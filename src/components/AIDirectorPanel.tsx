@@ -1,8 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { Wand2, Palette, Camera, Sparkles } from "lucide-react";
+import { Wand2, Palette, Camera, Sparkles, Video } from "lucide-react";
 import { useProject } from "@/hooks/useProject";
+import { Badge } from "@/components/ui/badge";
 
 const stylePresets = [
   { name: "Tokyo Neon", color: "from-pink-500 to-purple-500" },
@@ -11,12 +12,49 @@ const stylePresets = [
   { name: "Eden Light", color: "from-emerald-400 to-cyan-400" },
 ];
 
+const videoProviders = [
+  { 
+    id: "sora", 
+    name: "Sora 2", 
+    icon: "🎬",
+    description: "OpenAI - Best for music videos with audio sync",
+    features: ["Audio Sync", "20s clips", "Highest Quality"]
+  },
+  { 
+    id: "runway", 
+    name: "Runway Gen-3", 
+    icon: "🎨",
+    description: "Cinematic quality, fast generation",
+    features: ["5-10s clips", "Professional", "Fast"]
+  },
+  { 
+    id: "kling", 
+    name: "Kling AI", 
+    icon: "⚡",
+    description: "Cost-effective 1080p generation",
+    features: ["1080p 30fps", "Budget-friendly", "Good quality"]
+  },
+  { 
+    id: "veo", 
+    name: "Veo 3.1", 
+    icon: "🌟",
+    description: "Google - High quality video AI",
+    features: ["8s clips", "Google AI", "High quality"]
+  }
+];
+
 export const AIDirectorPanel = () => {
   const { currentProject, updateProject } = useProject();
 
   const handlePresetChange = (preset: string) => {
     if (currentProject) {
       updateProject({ style_preset: preset });
+    }
+  };
+
+  const handleProviderChange = (provider: string) => {
+    if (currentProject) {
+      updateProject({ video_provider: provider });
     }
   };
 
@@ -29,6 +67,8 @@ export const AIDirectorPanel = () => {
   const selectedPresetIndex = stylePresets.findIndex(
     (p) => p.name === currentProject?.style_preset
   );
+  
+  const selectedProvider = currentProject?.video_provider || 'sora';
 
   return (
     <div className="w-80 h-full glass-card border-l border-border/50 p-4 overflow-y-auto">
@@ -38,6 +78,49 @@ export const AIDirectorPanel = () => {
       </h2>
       
       <div className="space-y-6">
+        {/* Video Provider Selection */}
+        <Card className="glass-card p-4 space-y-3">
+          <div className="flex items-center gap-2 text-sm font-medium mb-3">
+            <Video className="w-4 h-4 text-primary" />
+            Video AI Provider
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {videoProviders.map((provider) => (
+              <Button
+                key={provider.id}
+                variant={selectedProvider === provider.id ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleProviderChange(provider.id)}
+                disabled={!currentProject}
+                className={`${
+                  selectedProvider === provider.id
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "hover:border-primary/50"
+                } transition-all h-auto py-2 flex flex-col items-start gap-1`}
+              >
+                <div className="flex items-center gap-1 w-full">
+                  <span className="text-base">{provider.icon}</span>
+                  <span className="font-semibold text-xs">{provider.name}</span>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {provider.features.map((feature, idx) => (
+                    <Badge 
+                      key={idx} 
+                      variant="secondary" 
+                      className="text-[10px] px-1 py-0 h-4"
+                    >
+                      {feature}
+                    </Badge>
+                  ))}
+                </div>
+              </Button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            {videoProviders.find(p => p.id === selectedProvider)?.description}
+          </p>
+        </Card>
+
         {/* Style Presets */}
         <Card className="glass-card p-4 space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium mb-3">
