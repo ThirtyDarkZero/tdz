@@ -54,7 +54,7 @@ export const AIDirectorPanel = () => {
 
   const handleProviderChange = (provider: string) => {
     if (currentProject) {
-      updateProject({ video_provider: provider });
+      updateProject({ video_provider: provider } as any);
     }
   };
 
@@ -68,7 +68,7 @@ export const AIDirectorPanel = () => {
     (p) => p.name === currentProject?.style_preset
   );
   
-  const selectedProvider = currentProject?.video_provider || 'sora';
+  const selectedProvider = (currentProject as any)?.video_provider || 'sora';
 
   return (
     <div className="w-80 h-full glass-card border-l border-border/50 p-4 overflow-y-auto">

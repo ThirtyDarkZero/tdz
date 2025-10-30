@@ -31,6 +31,7 @@ export type Database = {
           tempo_map: Json | null
           updated_at: string | null
           user_id: string | null
+          video_provider: string | null
         }
         Insert: {
           audio_file_path?: string | null
@@ -48,6 +49,7 @@ export type Database = {
           tempo_map?: Json | null
           updated_at?: string | null
           user_id?: string | null
+          video_provider?: string | null
         }
         Update: {
           audio_file_path?: string | null
@@ -65,6 +67,7 @@ export type Database = {
           tempo_map?: Json | null
           updated_at?: string | null
           user_id?: string | null
+          video_provider?: string | null
         }
         Relationships: []
       }

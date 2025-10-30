@@ -1,10 +1,46 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Film, Music2, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Film, Music2, Zap, Play, Loader2 } from "lucide-react";
 import { useProject } from "@/hooks/useProject";
+import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export const StoryboardView = () => {
   const { scenes, currentProject } = useProject();
+  const [generatingScenes, setGeneratingScenes] = useState<Set<string>>(new Set());
+
+  const generateVideo = async (sceneId: string) => {
+    try {
+      setGeneratingScenes(prev => new Set(prev).add(sceneId));
+      toast.info('Generating video...', { description: 'This may take 1-2 minutes' });
+
+      const { data, error } = await supabase.functions.invoke('generate-video', {
+        body: { 
+          sceneId,
+          provider: (currentProject as any)?.video_provider || 'sora'
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success('Video generated!', { 
+        description: `Using ${data.provider}` 
+      });
+    } catch (error) {
+      console.error('Error generating video:', error);
+      toast.error('Failed to generate video', { 
+        description: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    } finally {
+      setGeneratingScenes(prev => {
+        const next = new Set(prev);
+        next.delete(sceneId);
+        return next;
+      });
+    }
+  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -75,8 +111,36 @@ export const StoryboardView = () => {
               </Badge>
             </div>
 
-            <div className="aspect-video bg-gradient-to-br from-background/80 to-muted/50 rounded-lg mb-3 flex items-center justify-center border border-border/50">
-              <span className="text-xs text-muted-foreground">Scene Preview</span>
+            <div className="aspect-video bg-gradient-to-br from-background/80 to-muted/50 rounded-lg mb-3 flex items-center justify-center border border-border/50 relative group/video">
+              {scene.video_url ? (
+                <video 
+                  src={scene.video_url} 
+                  controls 
+                  className="w-full h-full rounded-lg object-cover"
+                />
+              ) : (
+                <>
+                  <span className="text-xs text-muted-foreground">Scene Preview</span>
+                  <Button
+                    size="sm"
+                    onClick={() => generateVideo(scene.id)}
+                    disabled={generatingScenes.has(scene.id)}
+                    className="absolute opacity-0 group-hover/video:opacity-100 transition-opacity bg-primary/90 hover:bg-primary"
+                  >
+                    {generatingScenes.has(scene.id) ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4 mr-2" />
+                        Generate Video
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
             </div>
 
             <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
