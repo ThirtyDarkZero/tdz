@@ -24,7 +24,7 @@ export const TopBar = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    window.location.href = "/auth";
+    window.location.href = "/";
   };
 
   return (

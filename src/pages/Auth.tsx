@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,20 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check for quick prompt from landing page
+    const quickPrompt = localStorage.getItem("quickPrompt");
+    if (quickPrompt && user) {
+      // User is logged in and has a prompt, redirect to studio
+      navigate("/studio");
+    } else if (user) {
+      // User is logged in but no prompt
+      navigate("/studio");
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,12 +35,13 @@ export default function Auth() {
       if (isSignUp) {
         const { error } = await signUp(email, password);
         if (error) throw error;
-        toast.success("Account created! Please check your email to confirm.");
+        toast.success("Account created! Redirecting to studio...");
+        setTimeout(() => navigate("/studio"), 1000);
       } else {
         const { error } = await signIn(email, password);
         if (error) throw error;
         toast.success("Signed in successfully!");
-        navigate("/");
+        navigate("/studio");
       }
     } catch (error: any) {
       toast.error(error.message || "Authentication failed");
@@ -95,6 +108,16 @@ export default function Auth() {
               ? "Already have an account? Sign in"
               : "Don't have an account? Sign up"}
           </button>
+        </div>
+
+        <div className="text-center">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/")}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            ← Back to Home
+          </Button>
         </div>
       </Card>
     </div>

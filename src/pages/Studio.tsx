@@ -7,7 +7,7 @@ import { AIDirectorPanel } from "@/components/AIDirectorPanel";
 import { TimelinePanel } from "@/components/TimelinePanel";
 import { useAuth } from "@/hooks/useAuth";
 
-const Index = () => {
+export default function Studio() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -43,6 +43,4 @@ const Index = () => {
       <TimelinePanel />
     </div>
   );
-};
-
-export default Index;
+}
