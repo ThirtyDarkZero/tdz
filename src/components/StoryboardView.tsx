@@ -112,9 +112,9 @@ export const StoryboardView = () => {
             </div>
 
             <div className="aspect-video bg-gradient-to-br from-background/80 to-muted/50 rounded-lg mb-3 flex items-center justify-center border border-border/50 relative group/video">
-              {scene.video_url ? (
+              {scene.generated_video_url ? (
                 <video 
-                  src={scene.video_url} 
+                  src={scene.generated_video_url} 
                   controls 
                   className="w-full h-full rounded-lg object-cover"
                 />

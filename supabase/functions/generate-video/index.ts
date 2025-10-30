@@ -140,8 +140,7 @@ serve(async (req) => {
     await supabase
       .from('scenes')
       .update({ 
-        video_url: videoData.videoUrl,
-        status: 'completed'
+        generated_video_url: videoData.videoUrl
       })
       .eq('id', sceneId);
 
