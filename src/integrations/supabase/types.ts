@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       projects: {
         Row: {
+          ai_twin_image_path: string | null
           audio_file_path: string | null
           bpm: number | null
           camera_motion: number | null
@@ -34,6 +35,7 @@ export type Database = {
           video_provider: string | null
         }
         Insert: {
+          ai_twin_image_path?: string | null
           audio_file_path?: string | null
           bpm?: number | null
           camera_motion?: number | null
@@ -52,6 +54,7 @@ export type Database = {
           video_provider?: string | null
         }
         Update: {
+          ai_twin_image_path?: string | null
           audio_file_path?: string | null
           bpm?: number | null
           camera_motion?: number | null

@@ -36,7 +36,7 @@ serve(async (req) => {
 
     console.log('Generating video for scene:', sceneId, 'using provider:', provider);
 
-    // Fetch scene data
+    // Fetch scene data with project details
     const { data: scene, error: sceneError } = await supabase
       .from('scenes')
       .select('*, projects(*)')
@@ -50,8 +50,46 @@ serve(async (req) => {
     // Determine which provider to use
     const videoProvider = provider || (scene.projects as any)?.video_provider || 'sora';
     
-    // Build the prompt from scene data
-    const prompt = `${scene.description}. Mood: ${scene.mood}. Intensity: ${scene.intensity}/10. Style: ${(scene.projects as any)?.style_preset || 'Cinematic'}`;
+    // Build the prompt from scene data with all style parameters
+    const project = scene.projects as any;
+    let prompt = `${scene.description}. Mood: ${scene.mood}. `;
+    
+    // Add style information
+    if (project.style_preset) {
+      prompt += `Style: ${project.style_preset}. `;
+    }
+    
+    // Add intensity
+    prompt += `Intensity: ${scene.intensity}/10. `;
+    
+    // Add camera motion guidance
+    const cameraMotion = project.camera_motion || 50;
+    if (cameraMotion < 30) {
+      prompt += `Camera: Static, locked shots. `;
+    } else if (cameraMotion < 70) {
+      prompt += `Camera: Smooth moderate movement. `;
+    } else {
+      prompt += `Camera: Dynamic, sweeping movements. `;
+    }
+    
+    // Add fantasy/realism guidance
+    const fantasyLevel = project.fantasy_realism || 60;
+    if (fantasyLevel < 30) {
+      prompt += `Photorealistic style. `;
+    } else if (fantasyLevel > 70) {
+      prompt += `Fantastical, surreal visuals. `;
+    }
+    
+    // Add AI twin if available
+    let referenceImageUrl = null;
+    if (project.ai_twin_image_path) {
+      const { data: { publicUrl } } = supabase.storage
+        .from('ai-twins')
+        .getPublicUrl(project.ai_twin_image_path);
+      
+      referenceImageUrl = publicUrl;
+      prompt += `Feature the person from the reference image as the main subject. `;
+    }
     
     const duration = Math.round((scene.end_time - scene.start_time) * 1000) / 1000;
 
@@ -77,7 +115,8 @@ serve(async (req) => {
             prompt,
             duration: Math.min(duration, 20),
             aspectRatio: '16:9',
-            audioPrompt: scene.mood
+            audioPrompt: scene.mood,
+            referenceImage: referenceImageUrl
           }),
         });
         break;
@@ -91,7 +130,8 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             prompt,
-            duration: Math.min(duration, 10)
+            duration: Math.min(duration, 10),
+            referenceImage: referenceImageUrl
           }),
         });
         break;
@@ -105,7 +145,8 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             prompt,
-            duration: Math.min(duration, 10)
+            duration: Math.min(duration, 10),
+            referenceImage: referenceImageUrl
           }),
         });
         break;
@@ -119,7 +160,8 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             prompt,
-            duration: Math.min(duration, 8)
+            duration: Math.min(duration, 8),
+            referenceImage: referenceImageUrl
           }),
         });
         break;

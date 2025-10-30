@@ -1,14 +1,15 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, Music, FileText, Loader2 } from "lucide-react";
+import { Upload, Music, FileText, Loader2, User } from "lucide-react";
 import { useRef } from "react";
 import { useProject } from "@/hooks/useProject";
 import { toast } from "sonner";
 
 export const UploadPanel = () => {
-  const { currentProject, updateProject, uploadAudio, loading } = useProject();
+  const { currentProject, updateProject, uploadAudio, uploadAITwin, loading } = useProject();
   const audioInputRef = useRef<HTMLInputElement>(null);
+  const twinInputRef = useRef<HTMLInputElement>(null);
 
   const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -20,6 +21,19 @@ export const UploadPanel = () => {
     }
 
     await uploadAudio(file);
+  };
+
+  const handleTwinUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please upload an image (JPG, PNG, WEBP) or video (MP4, MOV)');
+      return;
+    }
+
+    await uploadAITwin(file);
   };
 
   const handleLyricsChange = async (lyrics: string) => {
@@ -69,6 +83,42 @@ export const UploadPanel = () => {
           )}
         </Card>
 
+        {/* AI Twin Upload */}
+        <Card className="glass-card p-4 space-y-3">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <User className="w-4 h-4 text-accent" />
+            AI Twin (Optional)
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Upload your photo or video to appear in the music video
+          </p>
+          <input
+            ref={twinInputRef}
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp,video/mp4,video/quicktime"
+            onChange={handleTwinUpload}
+            className="hidden"
+          />
+          <Button 
+            variant="outline" 
+            className="w-full justify-start text-muted-foreground hover:text-foreground hover:border-accent/50 transition-all"
+            onClick={() => twinInputRef.current?.click()}
+            disabled={loading || !currentProject}
+          >
+            {loading ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Upload className="w-4 h-4 mr-2" />
+            )}
+            {currentProject?.ai_twin_image_path ? "Change AI Twin" : "Upload Photo/Video"}
+          </Button>
+          {currentProject?.ai_twin_image_path && (
+            <div className="text-xs text-accent font-mono truncate">
+              ✓ AI Twin uploaded
+            </div>
+          )}
+        </Card>
+
         {/* Lyrics Input */}
         <Card className="glass-card p-4 space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium">
@@ -76,7 +126,7 @@ export const UploadPanel = () => {
             Lyrics
           </div>
           <Textarea
-            placeholder="Paste your lyrics here..."
+            placeholder="Lyrics will auto-extract from audio, or paste manually..."
             value={currentProject?.lyrics || ""}
             onChange={(e) => handleLyricsChange(e.target.value)}
             className="min-h-[200px] bg-background/50 border-border/50 focus:border-primary/50 transition-all"

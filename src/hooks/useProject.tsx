@@ -16,6 +16,7 @@ export interface Project {
   camera_motion: number;
   fantasy_realism: number;
   status: string;
+  ai_twin_image_path: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -207,6 +208,31 @@ export const useProject = () => {
     }
   }, [user]);
 
+  // Upload AI twin image/video
+  const uploadAITwin = async (file: File) => {
+    if (!user || !currentProject) return;
+
+    setLoading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}/${currentProject.id}-twin.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("ai-twins")
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      await updateProject({ ai_twin_image_path: fileName } as any);
+      
+      toast.success("AI Twin uploaded successfully!");
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     currentProject,
     scenes,
@@ -214,6 +240,7 @@ export const useProject = () => {
     createProject,
     updateProject,
     uploadAudio,
+    uploadAITwin,
     generateScenes,
   };
 };

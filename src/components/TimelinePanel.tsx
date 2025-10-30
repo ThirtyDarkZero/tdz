@@ -1,13 +1,17 @@
 import { Card } from "@/components/ui/card";
-import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useProject } from "@/hooks/useProject";
 
 const beatMarkers = Array.from({ length: 32 }, (_, i) => i);
 
 export const TimelinePanel = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const { currentProject, generateScenes, loading } = useProject();
+
+  const canGenerateScenes = currentProject?.lyrics && currentProject?.audio_file_path;
 
   return (
     <div className="h-32 glass-card border-t border-border/50 p-4">
@@ -47,8 +51,28 @@ export const TimelinePanel = () => {
 
         <div className="flex-1" />
 
+        <Button
+          variant="default"
+          size="sm"
+          onClick={generateScenes}
+          disabled={!canGenerateScenes || loading}
+          className="bg-gradient-to-r from-primary to-accent hover:shadow-glow transition-all"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4 mr-2" />
+              Generate Scenes
+            </>
+          )}
+        </Button>
+
         <div className="text-xs text-muted-foreground">
-          120 BPM • 4/4 • C Major
+          {currentProject?.bpm || 120} BPM • 4/4 • {currentProject?.mood || 'Cinematic'}
         </div>
       </div>
 
