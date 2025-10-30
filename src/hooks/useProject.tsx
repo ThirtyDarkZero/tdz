@@ -199,7 +199,7 @@ export const useProject = () => {
         .eq("user_id", user.id)
         .order("updated_at", { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle()
         .then(({ data }) => {
           if (data) {
             setCurrentProject(data);
