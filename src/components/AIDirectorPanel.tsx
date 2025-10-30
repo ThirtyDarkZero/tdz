@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Wand2, Palette, Camera, Sparkles, Video } from "lucide-react";
-import { useProject } from "@/hooks/useProject";
+import { useProject } from "@/contexts/ProjectContext";
 import { Badge } from "@/components/ui/badge";
 
 const stylePresets = [

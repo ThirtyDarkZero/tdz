@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Sparkles, Play, LogOut, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useProject } from "@/hooks/useProject";
+import { useProject } from "@/contexts/ProjectContext";
 import { toast } from "sonner";
 
 export const TopBar = () => {

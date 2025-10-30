@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Play, Pause, SkipBack, SkipForward, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { useProject } from "@/hooks/useProject";
+import { useProject } from "@/contexts/ProjectContext";
 
 const beatMarkers = Array.from({ length: 32 }, (_, i) => i);
 

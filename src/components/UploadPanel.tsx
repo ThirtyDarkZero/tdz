@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Upload, Music, FileText, Loader2, User } from "lucide-react";
 import { useRef } from "react";
-import { useProject } from "@/hooks/useProject";
+import { useProject } from "@/contexts/ProjectContext";
 import { toast } from "sonner";
 
 export const UploadPanel = () => {

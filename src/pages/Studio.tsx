@@ -6,6 +6,7 @@ import { StoryboardView } from "@/components/StoryboardView";
 import { AIDirectorPanel } from "@/components/AIDirectorPanel";
 import { TimelinePanel } from "@/components/TimelinePanel";
 import { useAuth } from "@/hooks/useAuth";
+import { ProjectProvider } from "@/contexts/ProjectContext";
 
 export default function Studio() {
   const { user, loading } = useAuth();
@@ -33,14 +34,16 @@ export default function Studio() {
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      <TopBar />
-      <div className="flex-1 flex overflow-hidden">
-        <UploadPanel />
-        <StoryboardView />
-        <AIDirectorPanel />
+    <ProjectProvider>
+      <div className="h-screen flex flex-col overflow-hidden">
+        <TopBar />
+        <div className="flex-1 flex overflow-hidden">
+          <UploadPanel />
+          <StoryboardView />
+          <AIDirectorPanel />
+        </div>
+        <TimelinePanel />
       </div>
-      <TimelinePanel />
-    </div>
+    </ProjectProvider>
   );
 }
