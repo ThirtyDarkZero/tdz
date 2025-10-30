@@ -14,7 +14,113 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      projects: {
+        Row: {
+          audio_file_path: string | null
+          bpm: number | null
+          camera_motion: number | null
+          created_at: string | null
+          emotion_intensity: number | null
+          fantasy_realism: number | null
+          id: string
+          lyrics: string | null
+          mood: string | null
+          name: string
+          status: string | null
+          style_preset: string | null
+          tempo_map: Json | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          audio_file_path?: string | null
+          bpm?: number | null
+          camera_motion?: number | null
+          created_at?: string | null
+          emotion_intensity?: number | null
+          fantasy_realism?: number | null
+          id?: string
+          lyrics?: string | null
+          mood?: string | null
+          name?: string
+          status?: string | null
+          style_preset?: string | null
+          tempo_map?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          audio_file_path?: string | null
+          bpm?: number | null
+          camera_motion?: number | null
+          created_at?: string | null
+          emotion_intensity?: number | null
+          fantasy_realism?: number | null
+          id?: string
+          lyrics?: string | null
+          mood?: string | null
+          name?: string
+          status?: string | null
+          style_preset?: string | null
+          tempo_map?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      scenes: {
+        Row: {
+          camera_preset: string | null
+          created_at: string | null
+          description: string
+          end_time: number
+          generated_video_url: string | null
+          id: string
+          intensity: number
+          mood: string
+          project_id: string | null
+          scene_order: number
+          scene_type: string
+          start_time: number
+        }
+        Insert: {
+          camera_preset?: string | null
+          created_at?: string | null
+          description: string
+          end_time: number
+          generated_video_url?: string | null
+          id?: string
+          intensity: number
+          mood: string
+          project_id?: string | null
+          scene_order: number
+          scene_type: string
+          start_time: number
+        }
+        Update: {
+          camera_preset?: string | null
+          created_at?: string | null
+          description?: string
+          end_time?: number
+          generated_video_url?: string | null
+          id?: string
+          intensity?: number
+          mood?: string
+          project_id?: string | null
+          scene_order?: number
+          scene_type?: string
+          start_time?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
