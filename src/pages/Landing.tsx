@@ -96,7 +96,7 @@ export default function Landing() {
             Powered by AI · Generate Cinematic Music Videos
           </Badge>
 
-          <h1 className="text-5xl md:text-7xl font-bold leading-tight animate-fade-in">
+          <h1 className="text-5xl md:text-7xl font-display font-black leading-tight animate-fade-in tracking-tight">
             Create Any Music Video
             <br />
             <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
@@ -166,7 +166,7 @@ export default function Landing() {
             <Badge className="mb-4 bg-secondary/20 text-secondary border-secondary/30">
               Platform Features
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">
               Everything You Need for
               <br />
               <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
@@ -200,7 +200,7 @@ export default function Landing() {
               <Badge className="bg-accent/20 text-accent border-accent/30">
                 Why Choose Us
               </Badge>
-              <h2 className="text-4xl md:text-5xl font-bold">
+              <h2 className="text-4xl md:text-5xl font-display font-bold">
                 From Concept to
                 <br />
                 <span className="bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
@@ -239,7 +239,7 @@ export default function Landing() {
       {/* Final CTA */}
       <section className="py-24 px-6">
         <div className="max-w-4xl mx-auto text-center space-y-8">
-          <h2 className="text-4xl md:text-6xl font-bold">
+          <h2 className="text-4xl md:text-6xl font-display font-black">
             Ready to Create Your
             <br />
             <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
