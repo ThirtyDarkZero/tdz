@@ -1,43 +1,43 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Film, Music2, Zap } from "lucide-react";
-
-const sceneData = [
-  {
-    id: 1,
-    type: "Intro",
-    time: "0:00 - 0:15",
-    description: "Palace exterior at night, gold lighting, slow dolly",
-    mood: "Luxury",
-    intensity: 40,
-  },
-  {
-    id: 2,
-    type: "Verse 1",
-    time: "0:15 - 0:45",
-    description: "Interior throne room, dramatic shadows, character close-up",
-    mood: "Authority",
-    intensity: 60,
-  },
-  {
-    id: 3,
-    type: "Hook",
-    time: "0:45 - 1:00",
-    description: "Beat drop - strobe lights, fast cuts, car scenes",
-    mood: "Energy",
-    intensity: 95,
-  },
-  {
-    id: 4,
-    type: "Verse 2",
-    time: "1:00 - 1:30",
-    description: "Rooftop panorama, city lights, slow motion walk",
-    mood: "Cinematic",
-    intensity: 70,
-  },
-];
+import { useProject } from "@/hooks/useProject";
 
 export const StoryboardView = () => {
+  const { scenes, currentProject } = useProject();
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  if (!currentProject) {
+    return (
+      <div className="flex-1 h-full p-6 flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <Film className="w-16 h-16 text-muted-foreground mx-auto opacity-50" />
+          <h3 className="text-xl font-semibold">No Project Selected</h3>
+          <p className="text-muted-foreground">Create a new project to get started</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (scenes.length === 0) {
+    return (
+      <div className="flex-1 h-full p-6 flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <Film className="w-16 h-16 text-primary mx-auto opacity-50" />
+          <h3 className="text-xl font-semibold">No Scenes Yet</h3>
+          <p className="text-muted-foreground">
+            Upload audio and lyrics, then click "Generate Scenes"
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 h-full p-6 overflow-y-auto">
       <div className="mb-6">
@@ -46,12 +46,12 @@ export const StoryboardView = () => {
           AI Storyboard
         </h2>
         <p className="text-muted-foreground text-sm">
-          AI-generated scene breakdown synced to your music
+          {scenes.length} scenes generated for your music video
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {sceneData.map((scene) => (
+        {scenes.map((scene) => (
           <Card
             key={scene.id}
             className="glass-card p-4 hover:border-primary/50 transition-all cursor-pointer group"
@@ -63,10 +63,10 @@ export const StoryboardView = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
-                    {scene.type}
+                    {scene.scene_type}
                   </h3>
                   <p className="text-xs text-muted-foreground font-mono">
-                    {scene.time}
+                    {formatTime(scene.start_time)} - {formatTime(scene.end_time)}
                   </p>
                 </div>
               </div>
@@ -76,10 +76,10 @@ export const StoryboardView = () => {
             </div>
 
             <div className="aspect-video bg-gradient-to-br from-background/80 to-muted/50 rounded-lg mb-3 flex items-center justify-center border border-border/50">
-              <span className="text-xs text-muted-foreground">AI Preview</span>
+              <span className="text-xs text-muted-foreground">Scene Preview</span>
             </div>
 
-            <p className="text-sm text-muted-foreground mb-3">
+            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
               {scene.description}
             </p>
 

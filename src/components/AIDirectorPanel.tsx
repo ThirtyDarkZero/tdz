@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Wand2, Palette, Camera, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useProject } from "@/hooks/useProject";
 
 const stylePresets = [
   { name: "Tokyo Neon", color: "from-pink-500 to-purple-500" },
@@ -12,10 +12,23 @@ const stylePresets = [
 ];
 
 export const AIDirectorPanel = () => {
-  const [selectedPreset, setSelectedPreset] = useState(0);
-  const [emotionIntensity, setEmotionIntensity] = useState([70]);
-  const [cameraMotion, setCameraMotion] = useState([50]);
-  const [fantasyRealism, setFantasyRealism] = useState([60]);
+  const { currentProject, updateProject } = useProject();
+
+  const handlePresetChange = (preset: string) => {
+    if (currentProject) {
+      updateProject({ style_preset: preset });
+    }
+  };
+
+  const handleSliderChange = (field: string, value: number[]) => {
+    if (currentProject) {
+      updateProject({ [field]: value[0] });
+    }
+  };
+
+  const selectedPresetIndex = stylePresets.findIndex(
+    (p) => p.name === currentProject?.style_preset
+  );
 
   return (
     <div className="w-80 h-full glass-card border-l border-border/50 p-4 overflow-y-auto">
@@ -35,11 +48,12 @@ export const AIDirectorPanel = () => {
             {stylePresets.map((preset, idx) => (
               <Button
                 key={idx}
-                variant={selectedPreset === idx ? "default" : "outline"}
+                variant={selectedPresetIndex === idx ? "default" : "outline"}
                 size="sm"
-                onClick={() => setSelectedPreset(idx)}
+                onClick={() => handlePresetChange(preset.name)}
+                disabled={!currentProject}
                 className={`${
-                  selectedPreset === idx
+                  selectedPresetIndex === idx
                     ? `bg-gradient-to-r ${preset.color} text-white border-0`
                     : "hover:border-primary/50"
                 } transition-all`}
@@ -58,15 +72,18 @@ export const AIDirectorPanel = () => {
           </div>
           <div className="space-y-2">
             <Slider
-              value={emotionIntensity}
-              onValueChange={setEmotionIntensity}
+              value={[currentProject?.emotion_intensity || 70]}
+              onValueChange={(val) => handleSliderChange('emotion_intensity', val)}
               max={100}
               step={1}
+              disabled={!currentProject}
               className="w-full"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>Subtle</span>
-              <span className="text-secondary font-mono">{emotionIntensity[0]}%</span>
+              <span className="text-secondary font-mono">
+                {currentProject?.emotion_intensity || 70}%
+              </span>
               <span>Intense</span>
             </div>
           </div>
@@ -80,15 +97,18 @@ export const AIDirectorPanel = () => {
           </div>
           <div className="space-y-2">
             <Slider
-              value={cameraMotion}
-              onValueChange={setCameraMotion}
+              value={[currentProject?.camera_motion || 50]}
+              onValueChange={(val) => handleSliderChange('camera_motion', val)}
               max={100}
               step={1}
+              disabled={!currentProject}
               className="w-full"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>Static</span>
-              <span className="text-accent font-mono">{cameraMotion[0]}%</span>
+              <span className="text-accent font-mono">
+                {currentProject?.camera_motion || 50}%
+              </span>
               <span>Dynamic</span>
             </div>
           </div>
@@ -102,36 +122,30 @@ export const AIDirectorPanel = () => {
           </div>
           <div className="space-y-2">
             <Slider
-              value={fantasyRealism}
-              onValueChange={setFantasyRealism}
+              value={[currentProject?.fantasy_realism || 60]}
+              onValueChange={(val) => handleSliderChange('fantasy_realism', val)}
               max={100}
               step={1}
+              disabled={!currentProject}
               className="w-full"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>Realistic</span>
-              <span className="text-primary font-mono">{fantasyRealism[0]}%</span>
+              <span className="text-primary font-mono">
+                {currentProject?.fantasy_realism || 60}%
+              </span>
               <span>Fantasy</span>
             </div>
           </div>
         </Card>
 
-        {/* Camera Presets */}
-        <Card className="glass-card p-4 space-y-3">
-          <div className="text-sm font-medium mb-2">Camera Presets</div>
-          <div className="space-y-2">
-            {["Cinematic Dolly", "Drone Shot", "Handheld", "Orbit 360°"].map((preset) => (
-              <Button
-                key={preset}
-                variant="outline"
-                size="sm"
-                className="w-full justify-start text-xs hover:border-primary/50 transition-all"
-              >
-                {preset}
-              </Button>
-            ))}
-          </div>
-        </Card>
+        {!currentProject && (
+          <Card className="glass-card p-4 bg-muted/30">
+            <p className="text-sm text-muted-foreground text-center">
+              Create a project to use AI controls
+            </p>
+          </Card>
+        )}
       </div>
     </div>
   );
