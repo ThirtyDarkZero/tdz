@@ -47,29 +47,120 @@ serve(async (req) => {
       throw new Error('Project not found');
     }
 
-    // Analyze lyrics if provided
-    let scenes = [];
-    if (project.lyrics) {
-      const lyricsResponse = await fetch(
-        `${Deno.env.get('SUPABASE_URL')}/functions/v1/analyze-lyrics`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': authHeader,
-          },
-          body: JSON.stringify({
-            lyrics: project.lyrics,
-            bpm: project.bpm || 120,
-            mood: project.mood || 'Cinematic',
-          }),
-        }
-      );
+    if (!project.lyrics) {
+      throw new Error('Lyrics are required to generate scenes');
+    }
 
-      if (lyricsResponse.ok) {
-        const lyricsData = await lyricsResponse.json();
-        scenes = lyricsData.scenes || [];
+    // Use Lovable AI to generate scenes with all style parameters
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY not configured');
+    }
+
+    // Get style-specific visual guidance
+    const styleGuides: Record<string, string> = {
+      "Cinematic": "Hollywood cinematography, dramatic lighting, professional color grading, film grain",
+      "Tokyo Neon": "Neon-lit streets, cyberpunk aesthetics, vibrant colors, urban nightlife, Japanese signs",
+      "Golden Hour": "Warm sunset lighting, natural beauty, soft glow, lens flares, outdoor scenes",
+      "Shadow Realm": "Dark atmospheric scenes, mysterious shadows, low-key lighting, thriller vibes",
+      "Eden Light": "Ethereal nature scenes, magical forest, glowing plants, fairy-tale atmosphere",
+      "Desert Dreams": "Arid desert landscapes, heat waves, warm tones, vast open spaces",
+      "Arctic Freeze": "Cold icy environments, minimalist, blue-white tones, winter wonderland",
+      "Synthwave": "80s retro aesthetics, grid patterns, purple-pink neon, vintage film look",
+      "Noir": "Black and white, high contrast, detective story vibes, dramatic shadows",
+      "Candy Pop": "Bright colorful scenes, playful energy, oversaturated colors, fun atmosphere",
+      "Urban Grit": "Street photography, raw energy, urban decay, graffiti, gritty realism",
+      "Cosmic": "Space scenes, galaxies, stars, nebulas, cosmic phenomena, zero gravity",
+    };
+
+    const styleGuide = styleGuides[project.style_preset || "Cinematic"] || styleGuides["Cinematic"];
+    const emotionLevel = project.emotion_intensity || 70;
+    const cameraMotion = project.camera_motion || 50;
+    const fantasyLevel = project.fantasy_realism || 60;
+
+    const cameraGuidance = cameraMotion < 30 
+      ? "mostly static shots, locked camera, minimal movement"
+      : cameraMotion < 70 
+      ? "moderate camera movement, smooth pans and tilts"
+      : "dynamic camera work, sweeping movements, tracking shots, aerial views";
+
+    const realismGuidance = fantasyLevel < 30
+      ? "photorealistic, documentary style, natural settings"
+      : fantasyLevel < 70
+      ? "slightly surreal elements, enhanced reality, artistic interpretation"
+      : "highly fantastical, dreamlike, surreal visuals, magical elements";
+
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-pro',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert music video director. Analyze song lyrics and break them down into cinematic scenes.
+
+VISUAL STYLE: ${styleGuide}
+EMOTION INTENSITY: ${emotionLevel}/100 (${emotionLevel < 30 ? 'subtle, understated' : emotionLevel < 70 ? 'moderate, balanced' : 'intense, dramatic'})
+CAMERA WORK: ${cameraGuidance}
+VISUAL REALISM: ${realismGuidance}
+
+For each distinct section (intro, verse, chorus, bridge, outro), create a scene with:
+1. Scene type (Intro, Verse 1, Chorus, Verse 2, Bridge, Outro, etc.)
+2. Estimated timing (start and end in seconds, based on typical song structure and BPM ${project.bpm})
+3. Visual description matching the style guide above - be specific about:
+   - Location and setting
+   - Lighting and color palette
+   - Camera angles and movement
+   - Visual effects or elements
+   - What the subject is doing
+4. Mood/emotion for the scene
+5. Intensity level (0-100, matching the energy of that section)
+
+Return as JSON array with these exact fields for each scene:
+{
+  "type": string,
+  "startTime": number (seconds),
+  "endTime": number (seconds),
+  "description": string (detailed visual description following the style guide),
+  "mood": string,
+  "intensity": number (0-100)
+}
+
+Make scenes 5-15 seconds each. Use the BPM (${project.bpm}) and overall mood (${project.mood}) for timing.`
+          },
+          {
+            role: 'user',
+            content: `Lyrics:\n\n${project.lyrics}`
+          }
+        ],
+      }),
+    });
+
+    if (!aiResponse.ok) {
+      throw new Error(`AI scene generation failed: ${aiResponse.status}`);
+    }
+
+    const aiData = await aiResponse.json();
+    const analysisText = aiData.choices[0].message.content;
+    
+    console.log('AI scene generation response:', analysisText);
+
+    // Parse JSON array from AI response
+    let scenes;
+    try {
+      const jsonMatch = analysisText.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        scenes = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('No JSON array found in response');
       }
+    } catch (parseError) {
+      console.error('Failed to parse AI response:', parseError);
+      throw new Error('Failed to parse scene analysis');
     }
 
     // Insert scenes into database

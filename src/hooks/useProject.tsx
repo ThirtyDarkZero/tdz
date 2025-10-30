@@ -110,19 +110,31 @@ export const useProject = () => {
 
       await updateProject({ audio_file_path: fileName });
       
+      toast.info('Analyzing audio and extracting lyrics...');
+
       // Analyze audio
-      const { data: analysis } = await supabase.functions.invoke("analyze-audio", {
+      const { data: analysis, error: analysisError } = await supabase.functions.invoke("analyze-audio", {
         body: { audioUrl: publicUrl },
       });
 
-      if (analysis) {
+      if (!analysisError && analysis) {
         await updateProject({
           bpm: analysis.bpm,
           mood: analysis.mood,
         });
       }
 
-      toast.success("Audio uploaded and analyzed!");
+      // Extract lyrics
+      const { data: lyricsData, error: lyricsError } = await supabase.functions.invoke("extract-lyrics", {
+        body: { audioUrl: publicUrl },
+      });
+
+      if (!lyricsError && lyricsData?.lyrics) {
+        await updateProject({ lyrics: lyricsData.lyrics });
+        toast.success("Audio uploaded, analyzed, and lyrics extracted!");
+      } else {
+        toast.success("Audio uploaded and analyzed! Add lyrics manually for best results.");
+      }
     } catch (error: any) {
       toast.error(error.message);
     } finally {

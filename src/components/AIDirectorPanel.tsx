@@ -6,10 +6,18 @@ import { useProject } from "@/hooks/useProject";
 import { Badge } from "@/components/ui/badge";
 
 const stylePresets = [
-  { name: "Tokyo Neon", color: "from-pink-500 to-purple-500" },
-  { name: "Golden Hour", color: "from-amber-500 to-orange-500" },
-  { name: "Shadow Realm", color: "from-slate-700 to-slate-900" },
-  { name: "Eden Light", color: "from-emerald-400 to-cyan-400" },
+  { name: "Cinematic", color: "from-blue-600 to-indigo-800", desc: "Hollywood-style, dramatic lighting" },
+  { name: "Tokyo Neon", color: "from-pink-500 to-purple-500", desc: "Cyberpunk, vibrant neon lights" },
+  { name: "Golden Hour", color: "from-amber-500 to-orange-500", desc: "Warm sunset, natural beauty" },
+  { name: "Shadow Realm", color: "from-slate-700 to-slate-900", desc: "Dark, mysterious atmosphere" },
+  { name: "Eden Light", color: "from-emerald-400 to-cyan-400", desc: "Nature, ethereal glow" },
+  { name: "Desert Dreams", color: "from-yellow-600 to-red-600", desc: "Arid landscapes, heat waves" },
+  { name: "Arctic Freeze", color: "from-cyan-400 to-blue-200", desc: "Cold, icy, minimalist" },
+  { name: "Synthwave", color: "from-purple-600 to-pink-500", desc: "80s retro, grid aesthetics" },
+  { name: "Noir", color: "from-gray-900 to-gray-600", desc: "Black & white, high contrast" },
+  { name: "Candy Pop", color: "from-pink-400 to-purple-300", desc: "Colorful, playful, bright" },
+  { name: "Urban Grit", color: "from-stone-600 to-zinc-800", desc: "Street style, raw energy" },
+  { name: "Cosmic", color: "from-indigo-900 to-purple-900", desc: "Space, stars, galaxies" },
 ];
 
 const videoProviders = [
@@ -127,7 +135,7 @@ export const AIDirectorPanel = () => {
             <Palette className="w-4 h-4 text-primary" />
             Style Preset
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1">
             {stylePresets.map((preset, idx) => (
               <Button
                 key={idx}
@@ -139,9 +147,11 @@ export const AIDirectorPanel = () => {
                   selectedPresetIndex === idx
                     ? `bg-gradient-to-r ${preset.color} text-white border-0`
                     : "hover:border-primary/50"
-                } transition-all`}
+                } transition-all h-auto py-2 flex flex-col items-start gap-1`}
+                title={preset.desc}
               >
-                {preset.name}
+                <span className="font-semibold text-xs">{preset.name}</span>
+                <span className="text-[10px] opacity-70 font-normal text-left">{preset.desc}</span>
               </Button>
             ))}
           </div>
