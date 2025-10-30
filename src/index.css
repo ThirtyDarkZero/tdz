@@ -8,43 +8,43 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 8%;
+    --foreground: 0 0% 98%;
 
-    --card: 222 47% 15%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222 47% 12%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 45 100% 51%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 127 100% 60%;
+    --primary-foreground: 0 0% 0%;
 
-    --secondary: 240 70% 60%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 25%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 222 30% 25%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 0 72% 51%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 127 100% 55%;
+    --accent-foreground: 0 0% 0%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 222 30% 25%;
-    --input: 222 30% 20%;
-    --ring: 45 100% 51%;
+    --border: 0 0% 20%;
+    --input: 0 0% 15%;
+    --ring: 127 100% 60%;
 
     --radius: 0.75rem;
 
-    /* Cinematic gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(240 70% 60%) 0%, hsl(45 100% 51%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(222 47% 11%) 0%, hsl(240 70% 20%) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(222 47% 15% / 0.8) 0%, hsl(240 60% 20% / 0.8) 100%);
+    /* Neon green gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(127 100% 60%) 0%, hsl(127 100% 45%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(0 0% 8%) 0%, hsl(0 0% 15%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 12% / 0.8) 0%, hsl(0 0% 18% / 0.8) 100%);
     
-    /* Shadows with glow */
-    --shadow-glow: 0 0 40px hsl(45 100% 51% / 0.3);
+    /* Shadows with neon glow */
+    --shadow-glow: 0 0 40px hsl(127 100% 60% / 0.4);
     --shadow-card: 0 10px 40px -10px hsl(0 0% 0% / 0.5);
     
     /* Animations */
@@ -59,7 +59,7 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
-    background: linear-gradient(180deg, hsl(222 47% 11%) 0%, hsl(240 70% 20%) 100%);
+    background: linear-gradient(180deg, hsl(0 0% 8%) 0%, hsl(0 0% 12%) 100%);
     background-attachment: fixed;
   }
 }
