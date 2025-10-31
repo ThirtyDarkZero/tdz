@@ -65,6 +65,27 @@ export type Database = {
         }
         Relationships: []
       }
+      artist_follows: {
+        Row: {
+          artist_id: string
+          created_at: string
+          follower_id: string
+          id: string
+        }
+        Insert: {
+          artist_id: string
+          created_at?: string
+          follower_id: string
+          id?: string
+        }
+        Update: {
+          artist_id?: string
+          created_at?: string
+          follower_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       artist_profiles: {
         Row: {
           artist_name: string
@@ -251,6 +272,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      listener_profiles: {
+        Row: {
+          bio: string | null
+          created_at: string
+          display_name: string
+          favorite_genres: Json | null
+          id: string
+          location: string | null
+          profile_image_path: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          display_name: string
+          favorite_genres?: Json | null
+          id?: string
+          location?: string | null
+          profile_image_path?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          display_name?: string
+          favorite_genres?: Json | null
+          id?: string
+          location?: string | null
+          profile_image_path?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       listening_history: {
         Row: {
@@ -693,6 +750,42 @@ export type Database = {
           },
         ]
       }
+      track_likes: {
+        Row: {
+          created_at: string
+          id: string
+          track_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          track_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          track_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_likes_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "published_tracks_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_likes_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tracks: {
         Row: {
           ai_tags: Json | null
@@ -980,7 +1073,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "verified_artist" | "artist" | "user"
+      app_role: "admin" | "verified_artist" | "artist" | "user" | "listener"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1108,7 +1201,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "verified_artist", "artist", "user"],
+      app_role: ["admin", "verified_artist", "artist", "user", "listener"],
     },
   },
 } as const
