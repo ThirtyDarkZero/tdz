@@ -30,7 +30,7 @@ serve(async (req) => {
       requestBody.image_url = imageUrl;
     }
 
-    const response = await fetch('https://api.runwayml.com/v1/generate', {
+    const response = await fetch('https://api.dev.runwayml.com/v1/generate', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${RUNWAY_API_KEY}`,
@@ -60,7 +60,7 @@ serve(async (req) => {
     while (!videoUrl && attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
       
-      const statusResponse = await fetch(`https://api.runwayml.com/v1/tasks/${taskId}`, {
+      const statusResponse = await fetch(`https://api.dev.runwayml.com/v1/tasks/${taskId}`, {
         headers: {
           'Authorization': `Bearer ${RUNWAY_API_KEY}`,
         },
