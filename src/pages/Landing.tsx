@@ -117,7 +117,7 @@ export default function Landing() {
             <img 
               src={tdzLogo} 
               alt="TDZ Distribution Logo" 
-              className="h-32 md:h-40 w-auto object-contain"
+              className="h-64 md:h-80 lg:h-96 w-auto object-contain"
             />
           </div>
 
