@@ -1,7 +1,10 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Film, Music2, Zap, Play, Loader2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Film, Music2, Zap, Play, Loader2, Edit2, Save } from "lucide-react";
 import { useProject } from "@/contexts/ProjectContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
@@ -10,6 +13,10 @@ import { toast } from "sonner";
 export const StoryboardView = () => {
   const { scenes, currentProject } = useProject();
   const [generatingScenes, setGeneratingScenes] = useState<Set<string>>(new Set());
+  const [editingScene, setEditingScene] = useState<any>(null);
+  const [editDescription, setEditDescription] = useState("");
+  const [editMood, setEditMood] = useState("");
+  const [editIntensity, setEditIntensity] = useState(50);
 
   const generateVideo = async (sceneId: string) => {
     try {
@@ -25,6 +32,9 @@ export const StoryboardView = () => {
 
       if (error) throw error;
 
+      // Refresh scenes to show the new video
+      window.location.reload();
+
       toast.success('Video generated!', { 
         description: `Using ${data.provider}` 
       });
@@ -39,6 +49,39 @@ export const StoryboardView = () => {
         next.delete(sceneId);
         return next;
       });
+    }
+  };
+
+  const openEditDialog = (scene: any) => {
+    setEditingScene(scene);
+    setEditDescription(scene.description);
+    setEditMood(scene.mood);
+    setEditIntensity(scene.intensity);
+  };
+
+  const saveSceneEdit = async () => {
+    if (!editingScene) return;
+
+    try {
+      const { error } = await supabase
+        .from('scenes')
+        .update({
+          description: editDescription,
+          mood: editMood,
+          intensity: editIntensity,
+        })
+        .eq('id', editingScene.id);
+
+      if (error) throw error;
+
+      // Refresh to show changes
+      window.location.reload();
+      
+      toast.success('Scene updated!');
+      setEditingScene(null);
+    } catch (error) {
+      console.error('Error updating scene:', error);
+      toast.error('Failed to update scene');
     }
   };
 
@@ -93,11 +136,11 @@ export const StoryboardView = () => {
             className="glass-card p-4 hover:border-primary/50 transition-all cursor-pointer group"
           >
             <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-1">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
                   <Music2 className="w-5 h-5 text-primary" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
                     {scene.scene_type}
                   </h3>
@@ -106,9 +149,63 @@ export const StoryboardView = () => {
                   </p>
                 </div>
               </div>
-              <Badge variant="outline" className="text-xs">
-                {scene.mood}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs">
+                  {scene.mood}
+                </Badge>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0"
+                      onClick={() => openEditDialog(scene)}
+                    >
+                      <Edit2 className="w-3 h-3" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Edit Scene: {scene.scene_type}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Description</label>
+                        <Textarea
+                          value={editDescription}
+                          onChange={(e) => setEditDescription(e.target.value)}
+                          className="min-h-[100px]"
+                          placeholder="Detailed visual description..."
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Mood</label>
+                          <Input
+                            value={editMood}
+                            onChange={(e) => setEditMood(e.target.value)}
+                            placeholder="e.g., Energetic, Melancholic"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Intensity ({editIntensity}%)</label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={editIntensity}
+                            onChange={(e) => setEditIntensity(parseInt(e.target.value))}
+                          />
+                        </div>
+                      </div>
+                      <Button onClick={saveSceneEdit} className="w-full">
+                        <Save className="w-4 h-4 mr-2" />
+                        Save Changes
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
 
             <div className="aspect-video bg-gradient-to-br from-background/80 to-muted/50 rounded-lg mb-3 flex items-center justify-center border border-border/50 relative group/video">

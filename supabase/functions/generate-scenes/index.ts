@@ -51,6 +51,14 @@ serve(async (req) => {
       throw new Error('Lyrics are required to generate scenes');
     }
 
+    // Fetch approved characters for this project
+    const { data: characters } = await supabase
+      .from('characters')
+      .select('*')
+      .eq('project_id', projectId)
+      .eq('is_approved', true)
+      .order('display_order', { ascending: true });
+
     // Use Lovable AI to generate scenes with all style parameters
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -90,6 +98,17 @@ serve(async (req) => {
       ? "slightly surreal elements, enhanced reality, artistic interpretation"
       : "highly fantastical, dreamlike, surreal visuals, magical elements";
 
+    // Build character guidance
+    let characterGuidance = "";
+    if (characters && characters.length > 0) {
+      const characterNames = characters.map((c: any) => c.name).join(", ");
+      characterGuidance = `\n\nAPPROVED CHARACTERS: ${characterNames}
+      - Feature these characters as the main subjects in scenes
+      - Describe how each character appears and what they're doing
+      - Maintain character consistency across scenes
+      - For character scenes, be specific about their actions, expressions, and positions`;
+    }
+
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -106,17 +125,18 @@ serve(async (req) => {
 VISUAL STYLE: ${styleGuide}
 EMOTION INTENSITY: ${emotionLevel}/100 (${emotionLevel < 30 ? 'subtle, understated' : emotionLevel < 70 ? 'moderate, balanced' : 'intense, dramatic'})
 CAMERA WORK: ${cameraGuidance}
-VISUAL REALISM: ${realismGuidance}
+VISUAL REALISM: ${realismGuidance}${characterGuidance}
 
 For each distinct section (intro, verse, chorus, bridge, outro), create a scene with:
 1. Scene type (Intro, Verse 1, Chorus, Verse 2, Bridge, Outro, etc.)
 2. Estimated timing (start and end in seconds, based on typical song structure and BPM ${project.bpm})
-3. Visual description matching the style guide above - be specific about:
-   - Location and setting
-   - Lighting and color palette
-   - Camera angles and movement
-   - Visual effects or elements
-   - What the subject is doing
+3. Visual description matching the style guide above - be HIGHLY SPECIFIC about:
+   - Exact location and setting (e.g., "rooftop at golden hour with city skyline")
+   - Precise lighting (e.g., "rim lighting from setting sun, warm orange glow")
+   - Camera angles and movement (e.g., "slow dolly push in from wide to close-up")
+   - Visual effects or elements (e.g., "lens flares, bokeh lights in background")
+   - Subject's actions and emotions (e.g., "artist singing passionately, gesturing to camera")
+   - If characters are provided, feature them prominently with specific actions
 4. Mood/emotion for the scene
 5. Intensity level (0-100, matching the energy of that section)
 
