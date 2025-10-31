@@ -158,9 +158,12 @@ serve(async (req) => {
     const baseUrl = Deno.env.get('SUPABASE_URL');
 
     // Build fallback chain: primary provider first, then all others
-    // Note: Veo and Sora are not currently supported/available
-    const workingProviders = ['runway', 'kling'];
-    const allProviders = [videoProvider, ...workingProviders.filter(p => p !== videoProvider)];
+    // Note: Currently only Runway is fully supported
+    // Sora: API endpoint issues (405 errors)
+    // Kling: Requires valid FAL_API_KEY with kling-video access
+    // Veo: Not supported through Lovable AI Gateway
+    const workingProviders = ['runway'];
+    const allProviders = [videoProvider === 'runway' ? videoProvider : 'runway'];
     
     for (let attempt = 0; attempt < allProviders.length && !videoUrl; attempt++) {
       try {
@@ -290,7 +293,7 @@ serve(async (req) => {
     // All attempts failed - provide helpful message
     console.error('[Video Gen] All providers failed:', lastError);
     const errorMessage = lastError instanceof Error ? lastError.message : 'All video generation providers failed';
-    throw new Error(`Video generation failed after trying all providers (${allProviders.join(', ')}). Last error: ${errorMessage}. Please ensure: 1) Runway has sufficient credits at https://runwayml.com, 2) FAL_API_KEY is configured correctly for Kling access.`);
+    throw new Error(`Video generation failed. ${errorMessage}. Please add credits to your Runway account at https://runwayml.com to continue generating videos.`);
   } catch (error) {
     console.error('[Video Gen] Fatal error:', error);
     return new Response(
