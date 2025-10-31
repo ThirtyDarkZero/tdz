@@ -50,9 +50,9 @@ export const TopBar = () => {
         </div>
         <div>
           <h1 className="text-lg font-bold glow-text">
-            {currentProject?.name || "AI Music Video Studio"}
+            {currentProject?.name || "TDZ Distribution"}
           </h1>
-          <p className="text-xs text-muted-foreground">Cinematic Generation Engine</p>
+          <p className="text-xs text-muted-foreground">AI-Powered Music Platform</p>
         </div>
       </div>
       

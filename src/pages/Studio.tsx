@@ -83,10 +83,10 @@ const Studio = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent mb-2">
-            Quantum Music Platform
+            TDZ Distribution
           </h1>
           <p className="text-xl text-muted-foreground">
-            AI-Powered Distribution & Streaming
+            Next-Gen Music Distribution & Streaming
           </p>
         </div>
 

@@ -288,6 +288,13 @@ export type Database = {
             foreignKeyName: "listening_history_track_id_fkey"
             columns: ["track_id"]
             isOneToOne: false
+            referencedRelation: "published_tracks_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "listening_history_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
@@ -371,6 +378,13 @@ export type Database = {
             columns: ["playlist_id"]
             isOneToOne: false
             referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playlist_tracks_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "published_tracks_view"
             referencedColumns: ["id"]
           },
           {
@@ -753,6 +767,27 @@ export type Database = {
           },
         ]
       }
+      upload_rate_limits: {
+        Row: {
+          id: string
+          uploads_count: number
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          id?: string
+          uploads_count?: number
+          user_id: string
+          window_start?: string
+        }
+        Update: {
+          id?: string
+          uploads_count?: number
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       upload_sessions: {
         Row: {
           chunk_size_bytes: number
@@ -851,6 +886,13 @@ export type Database = {
             foreignKeyName: "user_library_track_id_fkey"
             columns: ["track_id"]
             isOneToOne: false
+            referencedRelation: "published_tracks_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_library_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
@@ -882,9 +924,35 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      published_tracks_view: {
+        Row: {
+          album_cover: string | null
+          album_id: string | null
+          album_title: string | null
+          artist_name: string | null
+          bpm: number | null
+          created_at: string | null
+          duration: number | null
+          genre: string | null
+          id: string | null
+          like_count: number | null
+          mood: string | null
+          play_count: number | null
+          title: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracks_album_id_fkey"
+            columns: ["album_id"]
+            isOneToOne: false
+            referencedRelation: "albums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      check_upload_rate_limit: { Args: { p_user_id: string }; Returns: boolean }
       deduct_render_credits:
         | {
             Args: {
