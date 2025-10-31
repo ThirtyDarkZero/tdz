@@ -25,6 +25,7 @@ export type Database = {
           is_published: boolean | null
           play_count: number | null
           release_date: string | null
+          scheduled_release_date: string | null
           title: string
           total_duration: number | null
           total_tracks: number | null
@@ -41,6 +42,7 @@ export type Database = {
           is_published?: boolean | null
           play_count?: number | null
           release_date?: string | null
+          scheduled_release_date?: string | null
           title: string
           total_duration?: number | null
           total_tracks?: number | null
@@ -57,6 +59,7 @@ export type Database = {
           is_published?: boolean | null
           play_count?: number | null
           release_date?: string | null
+          scheduled_release_date?: string | null
           title?: string
           total_duration?: number | null
           total_tracks?: number | null
@@ -802,6 +805,7 @@ export type Database = {
           like_count: number | null
           mood: string | null
           play_count: number | null
+          release_date: string | null
           title: string
           track_number: number | null
           updated_at: string
@@ -823,6 +827,7 @@ export type Database = {
           like_count?: number | null
           mood?: string | null
           play_count?: number | null
+          release_date?: string | null
           title: string
           track_number?: number | null
           updated_at?: string
@@ -844,6 +849,7 @@ export type Database = {
           like_count?: number | null
           mood?: string | null
           play_count?: number | null
+          release_date?: string | null
           title?: string
           track_number?: number | null
           updated_at?: string

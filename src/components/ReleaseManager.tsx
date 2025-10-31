@@ -70,12 +70,16 @@ export const ReleaseManager = () => {
     setIsSubmitting(true);
 
     try {
-      // Update track to published
+      const releaseDateStr = format(releaseDate, "yyyy-MM-dd");
+      const today = format(new Date(), "yyyy-MM-dd");
+      const shouldPublishNow = releaseDateStr <= today;
+
+      // Update track with release date and publish status
       const { error: updateError } = await supabase
         .from("tracks")
         .update({
-          is_published: true,
-          // Store release info in metadata
+          is_published: shouldPublishNow,
+          release_date: releaseDateStr,
         })
         .eq("id", selectedTrack.id);
 
@@ -92,15 +96,18 @@ export const ReleaseManager = () => {
             artist_name: selectedTrack.artist_name,
             description: releaseDescription,
             genre: genre,
-            release_date: format(releaseDate, "yyyy-MM-dd"),
-            is_published: true,
+            release_date: releaseDateStr,
+            scheduled_release_date: releaseDateStr,
+            is_published: shouldPublishNow,
           });
 
         if (albumError) console.error("Album creation error:", albumError);
       }
 
-      toast.success("Release scheduled successfully!", {
-        description: `${selectedTrack.title} will go live on ${format(releaseDate, "PPP")}`,
+      toast.success(shouldPublishNow ? "Released!" : "Release scheduled!", {
+        description: shouldPublishNow 
+          ? `${selectedTrack.title} is now live on ${selectedPlatforms.length} platforms`
+          : `${selectedTrack.title} will go live on ${format(releaseDate, "PPP")}`,
       });
 
       // Reset form
