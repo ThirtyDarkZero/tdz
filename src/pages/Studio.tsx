@@ -6,6 +6,8 @@ import { StoryboardView } from "@/components/StoryboardView";
 import { TimelinePanel } from "@/components/TimelinePanel";
 import { AIDirectorPanel } from "@/components/AIDirectorPanel";
 import { ProductionPipeline } from "@/components/ProductionPipeline";
+import { ProjectsList } from "@/components/ProjectsList";
+import { TemplatesList } from "@/components/TemplatesList";
 import { ProjectProvider } from "@/contexts/ProjectContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Film, Package, FolderOpen, LayoutTemplate } from "lucide-react";
@@ -71,17 +73,11 @@ export default function Studio() {
             <TabsContent value="pipeline" className="flex-1 m-0 overflow-auto">
               <ProductionPipeline />
             </TabsContent>
-            <TabsContent value="projects" className="flex-1 m-0 overflow-auto p-6">
-              <div className="max-w-4xl mx-auto">
-                <h2 className="text-2xl font-bold mb-4">Projects</h2>
-                <p className="text-muted-foreground">Your projects will appear here.</p>
-              </div>
+            <TabsContent value="projects" className="flex-1 m-0 overflow-auto">
+              <ProjectsList />
             </TabsContent>
-            <TabsContent value="templates" className="flex-1 m-0 overflow-auto p-6">
-              <div className="max-w-4xl mx-auto">
-                <h2 className="text-2xl font-bold mb-4">Templates</h2>
-                <p className="text-muted-foreground">Browse video templates to get started quickly.</p>
-              </div>
+            <TabsContent value="templates" className="flex-1 m-0 overflow-auto">
+              <TemplatesList />
             </TabsContent>
             <AIDirectorPanel />
           </div>
