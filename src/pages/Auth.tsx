@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Sparkles } from "lucide-react";
+import tdzLogo from "@/assets/tdz-logo.png";
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -54,9 +54,7 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="glass-card p-8 w-full max-w-md space-y-6">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-            <Sparkles className="w-8 h-8 text-primary-foreground" />
-          </div>
+          <img src={tdzLogo} alt="TDZ Distribution" className="h-24 w-auto" style={{ mixBlendMode: 'screen' }} />
           <div className="text-center">
             <h1 className="text-3xl font-bold glow-text mb-2">
               TDZ Distribution

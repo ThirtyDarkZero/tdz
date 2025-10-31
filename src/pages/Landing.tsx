@@ -20,6 +20,7 @@ import {
   Headphones
 } from "lucide-react";
 import studioBackground from "@/assets/studio-background.jpg";
+import tdzLogo from "@/assets/tdz-logo.png";
 
 const features = [
   {
@@ -92,6 +93,11 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
+      {/* Logo Header */}
+      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+        <img src={tdzLogo} alt="TDZ Distribution" className="h-20 md:h-24 w-auto drop-shadow-2xl" style={{ mixBlendMode: 'screen' }} />
+      </div>
+
       {/* Animated Grid Background */}
       <div className="fixed inset-0 opacity-20 pointer-events-none">
         <div className="absolute inset-0" style={{

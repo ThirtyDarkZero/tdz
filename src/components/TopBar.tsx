@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { Sparkles, Play, LogOut, Plus } from "lucide-react";
+import { Play, LogOut, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProject } from "@/contexts/ProjectContext";
 import { toast } from "sonner";
+import tdzLogo from "@/assets/tdz-logo.png";
 
 export const TopBar = () => {
   const { user, signOut } = useAuth();
@@ -45,9 +46,7 @@ export const TopBar = () => {
   return (
     <header className="h-16 glass-card flex items-center justify-between px-6 border-b border-border/50">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-          <Sparkles className="w-5 h-5 text-primary-foreground" />
-        </div>
+        <img src={tdzLogo} alt="TDZ Distribution" className="h-10 w-auto" style={{ mixBlendMode: 'screen' }} />
         <div>
           <h1 className="text-lg font-bold glow-text">
             {currentProject?.name || "TDZ Distribution"}
