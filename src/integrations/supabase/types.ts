@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      characters: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_approved: boolean
+          media_path: string
+          media_type: string
+          name: string
+          project_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_approved?: boolean
+          media_path: string
+          media_type: string
+          name?: string
+          project_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_approved?: boolean
+          media_path?: string
+          media_type?: string
+          name?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "characters_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           ai_twin_image_path: string | null

@@ -7,11 +7,12 @@ import { Upload, Music, FileText, Loader2, User, Gauge, Smile } from "lucide-rea
 import { useRef } from "react";
 import { useProject } from "@/contexts/ProjectContext";
 import { toast } from "sonner";
+import { CharactersGallery } from "./CharactersGallery";
 
 export const UploadPanel = () => {
-  const { currentProject, updateProject, uploadAudio, uploadAITwin, loading } = useProject();
+  const { currentProject, updateProject, uploadAudio, uploadCharacter, loading } = useProject();
   const audioInputRef = useRef<HTMLInputElement>(null);
-  const twinInputRef = useRef<HTMLInputElement>(null);
+  const characterInputRef = useRef<HTMLInputElement>(null);
 
   const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -25,7 +26,7 @@ export const UploadPanel = () => {
     await uploadAudio(file);
   };
 
-  const handleTwinUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCharacterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -35,7 +36,12 @@ export const UploadPanel = () => {
       return;
     }
 
-    await uploadAITwin(file);
+    await uploadCharacter(file);
+    
+    // Reset input to allow uploading the same file again
+    if (characterInputRef.current) {
+      characterInputRef.current.value = '';
+    }
   };
 
   const handleLyricsChange = async (lyrics: string) => {
@@ -98,26 +104,26 @@ export const UploadPanel = () => {
           )}
         </Card>
 
-        {/* AI Twin Upload */}
+        {/* Characters Upload */}
         <Card className="glass-card p-4 space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium">
             <User className="w-4 h-4 text-accent" />
-            AI Twin (Optional)
+            Characters (Optional)
           </div>
           <p className="text-xs text-muted-foreground">
-            Upload your photo or video to appear in the music video
+            Upload photos or videos to feature in your music video
           </p>
           <input
-            ref={twinInputRef}
+            ref={characterInputRef}
             type="file"
             accept="image/jpeg,image/jpg,image/png,image/webp,video/mp4,video/quicktime"
-            onChange={handleTwinUpload}
+            onChange={handleCharacterUpload}
             className="hidden"
           />
           <Button 
             variant="outline" 
             className="w-full justify-start text-muted-foreground hover:text-foreground hover:border-accent/50 transition-all"
-            onClick={() => twinInputRef.current?.click()}
+            onClick={() => characterInputRef.current?.click()}
             disabled={loading || !currentProject}
           >
             {loading ? (
@@ -125,13 +131,10 @@ export const UploadPanel = () => {
             ) : (
               <Upload className="w-4 h-4 mr-2" />
             )}
-            {currentProject?.ai_twin_image_path ? "Change AI Twin" : "Upload Photo/Video"}
+            Add Character
           </Button>
-          {currentProject?.ai_twin_image_path && (
-            <div className="text-xs text-accent font-mono truncate">
-              ✓ AI Twin uploaded
-            </div>
-          )}
+          
+          <CharactersGallery />
         </Card>
 
         {/* BPM and Mood Controls */}

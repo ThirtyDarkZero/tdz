@@ -36,14 +36,28 @@ export interface Scene {
   created_at: string;
 }
 
+export interface Character {
+  id: string;
+  project_id: string;
+  name: string;
+  media_path: string;
+  media_type: 'image' | 'video';
+  is_approved: boolean;
+  display_order: number;
+  created_at: string;
+}
+
 interface ProjectContextType {
   currentProject: Project | null;
   scenes: Scene[];
+  characters: Character[];
   loading: boolean;
   createProject: () => Promise<Project | undefined>;
   updateProject: (updates: Partial<Project>) => Promise<void>;
   uploadAudio: (file: File) => Promise<void>;
-  uploadAITwin: (file: File) => Promise<void>;
+  uploadCharacter: (file: File, name?: string) => Promise<void>;
+  updateCharacter: (id: string, updates: Partial<Character>) => Promise<void>;
+  deleteCharacter: (id: string) => Promise<void>;
   generateScenes: () => Promise<void>;
 }
 
@@ -53,6 +67,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [scenes, setScenes] = useState<Scene[]>([]);
+  const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(false);
 
   const createProject = async () => {
@@ -153,23 +168,85 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const uploadAITwin = async (file: File) => {
+  const uploadCharacter = async (file: File, name?: string) => {
     if (!user || !currentProject) return;
 
     setLoading(true);
     try {
       const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}/${currentProject.id}-twin.${fileExt}`;
+      const mediaType = file.type.startsWith('image') ? 'image' : 'video';
+      const timestamp = Date.now();
+      const fileName = `${user.id}/${currentProject.id}-${timestamp}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("ai-twins")
+        .from("characters")
         .upload(fileName, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
-      await updateProject({ ai_twin_image_path: fileName } as any);
-      
-      toast.success("AI Twin uploaded successfully!");
+      const { error: dbError } = await supabase
+        .from("characters")
+        .insert({
+          project_id: currentProject.id,
+          name: name || `Character ${characters.length + 1}`,
+          media_path: fileName,
+          media_type: mediaType,
+          display_order: characters.length,
+        });
+
+      if (dbError) throw dbError;
+
+      await loadCharacters();
+      toast.success("Character uploaded successfully!");
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateCharacter = async (id: string, updates: Partial<Character>) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("characters")
+        .update(updates)
+        .eq("id", id);
+
+      if (error) throw error;
+
+      await loadCharacters();
+      toast.success("Character updated!");
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteCharacter = async (id: string) => {
+    setLoading(true);
+    try {
+      const character = characters.find(c => c.id === id);
+      if (!character) return;
+
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from("characters")
+        .remove([character.media_path]);
+
+      if (storageError) console.error('Storage deletion error:', storageError);
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from("characters")
+        .delete()
+        .eq("id", id);
+
+      if (dbError) throw dbError;
+
+      await loadCharacters();
+      toast.success("Character deleted!");
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -214,9 +291,27 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     setScenes(data || []);
   };
 
+  const loadCharacters = async () => {
+    if (!currentProject) return;
+
+    const { data, error } = await supabase
+      .from("characters")
+      .select("*")
+      .eq("project_id", currentProject.id)
+      .order("display_order", { ascending: true });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setCharacters((data || []) as Character[]);
+  };
+
   useEffect(() => {
     if (currentProject) {
       loadScenes();
+      loadCharacters();
     }
   }, [currentProject?.id]);
 
@@ -242,11 +337,14 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
       value={{
         currentProject,
         scenes,
+        characters,
         loading,
         createProject,
         updateProject,
         uploadAudio,
-        uploadAITwin,
+        uploadCharacter,
+        updateCharacter,
+        deleteCharacter,
         generateScenes,
       }}
     >
