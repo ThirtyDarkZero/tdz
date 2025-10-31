@@ -257,8 +257,21 @@ serve(async (req) => {
         }
 
         const errorText = await videoResponse.text();
-        lastError = new Error(`${currentProvider} failed: ${errorText}`);
         console.error(`[Video Gen] ${currentProvider} error:`, errorText);
+        
+        // Parse error and provide user-friendly messages
+        try {
+          const errorData = JSON.parse(errorText);
+          if (errorData.error?.includes('not have enough credits') || errorData.details?.includes('not have enough credits')) {
+            lastError = new Error(`${currentProvider} account has insufficient credits. Please add credits to your ${currentProvider} account at https://runwayml.com, or switch to a different provider (Kling or Veo) in the AI Director panel.`);
+          } else if (errorData.error?.includes('405') || errorData.error?.includes('Invalid method')) {
+            lastError = new Error(`${currentProvider} API endpoint is not available or configured incorrectly. Please try selecting Kling or Veo in the AI Director panel instead.`);
+          } else {
+            lastError = new Error(`${currentProvider} failed: ${errorText}`);
+          }
+        } catch {
+          lastError = new Error(`${currentProvider} failed: ${errorText}`);
+        }
         
       } catch (error) {
         lastError = error;
@@ -266,8 +279,9 @@ serve(async (req) => {
       }
     }
 
-    // All attempts failed
-    throw lastError || new Error('All video generation attempts failed');
+    // All attempts failed - provide helpful message
+    const errorMessage = lastError instanceof Error ? lastError.message : 'All video generation attempts failed';
+    throw new Error(errorMessage);
   } catch (error) {
     console.error('[Video Gen] Fatal error:', error);
     return new Response(
