@@ -1,7 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, Music, FileText, Loader2, User } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Upload, Music, FileText, Loader2, User, Gauge, Smile } from "lucide-react";
 import { useRef } from "react";
 import { useProject } from "@/contexts/ProjectContext";
 import { toast } from "sonner";
@@ -39,6 +41,19 @@ export const UploadPanel = () => {
   const handleLyricsChange = async (lyrics: string) => {
     if (currentProject) {
       await updateProject({ lyrics });
+    }
+  };
+
+  const handleBpmChange = async (bpm: string) => {
+    const bpmValue = parseInt(bpm);
+    if (currentProject && !isNaN(bpmValue) && bpmValue > 0 && bpmValue <= 300) {
+      await updateProject({ bpm: bpmValue });
+    }
+  };
+
+  const handleMoodChange = async (mood: string) => {
+    if (currentProject && mood.trim()) {
+      await updateProject({ mood: mood.trim() });
     }
   };
 
@@ -117,6 +132,53 @@ export const UploadPanel = () => {
               ✓ AI Twin uploaded
             </div>
           )}
+        </Card>
+
+        {/* BPM and Mood Controls */}
+        <Card className="glass-card p-4 space-y-4">
+          <div className="space-y-3">
+            <div>
+              <Label className="flex items-center gap-2 text-sm font-medium mb-2">
+                <Gauge className="w-4 h-4 text-primary" />
+                BPM (Beats Per Minute)
+              </Label>
+              <Input
+                type="number"
+                min="1"
+                max="300"
+                placeholder="Auto-detected from audio..."
+                value={currentProject?.bpm || ""}
+                onChange={(e) => handleBpmChange(e.target.value)}
+                className="bg-background/50 border-border/50 focus:border-primary/50 transition-all"
+                disabled={!currentProject}
+              />
+              {currentProject?.bpm && (
+                <div className="text-xs text-primary mt-1">
+                  ✓ {currentProject.bpm} BPM
+                </div>
+              )}
+            </div>
+            
+            <div>
+              <Label className="flex items-center gap-2 text-sm font-medium mb-2">
+                <Smile className="w-4 h-4 text-accent" />
+                Mood
+              </Label>
+              <Input
+                type="text"
+                placeholder="Auto-detected from audio..."
+                value={currentProject?.mood || ""}
+                onChange={(e) => handleMoodChange(e.target.value)}
+                className="bg-background/50 border-border/50 focus:border-accent/50 transition-all"
+                disabled={!currentProject}
+              />
+              {currentProject?.mood && (
+                <div className="text-xs text-accent mt-1">
+                  ✓ {currentProject.mood}
+                </div>
+              )}
+            </div>
+          </div>
         </Card>
 
         {/* Lyrics Input */}

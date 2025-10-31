@@ -135,9 +135,9 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
         });
       }
 
-      // Extract lyrics
+      // Extract lyrics - pass the storage path instead of public URL
       const { data: lyricsData, error: lyricsError } = await supabase.functions.invoke("extract-lyrics", {
-        body: { audioUrl: publicUrl },
+        body: { audioPath: fileName },
       });
 
       if (!lyricsError && lyricsData?.lyrics) {

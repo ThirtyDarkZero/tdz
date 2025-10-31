@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,27 +12,37 @@ serve(async (req) => {
   }
 
   try {
-    const { audioUrl } = await req.json();
+    const { audioPath } = await req.json();
 
-    if (!audioUrl) {
-      throw new Error('Audio URL is required');
+    if (!audioPath) {
+      throw new Error('Audio path is required');
     }
 
-    console.log('Extracting lyrics from audio:', audioUrl);
+    console.log('Extracting lyrics from audio:', audioPath);
 
-    // Use Lovable AI with Gemini for audio analysis
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!LOVABLE_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error('Required environment variables not configured');
     }
 
-    // Download audio file
-    const audioResponse = await fetch(audioUrl);
-    if (!audioResponse.ok) {
-      throw new Error('Failed to download audio file');
+    // Create Supabase client with service role to access private bucket
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Download audio file from private bucket
+    const { data: audioBlob, error: downloadError } = await supabase.storage
+      .from('audio-files')
+      .download(audioPath);
+
+    if (downloadError || !audioBlob) {
+      console.error('Failed to download audio:', downloadError);
+      throw new Error('Failed to download audio file from storage');
     }
 
-    const audioBuffer = await audioResponse.arrayBuffer();
+    // Convert blob to base64
+    const audioBuffer = await audioBlob.arrayBuffer();
     const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -57,7 +68,7 @@ serve(async (req) => {
               {
                 type: 'audio_url',
                 audio_url: {
-                  url: `data:audio/mp3;base64,${base64Audio}`
+                  url: `data:audio/wav;base64,${base64Audio}`
                 }
               }
             ]
