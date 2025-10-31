@@ -17,21 +17,17 @@ serve(async (req) => {
       throw new Error('No authorization header');
     }
 
-    // Create client for auth validation
-    const supabaseAuth = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    // Extract JWT token and decode to get user ID
+    const token = authHeader.replace('Bearer ', '');
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const userId = payload.sub;
 
-    // Validate user
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
-    if (userError || !user) {
-      console.error('Auth error:', userError);
+    if (!userId) {
+      console.error('No user ID in token');
       throw new Error('Unauthorized');
     }
 
-    console.log('Authenticated user:', user.id);
+    console.log('Authenticated user:', userId);
 
     // Use service role for database operations
     const supabase = createClient(
