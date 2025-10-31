@@ -45,7 +45,7 @@ const platforms = [
   },
 ];
 
-export function SocialMediaHub() {
+export const SocialMediaHub = () => {
   const handleConnect = (platform: string) => {
     toast.info(`Connect to ${platform}`, {
       description: "Social media integration coming soon! This will sync your analytics across all platforms."

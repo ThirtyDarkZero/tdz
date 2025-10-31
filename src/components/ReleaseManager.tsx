@@ -23,7 +23,7 @@ const platforms = [
   { id: "deezer", name: "Deezer", icon: "🎧" },
 ];
 
-export function ReleaseManager() {
+export const ReleaseManager = () => {
   const [selectedTrack, setSelectedTrack] = useState<any>(null);
   const [tracks, setTracks] = useState<any[]>([]);
   const [releaseDate, setReleaseDate] = useState<Date>();

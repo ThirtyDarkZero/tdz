@@ -18,7 +18,7 @@ type AnalyticsData = {
   recentActivity: any[];
 };
 
-export function DistributionAnalytics() {
+export const DistributionAnalytics = () => {
   const [analytics, setAnalytics] = useState<AnalyticsData>({
     totalStreams: 0,
     totalRevenue: 0,

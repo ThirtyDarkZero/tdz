@@ -81,7 +81,7 @@ const masterclasses = [
   },
 ];
 
-export function MasterClasses() {
+export const MasterClasses = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">

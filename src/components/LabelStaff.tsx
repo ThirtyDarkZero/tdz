@@ -75,7 +75,7 @@ const staffMembers: StaffMember[] = [
   },
 ];
 
-export function LabelStaff() {
+export const LabelStaff = () => {
   const [selectedStaff, setSelectedStaff] = useState<string>(staffMembers[0].id);
   const [conversations, setConversations] = useState<Record<string, Message[]>>({});
   const [inputMessage, setInputMessage] = useState("");

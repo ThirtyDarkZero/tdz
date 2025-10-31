@@ -53,7 +53,7 @@ const opportunities = [
   },
 ];
 
-export function OpportunitiesMarketplace() {
+export const OpportunitiesMarketplace = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">

@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-export function PitchingHub() {
+export const PitchingHub = () => {
   const handleSubmit = (type: string) => {
     toast.success(`${type} pitch submitted!`, {
       description: "Your pitch has been sent to our A&R team for review"
