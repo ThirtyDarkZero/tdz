@@ -151,17 +151,20 @@ serve(async (req) => {
       promptLength: prompt.length
     });
 
-    // Retry logic with provider fallback
+    // Retry logic with provider fallback - try all providers until one works
     let videoResponse;
     let lastError;
+    let videoUrl = null;
     const baseUrl = Deno.env.get('SUPABASE_URL');
 
-    for (let attempt = 0; attempt < 2; attempt++) {
+    // Build fallback chain: primary provider first, then all others
+    const allProviders = [videoProvider, ...providerFallbacks.filter(p => p !== videoProvider)];
+    
+    for (let attempt = 0; attempt < allProviders.length && !videoUrl; attempt++) {
       try {
-        const currentProvider = attempt === 0 ? videoProvider : 
-          providerFallbacks.find(p => p !== videoProvider) || 'kling';
+        const currentProvider = allProviders[attempt];
         
-        console.log(`[Video Gen] Attempt ${attempt + 1} with provider: ${currentProvider}`);
+        console.log(`[Video Gen] Attempt ${attempt + 1}/${allProviders.length} with provider: ${currentProvider}`);
 
         switch (currentProvider) {
           case 'sora':
@@ -232,6 +235,7 @@ serve(async (req) => {
         if (videoResponse.ok) {
           console.log(`[Video Gen] Success with ${currentProvider}`);
           const videoData = await videoResponse.json();
+          videoUrl = videoData.videoUrl;
           
           // Update scene with video URL
           await supabase
@@ -249,7 +253,8 @@ serve(async (req) => {
               videoUrl: videoData.videoUrl,
               provider: currentProvider,
               sceneId,
-              attempt: attempt + 1
+              attempt: attempt + 1,
+              totalAttempts: allProviders.length
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
@@ -262,9 +267,11 @@ serve(async (req) => {
         try {
           const errorData = JSON.parse(errorText);
           if (errorData.error?.includes('not have enough credits') || errorData.details?.includes('not have enough credits')) {
-            lastError = new Error(`${currentProvider} account has insufficient credits. Please add credits to your ${currentProvider} account at https://runwayml.com, or switch to a different provider (Kling or Veo) in the AI Director panel.`);
+            lastError = new Error(`${currentProvider} has insufficient credits. Trying next provider...`);
+            console.log(`[Video Gen] ${currentProvider} credits exhausted, trying next provider`);
           } else if (errorData.error?.includes('405') || errorData.error?.includes('Invalid method')) {
-            lastError = new Error(`${currentProvider} API endpoint is not available or configured incorrectly. Please try selecting Kling or Veo in the AI Director panel instead.`);
+            lastError = new Error(`${currentProvider} API endpoint unavailable. Trying next provider...`);
+            console.log(`[Video Gen] ${currentProvider} API issue, trying next provider`);
           } else {
             lastError = new Error(`${currentProvider} failed: ${errorText}`);
           }
@@ -279,8 +286,9 @@ serve(async (req) => {
     }
 
     // All attempts failed - provide helpful message
-    const errorMessage = lastError instanceof Error ? lastError.message : 'All video generation attempts failed';
-    throw new Error(errorMessage);
+    console.error('[Video Gen] All providers failed:', lastError);
+    const errorMessage = lastError instanceof Error ? lastError.message : 'All video generation providers failed';
+    throw new Error(`Video generation failed after trying all providers (${allProviders.join(', ')}). Last error: ${errorMessage}. Please try: 1) Adding credits to your video provider accounts, or 2) Selecting a different provider in the AI Director panel.`);
   } catch (error) {
     console.error('[Video Gen] Fatal error:', error);
     return new Response(
