@@ -59,7 +59,7 @@ export default function Auth() {
           </div>
           <div className="text-center">
             <h1 className="text-3xl font-bold glow-text mb-2">
-              AI Music Video Studio
+              TDZ Distribution
             </h1>
             <p className="text-muted-foreground">
               {isSignUp ? "Create your account" : "Sign in to continue"}

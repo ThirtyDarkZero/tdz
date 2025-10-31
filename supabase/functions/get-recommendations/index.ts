@@ -44,7 +44,7 @@ serve(async (req) => {
     const topMood = Array.from(moods.entries()).sort((a, b) => b[1] - a[1])[0]?.[0];
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    if (!LOVABLE_API_KEY) throw new Error("AI service temporarily unavailable");
 
     // Use AI to generate smart recommendations
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -106,8 +106,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Recommendations error:', error);
+    // Return generic error to prevent information leakage
     return new Response(JSON.stringify({
-      error: error instanceof Error ? error.message : 'Failed to get recommendations'
+      error: 'An error occurred processing your request'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

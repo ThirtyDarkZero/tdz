@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,10 +12,29 @@ serve(async (req) => {
   }
 
   try {
+    // Verify JWT token for authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header');
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      throw new Error('Unauthorized');
+    }
+
     const { filePath, fileName } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    if (!LOVABLE_API_KEY) throw new Error("AI service temporarily unavailable");
 
     // Use AI to analyze track metadata from filename and suggest tags
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -77,8 +97,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Metadata analysis error:', error);
+    // Return generic error to prevent information leakage
     return new Response(JSON.stringify({
-      error: error instanceof Error ? error.message : 'Failed to analyze metadata',
+      error: 'An error occurred processing your request',
       tags: ["uncategorized"],
       bpm: null,
       key: null

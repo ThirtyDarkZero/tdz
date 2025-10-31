@@ -288,13 +288,6 @@ export type Database = {
             foreignKeyName: "listening_history_track_id_fkey"
             columns: ["track_id"]
             isOneToOne: false
-            referencedRelation: "public_tracks"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "listening_history_track_id_fkey"
-            columns: ["track_id"]
-            isOneToOne: false
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
@@ -378,13 +371,6 @@ export type Database = {
             columns: ["playlist_id"]
             isOneToOne: false
             referencedRelation: "playlists"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "playlist_tracks_track_id_fkey"
-            columns: ["track_id"]
-            isOneToOne: false
-            referencedRelation: "public_tracks"
             referencedColumns: ["id"]
           },
           {
@@ -865,13 +851,6 @@ export type Database = {
             foreignKeyName: "user_library_track_id_fkey"
             columns: ["track_id"]
             isOneToOne: false
-            referencedRelation: "public_tracks"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_library_track_id_fkey"
-            columns: ["track_id"]
-            isOneToOne: false
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
@@ -903,50 +882,7 @@ export type Database = {
       }
     }
     Views: {
-      public_tracks: {
-        Row: {
-          album_id: string | null
-          artist_name: string | null
-          created_at: string | null
-          duration: number | null
-          genre: string | null
-          id: string | null
-          like_count: number | null
-          play_count: number | null
-          title: string | null
-        }
-        Insert: {
-          album_id?: string | null
-          artist_name?: string | null
-          created_at?: string | null
-          duration?: number | null
-          genre?: string | null
-          id?: string | null
-          like_count?: number | null
-          play_count?: number | null
-          title?: string | null
-        }
-        Update: {
-          album_id?: string | null
-          artist_name?: string | null
-          created_at?: string | null
-          duration?: number | null
-          genre?: string | null
-          id?: string | null
-          like_count?: number | null
-          play_count?: number | null
-          title?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tracks_album_id_fkey"
-            columns: ["album_id"]
-            isOneToOne: false
-            referencedRelation: "albums"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       deduct_render_credits:

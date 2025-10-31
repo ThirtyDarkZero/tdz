@@ -17,16 +17,22 @@ serve(async (req) => {
       throw new Error('No authorization header');
     }
 
-    // Extract JWT token and decode to get user ID
-    const token = authHeader.replace('Bearer ', '');
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userId = payload.sub;
+    // Verify JWT token properly using Supabase
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
 
-    if (!userId) {
-      console.error('No user ID in token');
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      console.error('Authentication failed');
       throw new Error('Unauthorized');
     }
 
+    const userId = user.id;
     console.log('Authenticated user:', userId);
 
     // Use service role for database operations
@@ -69,7 +75,7 @@ serve(async (req) => {
     // Use Lovable AI to generate scenes with all style parameters
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
+      throw new Error('AI service temporarily unavailable');
     }
 
     // Get style-specific visual guidance
@@ -229,8 +235,9 @@ Make scenes 5-15 seconds each. Use the BPM (${project.bpm}) and overall mood (${
     );
   } catch (error) {
     console.error('Error in generate-scenes:', error);
+    // Return generic error to prevent information leakage
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: 'An error occurred processing your request' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

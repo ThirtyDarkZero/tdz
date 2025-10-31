@@ -16,20 +16,28 @@ serve(async (req) => {
 
     console.log('[Tempo] Creating simplified tempo map for project:', projectId);
 
-    // Extract JWT token and decode to get user ID
+    // Verify JWT token properly using Supabase
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('No authorization header');
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userId = payload.sub;
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
 
-    if (!userId) {
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
       throw new Error('Unauthorized');
     }
 
+    const userId = user.id;
+
+    // Use service role for database operations
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -79,8 +87,9 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('[Tempo] Error:', error);
+    // Return generic error to prevent information leakage
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: 'An error occurred processing your request' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
