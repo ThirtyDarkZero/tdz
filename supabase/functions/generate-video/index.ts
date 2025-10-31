@@ -290,10 +290,96 @@ serve(async (req) => {
       }
     }
 
-    // All attempts failed - provide helpful message
-    console.error('[Video Gen] All providers failed:', lastError);
-    const errorMessage = lastError instanceof Error ? lastError.message : 'All video generation providers failed';
-    throw new Error(`Video generation failed. ${errorMessage}. Please add credits to your Runway account at https://runwayml.com to continue generating videos.`);
+    // All video providers failed - fallback to still image generation
+    console.log('[Video Gen] All video providers failed, generating still image as fallback');
+    
+    try {
+      const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+      if (!LOVABLE_API_KEY) {
+        throw new Error('LOVABLE_API_KEY not configured');
+      }
+
+      // Generate a still image using Lovable AI
+      const imagePrompt = `Create a cinematic still frame for: ${prompt}. High quality, professional photography style.`;
+      
+      const imageResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash-image-preview',
+          messages: [
+            {
+              role: 'user',
+              content: imagePrompt
+            }
+          ],
+          modalities: ['image', 'text']
+        }),
+      });
+
+      if (!imageResponse.ok) {
+        const errorText = await imageResponse.text();
+        throw new Error(`Image generation failed: ${errorText}`);
+      }
+
+      const imageData = await imageResponse.json();
+      const base64Image = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      
+      if (!base64Image) {
+        throw new Error('No image returned from AI');
+      }
+
+      // Convert base64 to blob and upload to storage
+      const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
+      const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+      
+      const fileName = `fallback-${sceneId}-${Date.now()}.png`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('generated-videos')
+        .upload(fileName, binaryData, {
+          contentType: 'image/png',
+          upsert: true
+        });
+
+      if (uploadError) {
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('generated-videos')
+        .getPublicUrl(fileName);
+
+      videoUrl = urlData.publicUrl;
+
+      // Update scene with image URL
+      await supabase
+        .from('scenes')
+        .update({ 
+          generated_video_url: videoUrl
+        })
+        .eq('id', sceneId);
+
+      console.log('[Video Gen] Still image fallback successful:', videoUrl);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          videoUrl: videoUrl,
+          provider: 'lovable-ai-image',
+          isFallback: true,
+          sceneId,
+          message: 'Generated still image as video providers are unavailable'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (fallbackError) {
+      console.error('[Video Gen] Image fallback also failed:', fallbackError);
+      throw new Error(`Video generation failed. ${lastError instanceof Error ? lastError.message : 'Unknown error'}. Image fallback also failed: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}. Please add credits to your Runway account at https://runwayml.com.`);
+    }
   } catch (error) {
     console.error('[Video Gen] Fatal error:', error);
     return new Response(
