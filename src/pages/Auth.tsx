@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
 
@@ -13,19 +14,28 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { signIn, signUp, user } = useAuth();
+  const { role, loading: roleLoading } = useUserRole(user);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check for quick prompt from landing page
-    const quickPrompt = localStorage.getItem("quickPrompt");
-    if (quickPrompt && user) {
-      // User is logged in and has a prompt, redirect to studio
-      navigate("/studio");
-    } else if (user) {
-      // User is logged in but no prompt
-      navigate("/studio");
+    if (!user || roleLoading) return;
+
+    // Check if user has a role
+    if (!role) {
+      navigate("/role-selection");
+      return;
     }
-  }, [user, navigate]);
+
+    // Redirect based on role
+    if (role === "artist" || role === "verified_artist") {
+      navigate("/studio");
+    } else if (role === "listener") {
+      navigate("/discover");
+    } else {
+      // Default fallback for other roles
+      navigate("/discover");
+    }
+  }, [user, role, roleLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,17 +45,16 @@ export default function Auth() {
       if (isSignUp) {
         const { error } = await signUp(email, password);
         if (error) throw error;
-        toast.success("Account created! Redirecting to studio...");
-        setTimeout(() => navigate("/studio"), 1000);
+        toast.success("Account created! Choose your path...");
+        // Navigation will be handled by useEffect after user state updates
       } else {
         const { error } = await signIn(email, password);
         if (error) throw error;
         toast.success("Signed in successfully!");
-        navigate("/studio");
+        // Navigation will be handled by useEffect
       }
     } catch (error: any) {
       toast.error(error.message || "Authentication failed");
-    } finally {
       setLoading(false);
     }
   };
