@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Music, LayoutDashboard, Library, TrendingUp } from "lucide-react";
+import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { MusicLibrary } from "@/components/MusicLibrary";
 import { ArtistDashboard } from "@/components/ArtistDashboard";
+import { LabelStaff } from "@/components/LabelStaff";
+import { ReleaseManager } from "@/components/ReleaseManager";
+import { DistributionAnalytics } from "@/components/DistributionAnalytics";
 import { TopBar } from "@/components/TopBar";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -86,12 +89,24 @@ const Studio = () => {
             TDZ Distribution
           </h1>
           <p className="text-xl text-muted-foreground">
-            Next-Gen Music Distribution & Streaming
+            Your Complete Record Label Studio
           </p>
         </div>
 
-        <Tabs defaultValue="library" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-auto">
+        <Tabs defaultValue="label-staff" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto">
+            <TabsTrigger value="label-staff" className="gap-2">
+              <Users className="h-4 w-4" />
+              Label Staff
+            </TabsTrigger>
+            <TabsTrigger value="release" className="gap-2">
+              <Globe className="h-4 w-4" />
+              Release
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
             <TabsTrigger value="library" className="gap-2">
               <Library className="h-4 w-4" />
               Library
@@ -100,11 +115,19 @@ const Studio = () => {
               <LayoutDashboard className="h-4 w-4" />
               Dashboard
             </TabsTrigger>
-            <TabsTrigger value="discover" className="gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Discover
-            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="label-staff">
+            <LabelStaff />
+          </TabsContent>
+
+          <TabsContent value="release">
+            <ReleaseManager />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <DistributionAnalytics />
+          </TabsContent>
 
           <TabsContent value="library">
             <MusicLibrary onPlayTrack={handlePlayTrack} />
@@ -112,17 +135,6 @@ const Studio = () => {
 
           <TabsContent value="dashboard">
             <ArtistDashboard />
-          </TabsContent>
-
-          <TabsContent value="discover">
-            <div className="text-center py-12">
-              <Music className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-2xl font-bold mb-2">AI-Powered Discovery</h3>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                Quantum algorithms analyze your listening patterns to discover music you'll love.
-                Upload more tracks to unlock personalized recommendations.
-              </p>
-            </div>
           </TabsContent>
         </Tabs>
       </main>
