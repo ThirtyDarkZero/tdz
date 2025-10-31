@@ -28,13 +28,13 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { sceneId, provider } = await req.json();
+    const { sceneId, provider, retryCount = 0 } = await req.json();
 
     if (!sceneId) {
       throw new Error('Scene ID is required');
     }
 
-    console.log('Generating video for scene:', sceneId, 'using provider:', provider);
+    console.log(`[Video Gen] Starting: scene=${sceneId}, provider=${provider}, retry=${retryCount}`);
 
     // Fetch scene data with project details
     const { data: scene, error: sceneError } = await supabase
@@ -44,6 +44,7 @@ serve(async (req) => {
       .single();
 
     if (sceneError || !scene) {
+      console.error('[Video Gen] Scene not found:', sceneError);
       throw new Error('Scene not found');
     }
 
@@ -55,8 +56,13 @@ serve(async (req) => {
       .eq('is_approved', true)
       .order('display_order', { ascending: true });
 
-    // Determine which provider to use
-    const videoProvider = provider || (scene.projects as any)?.video_provider || 'sora';
+    console.log(`[Video Gen] Found ${characters?.length || 0} approved characters`);
+
+    // Determine which provider to use with fallback logic
+    let videoProvider = provider || (scene.projects as any)?.video_provider || 'sora';
+    const providerFallbacks = ['sora', 'runway', 'kling', 'veo'];
+    
+    console.log(`[Video Gen] Using provider: ${videoProvider}`);
     
     // Build the prompt from scene data with all style parameters
     const project = scene.projects as any;
@@ -134,112 +140,137 @@ serve(async (req) => {
     
     const duration = Math.round((scene.end_time - scene.start_time) * 1000) / 1000;
 
-    console.log('Video generation request:', {
+    console.log(`[Video Gen] Request details:`, {
       provider: videoProvider,
-      prompt,
-      duration
+      duration,
+      hasCharacters: !!characters?.length,
+      promptLength: prompt.length
     });
 
-    // Route to appropriate video generation service
+    // Retry logic with provider fallback
     let videoResponse;
+    let lastError;
     const baseUrl = Deno.env.get('SUPABASE_URL');
 
-    switch (videoProvider) {
-      case 'sora':
-        videoResponse = await fetch(`${baseUrl}/functions/v1/generate-video-sora`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': authHeader,
-          },
-          body: JSON.stringify({
-            prompt,
-            duration: Math.min(duration, 20),
-            aspectRatio: '16:9',
-            audioPrompt: scene.mood,
-            referenceImage: referenceImageUrl
-          }),
-        });
-        break;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const currentProvider = attempt === 0 ? videoProvider : 
+          providerFallbacks.find(p => p !== videoProvider) || 'kling';
+        
+        console.log(`[Video Gen] Attempt ${attempt + 1} with provider: ${currentProvider}`);
 
-      case 'runway':
-        videoResponse = await fetch(`${baseUrl}/functions/v1/generate-video-runway`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': authHeader,
-          },
-          body: JSON.stringify({
-            prompt,
-            duration: Math.min(duration, 10),
-            referenceImage: referenceImageUrl
-          }),
-        });
-        break;
+        switch (currentProvider) {
+          case 'sora':
+            videoResponse = await fetch(`${baseUrl}/functions/v1/generate-video-sora`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': authHeader,
+              },
+              body: JSON.stringify({
+                prompt,
+                duration: Math.min(duration, 20),
+                aspectRatio: '16:9',
+                audioPrompt: scene.mood,
+                referenceImage: referenceImageUrl
+              }),
+            });
+            break;
 
-      case 'kling':
-        videoResponse = await fetch(`${baseUrl}/functions/v1/generate-video-kling`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': authHeader,
-          },
-          body: JSON.stringify({
-            prompt,
-            duration: Math.min(duration, 10),
-            referenceImage: referenceImageUrl
-          }),
-        });
-        break;
+          case 'runway':
+            videoResponse = await fetch(`${baseUrl}/functions/v1/generate-video-runway`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': authHeader,
+              },
+              body: JSON.stringify({
+                prompt,
+                duration: Math.min(duration, 10),
+                referenceImage: referenceImageUrl
+              }),
+            });
+            break;
 
-      case 'veo':
-        videoResponse = await fetch(`${baseUrl}/functions/v1/generate-video-veo`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': authHeader,
-          },
-          body: JSON.stringify({
-            prompt,
-            duration: Math.min(duration, 8),
-            referenceImage: referenceImageUrl
-          }),
-        });
-        break;
+          case 'kling':
+            videoResponse = await fetch(`${baseUrl}/functions/v1/generate-video-kling`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': authHeader,
+              },
+              body: JSON.stringify({
+                prompt,
+                duration: Math.min(duration, 10),
+                referenceImage: referenceImageUrl
+              }),
+            });
+            break;
 
-      default:
-        throw new Error(`Unknown video provider: ${videoProvider}`);
+          case 'veo':
+            videoResponse = await fetch(`${baseUrl}/functions/v1/generate-video-veo`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': authHeader,
+              },
+              body: JSON.stringify({
+                prompt,
+                duration: Math.min(duration, 8),
+                referenceImage: referenceImageUrl
+              }),
+            });
+            break;
+
+          default:
+            throw new Error(`Unknown video provider: ${currentProvider}`);
+        }
+
+        if (videoResponse.ok) {
+          console.log(`[Video Gen] Success with ${currentProvider}`);
+          const videoData = await videoResponse.json();
+          
+          // Update scene with video URL
+          await supabase
+            .from('scenes')
+            .update({ 
+              generated_video_url: videoData.videoUrl
+            })
+            .eq('id', sceneId);
+
+          console.log(`[Video Gen] Scene updated with video URL`);
+
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              videoUrl: videoData.videoUrl,
+              provider: currentProvider,
+              sceneId,
+              attempt: attempt + 1
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const errorText = await videoResponse.text();
+        lastError = new Error(`${currentProvider} failed: ${errorText}`);
+        console.error(`[Video Gen] ${currentProvider} error:`, errorText);
+        
+      } catch (error) {
+        lastError = error;
+        console.error(`[Video Gen] Attempt ${attempt + 1} failed:`, error);
+      }
     }
 
-    if (!videoResponse.ok) {
-      const errorText = await videoResponse.text();
-      throw new Error(`Video generation failed: ${errorText}`);
-    }
-
-    const videoData = await videoResponse.json();
-    console.log('Video generated successfully:', videoData);
-
-    // Update scene with video URL
-    await supabase
-      .from('scenes')
-      .update({ 
-        generated_video_url: videoData.videoUrl
-      })
-      .eq('id', sceneId);
-
+    // All attempts failed
+    throw lastError || new Error('All video generation attempts failed');
+  } catch (error) {
+    console.error('[Video Gen] Fatal error:', error);
     return new Response(
       JSON.stringify({ 
-        success: true, 
-        videoUrl: videoData.videoUrl,
-        provider: videoProvider,
-        sceneId 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  } catch (error) {
-    console.error('Error in generate-video:', error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
