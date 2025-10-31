@@ -55,6 +55,195 @@ export type Database = {
           },
         ]
       }
+      credit_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          metadata: Json | null
+          reference_id: string | null
+          reference_type: string | null
+          status: string
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: string
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: string
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      exports: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          duration_seconds: number | null
+          error_message: string | null
+          file_path: string | null
+          file_size_bytes: number | null
+          format: string
+          id: string
+          includes_captions: boolean | null
+          includes_edl: boolean | null
+          includes_otio: boolean | null
+          includes_xml: boolean | null
+          project_id: string
+          started_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          error_message?: string | null
+          file_path?: string | null
+          file_size_bytes?: number | null
+          format: string
+          id?: string
+          includes_captions?: boolean | null
+          includes_edl?: boolean | null
+          includes_otio?: boolean | null
+          includes_xml?: boolean | null
+          project_id: string
+          started_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          error_message?: string | null
+          file_path?: string | null
+          file_size_bytes?: number | null
+          format?: string
+          id?: string
+          includes_captions?: boolean | null
+          includes_edl?: boolean | null
+          includes_otio?: boolean | null
+          includes_xml?: boolean | null
+          project_id?: string
+          started_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exports_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lyric_alignments: {
+        Row: {
+          confidence: number
+          created_at: string
+          end_time: number
+          id: string
+          line_index: number
+          phonemes: Json | null
+          project_id: string
+          start_time: number
+          word: string
+          word_index: number
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          end_time: number
+          id?: string
+          line_index: number
+          phonemes?: Json | null
+          project_id: string
+          start_time: number
+          word: string
+          word_index: number
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          end_time?: number
+          id?: string
+          line_index?: number
+          phonemes?: Json | null
+          project_id?: string
+          start_time?: number
+          word?: string
+          word_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lyric_alignments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_versions: {
+        Row: {
+          characters_snapshot: Json | null
+          created_at: string
+          created_by: string
+          id: string
+          project_id: string
+          scenes_snapshot: Json
+          snapshot_data: Json
+          version_number: number
+        }
+        Insert: {
+          characters_snapshot?: Json | null
+          created_at?: string
+          created_by: string
+          id?: string
+          project_id: string
+          scenes_snapshot: Json
+          snapshot_data: Json
+          version_number: number
+        }
+        Update: {
+          characters_snapshot?: Json | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          project_id?: string
+          scenes_snapshot?: Json
+          snapshot_data?: Json
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_versions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           ai_twin_image_path: string | null
@@ -115,6 +304,75 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_health: {
+        Row: {
+          avg_response_time_ms: number | null
+          checked_at: string
+          error_count_1h: number
+          id: string
+          last_error_message: string | null
+          last_failure_at: string | null
+          last_success_at: string | null
+          provider_name: string
+          status: string
+          success_count_1h: number
+        }
+        Insert: {
+          avg_response_time_ms?: number | null
+          checked_at?: string
+          error_count_1h?: number
+          id?: string
+          last_error_message?: string | null
+          last_failure_at?: string | null
+          last_success_at?: string | null
+          provider_name: string
+          status: string
+          success_count_1h?: number
+        }
+        Update: {
+          avg_response_time_ms?: number | null
+          checked_at?: string
+          error_count_1h?: number
+          id?: string
+          last_error_message?: string | null
+          last_failure_at?: string | null
+          last_success_at?: string | null
+          provider_name?: string
+          status?: string
+          success_count_1h?: number
+        }
+        Relationships: []
+      }
+      render_credits: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          total_earned: number
+          total_spent: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          total_earned?: number
+          total_spent?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          total_earned?: number
+          total_spent?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       scenes: {
         Row: {
           camera_preset: string | null
@@ -167,6 +425,92 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tempo_maps: {
+        Row: {
+          beat_grid: Json
+          bpm_points: Json
+          created_at: string
+          id: string
+          project_id: string
+          time_signature: string
+        }
+        Insert: {
+          beat_grid: Json
+          bpm_points: Json
+          created_at?: string
+          id?: string
+          project_id: string
+          time_signature?: string
+        }
+        Update: {
+          beat_grid?: Json
+          bpm_points?: Json
+          created_at?: string
+          id?: string
+          project_id?: string
+          time_signature?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tempo_maps_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      upload_sessions: {
+        Row: {
+          chunk_size_bytes: number
+          chunks_uploaded: Json
+          created_at: string
+          error_message: string | null
+          expires_at: string
+          file_name: string
+          file_size_bytes: number
+          id: string
+          project_id: string | null
+          status: string
+          storage_path: string | null
+          total_chunks: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chunk_size_bytes?: number
+          chunks_uploaded?: Json
+          created_at?: string
+          error_message?: string | null
+          expires_at?: string
+          file_name: string
+          file_size_bytes: number
+          id?: string
+          project_id?: string | null
+          status?: string
+          storage_path?: string | null
+          total_chunks: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chunk_size_bytes?: number
+          chunks_uploaded?: Json
+          created_at?: string
+          error_message?: string | null
+          expires_at?: string
+          file_name?: string
+          file_size_bytes?: number
+          id?: string
+          project_id?: string | null
+          status?: string
+          storage_path?: string | null
+          total_chunks?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
