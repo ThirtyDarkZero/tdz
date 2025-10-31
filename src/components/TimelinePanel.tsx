@@ -1,14 +1,19 @@
 import { Card } from "@/components/ui/card";
 import { Play, Pause, SkipBack, SkipForward, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useProject } from "@/contexts/ProjectContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const beatMarkers = Array.from({ length: 32 }, (_, i) => i);
 
 export const TimelinePanel = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  
   const projectContext = useProject();
   const { currentProject, generateScenes, loading } = projectContext || {
     currentProject: null,
@@ -18,14 +23,89 @@ export const TimelinePanel = () => {
 
   const canGenerateScenes = currentProject?.lyrics && currentProject?.audio_file_path;
 
+  // Load audio URL when project changes
+  useEffect(() => {
+    if (currentProject?.audio_file_path) {
+      const { data } = supabase.storage
+        .from('audio-files')
+        .getPublicUrl(currentProject.audio_file_path);
+      setAudioUrl(data.publicUrl);
+    } else {
+      setAudioUrl(null);
+    }
+  }, [currentProject?.audio_file_path]);
+
+  // Update current time from audio element
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const updateTime = () => setCurrentTime(audio.currentTime);
+    const updateDuration = () => setDuration(audio.duration);
+    const handleEnded = () => setIsPlaying(false);
+
+    audio.addEventListener('timeupdate', updateTime);
+    audio.addEventListener('loadedmetadata', updateDuration);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('timeupdate', updateTime);
+      audio.removeEventListener('loadedmetadata', updateDuration);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [audioUrl]);
+
+  // Play/pause control
+  const togglePlayPause = () => {
+    const audio = audioRef.current;
+    if (!audio || !audioUrl) return;
+
+    if (isPlaying) {
+      audio.pause();
+    } else {
+      audio.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  // Skip back 5 seconds
+  const skipBack = () => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.currentTime = Math.max(0, audio.currentTime - 5);
+    }
+  };
+
+  // Skip forward 5 seconds
+  const skipForward = () => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    if (!seconds || isNaN(seconds)) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div className="h-32 glass-card border-t border-border/50 p-4">
+      {/* Hidden audio element */}
+      {audioUrl && (
+        <audio ref={audioRef} src={audioUrl} preload="metadata" />
+      )}
+      
       <div className="flex items-center gap-4 mb-3">
         <div className="flex items-center gap-2">
           <Button
             size="icon"
             variant="outline"
             className="h-8 w-8"
+            onClick={skipBack}
+            disabled={!audioUrl}
           >
             <SkipBack className="w-4 h-4" />
           </Button>
@@ -33,7 +113,8 @@ export const TimelinePanel = () => {
             size="icon"
             variant="default"
             className="h-10 w-10 bg-gradient-to-r from-primary to-secondary hover:shadow-glow transition-all"
-            onClick={() => setIsPlaying(!isPlaying)}
+            onClick={togglePlayPause}
+            disabled={!audioUrl}
           >
             {isPlaying ? (
               <Pause className="w-5 h-5" />
@@ -45,13 +126,15 @@ export const TimelinePanel = () => {
             size="icon"
             variant="outline"
             className="h-8 w-8"
+            onClick={skipForward}
+            disabled={!audioUrl}
           >
             <SkipForward className="w-4 h-4" />
           </Button>
         </div>
 
         <div className="text-xs font-mono text-muted-foreground">
-          0:00 / 2:45
+          {formatTime(currentTime)} / {formatTime(duration)}
         </div>
 
         <div className="flex-1" />
