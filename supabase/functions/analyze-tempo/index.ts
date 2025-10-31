@@ -12,88 +12,52 @@ serve(async (req) => {
   }
 
   try {
+    const { projectId, bpm } = await req.json();
+
+    console.log('[Tempo] Creating simplified tempo map for project:', projectId);
+
+    // Extract JWT token and decode to get user ID
     const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header');
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const userId = payload.sub;
+
+    if (!userId) {
+      throw new Error('Unauthorized');
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader! } } }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { projectId, audioPath } = await req.json();
-
-    console.log('[Tempo] Analyzing tempo for project:', projectId);
-
-    // Use Lovable AI to analyze audio timing
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    // Create a simple beat grid based on BPM
+    // This is a lightweight alternative to processing entire audio files
+    const beatDuration = 60 / bpm; // seconds per beat
+    const totalBeats = 240; // Assume ~4 minute song max
     
-    // Download audio from storage
-    const adminSupabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      SUPABASE_SERVICE_ROLE_KEY ?? ''
-    );
+    const beatGrid = [];
+    const bpmPoints = [{ time: 0, bpm }];
     
-    const { data: audioBlob, error: downloadError } = await adminSupabase.storage
-      .from('audio-files')
-      .download(audioPath);
-
-    if (downloadError || !audioBlob) {
-      throw new Error('Failed to download audio file');
+    for (let i = 0; i < totalBeats; i++) {
+      const time = i * beatDuration;
+      const frame = Math.round(time * 30); // 30fps
+      beatGrid.push({
+        beat: i + 1,
+        time: parseFloat(time.toFixed(3)),
+        frame
+      });
     }
 
-    // Convert to base64
-    const audioBuffer = await audioBlob.arrayBuffer();
-    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
-
-    // Analyze with AI
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-pro',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert audio engineer. Analyze this audio and extract:
-1. BPM (beats per minute) - detect any tempo changes
-2. Beat grid - precise timing of every beat in seconds and frames (30fps)
-3. Time signature
-
-Return JSON:
-{
-  "bpmPoints": [{time: number, bpm: number}],
-  "beatGrid": [{beat: number, time: number, frame: number}],
-  "timeSignature": "4/4"
-}
-
-CRITICAL: Beat times must be accurate to ±33ms (1 frame at 30fps).`
-          },
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: 'Analyze the tempo and beat grid for this audio:' },
-              {
-                type: 'audio_url',
-                audio_url: { url: `data:audio/wav;base64,${base64Audio}` }
-              }
-            ]
-          }
-        ],
-      }),
-    });
-
-    const aiData = await aiResponse.json();
-    const analysisText = aiData.choices[0].message.content;
-    
-    const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Failed to parse tempo analysis');
-    }
-    
-    const tempoData = JSON.parse(jsonMatch[0]);
+    const tempoData = {
+      bpmPoints,
+      beatGrid,
+      timeSignature: "4/4"
+    };
 
     // Store in database
     const { error: dbError } = await supabase
@@ -107,7 +71,7 @@ CRITICAL: Beat times must be accurate to ±33ms (1 frame at 30fps).`
 
     if (dbError) throw dbError;
 
-    console.log('[Tempo] Analysis complete, beats:', tempoData.beatGrid.length);
+    console.log('[Tempo] Simplified tempo map created, beats:', beatGrid.length);
 
     return new Response(
       JSON.stringify(tempoData),

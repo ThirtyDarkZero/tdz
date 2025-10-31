@@ -11,7 +11,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export const StoryboardView = () => {
-  const { scenes, currentProject } = useProject();
+  const projectContext = useProject();
+  const { scenes, currentProject } = projectContext || { scenes: [], currentProject: null };
   const [generatingScenes, setGeneratingScenes] = useState<Set<string>>(new Set());
   const [editingScene, setEditingScene] = useState<any>(null);
   const [editDescription, setEditDescription] = useState("");

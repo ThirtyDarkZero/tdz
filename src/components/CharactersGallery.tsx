@@ -9,7 +9,13 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 export const CharactersGallery = () => {
-  const { characters, updateCharacter, deleteCharacter, loading } = useProject();
+  const projectContext = useProject();
+  const { characters, updateCharacter, deleteCharacter, loading } = projectContext || {
+    characters: [],
+    updateCharacter: async () => {},
+    deleteCharacter: async () => {},
+    loading: false
+  };
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});

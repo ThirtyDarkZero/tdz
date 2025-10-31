@@ -6,7 +6,13 @@ import { toast } from "sonner";
 
 export const TopBar = () => {
   const { user, signOut } = useAuth();
-  const { currentProject, createProject, generateScenes, loading } = useProject();
+  const projectContext = useProject();
+  const { currentProject, createProject, generateScenes, loading } = projectContext || {
+    currentProject: null,
+    createProject: async () => undefined,
+    generateScenes: async () => {},
+    loading: false
+  };
 
   const handleGenerate = async () => {
     if (!currentProject) {

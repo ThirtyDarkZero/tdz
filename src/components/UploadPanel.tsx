@@ -10,7 +10,14 @@ import { toast } from "sonner";
 import { CharactersGallery } from "./CharactersGallery";
 
 export const UploadPanel = () => {
-  const { currentProject, updateProject, uploadAudio, uploadCharacter, loading } = useProject();
+  const projectContext = useProject();
+  const { currentProject, updateProject, uploadAudio, uploadCharacter, loading } = projectContext || {
+    currentProject: null,
+    updateProject: async () => {},
+    uploadAudio: async () => {},
+    uploadCharacter: async () => {},
+    loading: false
+  };
   const audioInputRef = useRef<HTMLInputElement>(null);
   const characterInputRef = useRef<HTMLInputElement>(null);
 

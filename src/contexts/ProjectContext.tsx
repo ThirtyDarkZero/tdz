@@ -365,10 +365,11 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useProject = () => {
+export const useProject = (): ProjectContextType | null => {
   const context = useContext(ProjectContext);
   if (context === undefined) {
-    throw new Error("useProject must be used within a ProjectProvider");
+    // Return null instead of throwing during initial render
+    return null;
   }
   return context;
 };

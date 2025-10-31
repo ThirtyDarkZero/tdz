@@ -52,7 +52,18 @@ const videoProviders = [
 ];
 
 export const AIDirectorPanel = () => {
-  const { currentProject, updateProject } = useProject();
+  const context = useProject();
+  
+  // Guard against context not being ready
+  if (!context) {
+    return (
+      <div className="w-80 h-full glass-card border-l border-border/50 p-4 flex items-center justify-center">
+        <p className="text-muted-foreground text-sm">Loading...</p>
+      </div>
+    );
+  }
+  
+  const { currentProject, updateProject } = context;
 
   const handlePresetChange = (preset: string) => {
     if (currentProject) {

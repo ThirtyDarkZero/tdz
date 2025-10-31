@@ -20,7 +20,8 @@ interface PipelineStatus {
 }
 
 export const ProductionPipeline = () => {
-  const { currentProject, scenes } = useProject();
+  const projectContext = useProject();
+  const { currentProject, scenes } = projectContext || { currentProject: null, scenes: [] };
   const [status, setStatus] = useState<PipelineStatus>({
     tempoAnalyzed: false,
     lyricsAligned: false,

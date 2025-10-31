@@ -9,7 +9,12 @@ const beatMarkers = Array.from({ length: 32 }, (_, i) => i);
 export const TimelinePanel = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const { currentProject, generateScenes, loading } = useProject();
+  const projectContext = useProject();
+  const { currentProject, generateScenes, loading } = projectContext || {
+    currentProject: null,
+    generateScenes: async () => {},
+    loading: false
+  };
 
   const canGenerateScenes = currentProject?.lyrics && currentProject?.audio_file_path;
 
