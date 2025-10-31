@@ -104,21 +104,21 @@ export default function Landing() {
 
         {/* Hero Content */}
         <div className="relative z-10 max-w-7xl mx-auto px-6 text-center space-y-12 py-20">
+          {/* Logo */}
+          <div className="animate-fade-in flex justify-center">
+            <img 
+              src={tdzLogo} 
+              alt="TDZ Distribution Logo" 
+              className="h-80 md:h-96 lg:h-[32rem] w-auto object-contain"
+            />
+          </div>
+
           {/* Floating Badge */}
-          <div className="animate-fade-in">
+          <div className="animate-fade-in" style={{ animationDelay: '0.05s' }}>
             <Badge className="bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20 text-foreground border-primary/40 backdrop-blur-xl px-6 py-2 text-base neon-border">
               <Globe className="w-4 h-4 mr-2 animate-pulse" />
               Global Distribution · Premium Streaming · 100% Royalties
             </Badge>
-          </div>
-
-          {/* Logo */}
-          <div className="animate-fade-in flex justify-center" style={{ animationDelay: '0.05s' }}>
-            <img 
-              src={tdzLogo} 
-              alt="TDZ Distribution Logo" 
-              className="h-64 md:h-80 lg:h-96 w-auto object-contain"
-            />
           </div>
 
           {/* 3D Layered Title */}
