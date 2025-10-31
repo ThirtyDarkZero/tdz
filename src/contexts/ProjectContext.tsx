@@ -15,6 +15,7 @@ export interface Project {
   emotion_intensity: number;
   camera_motion: number;
   fantasy_realism: number;
+  video_provider: string | null;
   status: string;
   ai_twin_image_path: string | null;
   created_at: string;
