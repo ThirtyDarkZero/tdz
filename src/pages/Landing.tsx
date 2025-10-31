@@ -5,67 +5,68 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Sparkles, 
   Music, 
-  Video, 
-  Wand2, 
+  Upload, 
+  TrendingUp, 
   Zap, 
-  Camera, 
-  Palette,
+  Globe,
+  Radio,
+  Shield,
+  Download,
   ArrowRight,
   CheckCircle2,
-  Play,
-  Layers,
-  Brain
+  DollarSign,
+  BarChart3,
+  Headphones
 } from "lucide-react";
-import heroBackground from "@/assets/hero-background.jpg";
+import studioBackground from "@/assets/studio-background.jpg";
 
 const features = [
   {
-    icon: Music,
-    title: "Audio Intelligence",
-    description: "AI-powered beat detection, tempo analysis, and mood tagging that understands your music",
+    icon: Globe,
+    title: "Global Distribution",
+    description: "Distribute to Spotify, Apple Music, Amazon, YouTube Music, and 150+ platforms worldwide",
     color: "from-primary to-secondary"
   },
   {
-    icon: Video,
-    title: "Cinematic Scene Generation",
-    description: "Generate 4K scenes with perfect motion sync, camera movements, and lighting",
+    icon: TrendingUp,
+    title: "Real-Time Analytics",
+    description: "Track streams, revenue, and audience demographics across all platforms in real-time",
     color: "from-secondary to-accent"
   },
   {
-    icon: Wand2,
-    title: "Lyric Intelligence",
-    description: "NLP-powered scene breakdown that turns lyrics into visual storytelling",
+    icon: Music,
+    title: "Premium Streaming",
+    description: "High-fidelity audio streaming with advanced player features and offline support",
     color: "from-accent to-primary"
   },
   {
-    icon: Camera,
-    title: "AI Director",
-    description: "Automatic camera work, transitions, and shot composition synced to beats",
+    icon: Zap,
+    title: "Instant Publishing",
+    description: "Upload once and go live on all major platforms within 24-48 hours",
     color: "from-primary to-accent"
   },
   {
-    icon: Palette,
-    title: "Style Presets",
-    description: "Cinematic, anime, surreal themes with custom mood and color grading",
+    icon: Radio,
+    title: "Playlist Pitching",
+    description: "Submit directly to Spotify and Apple Music curators for playlist consideration",
     color: "from-secondary to-primary"
   },
   {
-    icon: Zap,
-    title: "Beat-Perfect Sync",
-    description: "Frame-accurate synchronization between visual cuts and musical beats",
+    icon: DollarSign,
+    title: "100% Royalties",
+    description: "Keep every penny you earn. No hidden fees. Transparent payment processing",
     color: "from-accent to-secondary"
   }
 ];
 
 const benefits = [
-  "Generate music videos in minutes, not days",
-  "No technical skills or expensive equipment needed",
-  "Unlimited creative variations and styles",
-  "Professional cinematic quality every time",
-  "Full control over mood, pacing, and aesthetics",
-  "Export in multiple formats for all platforms"
+  "Distribute unlimited tracks to 150+ platforms",
+  "Keep 100% of your streaming royalties",
+  "Real-time analytics and earnings dashboard",
+  "Professional metadata and artwork optimization",
+  "Direct playlist pitching to curators",
+  "24/7 artist support and guidance"
 ];
 
 export default function Landing() {
@@ -113,12 +114,13 @@ export default function Landing() {
 
       {/* Hero Section */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Parallax Background */}
+        {/* Studio Background */}
         <div 
           className="absolute inset-0 bg-cover bg-center transition-transform duration-100"
           style={{ 
-            backgroundImage: `url(${heroBackground})`,
-            transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px) scale(1.1)`
+            backgroundImage: `url(${studioBackground})`,
+            transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px) scale(1.1)`,
+            filter: 'brightness(0.4)'
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-background via-background/50 to-background" />
@@ -130,8 +132,8 @@ export default function Landing() {
           {/* Floating Badge */}
           <div className="animate-fade-in">
             <Badge className="bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20 text-foreground border-primary/40 backdrop-blur-xl px-6 py-2 text-base neon-border">
-              <Brain className="w-4 h-4 mr-2 animate-pulse" />
-              Next-Gen AI · Real-Time Generation · Unlimited Creativity
+              <Globe className="w-4 h-4 mr-2 animate-pulse" />
+              Global Distribution · Premium Streaming · 100% Royalties
             </Badge>
           </div>
 
@@ -140,40 +142,40 @@ export default function Landing() {
             <h1 className="text-6xl md:text-8xl lg:text-9xl font-display font-black leading-none tracking-tighter perspective-1000">
               <div className="relative inline-block animate-fade-in" style={{ animationDelay: '0.1s' }}>
                 <span className="relative z-10 bg-gradient-to-b from-foreground to-foreground/60 bg-clip-text text-transparent">
-                  CREATE
+                  DISTRIBUTE
                 </span>
                 <span className="absolute inset-0 blur-2xl bg-gradient-to-r from-primary via-secondary to-accent opacity-50" 
                       style={{ transform: 'translateZ(-50px)' }}>
-                  CREATE
+                  DISTRIBUTE
                 </span>
               </div>
               <br />
               <div className="relative inline-block animate-fade-in" style={{ animationDelay: '0.2s' }}>
                 <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent glow-text">
-                  IMPOSSIBLE
+                  YOUR MUSIC
                 </span>
               </div>
               <br />
               <div className="relative inline-block animate-fade-in" style={{ animationDelay: '0.3s' }}>
                 <span className="relative z-10 bg-gradient-to-b from-foreground to-foreground/60 bg-clip-text text-transparent">
-                  VIDEOS
+                  WORLDWIDE
                 </span>
               </div>
             </h1>
           </div>
 
           <p className="text-xl md:text-3xl text-foreground/80 max-w-4xl mx-auto animate-fade-in font-light" style={{ animationDelay: '0.4s' }}>
-            From <span className="text-primary font-semibold">audio</span> to <span className="text-secondary font-semibold">cinematic masterpiece</span> in <span className="text-accent font-semibold">60 seconds</span>
+            From <span className="text-primary font-semibold">local artist</span> to <span className="text-secondary font-semibold">global sensation</span> in <span className="text-accent font-semibold">24 hours</span>
           </p>
 
-          {/* Floating Prompt Generator */}
+          {/* Quick Start Input */}
           <div className="animate-scale-in max-w-4xl mx-auto" style={{ animationDelay: '0.5s' }}>
             <Card className="relative group glass-card p-8 border-primary/30 hover:border-primary/60 transition-all duration-500 hover:scale-[1.02]">
               <div className="absolute -inset-[1px] bg-gradient-to-r from-primary via-secondary to-accent rounded-lg opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-500" />
               <div className="relative space-y-4">
                 <div className="flex gap-3">
                   <Input
-                    placeholder="⚡ Describe your impossible vision... 'Astronaut DJ in zero gravity rave'"
+                    placeholder="🎵 Enter your artist name to get started..."
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     className="bg-background/80 backdrop-blur-sm border-primary/40 focus:border-primary text-lg h-14 px-6"
@@ -184,21 +186,21 @@ export default function Landing() {
                     onClick={handleQuickGenerate}
                     className="bg-gradient-to-r from-primary via-secondary to-accent hover:shadow-glow h-14 px-8 group"
                   >
-                    <Wand2 className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+                    <Upload className="w-6 h-6 group-hover:-translate-y-1 transition-transform" />
                   </Button>
                 </div>
                 <div className="flex items-center justify-center gap-6 text-sm">
                   <div className="flex items-center gap-2 text-primary">
                     <Zap className="w-4 h-4" />
-                    <span>Instant Generation</span>
+                    <span>Instant Setup</span>
                   </div>
                   <div className="flex items-center gap-2 text-secondary">
-                    <Layers className="w-4 h-4" />
-                    <span>4K Quality</span>
+                    <Globe className="w-4 h-4" />
+                    <span>150+ Platforms</span>
                   </div>
                   <div className="flex items-center gap-2 text-accent">
-                    <Play className="w-4 h-4" />
-                    <span>Beat-Synced</span>
+                    <DollarSign className="w-4 h-4" />
+                    <span>100% Royalties</span>
                   </div>
                 </div>
               </div>
@@ -212,7 +214,7 @@ export default function Landing() {
               onClick={() => navigate("/auth")}
               className="relative group bg-gradient-to-r from-primary via-secondary to-accent text-background font-bold text-xl px-12 h-16 hover:scale-105 transition-all duration-300"
             >
-              <span className="relative z-10">LAUNCH STUDIO</span>
+              <span className="relative z-10">START DISTRIBUTING</span>
               <ArrowRight className="w-6 h-6 ml-3 group-hover:translate-x-2 transition-transform relative z-10" />
               <div className="absolute inset-0 bg-gradient-to-r from-accent via-primary to-secondary opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500" />
             </Button>
@@ -222,7 +224,7 @@ export default function Landing() {
               onClick={() => navigate("/auth")}
               className="text-xl px-12 h-16 border-2 border-primary/60 hover:bg-primary/20 hover:border-primary backdrop-blur-xl transition-all duration-300 hover:scale-105"
             >
-              <Sparkles className="w-5 h-5 mr-2" />
+              <Headphones className="w-5 h-5 mr-2" />
               SIGN IN
             </Button>
           </div>
@@ -230,10 +232,10 @@ export default function Landing() {
           {/* Stats Bar */}
           <div className="flex flex-wrap justify-center gap-8 md:gap-12 animate-fade-in" style={{ animationDelay: '0.7s' }}>
             {[
-              { value: '10K+', label: 'Videos Created' },
-              { value: '60s', label: 'Avg Generation' },
-              { value: '4K', label: 'Max Quality' },
-              { value: '∞', label: 'Creative Freedom' }
+              { value: '50K+', label: 'Artists' },
+              { value: '24hrs', label: 'Go Live' },
+              { value: '150+', label: 'Platforms' },
+              { value: '100%', label: 'Your Rights' }
             ].map((stat, idx) => (
               <div key={idx} className="text-center">
                 <div className="text-3xl md:text-4xl font-display font-black bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
@@ -252,13 +254,13 @@ export default function Landing() {
           <div className="text-center mb-20">
             <h2 className="text-5xl md:text-7xl font-display font-black mb-6">
               <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-                QUANTUM LEAP
+                COMPLETE
               </span>
               <br />
-              IN VIDEO CREATION
+              DISTRIBUTION SUITE
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Technology that breaks the rules of what's possible
+              Everything you need to reach millions of listeners globally
             </p>
           </div>
 
@@ -270,16 +272,16 @@ export default function Landing() {
               <div className="relative z-10 h-full flex flex-col justify-between">
                 <div>
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
-                    <Music className="w-8 h-8 text-background" />
+                    <Globe className="w-8 h-8 text-background" />
                   </div>
-                  <h3 className="text-3xl font-display font-bold mb-4">Audio Intelligence</h3>
+                  <h3 className="text-3xl font-display font-bold mb-4">Global Distribution</h3>
                   <p className="text-muted-foreground text-lg max-w-lg">
-                    AI that understands rhythm, mood, and emotion. Every beat analyzed. Every transition synchronized. Perfection at 60fps.
+                    Distribute to Spotify, Apple Music, Amazon, YouTube Music, and 150+ platforms. Your music everywhere, all at once.
                   </p>
                 </div>
                 <div className="flex gap-3">
-                  <Badge className="bg-primary/20 text-primary border-primary/30">Real-time Analysis</Badge>
-                  <Badge className="bg-secondary/20 text-secondary border-secondary/30">BPM Detection</Badge>
+                  <Badge className="bg-primary/20 text-primary border-primary/30">150+ Platforms</Badge>
+                  <Badge className="bg-secondary/20 text-secondary border-secondary/30">24hr Go-Live</Badge>
                 </div>
               </div>
             </Card>
@@ -290,11 +292,11 @@ export default function Landing() {
               <div className="relative z-10 h-full flex flex-col justify-between">
                 <div>
                   <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-secondary to-accent flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500">
-                    <Video className="w-7 h-7 text-background" />
+                    <BarChart3 className="w-7 h-7 text-background" />
                   </div>
-                  <h3 className="text-2xl font-display font-bold mb-3">4K Cinematic</h3>
+                  <h3 className="text-2xl font-display font-bold mb-3">Analytics</h3>
                   <p className="text-muted-foreground">
-                    Hollywood-grade visuals. Professional color grading. Cinema-ready output.
+                    Real-time streams, earnings, and audience insights across all platforms.
                   </p>
                 </div>
               </div>
@@ -302,10 +304,10 @@ export default function Landing() {
 
             {/* Small Features */}
             {[
-              { icon: Wand2, title: "Lyric Sync", desc: "Visual storytelling from words", color: "from-accent to-primary" },
-              { icon: Camera, title: "AI Director", desc: "Perfect shots every time", color: "from-primary to-secondary" },
-              { icon: Palette, title: "Style Presets", desc: "Infinite visual themes", color: "from-secondary to-accent" },
-              { icon: Zap, title: "Instant Export", desc: "Ready in seconds", color: "from-accent to-primary" }
+              { icon: Music, title: "Premium Audio", desc: "High-fidelity streaming quality", color: "from-accent to-primary" },
+              { icon: Radio, title: "Playlist Pitch", desc: "Direct curator access", color: "from-primary to-secondary" },
+              { icon: DollarSign, title: "100% Royalties", desc: "Keep everything you earn", color: "from-secondary to-accent" },
+              { icon: Shield, title: "Rights Protected", desc: "You own your music", color: "from-accent to-primary" }
             ].map((feature, idx) => (
               <Card key={idx} className="md:col-span-2 glass-card p-6 relative group overflow-hidden hover:border-primary/60 transition-all duration-500">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -339,18 +341,18 @@ export default function Landing() {
               <div>
                 <Badge className="bg-accent/20 text-accent border-accent/30 mb-6 text-base px-4 py-2">
                   <Zap className="w-4 h-4 mr-2" />
-                  The Future is Now
+                  Built By Artists, For Artists
                 </Badge>
                 <h2 className="text-5xl md:text-6xl lg:text-7xl font-display font-black leading-none mb-6">
                   <span className="bg-gradient-to-r from-accent via-primary to-secondary bg-clip-text text-transparent">
-                    REDEFINE
+                    YOUR MUSIC
                   </span>
                   <br />
-                  WHAT'S POSSIBLE
+                  YOUR RULES
                 </h2>
                 <p className="text-xl text-muted-foreground leading-relaxed">
-                  Break free from limitations. Your imagination is the only boundary. 
-                  Transform any sound into <span className="text-primary font-semibold">visual poetry</span>.
+                  No hidden fees. No complicated contracts. Just powerful tools to help you 
+                  reach <span className="text-primary font-semibold">millions of listeners</span> worldwide.
                 </p>
               </div>
               <Button
@@ -358,8 +360,8 @@ export default function Landing() {
                 onClick={() => navigate("/auth")}
                 className="bg-gradient-to-r from-accent via-primary to-secondary hover:scale-105 transition-all duration-300 h-16 px-10 text-lg font-bold"
               >
-                <Play className="w-6 h-6 mr-2" />
-                START CREATING
+                <Upload className="w-6 h-6 mr-2" />
+                START NOW
               </Button>
             </div>
 
@@ -399,14 +401,14 @@ export default function Landing() {
           {/* Massive CTA */}
           <div className="space-y-8">
             <h2 className="text-6xl md:text-8xl lg:text-9xl font-display font-black leading-none">
-              <span className="block animate-fade-in">YOUR</span>
+              <span className="block animate-fade-in">READY TO</span>
               <span className="block bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent animate-fade-in glow-text" style={{ animationDelay: '0.1s' }}>
-                MASTERPIECE
+                GO GLOBAL
               </span>
-              <span className="block animate-fade-in" style={{ animationDelay: '0.2s' }}>AWAITS</span>
+              <span className="block animate-fade-in" style={{ animationDelay: '0.2s' }}>?</span>
             </h2>
             <p className="text-2xl md:text-3xl text-muted-foreground max-w-3xl mx-auto font-light animate-fade-in" style={{ animationDelay: '0.3s' }}>
-              Stop dreaming. Start creating. The future of music videos is <span className="text-primary font-semibold">one click away</span>.
+              Join 50,000+ independent artists distributing their music to <span className="text-primary font-semibold">millions of listeners</span> worldwide.
             </p>
           </div>
 
@@ -418,24 +420,24 @@ export default function Landing() {
               className="relative group bg-gradient-to-r from-primary via-secondary to-accent text-background font-black text-2xl md:text-3xl px-16 h-20 md:h-24 rounded-2xl hover:scale-110 transition-all duration-500 shadow-2xl"
             >
               <span className="relative z-10 flex items-center gap-4">
-                <Sparkles className="w-8 h-8 group-hover:rotate-180 transition-transform duration-500" />
+                <Upload className="w-8 h-8 group-hover:-translate-y-2 transition-transform duration-500" />
                 LAUNCH NOW
                 <ArrowRight className="w-8 h-8 group-hover:translate-x-4 transition-transform duration-500" />
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-accent via-primary to-secondary opacity-0 group-hover:opacity-100 blur-2xl transition-opacity duration-500 rounded-2xl" />
             </Button>
             <p className="text-muted-foreground text-lg">
-              Free forever · No credit card · Unlimited creativity
+              No credit card required · Keep 100% rights · 24/7 support
             </p>
           </div>
 
           {/* Social Proof Pills */}
           <div className="flex flex-wrap justify-center gap-4 pt-8 animate-fade-in" style={{ animationDelay: '0.5s' }}>
             {[
-              "🎬 10K+ Videos",
-              "⚡ 60s Average",
-              "🎨 ∞ Styles",
-              "🚀 Zero Learning Curve"
+              "🌍 150+ Platforms",
+              "⚡ 24hr Go-Live",
+              "💰 100% Royalties",
+              "🚀 Zero Setup Fees"
             ].map((pill, idx) => (
               <Badge key={idx} className="bg-card/50 backdrop-blur-xl border-primary/30 text-foreground px-6 py-3 text-base">
                 {pill}
@@ -452,16 +454,16 @@ export default function Landing() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-background" />
+                <Music className="w-6 h-6 text-background" />
               </div>
-              <span className="font-display font-bold text-xl">AI MUSIC VIDEO STUDIO</span>
+              <span className="font-display font-bold text-xl">TDZ DISTRIBUTION</span>
             </div>
             <div className="flex flex-col items-center md:items-end gap-2">
               <p className="text-muted-foreground">
-                Powered by next-generation AI · Built for creators
+                Next-Gen Music Distribution · Built for Independent Artists
               </p>
               <p className="text-sm text-muted-foreground/60">
-                © 2025 AI Music Video Studio. Breaking boundaries since today.
+                © 2025 TDZ Distribution. Empowering artists worldwide.
               </p>
             </div>
           </div>
