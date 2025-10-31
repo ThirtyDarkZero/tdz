@@ -190,8 +190,8 @@ serve(async (req) => {
               },
               body: JSON.stringify({
                 prompt,
+                referenceImage: referenceImageUrl,
                 duration: Math.min(duration, 10),
-                referenceImage: referenceImageUrl
               }),
             });
             break;

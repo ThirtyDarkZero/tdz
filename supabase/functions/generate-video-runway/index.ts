@@ -11,26 +11,28 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, imageUrl, duration = 5 } = await req.json();
-    console.log('Runway Gen-3 generation request:', { prompt, imageUrl, duration });
+    const { prompt, referenceImage, duration = 5 } = await req.json();
+    console.log('Runway Gen-4 generation request:', { prompt, referenceImage, duration });
 
     const RUNWAY_API_KEY = Deno.env.get('RUNWAY_API_KEY');
     if (!RUNWAY_API_KEY) {
       throw new Error('RUNWAY_API_KEY not configured');
     }
 
-    // Call Runway Gen-3 Alpha Turbo API
-    const requestBody: any = {
-      model: 'gen3a_turbo',
-      prompt: prompt,
-      duration: duration
+    // Runway requires an image for video generation
+    // If no reference image provided, use a neutral placeholder
+    const promptImage = referenceImage || 'https://upload.wikimedia.org/wikipedia/commons/8/85/Tour_Eiffel_Wikimedia_Commons_(cropped).jpg';
+
+    // Call Runway Gen-4 Turbo API for image-to-video
+    const requestBody = {
+      model: 'gen4_turbo',
+      promptImage: promptImage,
+      promptText: prompt,
+      ratio: '1280:720',
+      duration: Math.min(duration, 10) // Gen-4 supports up to 10 seconds
     };
 
-    if (imageUrl) {
-      requestBody.image_url = imageUrl;
-    }
-
-    const response = await fetch('https://api.dev.runwayml.com/v1/generate', {
+    const response = await fetch('https://api.dev.runwayml.com/v1/image_to_video', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${RUNWAY_API_KEY}`,
@@ -56,7 +58,7 @@ serve(async (req) => {
     const taskId = data.id;
     let videoUrl = null;
     let attempts = 0;
-    const maxAttempts = 60; // 5 minutes max
+    const maxAttempts = 120; // 10 minutes max (5 second intervals)
 
     while (!videoUrl && attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
@@ -68,13 +70,19 @@ serve(async (req) => {
         },
       });
 
+      if (!statusResponse.ok) {
+        const errorText = await statusResponse.text();
+        console.error('Runway status check error:', statusResponse.status, errorText);
+        throw new Error(`Status check failed: ${statusResponse.status}`);
+      }
+
       const statusData = await statusResponse.json();
       console.log('Runway status check:', statusData);
 
-      if (statusData.status === 'SUCCEEDED') {
+      if (statusData.status === 'SUCCEEDED' && statusData.output && statusData.output.length > 0) {
         videoUrl = statusData.output[0];
       } else if (statusData.status === 'FAILED') {
-        throw new Error('Video generation failed');
+        throw new Error(`Video generation failed: ${statusData.failure || 'Unknown error'}`);
       }
       
       attempts++;
