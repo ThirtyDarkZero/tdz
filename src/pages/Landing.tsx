@@ -64,10 +64,6 @@ export default function Landing() {
     }
   };
   return <div className="min-h-screen relative overflow-hidden">
-      {/* Logo Header */}
-      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
-        
-      </div>
 
       {/* Animated Grid Background */}
       <div className="fixed inset-0 opacity-20 pointer-events-none">
@@ -114,6 +110,15 @@ export default function Landing() {
               <Globe className="w-4 h-4 mr-2 animate-pulse" />
               Global Distribution · Premium Streaming · 100% Royalties
             </Badge>
+          </div>
+
+          {/* Logo */}
+          <div className="animate-fade-in flex justify-center" style={{ animationDelay: '0.05s' }}>
+            <img 
+              src={tdzLogo} 
+              alt="TDZ Distribution Logo" 
+              className="h-32 md:h-40 w-auto object-contain"
+            />
           </div>
 
           {/* 3D Layered Title */}
