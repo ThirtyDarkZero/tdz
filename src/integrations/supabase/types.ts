@@ -455,7 +455,7 @@ export type Database = {
           {
             foreignKeyName: "tempo_maps_project_id_fkey"
             columns: ["project_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
