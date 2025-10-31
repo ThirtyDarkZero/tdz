@@ -288,6 +288,13 @@ export type Database = {
             foreignKeyName: "listening_history_track_id_fkey"
             columns: ["track_id"]
             isOneToOne: false
+            referencedRelation: "public_tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "listening_history_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
@@ -371,6 +378,13 @@ export type Database = {
             columns: ["playlist_id"]
             isOneToOne: false
             referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playlist_tracks_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "public_tracks"
             referencedColumns: ["id"]
           },
           {
@@ -851,28 +865,118 @@ export type Database = {
             foreignKeyName: "user_library_track_id_fkey"
             columns: ["track_id"]
             isOneToOne: false
+            referencedRelation: "public_tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_library_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
         ]
       }
+      user_roles: {
+        Row: {
+          granted_at: string | null
+          granted_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      public_tracks: {
+        Row: {
+          album_id: string | null
+          artist_name: string | null
+          created_at: string | null
+          duration: number | null
+          genre: string | null
+          id: string | null
+          like_count: number | null
+          play_count: number | null
+          title: string | null
+        }
+        Insert: {
+          album_id?: string | null
+          artist_name?: string | null
+          created_at?: string | null
+          duration?: number | null
+          genre?: string | null
+          id?: string | null
+          like_count?: number | null
+          play_count?: number | null
+          title?: string | null
+        }
+        Update: {
+          album_id?: string | null
+          artist_name?: string | null
+          created_at?: string | null
+          duration?: number | null
+          genre?: string | null
+          id?: string | null
+          like_count?: number | null
+          play_count?: number | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracks_album_id_fkey"
+            columns: ["album_id"]
+            isOneToOne: false
+            referencedRelation: "albums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
-      deduct_render_credits: {
+      deduct_render_credits:
+        | {
+            Args: {
+              p_amount: number
+              p_description?: string
+              p_user_id: string
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              p_amount: number
+              p_reference_id: string
+              p_reference_type: string
+              p_user_id: string
+            }
+            Returns: number
+          }
+      has_role: {
         Args: {
-          p_amount: number
-          p_reference_id: string
-          p_reference_type: string
-          p_user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
-        Returns: number
+        Returns: boolean
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "verified_artist" | "artist" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -999,6 +1103,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "verified_artist", "artist", "user"],
+    },
   },
 } as const
