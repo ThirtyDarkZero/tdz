@@ -259,16 +259,28 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.functions.invoke("generate-scenes", {
+      const { data, error } = await supabase.functions.invoke("generate-scenes", {
         body: { projectId: currentProject.id },
       });
 
       if (error) throw error;
 
       await loadScenes();
-      toast.success("Scenes generated successfully!");
+      
+      const sceneCount = data?.scenesCount || 'Multiple';
+      toast.success("Scenes generated successfully!", {
+        description: `${sceneCount} scenes created from your lyrics`
+      });
     } catch (error: any) {
-      toast.error(error.message);
+      const errorMsg = error.message || 'Unknown error';
+      toast.error("Failed to generate scenes", {
+        description: errorMsg.includes('Unauthorized') 
+          ? 'Please try logging out and back in'
+          : errorMsg.includes('Lyrics are required')
+          ? 'Add lyrics in the left panel first'
+          : errorMsg
+      });
+      console.error('Scene generation error:', error);
     } finally {
       setLoading(false);
     }

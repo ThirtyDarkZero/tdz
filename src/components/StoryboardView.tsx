@@ -32,16 +32,27 @@ export const StoryboardView = () => {
 
       if (error) throw error;
 
-      // Refresh scenes to show the new video
-      window.location.reload();
+      // Refresh scenes data from context
+      const { data: updatedScenes } = await supabase
+        .from("scenes")
+        .select("*")
+        .eq("project_id", currentProject!.id)
+        .order("scene_order", { ascending: true });
+
+      if (updatedScenes) {
+        window.location.reload(); // Force reload to update state
+      }
 
       toast.success('Video generated!', { 
         description: `Using ${data.provider}` 
       });
     } catch (error) {
       console.error('Error generating video:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       toast.error('Failed to generate video', { 
-        description: error instanceof Error ? error.message : 'Unknown error' 
+        description: errorMsg.includes('Unauthorized') 
+          ? 'Please try logging out and back in' 
+          : errorMsg
       });
     } finally {
       setGeneratingScenes(prev => {
@@ -74,14 +85,15 @@ export const StoryboardView = () => {
 
       if (error) throw error;
 
-      // Refresh to show changes
-      window.location.reload();
-      
       toast.success('Scene updated!');
       setEditingScene(null);
+      
+      // Refresh to show changes
+      window.location.reload();
     } catch (error) {
       console.error('Error updating scene:', error);
-      toast.error('Failed to update scene');
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      toast.error('Failed to update scene', { description: errorMsg });
     }
   };
 

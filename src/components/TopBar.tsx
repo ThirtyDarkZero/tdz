@@ -14,8 +14,17 @@ export const TopBar = () => {
       return;
     }
 
+    if (!currentProject.audio_file_path) {
+      toast.error("Please upload an audio file first", {
+        description: "Upload a song in the left panel"
+      });
+      return;
+    }
+
     if (!currentProject.lyrics) {
-      toast.error("Please add lyrics to generate scenes");
+      toast.error("Please add lyrics to generate scenes", {
+        description: "Lyrics should auto-extract or paste manually"
+      });
       return;
     }
 

@@ -19,7 +19,18 @@ export const UploadPanel = () => {
     if (!file) return;
 
     if (!file.type.startsWith('audio/')) {
-      toast.error('Please upload an audio file');
+      toast.error('Please upload an audio file', {
+        description: 'Supported: MP3, WAV, M4A'
+      });
+      return;
+    }
+
+    // Check file size (50MB max)
+    const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+    if (file.size > maxSize) {
+      toast.error('File too large', {
+        description: 'Maximum file size is 50MB'
+      });
       return;
     }
 
