@@ -70,7 +70,7 @@ serve(async (req) => {
     
     // Build the prompt from scene data with all style parameters
     const project = scene.projects as any;
-    let prompt = `Music video scene: ${scene.description}. `;
+    let prompt = `Music video scene (SILENT VIDEO ONLY - no audio generation): ${scene.description}. `;
     
     // Add character references if available
     if (characters && characters.length > 0) {
@@ -172,10 +172,9 @@ serve(async (req) => {
                 'Authorization': authHeader,
               },
               body: JSON.stringify({
-                prompt,
+                prompt: `${prompt} IMPORTANT: Generate silent video only, no audio track.`,
                 duration: Math.min(duration, 20),
                 aspectRatio: '16:9',
-                audioPrompt: scene.mood,
                 referenceImage: referenceImageUrl
               }),
             });
@@ -189,7 +188,7 @@ serve(async (req) => {
                 'Authorization': authHeader,
               },
               body: JSON.stringify({
-                prompt,
+                prompt: `${prompt} Generate silent video only for music video.`,
                 referenceImage: referenceImageUrl,
                 duration: Math.min(duration, 10),
               }),
@@ -204,7 +203,7 @@ serve(async (req) => {
                 'Authorization': authHeader,
               },
               body: JSON.stringify({
-                prompt,
+                prompt: `${prompt} Silent video for music video - no audio generation.`,
                 duration: Math.min(duration, 10),
                 referenceImage: referenceImageUrl
               }),
@@ -219,7 +218,7 @@ serve(async (req) => {
                 'Authorization': authHeader,
               },
               body: JSON.stringify({
-                prompt,
+                prompt: `${prompt} Generate silent video only, no audio track.`,
                 duration: Math.min(duration, 8),
                 referenceImage: referenceImageUrl
               }),
