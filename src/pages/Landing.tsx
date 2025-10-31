@@ -444,9 +444,11 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                <Music className="w-6 h-6 text-background" />
-              </div>
+              <img 
+                src={tdzLogo} 
+                alt="TDZ Distribution Logo" 
+                className="h-10 w-auto object-contain"
+              />
               <span className="font-display font-bold text-xl">TDZ DISTRIBUTION</span>
             </div>
             <div className="flex flex-col items-center md:items-end gap-2">
