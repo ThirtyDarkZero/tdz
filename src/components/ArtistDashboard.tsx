@@ -1,12 +1,17 @@
 import { useState, useEffect } from "react";
-import { Upload, TrendingUp, Users, Play, DollarSign } from "lucide-react";
+import { Upload, TrendingUp, Users, Play, DollarSign, Music, MapPin, Target, Sparkles, GraduationCap, BarChart3 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { UploadTrack } from "./UploadTrack";
+import { MusicUploadPro } from "./MusicUploadPro";
+import { SocialMediaHub } from "./SocialMediaHub";
+import { TourRecommendations } from "./TourRecommendations";
+import { PitchingHub } from "./PitchingHub";
+import { OpportunitiesMarketplace } from "./OpportunitiesMarketplace";
+import { MasterClasses } from "./MasterClasses";
 
 interface Stats {
   totalPlays: number;
@@ -106,23 +111,23 @@ export const ArtistDashboard = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold">Artist Dashboard</h1>
-          <p className="text-muted-foreground mt-2">Manage your music and track your performance</p>
+          <p className="text-muted-foreground mt-2">Your complete record label suite</p>
         </div>
         <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
           <DialogTrigger asChild>
-            <Button size="lg">
+            <Button size="lg" data-upload-track>
               <Upload className="h-4 w-4 mr-2" />
-              Upload Track
+              Upload Music
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Upload New Track</DialogTitle>
+              <DialogTitle>Upload New Music</DialogTitle>
               <DialogDescription>
-                Upload your music and let AI analyze it for optimal distribution
+                Complete metadata, artwork, and publishing information
               </DialogDescription>
             </DialogHeader>
-            <UploadTrack onSuccess={() => {
+            <MusicUploadPro onSuccess={() => {
               setUploadOpen(false);
               loadStats();
             }} />
@@ -176,31 +181,82 @@ export const ArtistDashboard = () => {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Top Performing Tracks</CardTitle>
-          <CardDescription>Your most played songs</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {stats.recentPlays.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No tracks yet. Upload your first track!</p>
-          ) : (
-            <div className="space-y-3">
-              {stats.recentPlays.map((track, index) => (
-                <div key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/50">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl font-bold text-muted-foreground w-8">#{index + 1}</span>
-                    <div>
-                      <p className="font-medium">{track.track_title}</p>
-                      <p className="text-sm text-muted-foreground">{track.play_count.toLocaleString()} plays</p>
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-6 lg:w-auto">
+          <TabsTrigger value="overview" className="gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="social" className="gap-2">
+            <Users className="h-4 w-4" />
+            Social
+          </TabsTrigger>
+          <TabsTrigger value="tour" className="gap-2">
+            <MapPin className="h-4 w-4" />
+            Tours
+          </TabsTrigger>
+          <TabsTrigger value="pitching" className="gap-2">
+            <Target className="h-4 w-4" />
+            Pitching
+          </TabsTrigger>
+          <TabsTrigger value="opportunities" className="gap-2">
+            <Sparkles className="h-4 w-4" />
+            Opportunities
+          </TabsTrigger>
+          <TabsTrigger value="education" className="gap-2">
+            <GraduationCap className="h-4 w-4" />
+            Learn
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview">
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Performing Tracks</CardTitle>
+              <CardDescription>Your most played songs</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {stats.recentPlays.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No tracks yet. Upload your first track!</p>
+              ) : (
+                <div className="space-y-3">
+                  {stats.recentPlays.map((track, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/50">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl font-bold text-muted-foreground w-8">#{index + 1}</span>
+                        <div>
+                          <p className="font-medium">{track.track_title}</p>
+                          <p className="text-sm text-muted-foreground">{track.play_count.toLocaleString()} plays</p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="social">
+          <SocialMediaHub />
+        </TabsContent>
+
+        <TabsContent value="tour">
+          <TourRecommendations />
+        </TabsContent>
+
+        <TabsContent value="pitching">
+          <PitchingHub />
+        </TabsContent>
+
+        <TabsContent value="opportunities">
+          <OpportunitiesMarketplace />
+        </TabsContent>
+
+        <TabsContent value="education">
+          <MasterClasses />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
