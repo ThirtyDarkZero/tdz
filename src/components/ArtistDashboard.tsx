@@ -1,0 +1,206 @@
+import { useState, useEffect } from "react";
+import { Upload, TrendingUp, Users, Play, DollarSign } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { UploadTrack } from "./UploadTrack";
+
+interface Stats {
+  totalPlays: number;
+  totalTracks: number;
+  totalAlbums: number;
+  monthlyListeners: number;
+  recentPlays: Array<{
+    track_title: string;
+    play_count: number;
+  }>;
+}
+
+export const ArtistDashboard = () => {
+  const [stats, setStats] = useState<Stats>({
+    totalPlays: 0,
+    totalTracks: 0,
+    totalAlbums: 0,
+    monthlyListeners: 0,
+    recentPlays: []
+  });
+  const [loading, setLoading] = useState(true);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get total tracks
+      const { count: tracksCount } = await supabase
+        .from('tracks')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      // Get total albums
+      const { count: albumsCount } = await supabase
+        .from('albums')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      // Get total plays
+      const { data: tracks } = await supabase
+        .from('tracks')
+        .select('id, play_count, title')
+        .eq('user_id', user.id);
+
+      const totalPlays = tracks?.reduce((sum, track) => sum + track.play_count, 0) || 0;
+
+      // Get monthly listeners (unique users who played in last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const { data: listeners } = await supabase
+        .from('listening_history')
+        .select('user_id')
+        .in('track_id', tracks?.map(t => t.id) || [])
+        .gte('played_at', thirtyDaysAgo.toISOString());
+
+      const uniqueListeners = new Set(listeners?.map(l => l.user_id)).size;
+
+      // Get top tracks
+      const topTracks = tracks
+        ?.sort((a, b) => b.play_count - a.play_count)
+        .slice(0, 5)
+        .map(t => ({ track_title: t.title, play_count: t.play_count })) || [];
+
+      setStats({
+        totalPlays,
+        totalTracks: tracksCount || 0,
+        totalAlbums: albumsCount || 0,
+        monthlyListeners: uniqueListeners,
+        recentPlays: topTracks
+      });
+    } catch (error: any) {
+      console.error('Error loading stats:', error);
+      toast({
+        title: "Failed to load stats",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="text-center py-12">Loading dashboard...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-4xl font-bold">Artist Dashboard</h1>
+          <p className="text-muted-foreground mt-2">Manage your music and track your performance</p>
+        </div>
+        <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+          <DialogTrigger asChild>
+            <Button size="lg">
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Track
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Upload New Track</DialogTitle>
+              <DialogDescription>
+                Upload your music and let AI analyze it for optimal distribution
+              </DialogDescription>
+            </DialogHeader>
+            <UploadTrack onSuccess={() => {
+              setUploadOpen(false);
+              loadStats();
+            }} />
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total Plays</CardTitle>
+            <Play className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalPlays.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">All time plays</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Listeners</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.monthlyListeners.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Last 30 days</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total Tracks</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalTracks}</div>
+            <p className="text-xs text-muted-foreground">{stats.totalAlbums} albums</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Estimated Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${(stats.totalPlays * 0.004).toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">Based on streams</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Top Performing Tracks</CardTitle>
+          <CardDescription>Your most played songs</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {stats.recentPlays.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">No tracks yet. Upload your first track!</p>
+          ) : (
+            <div className="space-y-3">
+              {stats.recentPlays.map((track, index) => (
+                <div key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/50">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl font-bold text-muted-foreground w-8">#{index + 1}</span>
+                    <div>
+                      <p className="font-medium">{track.track_title}</p>
+                      <p className="text-sm text-muted-foreground">{track.play_count.toLocaleString()} plays</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};

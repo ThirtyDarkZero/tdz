@@ -1,21 +1,32 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { TopBar } from "@/components/TopBar";
-import { UploadPanel } from "@/components/UploadPanel";
-import { StoryboardView } from "@/components/StoryboardView";
-import { TimelinePanel } from "@/components/TimelinePanel";
-import { AIDirectorPanel } from "@/components/AIDirectorPanel";
-import { ProductionPipeline } from "@/components/ProductionPipeline";
-import { ProjectsList } from "@/components/ProjectsList";
-import { TemplatesList } from "@/components/TemplatesList";
-import { ProjectProvider } from "@/contexts/ProjectContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Film, Package, FolderOpen, LayoutTemplate } from "lucide-react";
+import { Music, LayoutDashboard, Library, TrendingUp } from "lucide-react";
+import { MusicPlayer } from "@/components/MusicPlayer";
+import { MusicLibrary } from "@/components/MusicLibrary";
+import { ArtistDashboard } from "@/components/ArtistDashboard";
+import { TopBar } from "@/components/TopBar";
 import { useAuth } from "@/hooks/useAuth";
 
-export default function Studio() {
+interface Track {
+  id: string;
+  title: string;
+  artist_name: string;
+  duration: number;
+  file_path: string;
+  play_count: number;
+  album?: {
+    title: string;
+    cover_art_path?: string;
+  };
+}
+
+const Studio = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
+  const [queue, setQueue] = useState<Track[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -38,53 +49,93 @@ export default function Studio() {
     return null;
   }
 
-  return (
-    <ProjectProvider>
-      <div className="h-screen flex flex-col overflow-hidden">
-        <TopBar />
-      <div className="flex-1 flex overflow-hidden">
-        <UploadPanel />
-        <Tabs defaultValue="storyboard" className="flex-1 flex flex-col">
-          <div className="border-b px-6">
-            <TabsList className="h-12">
-              <TabsTrigger value="storyboard" className="gap-2">
-                <Film className="w-4 h-4" />
-                Storyboard
-              </TabsTrigger>
-              <TabsTrigger value="pipeline" className="gap-2">
-                <Package className="w-4 h-4" />
-                Production
-              </TabsTrigger>
-              <TabsTrigger value="projects" className="gap-2">
-                <FolderOpen className="w-4 h-4" />
-                Projects
-              </TabsTrigger>
-              <TabsTrigger value="templates" className="gap-2">
-                <LayoutTemplate className="w-4 h-4" />
-                Templates
-              </TabsTrigger>
-            </TabsList>
-          </div>
+  const handlePlayTrack = (track: Track, trackQueue: Track[]) => {
+    setCurrentTrack(track);
+    setQueue(trackQueue);
+    const index = trackQueue.findIndex(t => t.id === track.id);
+    setCurrentIndex(index);
+  };
 
-          <div className="flex-1 flex overflow-hidden">
-            <TabsContent value="storyboard" className="flex-1 m-0 overflow-auto">
-              <StoryboardView />
-            </TabsContent>
-            <TabsContent value="pipeline" className="flex-1 m-0 overflow-auto">
-              <ProductionPipeline />
-            </TabsContent>
-            <TabsContent value="projects" className="flex-1 m-0 overflow-auto">
-              <ProjectsList />
-            </TabsContent>
-            <TabsContent value="templates" className="flex-1 m-0 overflow-auto">
-              <TemplatesList />
-            </TabsContent>
-            <AIDirectorPanel />
-          </div>
+  const handleNext = () => {
+    if (currentIndex < queue.length - 1) {
+      const nextTrack = queue[currentIndex + 1];
+      setCurrentTrack(nextTrack);
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentIndex > 0) {
+      const prevTrack = queue[currentIndex - 1];
+      setCurrentTrack(prevTrack);
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  const handleTrackEnd = () => {
+    handleNext();
+  };
+
+  return (
+    <div className="min-h-screen bg-background pb-32">
+      <TopBar />
+      
+      <main className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent mb-2">
+            Quantum Music Platform
+          </h1>
+          <p className="text-xl text-muted-foreground">
+            AI-Powered Distribution & Streaming
+          </p>
+        </div>
+
+        <Tabs defaultValue="library" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 lg:w-auto">
+            <TabsTrigger value="library" className="gap-2">
+              <Library className="h-4 w-4" />
+              Library
+            </TabsTrigger>
+            <TabsTrigger value="dashboard" className="gap-2">
+              <LayoutDashboard className="h-4 w-4" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="discover" className="gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Discover
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="library">
+            <MusicLibrary onPlayTrack={handlePlayTrack} />
+          </TabsContent>
+
+          <TabsContent value="dashboard">
+            <ArtistDashboard />
+          </TabsContent>
+
+          <TabsContent value="discover">
+            <div className="text-center py-12">
+              <Music className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-2xl font-bold mb-2">AI-Powered Discovery</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                Quantum algorithms analyze your listening patterns to discover music you'll love.
+                Upload more tracks to unlock personalized recommendations.
+              </p>
+            </div>
+          </TabsContent>
         </Tabs>
-      </div>
-      <TimelinePanel />
-      </div>
-    </ProjectProvider>
+      </main>
+
+      <MusicPlayer
+        currentTrack={currentTrack}
+        queue={queue}
+        onNext={handleNext}
+        onPrevious={handlePrevious}
+        onTrackEnd={handleTrackEnd}
+      />
+    </div>
   );
-}
+};
+
+export default Studio;
