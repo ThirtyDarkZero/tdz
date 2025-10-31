@@ -158,7 +158,9 @@ serve(async (req) => {
     const baseUrl = Deno.env.get('SUPABASE_URL');
 
     // Build fallback chain: primary provider first, then all others
-    const allProviders = [videoProvider, ...providerFallbacks.filter(p => p !== videoProvider)];
+    // Note: Veo is not supported through Lovable AI Gateway for video generation
+    const workingProviders = ['sora', 'runway', 'kling'];
+    const allProviders = [videoProvider, ...workingProviders.filter(p => p !== videoProvider)];
     
     for (let attempt = 0; attempt < allProviders.length && !videoUrl; attempt++) {
       try {
