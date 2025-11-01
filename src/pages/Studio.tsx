@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe, Image, Heart, BookOpen, Zap } from "lucide-react";
+import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe, Image, Heart, BookOpen, Zap, Film, User, ShoppingBag } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { MusicLibrary } from "@/components/MusicLibrary";
 import { ArtistDashboard } from "@/components/ArtistDashboard";
@@ -15,6 +15,9 @@ import { ArtistGalleryManager } from "@/components/ArtistGalleryManager";
 import { FanEngagementHub } from "@/components/FanEngagementHub";
 import { StorytellingStudio } from "@/components/StorytellingStudio";
 import { MomentumTracker } from "@/components/MomentumTracker";
+import { CanvasManager } from "@/components/CanvasManager";
+import { ArtistProfileEditor } from "@/components/ArtistProfileEditor";
+import { MerchAndTickets } from "@/components/MerchAndTickets";
 import { TopBar } from "@/components/TopBar";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -204,6 +207,27 @@ const Studio = () => {
                 <Zap className="h-5 w-5" />
                 <span className="hidden sm:inline">Momentum</span>
               </TabsTrigger>
+              <TabsTrigger 
+                value="canvas" 
+                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+              >
+                <Film className="h-5 w-5" />
+                <span className="hidden sm:inline">Canvas</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="profile" 
+                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+              >
+                <User className="h-5 w-5" />
+                <span className="hidden sm:inline">Profile</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="merch" 
+                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+              >
+                <ShoppingBag className="h-5 w-5" />
+                <span className="hidden sm:inline">Merch</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -248,6 +272,18 @@ const Studio = () => {
 
             <TabsContent value="momentum" className="mt-0">
               <MomentumTracker />
+            </TabsContent>
+
+            <TabsContent value="canvas" className="mt-0">
+              <CanvasManager />
+            </TabsContent>
+
+            <TabsContent value="profile" className="mt-0">
+              <ArtistProfileEditor />
+            </TabsContent>
+
+            <TabsContent value="merch" className="mt-0">
+              <MerchAndTickets />
             </TabsContent>
           </div>
         </Tabs>

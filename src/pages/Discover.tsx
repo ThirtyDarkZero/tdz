@@ -330,8 +330,9 @@ export default function Discover() {
               {filteredTracks.map((track, index) => (
                   <Card 
                     key={track.id} 
-                    className="glass-card-premium group hover:border-primary/70 transition-all duration-300 hover-lift shadow-card-hover animate-fade-in"
+                    className="glass-card-premium group hover:border-primary/70 transition-all duration-300 hover-lift shadow-card-hover animate-fade-in cursor-pointer"
                     style={{ animationDelay: `${index * 0.05}s` }}
+                    onClick={() => navigate(`/track/${track.id}`)}
                   >
                     <div className="p-5 space-y-4">
                       {/* Album Art with Motion Support */}
@@ -362,7 +363,10 @@ export default function Discover() {
                           <Button 
                             size="icon" 
                             className="h-16 w-16 rounded-full bg-primary shadow-glow hover:scale-110 transition-transform"
-                            onClick={() => handlePlayTrack(track)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePlayTrack(track);
+                            }}
                           >
                             <Play className="w-6 h-6 ml-1" fill="currentColor" />
                           </Button>
@@ -377,9 +381,15 @@ export default function Discover() {
                       {/* Track Info */}
                       <div className="space-y-1">
                         <h3 className="font-bold text-lg truncate group-hover:text-primary transition-colors">{track.title}</h3>
-                        <p className="text-sm text-muted-foreground truncate font-medium">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/artist/${track.user_id}`);
+                          }}
+                          className="text-sm text-muted-foreground truncate font-medium hover:text-primary transition-colors block w-full text-left"
+                        >
                           {track.artist_name}
-                        </p>
+                        </button>
                       </div>
 
                       {/* Actions */}
