@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { 
   Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Heart, 
   Shuffle, Repeat, List, Mic, MoreHorizontal, Share2, Download,
-  Cast, Radio, Clock
+  Cast, Radio, Clock, Sliders, Award, Maximize2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -10,6 +10,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { QueuePanel } from "./QueuePanel";
 import { LyricsPanel } from "./LyricsPanel";
+import { AudioVisualizer } from "./AudioVisualizer";
+import { EqualizerPanel } from "./EqualizerPanel";
+import { CreditsPanel } from "./CreditsPanel";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +41,11 @@ interface Track {
     title: string;
     cover_art_path?: string;
   };
+  ai_tags?: {
+    metadata?: {
+      isMotionCover?: boolean;
+    };
+  };
 }
 
 interface MusicPlayerProps {
@@ -62,6 +70,10 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
   const [sleepTimerMinutes, setSleepTimerMinutes] = useState(30);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [crossfadeDuration, setCrossfadeDuration] = useState(0);
+  const [showEqualizer, setShowEqualizer] = useState(false);
+  const [showCredits, setShowCredits] = useState(false);
+  const [showVisualizer, setShowVisualizer] = useState(false);
+  const [motionCoverUrl, setMotionCoverUrl] = useState<string | null>(null);
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const sleepTimerRef = useRef<NodeJS.Timeout>();
@@ -83,8 +95,19 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
         });
       }
       checkIfLiked();
+      loadMotionCover();
     }
   }, [currentTrack]);
+
+  const loadMotionCover = async () => {
+    if (!currentTrack?.album?.cover_art_path || !currentTrack?.ai_tags?.metadata?.isMotionCover) {
+      setMotionCoverUrl(null);
+      return;
+    }
+
+    const { data } = supabase.storage.from('motion-covers').getPublicUrl(currentTrack.album.cover_art_path);
+    setMotionCoverUrl(data.publicUrl);
+  };
 
   useEffect(() => {
     if (audioRef.current) {
@@ -309,15 +332,35 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
           crossOrigin="anonymous"
         />
         
+        {/* Visualizer Section */}
+        {showVisualizer && (
+          <div className="border-b border-border/50 bg-black/40">
+            <AudioVisualizer audioElement={audioRef.current} isPlaying={isPlaying} />
+          </div>
+        )}
+        
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
-            {/* Track Info - Left Side */}
+            {/* Track Info with Motion Cover - Left Side */}
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              <img
-                src={coverUrl}
-                alt={currentTrack.title}
-                className="w-16 h-16 rounded-lg object-cover shadow-lg"
-              />
+              <div className="relative w-16 h-16 rounded-lg overflow-hidden shadow-lg">
+                {motionCoverUrl ? (
+                  <video
+                    src={motionCoverUrl}
+                    className="w-full h-full object-cover"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                  />
+                ) : (
+                  <img
+                    src={coverUrl}
+                    alt={currentTrack.title}
+                    className="w-full h-full object-cover"
+                  />
+                )}
+              </div>
               <div className="min-w-0">
                 <p className="font-semibold truncate text-base">{currentTrack.title}</p>
                 <p className="text-sm text-muted-foreground truncate">{currentTrack.artist_name}</p>
@@ -403,10 +446,35 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
               <Button
                 variant="ghost"
                 size="icon"
+                onClick={() => setShowVisualizer(!showVisualizer)}
+                title="Visualizer"
+                className={showVisualizer ? "text-primary" : ""}
+              >
+                <Radio className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowEqualizer(true)}
+                title="Equalizer"
+              >
+                <Sliders className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setShowLyrics(true)}
                 title="Lyrics"
               >
                 <Mic className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowCredits(true)}
+                title="Credits"
+              >
+                <Award className="h-5 w-5" />
               </Button>
               <Button
                 variant="ghost"
@@ -504,6 +572,18 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
         onClose={() => setShowLyrics(false)}
         trackId={currentTrack.id}
         currentTime={currentTime}
+      />
+
+      <EqualizerPanel
+        open={showEqualizer}
+        onClose={() => setShowEqualizer(false)}
+        audioElement={audioRef.current}
+      />
+
+      <CreditsPanel
+        open={showCredits}
+        onClose={() => setShowCredits(false)}
+        trackId={currentTrack.id}
       />
 
       <Dialog open={showSleepTimer} onOpenChange={setShowSleepTimer}>
