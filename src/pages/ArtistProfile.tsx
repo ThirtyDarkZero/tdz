@@ -8,9 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { 
   Play, Heart, UserPlus, UserCheck, Share2, 
-  Music, Image as ImageIcon, Bell, BellOff
+  Music, Image as ImageIcon, Bell, BellOff, ArrowLeft, Home
 } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
+import tdzLogo from "@/assets/tdz-logo.png";
 
 export default function ArtistProfile() {
   const { artistId } = useParams();
@@ -213,6 +214,36 @@ export default function ArtistProfile() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Top Navigation */}
+      <div className="sticky top-0 z-50 glass-card border-b border-border/50">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate("/discover")}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Discover
+            </Button>
+            <button 
+              onClick={() => navigate("/discover")}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <img src={tdzLogo} alt="TDZ" className="h-8 w-auto" style={{ mixBlendMode: 'screen' }} />
+            </button>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => navigate("/discover")}
+          >
+            <Home className="w-4 h-4 mr-2" />
+            Discover
+          </Button>
+        </div>
+      </div>
+
       {/* Hero Section */}
       <div className="relative h-96 overflow-hidden">
         {artist.banner_image_path ? (

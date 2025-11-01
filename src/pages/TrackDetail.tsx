@@ -6,9 +6,10 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { 
-  Play, Heart, Share2, ArrowLeft, Music, Calendar, Clock
+  Play, Heart, Share2, ArrowLeft, Music, Calendar, Clock, Home
 } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
+import tdzLogo from "@/assets/tdz-logo.png";
 
 export default function TrackDetail() {
   const { trackId } = useParams();
@@ -102,19 +103,41 @@ export default function TrackDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Top Navigation */}
+      <div className="sticky top-0 z-50 glass-card border-b border-border/50">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+            <button 
+              onClick={() => navigate("/discover")}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <img src={tdzLogo} alt="TDZ" className="h-8 w-auto" style={{ mixBlendMode: 'screen' }} />
+            </button>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => navigate("/discover")}
+          >
+            <Home className="w-4 h-4 mr-2" />
+            Discover
+          </Button>
+        </div>
+      </div>
+
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-0 w-[1200px] h-[1200px] bg-primary/15 rounded-full blur-[200px] animate-pulse" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-12">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate(-1)}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
 
         <div className="grid md:grid-cols-2 gap-12 mb-12">
           {/* Album Art / Canvas */}
