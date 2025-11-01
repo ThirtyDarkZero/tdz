@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
 
 export default function Discover() {
+  const navigate = useNavigate();
   const [tracks, setTracks] = useState<any[]>([]);
   const [artists, setArtists] = useState<any[]>([]);
   const [playlists, setPlaylists] = useState<any[]>([]);
@@ -382,8 +384,9 @@ export default function Discover() {
               {artists.map((artist, index) => (
                 <Card 
                   key={artist.id} 
-                  className="glass-card-premium p-5 text-center hover:border-primary/70 transition-all hover-lift shadow-card-hover animate-fade-in"
+                  className="glass-card-premium p-5 text-center hover:border-primary/70 transition-all hover-lift shadow-card-hover animate-fade-in cursor-pointer"
                   style={{ animationDelay: `${index * 0.05}s` }}
+                  onClick={() => navigate(`/artist/${artist.user_id}`)}
                 >
                   <div className="relative">
                     <div className="aspect-square rounded-full overflow-hidden bg-gradient-to-br from-primary/30 to-secondary/30 mb-4 shadow-glow ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all">
@@ -410,7 +413,10 @@ export default function Discover() {
                   <Button
                     size="sm"
                     variant={followedArtists.has(artist.user_id) ? "outline" : "default"}
-                    onClick={() => toggleFollow(artist.user_id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFollow(artist.user_id);
+                    }}
                     className={`w-full transition-all hover-lift ${
                       followedArtists.has(artist.user_id) 
                         ? "border-primary/50" 

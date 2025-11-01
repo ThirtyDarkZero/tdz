@@ -89,6 +89,36 @@ export type Database = {
         }
         Relationships: []
       }
+      artist_gallery: {
+        Row: {
+          artist_id: string
+          caption: string | null
+          created_at: string
+          display_order: number | null
+          id: string
+          image_path: string
+          updated_at: string
+        }
+        Insert: {
+          artist_id: string
+          caption?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          image_path: string
+          updated_at?: string
+        }
+        Update: {
+          artist_id?: string
+          caption?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          image_path?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       artist_profiles: {
         Row: {
           artist_name: string
@@ -815,6 +845,48 @@ export type Database = {
           },
           {
             foreignKeyName: "track_likes_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      track_presaves: {
+        Row: {
+          artist_id: string
+          id: string
+          notified: boolean | null
+          presaved_at: string
+          track_id: string
+          user_id: string
+        }
+        Insert: {
+          artist_id: string
+          id?: string
+          notified?: boolean | null
+          presaved_at?: string
+          track_id: string
+          user_id: string
+        }
+        Update: {
+          artist_id?: string
+          id?: string
+          notified?: boolean | null
+          presaved_at?: string
+          track_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_presaves_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "published_tracks_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_presaves_track_id_fkey"
             columns: ["track_id"]
             isOneToOne: false
             referencedRelation: "tracks"
