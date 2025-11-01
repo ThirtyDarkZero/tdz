@@ -14,6 +14,14 @@ interface Track {
   file_path: string;
   play_count: number;
   genre?: string;
+  ai_tags?: {
+    metadata?: {
+      isMotionCover?: boolean;
+      artworkUrl?: string;
+      [key: string]: any;
+    };
+    [key: string]: any;
+  };
   album?: {
     title: string;
     cover_art_path?: string;
@@ -78,9 +86,9 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
         .eq('user_id', user.id)
         .eq('library_type', 'liked_track');
 
-      setTracks(tracksData || []);
+      setTracks(tracksData as Track[] || []);
       setAlbums(albumsData || []);
-      setLikedTracks(likedData?.map(item => item.track).filter(Boolean) || []);
+      setLikedTracks(likedData?.map(item => item.track as Track).filter(Boolean) || []);
     } catch (error: any) {
       console.error('Error loading library:', error);
       toast({
@@ -99,9 +107,37 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getCoverUrl = (path?: string) => {
+  const getCoverUrl = (path?: string, bucket: string = 'album-covers') => {
     if (!path) return '/placeholder.svg';
-    return supabase.storage.from('album-covers').getPublicUrl(path).data.publicUrl;
+    return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  };
+
+  const CoverArt = ({ track, className }: { track: Track, className?: string }) => {
+    const isMotion = track.ai_tags?.metadata?.isMotionCover;
+    const coverPath = track.album?.cover_art_path || track.ai_tags?.metadata?.artworkUrl;
+    const bucket = isMotion ? 'motion-covers' : 'album-covers';
+    const coverUrl = getCoverUrl(coverPath, bucket);
+
+    if (isMotion && coverPath) {
+      return (
+        <video
+          src={coverUrl}
+          className={className}
+          autoPlay
+          loop
+          muted
+          playsInline
+        />
+      );
+    }
+
+    return (
+      <img
+        src={coverUrl}
+        alt={track.title}
+        className={className}
+      />
+    );
   };
 
   const TrackList = ({ tracks: trackList }: { tracks: Track[] }) => (
@@ -121,11 +157,7 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
           </Button>
           <span className="text-muted-foreground w-6 group-hover:hidden">{index + 1}</span>
           
-          <img
-            src={track.album?.cover_art_path ? getCoverUrl(track.album.cover_art_path) : '/placeholder.svg'}
-            alt={track.title}
-            className="w-12 h-12 rounded object-cover"
-          />
+          <CoverArt track={track} className="w-12 h-12 rounded object-cover" />
           
           <div className="flex-1 min-w-0">
             <p className="font-medium truncate">{track.title}</p>

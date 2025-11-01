@@ -26,6 +26,7 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [artworkFile, setArtworkFile] = useState<File | null>(null);
   const [artworkPreview, setArtworkPreview] = useState<string>("");
+  const [isMotionCover, setIsMotionCover] = useState(false);
   
   // Basic metadata
   const [title, setTitle] = useState("");
@@ -51,20 +52,34 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
   const handleArtworkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (!file.type.startsWith('image/')) {
-        toast.error("Please select an image file");
+      const isVideo = file.type.startsWith('video/');
+      const isImage = file.type.startsWith('image/');
+      
+      if (!isVideo && !isImage) {
+        toast.error("Please select an image or video file");
         return;
       }
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error("Image must be less than 10MB");
+      
+      const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+      const sizeLabel = isVideo ? "50MB" : "10MB";
+      
+      if (file.size > maxSize) {
+        toast.error(`File must be less than ${sizeLabel}`);
         return;
       }
+      
       setArtworkFile(file);
+      setIsMotionCover(isVideo);
+      
       const reader = new FileReader();
       reader.onloadend = () => {
         setArtworkPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+      
+      if (isVideo) {
+        toast.success("Motion art cover selected! 🎬");
+      }
     }
   };
 
@@ -122,11 +137,13 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Upload artwork first
+      // Upload artwork (static or motion)
       setProgress(20);
+      const bucket = isMotionCover ? 'motion-covers' : 'album-covers';
       const artworkPath = `${user.id}/artwork/${Date.now()}-${artworkFile.name}`;
+      
       const { error: artworkError } = await supabase.storage
-        .from('album-covers')
+        .from(bucket)
         .upload(artworkPath, artworkFile, {
           cacheControl: '3600',
           upsert: false
@@ -135,7 +152,7 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
       if (artworkError) throw artworkError;
       
       const { data: { publicUrl: artworkUrl } } = supabase.storage
-        .from('album-covers')
+        .from(bucket)
         .getPublicUrl(artworkPath);
 
       // Get audio duration
@@ -191,7 +208,9 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
             language,
             description,
             contributors,
-            artworkUrl
+            artworkUrl,
+            isMotionCover,
+            coverBucket: bucket
           }
         },
         bpm: aiData?.bpm || null,
@@ -203,13 +222,16 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
 
       setProgress(100);
       toast.success("Music uploaded successfully!", {
-        description: "Your track is ready for distribution"
+        description: isMotionCover 
+          ? "Your track with motion art is ready for distribution 🎬" 
+          : "Your track is ready for distribution"
       });
       
       // Reset form
       setAudioFile(null);
       setArtworkFile(null);
       setArtworkPreview("");
+      setIsMotionCover(false);
       setTitle("");
       setArtistName("");
       setContributors([]);
@@ -263,33 +285,49 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
 
           {/* Artwork Upload */}
           <Card className="p-6">
-            <Label className="text-base font-semibold mb-4 block">Artwork *</Label>
+            <Label className="text-base font-semibold mb-4 block">
+              Artwork * {isMotionCover && <Badge className="ml-2 bg-primary">Motion Art 🎬</Badge>}
+            </Label>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
                 <ImageIcon className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
                 <Label htmlFor="artwork-file" className="cursor-pointer">
                   <div className="text-sm font-medium mb-1">Upload Cover Art</div>
                   <div className="text-xs text-muted-foreground mb-3">
-                    JPG, PNG · Min 3000x3000px · Max 10MB
+                    <div>Static: JPG, PNG · Min 3000x3000px · Max 10MB</div>
+                    <div className="text-primary font-semibold mt-1">Motion: MP4, WebM, MOV · Max 50MB 🎬</div>
                   </div>
                   <Input
                     id="artwork-file"
                     type="file"
-                    accept="image/jpeg,image/png"
+                    accept="image/jpeg,image/png,video/mp4,video/webm,video/quicktime,image/gif"
                     onChange={handleArtworkChange}
                     className="hidden"
                     disabled={uploading}
                   />
                   <Button type="button" variant="outline" disabled={uploading}>
                     <Upload className="h-4 w-4 mr-2" />
-                    Choose Image
+                    Choose {isMotionCover ? "Video" : "Image"}
                   </Button>
                 </Label>
               </div>
               {artworkPreview && (
                 <div className="relative rounded-lg overflow-hidden bg-muted">
-                  <img src={artworkPreview} alt="Artwork preview" className="w-full h-full object-cover" />
-                  <Badge className="absolute top-2 right-2">Preview</Badge>
+                  {isMotionCover ? (
+                    <video 
+                      src={artworkPreview} 
+                      className="w-full h-full object-cover" 
+                      autoPlay 
+                      loop 
+                      muted
+                      playsInline
+                    />
+                  ) : (
+                    <img src={artworkPreview} alt="Artwork preview" className="w-full h-full object-cover" />
+                  )}
+                  <Badge className="absolute top-2 right-2 shadow-glow">
+                    {isMotionCover ? "Motion Preview 🎬" : "Preview"}
+                  </Badge>
                 </div>
               )}
             </div>
