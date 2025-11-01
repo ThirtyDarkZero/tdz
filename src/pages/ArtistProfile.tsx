@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { MusicPlayer } from "@/components/MusicPlayer";
 
 export default function ArtistProfile() {
   const { artistId } = useParams();
+  const navigate = useNavigate();
   const [artist, setArtist] = useState<any>(null);
   const [tracks, setTracks] = useState<any[]>([]);
   const [gallery, setGallery] = useState<any[]>([]);
@@ -24,12 +25,27 @@ export default function ArtistProfile() {
   const [queue, setQueue] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  // Validate artistId is a valid UUID
   useEffect(() => {
-    loadUser();
-    loadArtist();
-    loadTracks();
-    loadGallery();
+    if (!artistId || artistId === ":artistId" || !isValidUUID(artistId)) {
+      toast.error("Invalid artist profile");
+      navigate("/discover");
+    }
+  }, [artistId, navigate]);
+
+  useEffect(() => {
+    if (artistId && isValidUUID(artistId)) {
+      loadUser();
+      loadArtist();
+      loadTracks();
+      loadGallery();
+    }
   }, [artistId]);
+
+  const isValidUUID = (str: string) => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
+  };
 
   const loadUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();

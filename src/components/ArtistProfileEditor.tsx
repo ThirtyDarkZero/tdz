@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Upload, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Upload, Image as ImageIcon, Loader2, Eye } from "lucide-react";
 
 export const ArtistProfileEditor = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
@@ -18,6 +20,7 @@ export const ArtistProfileEditor = () => {
   const [bannerImage, setBannerImage] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string>("");
   const [bannerPreview, setBannerPreview] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
 
   useEffect(() => {
     loadProfile();
@@ -27,6 +30,8 @@ export const ArtistProfileEditor = () => {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    
+    setUserId(user.id);
 
     const { data, error } = await supabase
       .from("artist_profiles")
@@ -145,8 +150,22 @@ export const ArtistProfileEditor = () => {
     <div className="space-y-6">
       <Card className="glass-card-premium">
         <CardHeader>
-          <CardTitle>Edit Artist Profile</CardTitle>
-          <CardDescription>Update your public artist profile</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Edit Artist Profile</CardTitle>
+              <CardDescription>Update your public artist profile</CardDescription>
+            </div>
+            {userId && (
+              <Button
+                onClick={() => navigate(`/artist/${userId}`)}
+                variant="outline"
+                size="sm"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                View Profile
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Banner Image */}
