@@ -10,6 +10,7 @@ import {
   Play, Heart, UserPlus, UserCheck, Share2, 
   Music, Image as ImageIcon, Bell, BellOff
 } from "lucide-react";
+import { MusicPlayer } from "@/components/MusicPlayer";
 
 export default function ArtistProfile() {
   const { artistId } = useParams();
@@ -19,6 +20,9 @@ export default function ArtistProfile() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [presavedTracks, setPresavedTracks] = useState<Set<string>>(new Set());
   const [user, setUser] = useState<any>(null);
+  const [currentTrack, setCurrentTrack] = useState<any>(null);
+  const [queue, setQueue] = useState<any[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     loadUser();
@@ -159,6 +163,33 @@ export default function ArtistProfile() {
     }
   };
 
+  const handlePlayTrack = (track: any) => {
+    setCurrentTrack(track);
+    setQueue(tracks);
+    const index = tracks.findIndex(t => t.id === track.id);
+    setCurrentIndex(index);
+  };
+
+  const handleNext = () => {
+    if (currentIndex < queue.length - 1) {
+      const nextTrack = queue[currentIndex + 1];
+      setCurrentTrack(nextTrack);
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentIndex > 0) {
+      const prevTrack = queue[currentIndex - 1];
+      setCurrentTrack(prevTrack);
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  const handleTrackEnd = () => {
+    handleNext();
+  };
+
 
   if (!artist) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -258,7 +289,12 @@ export default function ArtistProfile() {
                 <Card key={track.id} className="glass-card-premium p-6 hover-lift">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <Button size="icon" variant="outline" className="h-12 w-12 rounded-full">
+                      <Button 
+                        size="icon" 
+                        variant="outline" 
+                        className="h-12 w-12 rounded-full"
+                        onClick={() => handlePlayTrack(track)}
+                      >
                         <Play className="w-5 h-5" fill="currentColor" />
                       </Button>
                       <div>
@@ -339,6 +375,14 @@ export default function ArtistProfile() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <MusicPlayer
+        currentTrack={currentTrack}
+        queue={queue}
+        onNext={handleNext}
+        onPrevious={handlePrevious}
+        onTrackEnd={handleTrackEnd}
+      />
     </div>
   );
 }
