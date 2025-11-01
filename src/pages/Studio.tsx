@@ -17,6 +17,7 @@ import { StorytellingStudio } from "@/components/StorytellingStudio";
 import { MomentumTracker } from "@/components/MomentumTracker";
 import { CanvasManager } from "@/components/CanvasManager";
 import { ArtistProfileEditor } from "@/components/ArtistProfileEditor";
+import { ListenerProfileEditor } from "@/components/ListenerProfileEditor";
 import { MerchAndTickets } from "@/components/MerchAndTickets";
 import { TopBar } from "@/components/TopBar";
 import { useAuth } from "@/hooks/useAuth";
@@ -228,6 +229,17 @@ const Studio = () => {
                 <ShoppingBag className="h-5 w-5" />
                 <span className="hidden sm:inline">Merch</span>
               </TabsTrigger>
+              
+              {/* Listener Profile Tab */}
+              {role === 'listener' && (
+                <TabsTrigger 
+                  value="listener-profile" 
+                  className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+                >
+                  <User className="h-5 w-5" />
+                  <span className="hidden sm:inline">My Profile</span>
+                </TabsTrigger>
+              )}
             </TabsList>
           </div>
 
@@ -284,6 +296,10 @@ const Studio = () => {
 
             <TabsContent value="merch" className="mt-0">
               <MerchAndTickets />
+            </TabsContent>
+
+            <TabsContent value="listener-profile" className="mt-0">
+              <ListenerProfileEditor />
             </TabsContent>
           </div>
         </Tabs>
