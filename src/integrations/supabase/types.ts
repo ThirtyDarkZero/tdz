@@ -1145,6 +1145,7 @@ export type Database = {
           bpm: number | null
           created_at: string | null
           duration: number | null
+          file_path: string | null
           genre: string | null
           id: string | null
           like_count: number | null
