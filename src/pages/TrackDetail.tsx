@@ -6,12 +6,10 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { 
-  Play, Heart, Share2, ArrowLeft, Music, Calendar, Clock, Home, Plus, MessageCircle
+  Play, Heart, Share2, ArrowLeft, Music, Calendar, Clock, Home
 } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import tdzLogo from "@/assets/tdz-logo.png";
-import { CommentsSection } from "@/components/CommentsSection";
-import { AddToPlaylistDialog } from "@/components/AddToPlaylistDialog";
 
 export default function TrackDetail() {
   const { trackId } = useParams();
@@ -20,7 +18,6 @@ export default function TrackDetail() {
   const [isLiked, setIsLiked] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [currentTrack, setCurrentTrack] = useState<any>(null);
-  const [playlistDialogOpen, setPlaylistDialogOpen] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -235,24 +232,11 @@ export default function TrackDetail() {
                   fill={isLiked ? "currentColor" : "none"}
                 />
               </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="h-16 w-16"
-                onClick={() => setPlaylistDialogOpen(true)}
-              >
-                <Plus className="w-6 h-6" />
-              </Button>
               <Button size="lg" variant="outline" className="h-16 w-16">
                 <Share2 className="w-6 h-6" />
               </Button>
             </div>
           </div>
-        </div>
-
-        {/* Comments Section */}
-        <div className="mt-12">
-          <CommentsSection trackId={trackId!} />
         </div>
 
         {/* Additional Info */}
@@ -286,12 +270,6 @@ export default function TrackDetail() {
         onNext={() => {}}
         onPrevious={() => {}}
         onTrackEnd={() => {}}
-      />
-
-      <AddToPlaylistDialog
-        open={playlistDialogOpen}
-        onOpenChange={setPlaylistDialogOpen}
-        trackId={trackId!}
       />
     </div>
   );

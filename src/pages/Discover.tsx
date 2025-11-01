@@ -8,12 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Play, Heart, Share2, Music, TrendingUp, Flame, 
-  Search, User, ListMusic, Plus, UserPlus, MessageCircle
+  Search, User, ListMusic, Plus, UserPlus 
 } from "lucide-react";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { MusicPlayer } from "@/components/MusicPlayer";
-import { AddToPlaylistDialog } from "@/components/AddToPlaylistDialog";
 
 export default function Discover() {
   const navigate = useNavigate();
@@ -28,8 +27,6 @@ export default function Discover() {
   const [currentTrack, setCurrentTrack] = useState<any>(null);
   const [queue, setQueue] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [playlistDialogOpen, setPlaylistDialogOpen] = useState(false);
-  const [selectedTrackId, setSelectedTrackId] = useState<string>("");
 
   useEffect(() => {
     loadUser();
@@ -401,10 +398,7 @@ export default function Discover() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleLike(track.id);
-                            }}
+                            onClick={() => toggleLike(track.id)}
                             className={`hover-lift transition-all ${likedTracks.has(track.id) ? "text-red-500 hover:text-red-600" : "hover:text-primary"}`}
                           >
                             <Heart 
@@ -412,28 +406,8 @@ export default function Discover() {
                               fill={likedTracks.has(track.id) ? "currentColor" : "none"}
                             />
                           </Button>
-                          <Button 
-                            size="icon" 
-                            variant="ghost" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedTrackId(track.id);
-                              setPlaylistDialogOpen(true);
-                            }}
-                            className="hover-lift hover:text-primary transition-all"
-                          >
-                            <Plus className="w-5 h-5" />
-                          </Button>
-                          <Button 
-                            size="icon" 
-                            variant="ghost" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/track/${track.id}`);
-                            }}
-                            className="hover-lift hover:text-primary transition-all"
-                          >
-                            <MessageCircle className="w-5 h-5" />
+                          <Button size="icon" variant="ghost" className="hover-lift hover:text-primary transition-all">
+                            <Share2 className="w-5 h-5" />
                           </Button>
                         </div>
                         <Badge variant="outline" className="font-mono">
@@ -563,12 +537,6 @@ export default function Discover() {
         onNext={handleNext}
         onPrevious={handlePrevious}
         onTrackEnd={handleTrackEnd}
-      />
-      
-      <AddToPlaylistDialog
-        open={playlistDialogOpen}
-        onOpenChange={setPlaylistDialogOpen}
-        trackId={selectedTrackId}
       />
     </div>
   );
