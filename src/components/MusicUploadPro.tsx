@@ -23,7 +23,7 @@ type Contributor = {
 export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [audioFiles, setAudioFiles] = useState<File[]>([]);
   const [artworkFile, setArtworkFile] = useState<File | null>(null);
   const [artworkPreview, setArtworkPreview] = useState<string>("");
   const [isMotionCover, setIsMotionCover] = useState(false);
@@ -108,9 +108,31 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
     setContributors(contributors.filter(c => c.id !== id));
   };
 
+  const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const audioFileList = Array.from(files).filter(file => {
+        const isAudio = file.type.startsWith('audio/');
+        if (!isAudio) {
+          toast.error(`${file.name} is not an audio file`);
+          return false;
+        }
+        return true;
+      });
+      
+      if (audioFileList.length > 20) {
+        toast.error("Maximum 20 tracks can be uploaded at once");
+        setAudioFiles(audioFileList.slice(0, 20));
+      } else {
+        setAudioFiles(audioFileList);
+        toast.success(`${audioFileList.length} track(s) selected`);
+      }
+    }
+  };
+
   const handleUpload = async () => {
-    if (!audioFile) {
-      toast.error("Please select an audio file");
+    if (audioFiles.length === 0) {
+      toast.error("Please select at least one audio file");
       return;
     }
     
@@ -137,98 +159,120 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Upload artwork (static or motion)
-      setProgress(20);
-      const bucket = isMotionCover ? 'motion-covers' : 'album-covers';
-      const artworkPath = `${user.id}/artwork/${Date.now()}-${artworkFile.name}`;
-      
-      const { error: artworkError } = await supabase.storage
-        .from(bucket)
-        .upload(artworkPath, artworkFile, {
-          cacheControl: '3600',
-          upsert: false
+      let artworkUrl = "";
+      let bucket = "album-covers";
+
+      // Upload artwork if provided (static or motion)
+      if (artworkFile) {
+        setProgress(15);
+        bucket = isMotionCover ? 'motion-covers' : 'album-covers';
+        const artworkPath = `${user.id}/artwork/${Date.now()}-${artworkFile.name}`;
+        
+        const { error: artworkError } = await supabase.storage
+          .from(bucket)
+          .upload(artworkPath, artworkFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
+        
+        if (artworkError) throw artworkError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from(bucket)
+          .getPublicUrl(artworkPath);
+        artworkUrl = publicUrl;
+      }
+
+      // Process each audio file
+      const totalFiles = audioFiles.length;
+      const uploadedTracks = [];
+
+      for (let i = 0; i < audioFiles.length; i++) {
+        const audioFile = audioFiles[i];
+        const fileProgress = 20 + (60 * (i / totalFiles));
+        setProgress(fileProgress);
+
+        // Get audio duration
+        const audio = new Audio();
+        const duration = await new Promise<number>((resolve) => {
+          audio.onloadedmetadata = () => resolve(Math.floor(audio.duration));
+          audio.src = URL.createObjectURL(audioFile);
         });
-      
-      if (artworkError) throw artworkError;
-      
-      const { data: { publicUrl: artworkUrl } } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(artworkPath);
 
-      // Get audio duration
-      setProgress(30);
-      const audio = new Audio();
-      const duration = await new Promise<number>((resolve) => {
-        audio.onloadedmetadata = () => resolve(Math.floor(audio.duration));
-        audio.src = URL.createObjectURL(audioFile);
-      });
+        // Upload audio file
+        const sanitizedFileName = audioFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const filePath = `${user.id}/${Date.now()}-${sanitizedFileName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('track-files')
+          .upload(filePath, audioFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
 
-      // Upload audio file
-      setProgress(40);
-      const sanitizedFileName = audioFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const filePath = `${user.id}/${Date.now()}-${sanitizedFileName}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('track-files')
-        .upload(filePath, audioFile, {
-          cacheControl: '3600',
-          upsert: false
-        });
+        if (uploadError) throw uploadError;
 
-      if (uploadError) throw uploadError;
-      setProgress(70);
+        // AI analysis (if needed)
+        let aiData = null;
+        try {
+          const { data } = await supabase.functions.invoke('analyze-track-metadata', {
+            body: { filePath, fileName: audioFile.name }
+          });
+          aiData = data;
+        } catch (err) {
+          console.warn('AI analysis failed for', audioFile.name, err);
+        }
+        
+        // Extract title from filename (remove extension)
+        const trackTitle = title || audioFile.name.replace(/\.[^/.]+$/, "");
+        const trackArtist = artistName || "Unknown Artist";
 
-      // AI analysis
-      const { data: aiData } = await supabase.functions.invoke('analyze-track-metadata', {
-        body: { filePath, fileName: audioFile.name }
-      });
+        // Create track record
+        const { data: trackData, error: dbError } = await supabase.from('tracks').insert({
+          user_id: user.id,
+          title: trackTitle.slice(0, 200),
+          artist_name: trackArtist.slice(0, 100),
+          duration,
+          file_path: filePath,
+          genre,
+          is_published: false,
+          ai_tags: {
+            ...aiData?.tags,
+            metadata: {
+              isrc,
+              upc,
+              copyrightYear,
+              copyrightHolder,
+              publishingRights,
+              pLine,
+              cLine,
+              explicitContent,
+              language,
+              description,
+              contributors,
+              artworkUrl,
+              isMotionCover,
+              coverBucket: bucket
+            }
+          },
+          bpm: aiData?.bpm || null,
+          key: aiData?.key || null,
+          mood: aiData?.mood || null
+        }).select();
 
-      setProgress(85);
-      
-      // Create track record with full metadata
-      const { error: dbError } = await supabase.from('tracks').insert({
-        user_id: user.id,
-        title: title.slice(0, 200),
-        artist_name: artistName.slice(0, 100),
-        duration,
-        file_path: filePath,
-        genre,
-        is_published: false,
-        ai_tags: {
-          ...aiData?.tags,
-          metadata: {
-            isrc,
-            upc,
-            copyrightYear,
-            copyrightHolder,
-            publishingRights,
-            pLine,
-            cLine,
-            explicitContent,
-            language,
-            description,
-            contributors,
-            artworkUrl,
-            isMotionCover,
-            coverBucket: bucket
-          }
-        },
-        bpm: aiData?.bpm || null,
-        key: aiData?.key || null,
-        mood: aiData?.mood || null
-      });
-
-      if (dbError) throw dbError;
+        if (dbError) throw dbError;
+        uploadedTracks.push(trackData?.[0]);
+      }
 
       setProgress(100);
-      toast.success("Music uploaded successfully!", {
+      toast.success(`${uploadedTracks.length} track(s) uploaded successfully!`, {
         description: isMotionCover 
-          ? "Your track with motion art is ready for distribution 🎬" 
-          : "Your track is ready for distribution"
+          ? "Your tracks with motion art are ready for distribution 🎬" 
+          : "Your tracks are ready for distribution"
       });
       
       // Reset form
-      setAudioFile(null);
+      setAudioFiles([]);
       setArtworkFile(null);
       setArtworkPreview("");
       setIsMotionCover(false);
@@ -255,64 +299,82 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
         </TabsList>
 
         <TabsContent value="basic" className="space-y-4">
-          {/* Audio File Upload */}
+          {/* Audio Files Upload */}
           <Card className="p-6">
-            <Label className="text-base font-semibold mb-4 block">Audio File *</Label>
-            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
-              <Music className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-              <Label htmlFor="audio-file" className="cursor-pointer">
-                <div className="text-sm font-medium mb-1">
-                  {audioFile ? audioFile.name : "Choose Audio File"}
+            <Label className="text-base font-semibold mb-4 block">
+              Audio Files * {audioFiles.length > 0 && <Badge className="ml-2">{audioFiles.length} selected</Badge>}
+            </Label>
+            <div className="border-2 border-dashed border-primary/30 rounded-lg p-8 text-center hover:border-primary/60 transition-colors">
+              <Music className="h-12 w-12 mx-auto mb-4 text-primary" />
+              <div className="text-sm font-medium mb-2">
+                {audioFiles.length > 0 
+                  ? `${audioFiles.length} file(s) selected` 
+                  : "Choose Audio Files (up to 20)"}
+              </div>
+              <div className="text-xs text-muted-foreground mb-4">
+                MP3, WAV, FLAC, M4A · Max 200MB per file · Up to 20 files
+              </div>
+              {audioFiles.length > 0 && (
+                <div className="mb-4 max-h-32 overflow-y-auto text-left bg-muted/50 rounded p-3">
+                  {audioFiles.map((file, index) => (
+                    <div key={index} className="text-xs text-muted-foreground truncate">
+                      {index + 1}. {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                    </div>
+                  ))}
                 </div>
-                <div className="text-xs text-muted-foreground mb-3">
-                  MP3, WAV, FLAC · Max 200MB
-                </div>
-                <Input
-                  id="audio-file"
-                  type="file"
-                  accept="audio/mpeg,audio/mp3,audio/wav,audio/flac,audio/m4a"
-                  onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
-                  className="hidden"
-                  disabled={uploading}
-                />
-                <Button type="button" variant="outline" disabled={uploading}>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Select File
+              )}
+              <input
+                id="audio-files"
+                type="file"
+                accept="audio/mpeg,audio/mp3,audio/wav,audio/flac,audio/m4a"
+                onChange={handleAudioChange}
+                className="hidden"
+                disabled={uploading}
+                multiple
+              />
+              <label htmlFor="audio-files">
+                <Button type="button" variant="default" disabled={uploading} className="bg-gradient-to-r from-primary to-secondary shadow-glow cursor-pointer" asChild>
+                  <span>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Select Audio Files
+                  </span>
                 </Button>
-              </Label>
+              </label>
             </div>
           </Card>
 
           {/* Artwork Upload */}
           <Card className="p-6">
             <Label className="text-base font-semibold mb-4 block">
-              Artwork * {isMotionCover && <Badge className="ml-2 bg-primary">Motion Art 🎬</Badge>}
+              Artwork (Optional) {isMotionCover && <Badge className="ml-2 bg-primary">Motion Art 🎬</Badge>}
             </Label>
             <div className="grid md:grid-cols-2 gap-4">
-              <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
-                <ImageIcon className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-                <Label htmlFor="artwork-file" className="cursor-pointer">
-                  <div className="text-sm font-medium mb-1">Upload Cover Art</div>
-                  <div className="text-xs text-muted-foreground mb-3">
-                    <div>Static: JPG, PNG · Min 3000x3000px · Max 10MB</div>
-                    <div className="text-primary font-semibold mt-1">Motion: MP4, WebM, MOV · Max 50MB 🎬</div>
-                  </div>
-                  <Input
-                    id="artwork-file"
-                    type="file"
-                    accept="image/jpeg,image/png,video/mp4,video/webm,video/quicktime,image/gif"
-                    onChange={handleArtworkChange}
-                    className="hidden"
-                    disabled={uploading}
-                  />
-                  <Button type="button" variant="outline" disabled={uploading}>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Choose {isMotionCover ? "Video" : "Image"}
+              <div className="border-2 border-dashed border-primary/30 rounded-lg p-6 text-center hover:border-primary/60 transition-colors">
+                <ImageIcon className="h-10 w-10 mx-auto mb-3 text-primary" />
+                <div className="text-sm font-medium mb-1">Upload Cover Art</div>
+                <div className="text-xs text-muted-foreground mb-4">
+                  <div>Static: JPG, PNG · Min 3000x3000px · Max 10MB</div>
+                  <div className="text-primary font-semibold mt-1">Motion: MP4, WebM, MOV · Max 50MB 🎬</div>
+                </div>
+                <input
+                  id="artwork-file"
+                  type="file"
+                  accept="image/jpeg,image/png,video/mp4,video/webm,video/quicktime,image/gif"
+                  onChange={handleArtworkChange}
+                  className="hidden"
+                  disabled={uploading}
+                />
+                <label htmlFor="artwork-file">
+                  <Button type="button" variant="outline" disabled={uploading} className="cursor-pointer" asChild>
+                    <span>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Choose {isMotionCover ? "Video" : "Image"}
+                    </span>
                   </Button>
-                </Label>
+                </label>
               </div>
               {artworkPreview && (
-                <div className="relative rounded-lg overflow-hidden bg-muted">
+                <div className="relative rounded-lg overflow-hidden bg-muted shadow-glow">
                   {isMotionCover ? (
                     <video 
                       src={artworkPreview} 
@@ -336,22 +398,27 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
           {/* Basic Metadata */}
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="title">Track Title *</Label>
+              <Label htmlFor="title">Track Title {audioFiles.length <= 1 ? "*" : "(Optional - uses filename)"}</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Song name"
+                placeholder={audioFiles.length > 1 ? "Leave blank to use filenames" : "Song name"}
                 disabled={uploading}
               />
+              {audioFiles.length > 1 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Leave blank to auto-generate titles from file names
+                </p>
+              )}
             </div>
             <div>
-              <Label htmlFor="artist">Artist Name *</Label>
+              <Label htmlFor="artist">Artist Name {audioFiles.length <= 1 ? "*" : "(Optional)"}</Label>
               <Input
                 id="artist"
                 value={artistName}
                 onChange={(e) => setArtistName(e.target.value)}
-                placeholder="Your artist name"
+                placeholder={audioFiles.length > 1 ? "Leave blank for 'Unknown Artist'" : "Your artist name"}
                 disabled={uploading}
               />
             </div>
@@ -587,15 +654,15 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
 
       <Button
         onClick={handleUpload}
-        disabled={uploading || !audioFile || !artworkFile || !title || !artistName}
-        className="w-full h-12 bg-gradient-to-r from-primary via-secondary to-accent"
+        disabled={uploading || audioFiles.length === 0}
+        className="w-full h-12 bg-gradient-to-r from-primary via-secondary to-accent shadow-glow hover-lift"
       >
         {uploading ? (
-          <>Uploading...</>
+          <>Uploading {audioFiles.length} track(s)...</>
         ) : (
           <>
             <Save className="w-4 h-4 mr-2" />
-            Upload Music
+            Upload {audioFiles.length > 0 ? `${audioFiles.length} Track(s)` : "Music"}
           </>
         )}
       </Button>
