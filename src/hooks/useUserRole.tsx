@@ -26,7 +26,9 @@ export const useUserRole = (user: User | null) => {
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id)
-        .maybeSingle();
+        .order("granted_at", { ascending: false })
+        .limit(1)
+        .single();
 
       if (error) {
         console.error("Error loading role:", error);

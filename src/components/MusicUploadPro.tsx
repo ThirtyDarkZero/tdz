@@ -177,10 +177,22 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
         
         if (artworkError) throw artworkError;
         
-        const { data: { publicUrl } } = supabase.storage
-          .from(bucket)
-          .getPublicUrl(artworkPath);
-        artworkUrl = publicUrl;
+        artworkUrl = artworkPath; // Store path, not full URL
+      }
+
+      // Ensure artist profile exists
+      const { data: existingProfile } = await supabase
+        .from('artist_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!existingProfile) {
+        await supabase.from('artist_profiles').insert({
+          user_id: user.id,
+          artist_name: artistName || 'Unknown Artist',
+          bio: description || null
+        });
       }
 
       // Process each audio file
