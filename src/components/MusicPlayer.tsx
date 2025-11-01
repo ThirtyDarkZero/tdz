@@ -107,8 +107,9 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
     }
 
     // Use artworkUrl if available, otherwise try album cover path
-    if (currentTrack.ai_tags.metadata.artworkUrl) {
-      setMotionCoverUrl(currentTrack.ai_tags.metadata.artworkUrl);
+    const metadata = currentTrack.ai_tags.metadata as any;
+    if (metadata.artworkUrl) {
+      setMotionCoverUrl(metadata.artworkUrl);
     } else if (currentTrack.album?.cover_art_path) {
       const { data } = supabase.storage.from('motion-covers').getPublicUrl(currentTrack.album.cover_art_path);
       setMotionCoverUrl(data.publicUrl);

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe, Image } from "lucide-react";
+import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe, Image, Heart, BookOpen, Zap } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { MusicLibrary } from "@/components/MusicLibrary";
 import { ArtistDashboard } from "@/components/ArtistDashboard";
@@ -12,6 +12,9 @@ import { ReleaseManager } from "@/components/ReleaseManager";
 import { DistributionAnalytics } from "@/components/DistributionAnalytics";
 import { MusicUploadPro } from "@/components/MusicUploadPro";
 import { ArtistGalleryManager } from "@/components/ArtistGalleryManager";
+import { FanEngagementHub } from "@/components/FanEngagementHub";
+import { StorytellingStudio } from "@/components/StorytellingStudio";
+import { MomentumTracker } from "@/components/MomentumTracker";
 import { TopBar } from "@/components/TopBar";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -180,6 +183,27 @@ const Studio = () => {
                 <LayoutDashboard className="h-5 w-5" />
                 <span className="hidden sm:inline">Dashboard</span>
               </TabsTrigger>
+              <TabsTrigger 
+                value="fans" 
+                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+              >
+                <Heart className="h-5 w-5" />
+                <span className="hidden sm:inline">Fans</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="storytelling" 
+                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+              >
+                <BookOpen className="h-5 w-5" />
+                <span className="hidden sm:inline">Story</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="momentum" 
+                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+              >
+                <Zap className="h-5 w-5" />
+                <span className="hidden sm:inline">Momentum</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -212,6 +236,18 @@ const Studio = () => {
 
             <TabsContent value="dashboard" className="mt-0">
               <ArtistDashboard />
+            </TabsContent>
+
+            <TabsContent value="fans" className="mt-0">
+              <FanEngagementHub />
+            </TabsContent>
+
+            <TabsContent value="storytelling" className="mt-0">
+              <StorytellingStudio />
+            </TabsContent>
+
+            <TabsContent value="momentum" className="mt-0">
+              <MomentumTracker />
             </TabsContent>
           </div>
         </Tabs>
