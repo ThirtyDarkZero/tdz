@@ -897,6 +897,8 @@ export type Database = {
       tracks: {
         Row: {
           ai_tags: Json | null
+          album_cover_bucket: string | null
+          album_cover_path: string | null
           album_id: string | null
           artist_name: string
           bpm: number | null
@@ -919,6 +921,8 @@ export type Database = {
         }
         Insert: {
           ai_tags?: Json | null
+          album_cover_bucket?: string | null
+          album_cover_path?: string | null
           album_id?: string | null
           artist_name: string
           bpm?: number | null
@@ -941,6 +945,8 @@ export type Database = {
         }
         Update: {
           ai_tags?: Json | null
+          album_cover_bucket?: string | null
+          album_cover_path?: string | null
           album_id?: string | null
           artist_name?: string
           bpm?: number | null
@@ -1130,6 +1136,7 @@ export type Database = {
     Views: {
       published_tracks_view: {
         Row: {
+          ai_tags: Json | null
           album_cover: string | null
           album_id: string | null
           album_title: string | null
