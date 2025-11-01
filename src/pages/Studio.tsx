@@ -5,11 +5,13 @@ import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe } from "lucid
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { MusicLibrary } from "@/components/MusicLibrary";
 import { ArtistDashboard } from "@/components/ArtistDashboard";
+import { ManagerDashboard } from "@/components/ManagerDashboard";
 import { LabelStaff } from "@/components/LabelStaff";
 import { ReleaseManager } from "@/components/ReleaseManager";
 import { DistributionAnalytics } from "@/components/DistributionAnalytics";
 import { TopBar } from "@/components/TopBar";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface Track {
   id: string;
@@ -26,6 +28,7 @@ interface Track {
 
 const Studio = () => {
   const { user, loading } = useAuth();
+  const { role, loading: roleLoading } = useUserRole(user);
   const navigate = useNavigate();
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [queue, setQueue] = useState<Track[]>([]);
@@ -37,7 +40,7 @@ const Studio = () => {
     }
   }, [user, loading, navigate]);
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center space-y-3">
@@ -93,8 +96,14 @@ const Studio = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="label-staff" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto">
+        <Tabs defaultValue={role === 'manager' ? 'manager' : 'label-staff'} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6 lg:w-auto">
+            {role === 'manager' && (
+              <TabsTrigger value="manager" className="gap-2">
+                <Users className="h-4 w-4" />
+                Manager
+              </TabsTrigger>
+            )}
             <TabsTrigger value="label-staff" className="gap-2">
               <Users className="h-4 w-4" />
               Label Staff
@@ -116,6 +125,12 @@ const Studio = () => {
               Dashboard
             </TabsTrigger>
           </TabsList>
+
+          {role === 'manager' && (
+            <TabsContent value="manager">
+              <ManagerDashboard />
+            </TabsContent>
+          )}
 
           <TabsContent value="label-staff">
             <LabelStaff />

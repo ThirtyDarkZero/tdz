@@ -407,6 +407,39 @@ export type Database = {
           },
         ]
       }
+      manager_artists: {
+        Row: {
+          artist_id: string
+          commission_rate: number | null
+          contract_end_date: string | null
+          contract_start_date: string | null
+          created_at: string
+          id: string
+          manager_id: string
+          notes: string | null
+        }
+        Insert: {
+          artist_id: string
+          commission_rate?: number | null
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          created_at?: string
+          id?: string
+          manager_id: string
+          notes?: string | null
+        }
+        Update: {
+          artist_id?: string
+          commission_rate?: number | null
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          created_at?: string
+          id?: string
+          manager_id?: string
+          notes?: string | null
+        }
+        Relationships: []
+      }
       playlist_tracks: {
         Row: {
           added_at: string

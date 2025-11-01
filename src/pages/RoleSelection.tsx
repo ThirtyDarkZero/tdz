@@ -5,13 +5,13 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Music, Headphones, ArrowRight, Sparkles } from "lucide-react";
+import { Music, Headphones, Users, ArrowRight, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
 
 export default function RoleSelection() {
-  const [selectedRole, setSelectedRole] = useState<"artist" | "listener" | null>(null);
+  const [selectedRole, setSelectedRole] = useState<"artist" | "listener" | "manager" | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [artistName, setArtistName] = useState("");
@@ -38,7 +38,7 @@ export default function RoleSelection() {
       if (roleError) throw roleError;
 
       // Create profile based on role
-      if (selectedRole === "artist") {
+      if (selectedRole === "artist" || selectedRole === "manager") {
         const { error: profileError } = await supabase
           .from("artist_profiles")
           .insert({
@@ -108,7 +108,7 @@ export default function RoleSelection() {
         </div>
 
         {!selectedRole ? (
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-3 gap-6">
             {/* Artist Card */}
             <Card
               className="relative group cursor-pointer glass-card p-8 hover:border-primary transition-all duration-300 hover:scale-105"
@@ -127,6 +127,29 @@ export default function RoleSelection() {
                 </div>
                 <Button className="w-full bg-gradient-to-r from-primary to-secondary">
                   I'm an Artist
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </Card>
+
+            {/* Manager Card */}
+            <Card
+              className="relative group cursor-pointer glass-card p-8 hover:border-accent transition-all duration-300 hover:scale-105"
+              onClick={() => setSelectedRole("manager")}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-accent/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-lg" />
+              <div className="relative z-10 text-center space-y-6">
+                <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-accent to-primary flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <Users className="w-10 h-10 text-background" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-display font-bold mb-2">MANAGER</h3>
+                  <p className="text-muted-foreground">
+                    Manage artists and grow your roster
+                  </p>
+                </div>
+                <Button className="w-full bg-gradient-to-r from-accent to-primary">
+                  I'm a Manager
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
@@ -161,24 +184,28 @@ export default function RoleSelection() {
               <div className="w-16 h-16 mx-auto rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mb-4">
                 {selectedRole === "artist" ? (
                   <Music className="w-8 h-8 text-background" />
+                ) : selectedRole === "manager" ? (
+                  <Users className="w-8 h-8 text-background" />
                 ) : (
                   <Headphones className="w-8 h-8 text-background" />
                 )}
               </div>
               <h2 className="text-2xl font-display font-bold">
-                {selectedRole === "artist" ? "Artist Profile" : "Fan Profile"}
+                {selectedRole === "artist" ? "Artist Profile" : selectedRole === "manager" ? "Manager Profile" : "Fan Profile"}
               </h2>
             </div>
 
             <div className="space-y-4">
-              {selectedRole === "artist" && (
+              {(selectedRole === "artist" || selectedRole === "manager") && (
                 <div>
-                  <Label htmlFor="artistName">Artist Name *</Label>
+                  <Label htmlFor="artistName">
+                    {selectedRole === "artist" ? "Artist Name *" : "Company/Manager Name *"}
+                  </Label>
                   <Input
                     id="artistName"
                     value={artistName}
                     onChange={(e) => setArtistName(e.target.value)}
-                    placeholder="Your stage name"
+                    placeholder={selectedRole === "artist" ? "Your stage name" : "Your management company"}
                     className="mt-2"
                   />
                 </div>
