@@ -289,6 +289,24 @@ export default function ArtistProfile() {
                 <Card key={track.id} className="glass-card-premium p-6 hover-lift">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
+                      {/* Album Cover */}
+                      <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                        {track.ai_tags?.metadata?.isMotionCover && track.ai_tags?.metadata?.artworkUrl ? (
+                          <video 
+                            src={track.ai_tags.metadata.artworkUrl}
+                            className="w-full h-full object-cover"
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
+                            <Music className="w-6 h-6 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      
                       <Button 
                         size="icon" 
                         variant="outline" 

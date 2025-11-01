@@ -101,13 +101,20 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
   }, [currentTrack]);
 
   const loadMotionCover = async () => {
-    if (!currentTrack?.album?.cover_art_path || !currentTrack?.ai_tags?.metadata?.isMotionCover) {
+    if (!currentTrack?.ai_tags?.metadata?.isMotionCover) {
       setMotionCoverUrl(null);
       return;
     }
 
-    const { data } = supabase.storage.from('motion-covers').getPublicUrl(currentTrack.album.cover_art_path);
-    setMotionCoverUrl(data.publicUrl);
+    // Use artworkUrl if available, otherwise try album cover path
+    if (currentTrack.ai_tags.metadata.artworkUrl) {
+      setMotionCoverUrl(currentTrack.ai_tags.metadata.artworkUrl);
+    } else if (currentTrack.album?.cover_art_path) {
+      const { data } = supabase.storage.from('motion-covers').getPublicUrl(currentTrack.album.cover_art_path);
+      setMotionCoverUrl(data.publicUrl);
+    } else {
+      setMotionCoverUrl(null);
+    }
   };
 
   useEffect(() => {

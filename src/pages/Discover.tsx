@@ -336,23 +336,21 @@ export default function Discover() {
                     <div className="p-5 space-y-4">
                       {/* Album Art with Motion Support */}
                       <div className="relative aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-primary/30 to-secondary/30 shadow-glow">
-                        {track.album_cover_path && track.album_cover_bucket ? (
-                          track.ai_tags?.metadata?.isMotionCover ? (
-                            <video 
-                              src={supabase.storage.from(track.album_cover_bucket).getPublicUrl(track.album_cover_path).data.publicUrl}
-                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                              autoPlay
-                              loop
-                              muted
-                              playsInline
-                            />
-                          ) : (
-                            <img 
-                              src={supabase.storage.from(track.album_cover_bucket).getPublicUrl(track.album_cover_path).data.publicUrl}
-                              alt={track.title}
-                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                            />
-                          )
+                        {track.ai_tags?.metadata?.isMotionCover && track.ai_tags?.metadata?.artworkUrl ? (
+                          <video 
+                            src={track.ai_tags.metadata.artworkUrl}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                          />
+                        ) : track.album_cover_path && track.album_cover_bucket ? (
+                          <img 
+                            src={supabase.storage.from(track.album_cover_bucket).getPublicUrl(track.album_cover_path).data.publicUrl}
+                            alt={track.title}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                          />
                         ) : track.album_cover ? (
                           <img 
                             src={track.album_cover}
