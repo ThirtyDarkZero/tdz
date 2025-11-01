@@ -84,16 +84,17 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
       const audioUrl = supabase.storage.from('track-files').getPublicUrl(currentTrack.file_path).data.publicUrl;
       audioRef.current.src = audioUrl;
       audioRef.current.playbackRate = playbackRate;
-      if (isPlaying) {
-        audioRef.current.play().catch(err => {
-          console.error('Playback failed:', err);
-          toast({
-            title: "Playback Error",
-            description: "Failed to play track. File may be corrupted or unavailable.",
-            variant: "destructive"
-          });
+      // Auto-play when new track is loaded
+      audioRef.current.play().catch(err => {
+        console.error('Playback failed:', err);
+        toast({
+          title: "Playback Error",
+          description: "Failed to play track. File may be corrupted or unavailable.",
+          variant: "destructive"
         });
-      }
+      });
+      setIsPlaying(true);
+      recordPlay();
       checkIfLiked();
       loadMotionCover();
     }

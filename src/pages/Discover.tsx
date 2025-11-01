@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
+import { MusicPlayer } from "@/components/MusicPlayer";
 
 export default function Discover() {
   const navigate = useNavigate();
@@ -23,6 +24,9 @@ export default function Discover() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [currentTrack, setCurrentTrack] = useState<any>(null);
+  const [queue, setQueue] = useState<any[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     loadUser();
@@ -174,6 +178,33 @@ export default function Discover() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handlePlayTrack = (track: any) => {
+    setCurrentTrack(track);
+    setQueue(filteredTracks);
+    const index = filteredTracks.findIndex(t => t.id === track.id);
+    setCurrentIndex(index);
+  };
+
+  const handleNext = () => {
+    if (currentIndex < queue.length - 1) {
+      const nextTrack = queue[currentIndex + 1];
+      setCurrentTrack(nextTrack);
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentIndex > 0) {
+      const prevTrack = queue[currentIndex - 1];
+      setCurrentTrack(prevTrack);
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  const handleTrackEnd = () => {
+    handleNext();
   };
 
   const filteredTracks = tracks.filter(track =>
@@ -330,7 +361,11 @@ export default function Discover() {
                           />
                         ) : null}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
-                          <Button size="icon" className="h-16 w-16 rounded-full bg-primary shadow-glow hover:scale-110 transition-transform">
+                          <Button 
+                            size="icon" 
+                            className="h-16 w-16 rounded-full bg-primary shadow-glow hover:scale-110 transition-transform"
+                            onClick={() => handlePlayTrack(track)}
+                          >
                             <Play className="w-6 h-6 ml-1" fill="currentColor" />
                           </Button>
                         </div>
@@ -487,6 +522,14 @@ export default function Discover() {
           </TabsContent>
         </Tabs>
       </main>
+
+      <MusicPlayer
+        currentTrack={currentTrack}
+        queue={queue}
+        onNext={handleNext}
+        onPrevious={handlePrevious}
+        onTrackEnd={handleTrackEnd}
+      />
     </div>
   );
 }
