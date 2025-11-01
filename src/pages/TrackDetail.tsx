@@ -8,18 +8,18 @@ import { toast } from "sonner";
 import { 
   Play, Heart, Share2, ArrowLeft, Music, Calendar, Clock, Home, Plus, MessageCircle
 } from "lucide-react";
-import { MusicPlayer } from "@/components/MusicPlayer";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { CommentsSection } from "@/components/CommentsSection";
 import { AddToPlaylistDialog } from "@/components/AddToPlaylistDialog";
+import { useMusicPlayer } from "@/contexts/MusicPlayerContext";
 
 export default function TrackDetail() {
   const { trackId } = useParams();
   const navigate = useNavigate();
+  const { playTrack } = useMusicPlayer();
   const [track, setTrack] = useState<any>(null);
   const [isLiked, setIsLiked] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const [currentTrack, setCurrentTrack] = useState<any>(null);
   const [playlistDialogOpen, setPlaylistDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -91,7 +91,7 @@ export default function TrackDetail() {
   };
 
   const handlePlayTrack = () => {
-    setCurrentTrack(track);
+    playTrack(track);
   };
 
   const formatDuration = (seconds: number) => {
@@ -279,14 +279,6 @@ export default function TrackDetail() {
           </Card>
         )}
       </div>
-
-      <MusicPlayer
-        currentTrack={currentTrack}
-        queue={currentTrack ? [currentTrack] : []}
-        onNext={() => {}}
-        onPrevious={() => {}}
-        onTrackEnd={() => {}}
-      />
 
       <AddToPlaylistDialog
         open={playlistDialogOpen}

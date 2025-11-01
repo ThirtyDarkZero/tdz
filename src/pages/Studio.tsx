@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe, Image, Heart, BookOpen, Zap, Film, User, ShoppingBag } from "lucide-react";
-import { MusicPlayer } from "@/components/MusicPlayer";
 import { MusicLibrary } from "@/components/MusicLibrary";
 import { ArtistDashboard } from "@/components/ArtistDashboard";
 import { ManagerDashboard } from "@/components/ManagerDashboard";
@@ -22,6 +21,7 @@ import { MerchAndTickets } from "@/components/MerchAndTickets";
 import { TopBar } from "@/components/TopBar";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useMusicPlayer } from "@/contexts/MusicPlayerContext";
 
 interface Track {
   id: string;
@@ -40,9 +40,7 @@ const Studio = () => {
   const { user, loading } = useAuth();
   const { role, loading: roleLoading } = useUserRole(user);
   const navigate = useNavigate();
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
-  const [queue, setQueue] = useState<Track[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const { playTrack } = useMusicPlayer();
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -66,31 +64,8 @@ const Studio = () => {
     return null;
   }
 
-  const handlePlayTrack = (track: Track, trackQueue: Track[]) => {
-    setCurrentTrack(track);
-    setQueue(trackQueue);
-    const index = trackQueue.findIndex(t => t.id === track.id);
-    setCurrentIndex(index);
-  };
-
-  const handleNext = () => {
-    if (currentIndex < queue.length - 1) {
-      const nextTrack = queue[currentIndex + 1];
-      setCurrentTrack(nextTrack);
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentIndex > 0) {
-      const prevTrack = queue[currentIndex - 1];
-      setCurrentTrack(prevTrack);
-      setCurrentIndex(currentIndex - 1);
-    }
-  };
-
-  const handleTrackEnd = () => {
-    handleNext();
+  const handlePlayTrack = (track: any, trackQueue: any[]) => {
+    playTrack(track, trackQueue);
   };
 
   return (
@@ -304,14 +279,6 @@ const Studio = () => {
           </div>
         </Tabs>
       </main>
-
-      <MusicPlayer
-        currentTrack={currentTrack}
-        queue={queue}
-        onNext={handleNext}
-        onPrevious={handlePrevious}
-        onTrackEnd={handleTrackEnd}
-      />
 
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card-premium border-primary/30">

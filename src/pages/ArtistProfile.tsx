@@ -10,21 +10,19 @@ import {
   Play, Heart, UserPlus, UserCheck, Share2, 
   Music, Image as ImageIcon, Bell, BellOff, ArrowLeft, Home
 } from "lucide-react";
-import { MusicPlayer } from "@/components/MusicPlayer";
 import tdzLogo from "@/assets/tdz-logo.png";
+import { useMusicPlayer } from "@/contexts/MusicPlayerContext";
 
 export default function ArtistProfile() {
   const { artistId } = useParams();
   const navigate = useNavigate();
+  const { playTrack } = useMusicPlayer();
   const [artist, setArtist] = useState<any>(null);
   const [tracks, setTracks] = useState<any[]>([]);
   const [gallery, setGallery] = useState<any[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [presavedTracks, setPresavedTracks] = useState<Set<string>>(new Set());
   const [user, setUser] = useState<any>(null);
-  const [currentTrack, setCurrentTrack] = useState<any>(null);
-  const [queue, setQueue] = useState<any[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
 
   // Validate artistId is a valid UUID
   useEffect(() => {
@@ -181,30 +179,7 @@ export default function ArtistProfile() {
   };
 
   const handlePlayTrack = (track: any) => {
-    setCurrentTrack(track);
-    setQueue(tracks);
-    const index = tracks.findIndex(t => t.id === track.id);
-    setCurrentIndex(index);
-  };
-
-  const handleNext = () => {
-    if (currentIndex < queue.length - 1) {
-      const nextTrack = queue[currentIndex + 1];
-      setCurrentTrack(nextTrack);
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentIndex > 0) {
-      const prevTrack = queue[currentIndex - 1];
-      setCurrentTrack(prevTrack);
-      setCurrentIndex(currentIndex - 1);
-    }
-  };
-
-  const handleTrackEnd = () => {
-    handleNext();
+    playTrack(track, tracks);
   };
 
 
@@ -440,14 +415,6 @@ export default function ArtistProfile() {
           </TabsContent>
         </Tabs>
       </div>
-
-      <MusicPlayer
-        currentTrack={currentTrack}
-        queue={queue}
-        onNext={handleNext}
-        onPrevious={handlePrevious}
-        onTrackEnd={handleTrackEnd}
-      />
     </div>
   );
 }

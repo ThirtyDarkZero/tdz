@@ -12,11 +12,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
-import { MusicPlayer } from "@/components/MusicPlayer";
 import { AddToPlaylistDialog } from "@/components/AddToPlaylistDialog";
+import { useMusicPlayer } from "@/contexts/MusicPlayerContext";
 
 export default function Discover() {
   const navigate = useNavigate();
+  const { playTrack } = useMusicPlayer();
   const [tracks, setTracks] = useState<any[]>([]);
   const [artists, setArtists] = useState<any[]>([]);
   const [playlists, setPlaylists] = useState<any[]>([]);
@@ -25,9 +26,6 @@ export default function Discover() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
-  const [currentTrack, setCurrentTrack] = useState<any>(null);
-  const [queue, setQueue] = useState<any[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [playlistDialogOpen, setPlaylistDialogOpen] = useState(false);
   const [selectedTrackId, setSelectedTrackId] = useState<string>("");
 
@@ -184,30 +182,7 @@ export default function Discover() {
   };
 
   const handlePlayTrack = (track: any) => {
-    setCurrentTrack(track);
-    setQueue(filteredTracks);
-    const index = filteredTracks.findIndex(t => t.id === track.id);
-    setCurrentIndex(index);
-  };
-
-  const handleNext = () => {
-    if (currentIndex < queue.length - 1) {
-      const nextTrack = queue[currentIndex + 1];
-      setCurrentTrack(nextTrack);
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentIndex > 0) {
-      const prevTrack = queue[currentIndex - 1];
-      setCurrentTrack(prevTrack);
-      setCurrentIndex(currentIndex - 1);
-    }
-  };
-
-  const handleTrackEnd = () => {
-    handleNext();
+    playTrack(track, filteredTracks);
   };
 
   const filteredTracks = tracks.filter(track =>
@@ -557,14 +532,6 @@ export default function Discover() {
         </Tabs>
       </main>
 
-      <MusicPlayer
-        currentTrack={currentTrack}
-        queue={queue}
-        onNext={handleNext}
-        onPrevious={handlePrevious}
-        onTrackEnd={handleTrackEnd}
-      />
-      
       <AddToPlaylistDialog
         open={playlistDialogOpen}
         onOpenChange={setPlaylistDialogOpen}
