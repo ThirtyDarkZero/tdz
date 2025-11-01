@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { MusicLibrary } from "@/components/MusicLibrary";
@@ -9,6 +10,7 @@ import { ManagerDashboard } from "@/components/ManagerDashboard";
 import { LabelStaff } from "@/components/LabelStaff";
 import { ReleaseManager } from "@/components/ReleaseManager";
 import { DistributionAnalytics } from "@/components/DistributionAnalytics";
+import { MusicUploadPro } from "@/components/MusicUploadPro";
 import { TopBar } from "@/components/TopBar";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -33,6 +35,7 @@ const Studio = () => {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [queue, setQueue] = useState<Track[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -91,7 +94,7 @@ const Studio = () => {
         <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[100px]" />
       </div>
       
-      <TopBar />
+      <TopBar onUploadClick={() => setUploadDialogOpen(true)} />
       
       <main className="container mx-auto px-4 py-12 relative z-10">
         {/* Epic hero section */}
@@ -209,6 +212,17 @@ const Studio = () => {
         onPrevious={handlePrevious}
         onTrackEnd={handleTrackEnd}
       />
+
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card-premium border-primary/30">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary via-primary-glow to-primary bg-clip-text text-transparent">
+              Upload Your Music
+            </DialogTitle>
+          </DialogHeader>
+          <MusicUploadPro onSuccess={() => setUploadDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

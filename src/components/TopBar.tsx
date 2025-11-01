@@ -4,14 +4,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
 
-export const TopBar = () => {
+export const TopBar = ({ onUploadClick }: { onUploadClick?: () => void }) => {
   const { signOut } = useAuth();
 
   const handleUploadMusic = () => {
-    // Trigger the upload track dialog
-    const uploadButton = document.querySelector('[data-upload-track]') as HTMLElement;
-    if (uploadButton) {
-      uploadButton.click();
+    if (onUploadClick) {
+      onUploadClick();
     } else {
       toast.info("Upload music from the Library tab", {
         description: "Navigate to Library to upload your tracks"
