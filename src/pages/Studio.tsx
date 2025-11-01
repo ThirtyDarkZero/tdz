@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe } from "lucide-react";
+import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe, Image } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { MusicLibrary } from "@/components/MusicLibrary";
 import { ArtistDashboard } from "@/components/ArtistDashboard";
@@ -11,6 +11,7 @@ import { LabelStaff } from "@/components/LabelStaff";
 import { ReleaseManager } from "@/components/ReleaseManager";
 import { DistributionAnalytics } from "@/components/DistributionAnalytics";
 import { MusicUploadPro } from "@/components/MusicUploadPro";
+import { ArtistGalleryManager } from "@/components/ArtistGalleryManager";
 import { TopBar } from "@/components/TopBar";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -166,6 +167,13 @@ const Studio = () => {
                 <span className="hidden sm:inline">Library</span>
               </TabsTrigger>
               <TabsTrigger 
+                value="gallery" 
+                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+              >
+                <Image className="h-5 w-5" />
+                <span className="hidden sm:inline">Gallery</span>
+              </TabsTrigger>
+              <TabsTrigger 
                 value="dashboard" 
                 className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
               >
@@ -196,6 +204,10 @@ const Studio = () => {
 
             <TabsContent value="library" className="mt-0">
               <MusicLibrary onPlayTrack={handlePlayTrack} />
+            </TabsContent>
+
+            <TabsContent value="gallery" className="mt-0">
+              <ArtistGalleryManager />
             </TabsContent>
 
             <TabsContent value="dashboard" className="mt-0">

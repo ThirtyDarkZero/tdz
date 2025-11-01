@@ -5,12 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { 
   Play, Heart, UserPlus, UserCheck, Share2, 
-  Music, Image as ImageIcon, Upload, X, Bell, BellOff
+  Music, Image as ImageIcon, Bell, BellOff
 } from "lucide-react";
 
 export default function ArtistProfile() {
@@ -21,9 +19,6 @@ export default function ArtistProfile() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [presavedTracks, setPresavedTracks] = useState<Set<string>>(new Set());
   const [user, setUser] = useState<any>(null);
-  const [isOwnProfile, setIsOwnProfile] = useState(false);
-  const [uploadingGallery, setUploadingGallery] = useState(false);
-  const [newCaption, setNewCaption] = useState("");
 
   useEffect(() => {
     loadUser();
@@ -35,9 +30,6 @@ export default function ArtistProfile() {
   const loadUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setUser(user);
-    if (user && user.id === artistId) {
-      setIsOwnProfile(true);
-    }
     if (user) {
       checkIfFollowing(user.id);
       loadPresaves(user.id);
@@ -167,48 +159,6 @@ export default function ArtistProfile() {
     }
   };
 
-  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !user || !isOwnProfile) return;
-
-    setUploadingGallery(true);
-    const file = e.target.files[0];
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-
-    try {
-      const { error: uploadError } = await supabase.storage
-        .from("artist-gallery")
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      const { error: dbError } = await supabase
-        .from("artist_gallery")
-        .insert({
-          artist_id: user.id,
-          image_path: fileName,
-          caption: newCaption || null,
-          display_order: gallery.length
-        });
-
-      if (dbError) throw dbError;
-
-      toast.success("Photo added to gallery");
-      setNewCaption("");
-      loadGallery();
-    } catch (error: any) {
-      toast.error("Failed to upload photo: " + error.message);
-    } finally {
-      setUploadingGallery(false);
-    }
-  };
-
-  const deleteGalleryPhoto = async (photoId: string, imagePath: string) => {
-    await supabase.storage.from("artist-gallery").remove([imagePath]);
-    await supabase.from("artist_gallery").delete().eq("id", photoId);
-    toast.success("Photo deleted");
-    loadGallery();
-  };
 
   if (!artist) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -260,27 +210,25 @@ export default function ArtistProfile() {
                 <span>{artist.total_plays?.toLocaleString()} total plays</span>
               </div>
               
-              {!isOwnProfile && (
-                <div className="flex gap-3">
-                  <Button onClick={toggleFollow} size="lg" className="shadow-glow">
-                    {isFollowing ? (
-                      <>
-                        <UserCheck className="w-5 h-5 mr-2" />
-                        Following
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="w-5 h-5 mr-2" />
-                        Follow
-                      </>
-                    )}
-                  </Button>
-                  <Button variant="outline" size="lg">
-                    <Share2 className="w-5 h-5 mr-2" />
-                    Share
-                  </Button>
-                </div>
-              )}
+              <div className="flex gap-3">
+                <Button onClick={toggleFollow} size="lg" className="shadow-glow">
+                  {isFollowing ? (
+                    <>
+                      <UserCheck className="w-5 h-5 mr-2" />
+                      Following
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-5 h-5 mr-2" />
+                      Follow
+                    </>
+                  )}
+                </Button>
+                <Button variant="outline" size="lg">
+                  <Share2 className="w-5 h-5 mr-2" />
+                  Share
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -365,57 +313,18 @@ export default function ArtistProfile() {
           </TabsContent>
 
           <TabsContent value="gallery" className="space-y-6">
-            {isOwnProfile && (
-              <Card className="glass-card-premium p-6">
-                <h3 className="text-xl font-bold mb-4">Upload Photo</h3>
-                <div className="space-y-4">
-                  <Textarea
-                    placeholder="Add a caption (optional)"
-                    value={newCaption}
-                    onChange={(e) => setNewCaption(e.target.value)}
-                    className="mb-2"
-                  />
-                  <label>
-                    <Button variant="outline" disabled={uploadingGallery} asChild>
-                      <span className="cursor-pointer">
-                        <Upload className="w-4 h-4 mr-2" />
-                        {uploadingGallery ? "Uploading..." : "Choose Photo"}
-                      </span>
-                    </Button>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleGalleryUpload}
-                      className="hidden"
-                      disabled={uploadingGallery}
-                    />
-                  </label>
-                </div>
-              </Card>
-            )}
-
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {gallery.map(photo => (
-                <Card key={photo.id} className="glass-card-premium overflow-hidden group relative">
+                <Card key={photo.id} className="glass-card-premium overflow-hidden group relative hover-lift">
                   <img
                     src={photo.imageUrl}
                     alt={photo.caption || "Gallery photo"}
-                    className="w-full aspect-square object-cover"
+                    className="w-full aspect-square object-cover transition-transform duration-300 group-hover:scale-110"
                   />
                   {photo.caption && (
-                    <div className="p-3">
+                    <div className="p-3 bg-gradient-to-t from-background/90 to-transparent">
                       <p className="text-sm">{photo.caption}</p>
                     </div>
-                  )}
-                  {isOwnProfile && (
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => deleteGalleryPhoto(photo.id, photo.image_path)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
                   )}
                 </Card>
               ))}
