@@ -118,7 +118,7 @@ export const ArtistProfileEditor = () => {
 
       const { error } = await supabase
         .from("artist_profiles")
-        .upsert(profileData);
+        .upsert(profileData, { onConflict: 'user_id' });
 
       if (error) throw error;
 
