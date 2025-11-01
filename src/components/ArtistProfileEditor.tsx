@@ -108,7 +108,7 @@ export const ArtistProfileEditor = () => {
         bannerImageUrl = await uploadImage(bannerImage, "artist-images", "banner");
       }
 
-      const profileData = {
+      const profileData: any = {
         user_id: user.id,
         artist_name: artistName,
         bio: bio,
@@ -116,9 +116,14 @@ export const ArtistProfileEditor = () => {
         banner_image_path: bannerImageUrl,
       };
 
+      // Include ID if profile exists for proper update
+      if (profile?.id) {
+        profileData.id = profile.id;
+      }
+
       const { error } = await supabase
         .from("artist_profiles")
-        .upsert(profileData, { onConflict: 'user_id' });
+        .upsert(profileData);
 
       if (error) throw error;
 
