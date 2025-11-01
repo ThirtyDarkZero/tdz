@@ -53,14 +53,20 @@ export const TourRecommendations = () => {
 
       <div className="grid gap-4">
         {recommendations.map((rec, idx) => (
-          <Card key={idx} className="glass-card p-6 hover:border-primary/60 transition-all">
+          <Card 
+            key={idx} 
+            className="glass-card p-6 hover:border-primary/60 hover:scale-102 transition-all group cursor-pointer animate-fade-in"
+            style={{ animationDelay: `${idx * 100}ms` }}
+          >
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex-1 space-y-3">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <h3 className="font-semibold text-lg flex items-center gap-2 group-hover:text-primary transition-colors">
+                      <MapPin className="w-5 h-5 text-primary group-hover:scale-125 transition-transform" />
                       {rec.city}
-                      <Badge className="bg-primary/20 text-primary border-primary/30">
+                      <Badge className="bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border-primary/30 group-hover:scale-110 transition-transform">
+                        <Star className="w-3 h-3 mr-1" />
                         {rec.matchScore}% Match
                       </Badge>
                     </h3>
@@ -69,17 +75,23 @@ export const TourRecommendations = () => {
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                    <span>{rec.audienceSize} listeners</span>
+                  <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                      <Users className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-medium">{rec.audienceSize}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span>{rec.bestMonth}</span>
+                  <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                      <Calendar className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-medium">{rec.bestMonth}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <MapPin className="w-4 h-4 text-muted-foreground" />
-                    <span>{rec.venues.length} venues</span>
+                  <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+                      <MapPin className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-medium">{rec.venues.length} venues</span>
                   </div>
                 </div>
 
@@ -93,11 +105,11 @@ export const TourRecommendations = () => {
               </div>
 
               <div className="flex flex-col gap-2">
-                <Button className="bg-gradient-to-r from-primary to-secondary">
-                  <Star className="w-4 h-4 mr-2" />
+                <Button className="bg-gradient-to-r from-primary to-secondary group-hover:scale-110 transition-transform shadow-lg">
+                  <Star className="w-4 h-4 mr-2 animate-pulse" />
                   Book Venue
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="group-hover:border-primary group-hover:text-primary transition-colors">
                   View Details
                 </Button>
               </div>
