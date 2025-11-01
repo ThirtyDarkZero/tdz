@@ -83,74 +83,122 @@ const Studio = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div className="min-h-screen bg-background pb-32 relative overflow-hidden">
+      {/* Epic background effects */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-primary/10 rounded-full blur-[150px] animate-pulse" />
+        <div className="absolute top-1/3 right-0 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[100px]" />
+      </div>
+      
       <TopBar />
       
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent mb-2">
-            TDZ Distribution
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            Your Complete Record Label Studio
+      <main className="container mx-auto px-4 py-12 relative z-10">
+        {/* Epic hero section */}
+        <div className="mb-12 text-center space-y-6">
+          <div className="inline-block">
+            <div className="relative">
+              <h1 className="text-7xl md:text-8xl font-black bg-gradient-to-r from-primary via-primary-glow to-primary bg-clip-text text-transparent mb-4 glow-text-lg animate-fade-in tracking-tight">
+                TDZ Distribution
+              </h1>
+              <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 blur-3xl -z-10 animate-pulse" />
+            </div>
+          </div>
+          
+          <p className="text-2xl md:text-3xl text-muted-foreground font-light tracking-wide animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            Your Complete <span className="text-primary font-semibold">Record Label Studio</span>
           </p>
+          
+          <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              <span>Live</span>
+            </div>
+            <span className="text-border">•</span>
+            <span>Powered by AI</span>
+            <span className="text-border">•</span>
+            <span>Real-time Analytics</span>
+          </div>
         </div>
 
-        <Tabs defaultValue={role === 'manager' ? 'manager' : 'label-staff'} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto">
-            {role === 'manager' && (
-              <TabsTrigger value="manager" className="gap-2">
-                <Users className="h-4 w-4" />
-                Manager
+        {/* Epic tabs with glass morphism */}
+        <Tabs defaultValue={role === 'manager' ? 'manager' : 'label-staff'} className="space-y-8">
+          <div className="flex justify-center animate-fade-in" style={{ animationDelay: '0.6s' }}>
+            <TabsList className="glass-card-premium p-2 gap-2 h-auto">
+              {role === 'manager' && (
+                <TabsTrigger 
+                  value="manager" 
+                  className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+                >
+                  <Users className="h-5 w-5" />
+                  <span className="hidden sm:inline">Manager</span>
+                </TabsTrigger>
+              )}
+              <TabsTrigger 
+                value="label-staff" 
+                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+              >
+                <Users className="h-5 w-5" />
+                <span className="hidden sm:inline">Label Staff</span>
               </TabsTrigger>
+              <TabsTrigger 
+                value="release" 
+                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+              >
+                <Globe className="h-5 w-5" />
+                <span className="hidden sm:inline">Release</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="analytics" 
+                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+              >
+                <TrendingUp className="h-5 w-5" />
+                <span className="hidden sm:inline">Analytics</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="library" 
+                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+              >
+                <Library className="h-5 w-5" />
+                <span className="hidden sm:inline">Library</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="dashboard" 
+                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+              >
+                <LayoutDashboard className="h-5 w-5" />
+                <span className="hidden sm:inline">Dashboard</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <div className="animate-fade-in" style={{ animationDelay: '0.8s' }}>
+            {role === 'manager' && (
+              <TabsContent value="manager" className="mt-0">
+                <ManagerDashboard />
+              </TabsContent>
             )}
-            <TabsTrigger value="label-staff" className="gap-2">
-              <Users className="h-4 w-4" />
-              Label Staff
-            </TabsTrigger>
-            <TabsTrigger value="release" className="gap-2">
-              <Globe className="h-4 w-4" />
-              Release
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="library" className="gap-2">
-              <Library className="h-4 w-4" />
-              Library
-            </TabsTrigger>
-            <TabsTrigger value="dashboard" className="gap-2">
-              <LayoutDashboard className="h-4 w-4" />
-              Dashboard
-            </TabsTrigger>
-          </TabsList>
 
-          {role === 'manager' && (
-            <TabsContent value="manager">
-              <ManagerDashboard />
+            <TabsContent value="label-staff" className="mt-0">
+              <LabelStaff />
             </TabsContent>
-          )}
 
-          <TabsContent value="label-staff">
-            <LabelStaff />
-          </TabsContent>
+            <TabsContent value="release" className="mt-0">
+              <ReleaseManager />
+            </TabsContent>
 
-          <TabsContent value="release">
-            <ReleaseManager />
-          </TabsContent>
+            <TabsContent value="analytics" className="mt-0">
+              <DistributionAnalytics />
+            </TabsContent>
 
-          <TabsContent value="analytics">
-            <DistributionAnalytics />
-          </TabsContent>
+            <TabsContent value="library" className="mt-0">
+              <MusicLibrary onPlayTrack={handlePlayTrack} />
+            </TabsContent>
 
-          <TabsContent value="library">
-            <MusicLibrary onPlayTrack={handlePlayTrack} />
-          </TabsContent>
-
-          <TabsContent value="dashboard">
-            <ArtistDashboard />
-          </TabsContent>
+            <TabsContent value="dashboard" className="mt-0">
+              <ArtistDashboard />
+            </TabsContent>
+          </div>
         </Tabs>
       </main>
 

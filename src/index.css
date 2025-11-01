@@ -19,6 +19,7 @@ All colors MUST be HSL.
 
     --primary: 127 100% 60%;
     --primary-foreground: 0 0% 0%;
+    --primary-glow: 127 100% 70%;
 
     --secondary: 0 0% 25%;
     --secondary-foreground: 0 0% 98%;
@@ -38,17 +39,23 @@ All colors MUST be HSL.
 
     --radius: 0.75rem;
 
-    /* Neon green gradients */
+    /* Epic neon gradients */
     --gradient-primary: linear-gradient(135deg, hsl(127 100% 60%) 0%, hsl(127 100% 45%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(0 0% 8%) 0%, hsl(0 0% 15%) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(0 0% 12% / 0.8) 0%, hsl(0 0% 18% / 0.8) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(0 0% 8%) 0%, hsl(127 100% 60% / 0.05) 50%, hsl(0 0% 8%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 12% / 0.6) 0%, hsl(0 0% 18% / 0.4) 100%);
+    --gradient-glass: linear-gradient(135deg, hsl(0 0% 15% / 0.7) 0%, hsl(0 0% 10% / 0.5) 100%);
+    --gradient-neon: linear-gradient(135deg, hsl(127 100% 60% / 0.2) 0%, hsl(127 100% 70% / 0.1) 100%);
+    --gradient-radial: radial-gradient(circle at 50% 0%, hsl(127 100% 60% / 0.15) 0%, transparent 70%);
     
-    /* Shadows with neon glow */
-    --shadow-glow: 0 0 40px hsl(127 100% 60% / 0.4);
-    --shadow-card: 0 10px 40px -10px hsl(0 0% 0% / 0.5);
+    /* Epic shadows */
+    --shadow-glow: 0 0 40px hsl(127 100% 60% / 0.5), 0 0 80px hsl(127 100% 60% / 0.3);
+    --shadow-glow-lg: 0 0 60px hsl(127 100% 60% / 0.6), 0 0 120px hsl(127 100% 60% / 0.4);
+    --shadow-card: 0 20px 60px -10px hsl(0 0% 0% / 0.7);
+    --shadow-card-hover: 0 30px 80px -10px hsl(0 0% 0% / 0.8), 0 0 40px hsl(127 100% 60% / 0.3);
     
     /* Animations */
     --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 }
 
@@ -69,17 +76,51 @@ All colors MUST be HSL.
     @apply bg-card/40 backdrop-blur-xl border border-border/50;
   }
   
+  .glass-card-premium {
+    background: var(--gradient-glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--border) / 0.5);
+    box-shadow: var(--shadow-card), inset 0 1px 0 hsl(0 0% 100% / 0.1);
+  }
+  
   .glow-text {
-    text-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+    text-shadow: 0 0 20px hsl(var(--primary) / 0.6), 0 0 40px hsl(var(--primary) / 0.4);
+  }
+  
+  .glow-text-lg {
+    text-shadow: 0 0 30px hsl(var(--primary) / 0.8), 0 0 60px hsl(var(--primary) / 0.5), 0 0 90px hsl(var(--primary) / 0.3);
   }
   
   .neon-border {
     box-shadow: 0 0 10px hsl(var(--primary) / 0.5), inset 0 0 10px hsl(var(--primary) / 0.1);
   }
+  
+  .neon-border-strong {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.7), 0 0 40px hsl(var(--primary) / 0.4), inset 0 0 15px hsl(var(--primary) / 0.15);
+  }
 
   .perspective-1000 {
     perspective: 1000px;
     transform-style: preserve-3d;
+  }
+  
+  .hover-lift {
+    transition: var(--transition-smooth);
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--shadow-card-hover);
+  }
+  
+  .animated-gradient {
+    background-size: 200% 200%;
+    animation: gradient-shift 8s ease infinite;
+  }
+  
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
   }
 }
 
