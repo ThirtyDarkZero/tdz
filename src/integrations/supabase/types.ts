@@ -1137,7 +1137,8 @@ export type Database = {
       published_tracks_view: {
         Row: {
           ai_tags: Json | null
-          album_cover: string | null
+          album_cover_bucket: string | null
+          album_cover_path: string | null
           album_id: string | null
           album_title: string | null
           artist_name: string | null

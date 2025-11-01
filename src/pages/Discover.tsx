@@ -296,7 +296,7 @@ export default function Discover() {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredTracks.map((track, index) => (
+              {filteredTracks.map((track, index) => (
                   <Card 
                     key={track.id} 
                     className="glass-card-premium group hover:border-primary/70 transition-all duration-300 hover-lift shadow-card-hover animate-fade-in"
@@ -305,10 +305,10 @@ export default function Discover() {
                     <div className="p-5 space-y-4">
                       {/* Album Art with Motion Support */}
                       <div className="relative aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-primary/30 to-secondary/30 shadow-glow">
-                        {track.album_cover && (
+                        {track.album_cover_path && track.album_cover_bucket ? (
                           track.ai_tags?.metadata?.isMotionCover ? (
                             <video 
-                              src={track.album_cover} 
+                              src={supabase.storage.from(track.album_cover_bucket).getPublicUrl(track.album_cover_path).data.publicUrl}
                               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                               autoPlay
                               loop
@@ -317,12 +317,18 @@ export default function Discover() {
                             />
                           ) : (
                             <img 
-                              src={track.album_cover} 
+                              src={supabase.storage.from(track.album_cover_bucket).getPublicUrl(track.album_cover_path).data.publicUrl}
                               alt={track.title}
                               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                             />
                           )
-                        )}
+                        ) : track.album_cover ? (
+                          <img 
+                            src={track.album_cover}
+                            alt={track.title}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                          />
+                        ) : null}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
                           <Button size="icon" className="h-16 w-16 rounded-full bg-primary shadow-glow hover:scale-110 transition-transform">
                             <Play className="w-6 h-6 ml-1" fill="currentColor" />

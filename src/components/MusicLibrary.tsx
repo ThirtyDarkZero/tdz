@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { QuickPublishButton } from "./QuickPublishButton";
 
 interface Track {
   id: string;
@@ -13,6 +14,9 @@ interface Track {
   duration: number;
   file_path: string;
   play_count: number;
+  is_published?: boolean;
+  album_cover_path?: string;
+  album_cover_bucket?: string;
   genre?: string;
   ai_tags?: {
     metadata?: {
@@ -43,6 +47,7 @@ interface MusicLibraryProps {
 
 export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
   const [tracks, setTracks] = useState<Track[]>([]);
+  const [unpublishedTracks, setUnpublishedTracks] = useState<Track[]>([]);
   const [albums, setAlbums] = useState<Album[]>([]);
   const [likedTracks, setLikedTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,21 +62,33 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Load all published tracks
+      // Load user's published tracks
       const { data: tracksData } = await supabase
         .from('tracks')
         .select(`
           *,
           album:albums(title, cover_art_path)
         `)
+        .eq('user_id', user.id)
         .eq('is_published', true)
+        .order('created_at', { ascending: false });
+
+      // Load user's unpublished tracks
+      const { data: unpublishedData } = await supabase
+        .from('tracks')
+        .select(`
+          *,
+          album:albums(title, cover_art_path)
+        `)
+        .eq('user_id', user.id)
+        .eq('is_published', false)
         .order('created_at', { ascending: false });
 
       // Load albums
       const { data: albumsData } = await supabase
         .from('albums')
         .select('*')
-        .eq('is_published', true)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       // Load liked tracks
@@ -87,6 +104,7 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
         .eq('library_type', 'liked_track');
 
       setTracks(tracksData as Track[] || []);
+      setUnpublishedTracks(unpublishedData as Track[] || []);
       setAlbums(albumsData || []);
       setLikedTracks(likedData?.map(item => item.track as Track).filter(Boolean) || []);
     } catch (error: any) {
@@ -114,8 +132,8 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
 
   const CoverArt = ({ track, className }: { track: Track, className?: string }) => {
     const isMotion = track.ai_tags?.metadata?.isMotionCover;
-    const coverPath = track.album?.cover_art_path || track.ai_tags?.metadata?.artworkUrl;
-    const bucket = isMotion ? 'motion-covers' : 'album-covers';
+    const coverPath = track.album_cover_path || track.album?.cover_art_path || track.ai_tags?.metadata?.artworkUrl;
+    const bucket = track.album_cover_bucket || (isMotion ? 'motion-covers' : 'album-covers');
     const coverUrl = getCoverUrl(coverPath, bucket);
 
     if (isMotion && coverPath) {
@@ -140,7 +158,7 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
     );
   };
 
-  const TrackList = ({ tracks: trackList }: { tracks: Track[] }) => (
+  const TrackList = ({ tracks: trackList, showPublish }: { tracks: Track[], showPublish?: boolean }) => (
     <div className="space-y-2">
       {trackList.map((track, index) => (
         <div
@@ -166,7 +184,15 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
           
           <span className="text-sm text-muted-foreground">{track.genre}</span>
           <span className="text-sm text-muted-foreground">{formatDuration(track.duration)}</span>
-          <span className="text-sm text-muted-foreground">{track.play_count.toLocaleString()} plays</span>
+          {!showPublish && <span className="text-sm text-muted-foreground">{track.play_count.toLocaleString()} plays</span>}
+          
+          {showPublish && (
+            <QuickPublishButton 
+              trackId={track.id}
+              isPublished={false}
+              onPublishChange={loadLibrary}
+            />
+          )}
           
           <Button variant="ghost" size="icon">
             <MoreVertical className="h-4 w-4" />
@@ -186,17 +212,34 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
         <h1 className="text-4xl font-bold">Your Library</h1>
       </div>
 
-      <Tabs defaultValue="tracks" className="space-y-6">
+      <Tabs defaultValue="unpublished" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="tracks">All Tracks</TabsTrigger>
+          <TabsTrigger value="unpublished">Unpublished ({unpublishedTracks.length})</TabsTrigger>
+          <TabsTrigger value="tracks">Published Tracks</TabsTrigger>
           <TabsTrigger value="albums">Albums</TabsTrigger>
           <TabsTrigger value="liked">Liked Songs</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="unpublished">
+          {unpublishedTracks.length === 0 ? (
+            <Card className="p-12 text-center">
+              <p className="text-muted-foreground mb-2">No unpublished tracks</p>
+              <p className="text-sm text-muted-foreground">Upload tracks to get started</p>
+            </Card>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground mb-4">
+                Publish your tracks to make them visible in Discovery and on your Artist Profile
+              </p>
+              <TrackList tracks={unpublishedTracks} showPublish />
+            </>
+          )}
+        </TabsContent>
+
         <TabsContent value="tracks">
           {tracks.length === 0 ? (
             <Card className="p-12 text-center">
-              <p className="text-muted-foreground">No tracks available yet</p>
+              <p className="text-muted-foreground">No published tracks yet</p>
             </Card>
           ) : (
             <TrackList tracks={tracks} />

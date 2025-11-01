@@ -248,6 +248,8 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
           file_path: filePath,
           genre,
           is_published: false,
+          album_cover_path: artworkUrl || null,
+          album_cover_bucket: bucket,
           ai_tags: {
             ...aiData?.tags,
             metadata: {
@@ -262,9 +264,7 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
               language,
               description,
               contributors,
-              artworkUrl,
-              isMotionCover,
-              coverBucket: bucket
+              isMotionCover
             }
           },
           bpm: aiData?.bpm || null,
