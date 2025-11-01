@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { MusicPlayerProvider, useMusicPlayer } from "./contexts/MusicPlayerContext";
 import { MusicPlayer } from "./components/MusicPlayer";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Studio from "./pages/Studio";
@@ -17,9 +18,23 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const AppContent = () => {
+const MusicPlayerWrapper = () => {
   const { currentTrack, queue, nextTrack, previousTrack } = useMusicPlayer();
   
+  if (!currentTrack) return null;
+  
+  return (
+    <MusicPlayer
+      currentTrack={currentTrack}
+      queue={queue}
+      onNext={nextTrack}
+      onPrevious={previousTrack}
+      onTrackEnd={nextTrack}
+    />
+  );
+};
+
+const AppContent = () => {
   return (
     <>
       <Routes>
@@ -34,31 +49,18 @@ const AppContent = () => {
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-      
-      {currentTrack && (
-        <MusicPlayer
-          currentTrack={currentTrack}
-          queue={queue}
-          onNext={nextTrack}
-          onPrevious={previousTrack}
-          onTrackEnd={nextTrack}
-        />
-      )}
+      <MusicPlayerWrapper />
     </>
   );
 };
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <MusicPlayerProvider>
-        <BrowserRouter>
-          <Toaster />
-          <Sonner />
-          <AppContent />
-        </BrowserRouter>
-      </MusicPlayerProvider>
-    </TooltipProvider>
+    <BrowserRouter>
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <h1 className="text-4xl font-bold">App Loading Test</h1>
+      </div>
+    </BrowserRouter>
   </QueryClientProvider>
 );
 
