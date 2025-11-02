@@ -663,21 +663,75 @@ export default function Landing() {
       <footer className="relative border-t border-primary/20 py-8 md:py-12 px-4 md:px-6">
         <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent" />
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6">
-            <div className="flex items-center gap-2 md:gap-3">
-              <img 
-                src={tdzLogo} 
-                alt="TDZ Distribution Logo" 
-                className="h-8 md:h-10 w-auto object-contain"
-              />
-              <span className="font-display font-bold text-base md:text-xl">TDZ DISTRIBUTION</span>
-            </div>
-            <div className="flex flex-col items-center md:items-end gap-1 md:gap-2">
-              <p className="text-muted-foreground text-xs md:text-base text-center md:text-right">
-                Next-Gen Music Distribution · Built for Independent Artists
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-6">
+            {/* Brand */}
+            <div className="flex flex-col items-center md:items-start gap-2">
+              <div className="flex items-center gap-2 md:gap-3">
+                <img 
+                  src={tdzLogo} 
+                  alt="TDZ Distribution Logo" 
+                  className="h-8 md:h-10 w-auto object-contain"
+                />
+                <span className="font-display font-bold text-base md:text-xl">TDZ DISTRIBUTION</span>
+              </div>
+              <p className="text-muted-foreground text-xs md:text-sm text-center md:text-left">
+                Next-Gen Music Distribution
               </p>
-              <p className="text-xs md:text-sm text-muted-foreground/60">
-                © 2025 TDZ Distribution. Empowering artists worldwide.
+            </div>
+
+            {/* Links */}
+            <div className="flex justify-center gap-8">
+              <div>
+                <h4 className="font-semibold mb-2 text-sm">Company</h4>
+                <ul className="space-y-1 text-xs text-muted-foreground">
+                  <li>
+                    <button 
+                      onClick={() => navigate("/investors")}
+                      className="hover:text-primary transition-colors"
+                    >
+                      About Us
+                    </button>
+                  </li>
+                  <li>
+                    <button 
+                      onClick={() => navigate("/investors")}
+                      className="hover:text-primary transition-colors"
+                    >
+                      Investors
+                    </button>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2 text-sm">Product</h4>
+                <ul className="space-y-1 text-xs text-muted-foreground">
+                  <li>
+                    <button 
+                      onClick={() => navigate("/discover")}
+                      className="hover:text-primary transition-colors"
+                    >
+                      Discover
+                    </button>
+                  </li>
+                  <li>
+                    <button 
+                      onClick={() => navigate("/studio")}
+                      className="hover:text-primary transition-colors"
+                    >
+                      Studio
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Copyright */}
+            <div className="flex flex-col items-center md:items-end gap-1">
+              <p className="text-xs md:text-sm text-muted-foreground/60 text-center md:text-right">
+                © 2025 TDZ Distribution
+              </p>
+              <p className="text-xs text-muted-foreground/60 text-center md:text-right">
+                Empowering artists worldwide
               </p>
             </div>
           </div>
