@@ -105,30 +105,32 @@ export default function TrackDetail() {
     <div className="min-h-screen bg-background">
       {/* Top Navigation */}
       <div className="sticky top-0 z-50 glass-card border-b border-border/50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-4">
             <Button 
               variant="ghost" 
               size="sm"
               onClick={() => navigate(-1)}
+              className="h-8 sm:h-9"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
+              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="text-xs sm:text-sm">Back</span>
             </Button>
             <button 
               onClick={() => navigate("/discover")}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
-              <img src={tdzLogo} alt="TDZ" className="h-8 w-auto" style={{ mixBlendMode: 'screen' }} />
+              <img src={tdzLogo} alt="TDZ" className="h-6 sm:h-8 w-auto" style={{ mixBlendMode: 'screen' }} />
             </button>
           </div>
           <Button 
             variant="outline" 
             size="sm"
             onClick={() => navigate("/discover")}
+            className="h-8 sm:h-9 text-xs sm:text-sm"
           >
-            <Home className="w-4 h-4 mr-2" />
-            Discover
+            <Home className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Discover</span>
           </Button>
         </div>
       </div>
@@ -137,12 +139,12 @@ export default function TrackDetail() {
         <div className="absolute top-0 left-0 w-[1200px] h-[1200px] bg-primary/15 rounded-full blur-[200px] animate-pulse" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-12">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 md:py-12">
 
-        <div className="grid md:grid-cols-2 gap-12 mb-12">
+        <div className="grid md:grid-cols-2 gap-6 md:gap-12 mb-8 md:mb-12">
           {/* Album Art / Canvas */}
-          <div className="space-y-6">
-            <div className="aspect-square rounded-3xl overflow-hidden shadow-glow-lg">
+          <div className="space-y-4 md:space-y-6">
+            <div className="aspect-square rounded-2xl md:rounded-3xl overflow-hidden shadow-glow-lg">
               {track.ai_tags?.metadata?.isMotionCover && track.ai_tags?.metadata?.artworkUrl ? (
                 <video 
                   src={track.ai_tags.metadata.artworkUrl}
@@ -160,80 +162,84 @@ export default function TrackDetail() {
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
-                  <Music className="w-32 h-32 text-muted-foreground" />
+                  <Music className="w-20 h-20 sm:w-32 sm:h-32 text-muted-foreground" />
                 </div>
               )}
             </div>
           </div>
 
           {/* Track Info */}
-          <div className="flex flex-col justify-center space-y-8">
-            <div className="space-y-4">
-              <Badge className="text-sm px-4 py-2">SINGLE</Badge>
-              <h1 className="text-7xl font-black glow-text leading-tight">{track.title}</h1>
+          <div className="flex flex-col justify-center space-y-4 sm:space-y-6 md:space-y-8">
+            <div className="space-y-2 sm:space-y-3 md:space-y-4">
+              <Badge className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5">SINGLE</Badge>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-tight">{track.title}</h1>
               <button 
                 onClick={() => navigate(`/artist/${track.user_id}`)}
-                className="text-3xl font-bold text-muted-foreground hover:text-primary transition-colors"
+                className="text-lg sm:text-xl md:text-2xl font-semibold text-muted-foreground hover:text-primary transition-colors text-left"
               >
                 {track.artist_name}
               </button>
             </div>
 
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-2">
               {track.genre && (
-                <Badge variant="outline" className="text-base px-4 py-2">
+                <Badge variant="outline" className="text-xs sm:text-sm px-2 sm:px-3 py-1">
                   {track.genre}
                 </Badge>
               )}
               {track.mood && (
-                <Badge variant="outline" className="text-base px-4 py-2">
+                <Badge variant="outline" className="text-xs sm:text-sm px-2 sm:px-3 py-1">
                   {track.mood}
                 </Badge>
               )}
               {track.bpm && (
-                <Badge variant="outline" className="text-base px-4 py-2">
+                <Badge variant="outline" className="text-xs sm:text-sm px-2 sm:px-3 py-1">
                   {track.bpm} BPM
                 </Badge>
               )}
             </div>
 
-            <div className="flex items-center gap-6 text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
+            <div className="flex items-center flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>{new Date(track.created_at).getFullYear()}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5" />
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>{formatDuration(track.duration)}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Play className="w-5 h-5" />
-                <span>{track.play_count?.toLocaleString()} plays</span>
+              <div className="flex items-center gap-1.5">
+                <Play className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>{track.play_count?.toLocaleString()}</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Button 
-                size="lg" 
-                className="h-16 px-12 text-xl shadow-glow"
+                size="default"
+                className="h-12 sm:h-14 md:h-16 px-6 sm:px-8 md:px-12 text-sm sm:text-base md:text-lg shadow-glow"
                 onClick={handlePlayTrack}
               >
-                <Play className="w-6 h-6 mr-3" fill="currentColor" />
+                <Play className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 mr-2" fill="currentColor" />
                 Play
               </Button>
               <Button
-                size="lg"
+                size="default"
                 variant="outline"
-                className="h-16 w-16"
+                className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16"
                 onClick={toggleLike}
               >
                 <Heart 
-                  className="w-6 h-6" 
+                  className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" 
                   fill={isLiked ? "currentColor" : "none"}
                 />
               </Button>
-              <Button size="lg" variant="outline" className="h-16 w-16">
-                <Share2 className="w-6 h-6" />
+              <Button 
+                size="default"
+                variant="outline" 
+                className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16"
+              >
+                <Share2 className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
               </Button>
             </div>
           </div>
@@ -241,10 +247,10 @@ export default function TrackDetail() {
 
         {/* Additional Info */}
         {track.albums && (
-          <Card className="glass-card-premium p-8">
-            <h2 className="text-2xl font-black mb-4 glow-text">From the Album</h2>
-            <div className="flex items-center gap-6">
-              <div className="w-24 h-24 rounded-lg overflow-hidden">
+          <Card className="glass-card-premium p-4 sm:p-6 md:p-8">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4">From the Album</h2>
+            <div className="flex items-center gap-3 sm:gap-4 md:gap-6">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-lg overflow-hidden flex-shrink-0">
                 {track.albums.cover_art_path ? (
                   <img 
                     src={supabase.storage.from('album-covers').getPublicUrl(track.albums.cover_art_path).data.publicUrl}
@@ -255,9 +261,9 @@ export default function TrackDetail() {
                   <div className="w-full h-full bg-gradient-to-br from-primary/30 to-secondary/30" />
                 )}
               </div>
-              <div>
-                <h3 className="text-2xl font-bold">{track.albums.title}</h3>
-                <p className="text-muted-foreground">{track.artist_name}</p>
+              <div className="min-w-0">
+                <h3 className="text-base sm:text-lg md:text-xl font-bold truncate">{track.albums.title}</h3>
+                <p className="text-sm sm:text-base text-muted-foreground truncate">{track.artist_name}</p>
               </div>
             </div>
           </Card>

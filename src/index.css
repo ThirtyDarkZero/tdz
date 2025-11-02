@@ -117,6 +117,16 @@ All colors MUST be HSL.
     background-size: 200% 200%;
     animation: gradient-shift 8s ease infinite;
   }
+
+  /* Hide scrollbar for swipeable carousels */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
   
   @keyframes gradient-shift {
     0%, 100% { background-position: 0% 50%; }

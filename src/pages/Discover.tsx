@@ -345,30 +345,73 @@ export default function Discover() {
               </div>
             </div>
 
-            {/* Tracks Grid */}
-            <div className="space-y-4 md:space-y-6">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight glow-text">Latest Releases</h2>
-                <Badge variant="outline" className="text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2">
-                  {filteredTracks.length} Tracks
+            {/* Latest Releases Carousel */}
+            <div className="space-y-3 md:space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Latest Releases</h2>
+                <Badge variant="outline" className="text-xs px-2 py-1">
+                  {filteredTracks.length}
                 </Badge>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-              {filteredTracks.map((track, index) => (
-                  <Card 
-                    key={track.id} 
-                    className="glass-card-premium group hover:border-primary/70 transition-all duration-300 hover-lift shadow-card-hover animate-fade-in cursor-pointer"
-                    style={{ animationDelay: `${index * 0.05}s` }}
+              {/* Mobile Carousel - 2 per view */}
+              <div className="md:hidden overflow-x-auto scrollbar-hide -mx-3 px-3">
+                <div className="flex gap-3 pb-2">
+                  {filteredTracks.slice(0, 12).map((track) => (
+                    <div 
+                      key={track.id}
+                      className="flex-shrink-0 w-[calc(50%-6px)] cursor-pointer"
+                      onClick={() => navigate(`/track/${track.id}`)}
+                    >
+                      <div className="space-y-2">
+                        <div className="relative aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20">
+                          {track.ai_tags?.metadata?.isMotionCover && track.ai_tags?.metadata?.artworkUrl ? (
+                            <video 
+                              src={track.ai_tags.metadata.artworkUrl}
+                              className="w-full h-full object-cover"
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                            />
+                          ) : track.album_cover_path && track.album_cover_bucket ? (
+                            <img 
+                              src={supabase.storage.from(track.album_cover_bucket).getPublicUrl(track.album_cover_path).data.publicUrl}
+                              alt={track.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : track.album_cover ? (
+                            <img 
+                              src={track.album_cover}
+                              alt={track.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : null}
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="text-xs font-medium truncate">{track.title}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{track.artist_name}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Desktop Grid */}
+              <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3 md:gap-4">
+              {filteredTracks.slice(0, 24).map((track) => (
+                  <div 
+                    key={track.id}
+                    className="group cursor-pointer"
                     onClick={() => navigate(`/track/${track.id}`)}
                   >
-                    <div className="p-5 space-y-4">
-                      {/* Album Art with Motion Support */}
-                      <div className="relative aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-primary/30 to-secondary/30 shadow-glow">
+                    <div className="space-y-2">
+                      <div className="relative aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20">
                         {track.ai_tags?.metadata?.isMotionCover && track.ai_tags?.metadata?.artworkUrl ? (
                           <video 
                             src={track.ai_tags.metadata.artworkUrl}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
                             autoPlay
                             loop
                             muted
@@ -378,74 +421,34 @@ export default function Discover() {
                           <img 
                             src={supabase.storage.from(track.album_cover_bucket).getPublicUrl(track.album_cover_path).data.publicUrl}
                             alt={track.title}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
                           />
                         ) : track.album_cover ? (
                           <img 
                             src={track.album_cover}
                             alt={track.title}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
                           />
                         ) : null}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <Button 
                             size="icon" 
-                            className="h-16 w-16 rounded-full bg-primary shadow-glow hover:scale-110 transition-transform"
+                            className="h-12 w-12 rounded-full"
                             onClick={(e) => {
                               e.stopPropagation();
                               handlePlayTrack(track);
                             }}
                           >
-                            <Play className="w-6 h-6 ml-1" fill="currentColor" />
+                            <Play className="w-5 h-5 ml-0.5" fill="currentColor" />
                           </Button>
-                        </div>
-                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Badge className="bg-primary/90 text-primary-foreground shadow-glow">
-                            {track.ai_tags?.metadata?.isMotionCover ? "Motion 🎬" : "New"}
-                          </Badge>
                         </div>
                       </div>
-
-                      {/* Track Info */}
-                      <div className="space-y-1">
-                        <h3 className="font-bold text-lg truncate group-hover:text-primary transition-colors">{track.title}</h3>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (track.artist_user_id) {
-                              navigate(`/artist/${track.artist_user_id}`);
-                            }
-                          }}
-                          className="text-sm text-muted-foreground truncate font-medium hover:text-primary transition-colors block w-full text-left"
-                        >
-                          {track.artist_name}
-                        </button>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => toggleLike(track.id)}
-                            className={`hover-lift transition-all ${likedTracks.has(track.id) ? "text-red-500 hover:text-red-600" : "hover:text-primary"}`}
-                          >
-                            <Heart 
-                              className="w-5 h-5" 
-                              fill={likedTracks.has(track.id) ? "currentColor" : "none"}
-                            />
-                          </Button>
-                          <Button size="icon" variant="ghost" className="hover-lift hover:text-primary transition-all">
-                            <Share2 className="w-5 h-5" />
-                          </Button>
-                        </div>
-                        <Badge variant="outline" className="font-mono">
-                          {formatDuration(track.duration)}
-                        </Badge>
+                      <div className="space-y-0.5">
+                        <p className="text-sm font-medium truncate">{track.title}</p>
+                        <p className="text-xs text-muted-foreground truncate">{track.artist_name}</p>
                       </div>
                     </div>
-                  </Card>
+                  </div>
                 ))}
               </div>
             </div>
