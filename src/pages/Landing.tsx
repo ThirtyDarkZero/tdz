@@ -9,6 +9,8 @@ import studioBackground from "@/assets/studio-background.jpg";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { MotionCover } from "@/components/MotionCover";
+import { Hero3D } from "@/components/Hero3D";
+import { EnhancedCard } from "@/components/EnhancedCard";
 
 const artistFeatures = [
   {
@@ -155,13 +157,16 @@ export default function Landing() {
 
       {/* Hero Section */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        {/* 3D Background */}
+        <Hero3D />
+        
         {/* Studio Background */}
         <div className="absolute inset-0 bg-cover bg-center transition-transform duration-100" style={{
         backgroundImage: `url(${studioBackground})`,
         transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px) scale(1.1)`,
-        filter: 'brightness(0.4)'
+        filter: 'brightness(0.3)'
       }}>
-          <div className="absolute inset-0 bg-gradient-to-b from-background via-background/50 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background via-background/40 to-background" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,hsl(var(--background))_100%)]" />
         </div>
 
@@ -186,33 +191,31 @@ export default function Landing() {
           </div>
 
           {/* 3D Layered Title */}
-          <div className="relative px-4">
-            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-9xl font-display font-black leading-none tracking-tighter perspective-1000">
-              <div className="relative inline-block animate-fade-in" style={{
+          <div className="relative px-4 perspective-2000">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-9xl font-display font-black leading-none tracking-tighter">
+              <div className="relative inline-block animate-fade-in float-slow" style={{
               animationDelay: '0.1s'
             }}>
-                <span className="relative z-10 bg-gradient-to-b from-foreground to-foreground/60 bg-clip-text text-transparent">
+                <span className="relative z-10 bg-gradient-to-b from-foreground via-foreground/80 to-foreground/60 bg-clip-text text-transparent drop-shadow-2xl">
                   DISTRIBUTE
                 </span>
-                <span className="absolute inset-0 blur-2xl bg-gradient-to-r from-primary via-secondary to-accent opacity-50" style={{
-                transform: 'translateZ(-50px)'
-              }}>
+                <span className="absolute inset-0 blur-3xl bg-gradient-to-r from-primary via-secondary to-accent opacity-60 animate-pulse-glow">
                   DISTRIBUTE
                 </span>
               </div>
               <br />
-              <div className="relative inline-block animate-fade-in" style={{
+              <div className="relative inline-block animate-scale-in" style={{
               animationDelay: '0.2s'
             }}>
-                <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent glow-text">
+                <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent glow-text-rainbow animated-gradient-fast">
                   YOUR MUSIC
                 </span>
               </div>
               <br />
-              <div className="relative inline-block animate-fade-in" style={{
+              <div className="relative inline-block animate-fade-in float" style={{
               animationDelay: '0.3s'
             }}>
-                <span className="relative z-10 bg-gradient-to-b from-foreground to-foreground/60 bg-clip-text text-transparent">
+                <span className="relative z-10 bg-gradient-to-b from-foreground via-foreground/80 to-foreground/60 bg-clip-text text-transparent drop-shadow-2xl">
                   WORLDWIDE
                 </span>
               </div>
@@ -229,13 +232,22 @@ export default function Landing() {
           <div className="animate-scale-in max-w-4xl mx-auto px-4" style={{
           animationDelay: '0.5s'
         }}>
-            <Card className="relative group glass-card p-4 md:p-8 border-primary/30 hover:border-primary/60 transition-all duration-500 hover:scale-[1.02]">
-              <div className="absolute -inset-[1px] bg-gradient-to-r from-primary via-secondary to-accent rounded-lg opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-500" />
-              <div className="relative space-y-4">
+            <EnhancedCard glowColor="primary">
+              <div className="p-4 md:p-8 space-y-4">
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Input placeholder="🎵 Enter your artist name..." value={prompt} onChange={e => setPrompt(e.target.value)} className="bg-background/80 backdrop-blur-sm border-primary/40 focus:border-primary text-base md:text-lg h-12 md:h-14 px-4 md:px-6" onKeyDown={e => e.key === "Enter" && handleQuickGenerate()} />
-                  <Button size="lg" onClick={handleQuickGenerate} className="bg-gradient-to-r from-primary via-secondary to-accent hover:shadow-glow h-12 md:h-14 px-6 md:px-8 group">
-                    <Upload className="w-5 h-5 md:w-6 md:h-6 group-hover:-translate-y-1 transition-transform" />
+                  <Input 
+                    placeholder="🎵 Enter your artist name..." 
+                    value={prompt} 
+                    onChange={e => setPrompt(e.target.value)} 
+                    className="bg-background/90 backdrop-blur-sm border-primary/50 focus:border-primary text-base md:text-lg h-12 md:h-14 px-4 md:px-6 neon-border" 
+                    onKeyDown={e => e.key === "Enter" && handleQuickGenerate()} 
+                  />
+                  <Button 
+                    size="lg" 
+                    onClick={handleQuickGenerate} 
+                    className="bg-gradient-to-r from-primary via-secondary to-accent animated-gradient h-12 md:h-14 px-6 md:px-8 group animate-pulse-glow"
+                  >
+                    <Upload className="w-5 h-5 md:w-6 md:h-6 group-hover:-translate-y-1 group-hover:rotate-12 transition-all" />
                   </Button>
                 </div>
                 <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6 text-xs md:text-sm">
@@ -253,19 +265,28 @@ export default function Landing() {
                   </div>
                 </div>
               </div>
-            </Card>
+            </EnhancedCard>
           </div>
 
           {/* Floating CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center animate-fade-in px-4" style={{
           animationDelay: '0.6s'
         }}>
-            <Button size="lg" onClick={() => navigate("/auth")} className="relative group bg-gradient-to-r from-primary via-secondary to-accent text-background font-bold text-base md:text-xl px-8 md:px-12 h-14 md:h-16 hover:scale-105 transition-all duration-300 w-full sm:w-auto">
+            <Button 
+              size="lg" 
+              onClick={() => navigate("/auth")} 
+              className="relative group bg-gradient-to-r from-primary via-secondary to-accent text-background font-bold text-base md:text-xl px-8 md:px-12 h-14 md:h-16 hover:scale-110 transition-all duration-300 w-full sm:w-auto animated-gradient neon-border-strong float-slow"
+            >
               <span className="relative z-10">START DISTRIBUTING</span>
-              <ArrowRight className="w-5 h-5 md:w-6 md:h-6 ml-2 md:ml-3 group-hover:translate-x-2 transition-transform relative z-10" />
-              <div className="absolute inset-0 bg-gradient-to-r from-accent via-primary to-secondary opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500" />
+              <ArrowRight className="w-5 h-5 md:w-6 md:h-6 ml-2 md:ml-3 group-hover:translate-x-3 group-hover:scale-125 transition-all relative z-10" />
+              <div className="absolute inset-0 bg-gradient-to-r from-accent via-primary to-secondary opacity-0 group-hover:opacity-100 blur-2xl transition-opacity duration-500" />
             </Button>
-            <Button size="lg" variant="outline" onClick={() => navigate("/auth")} className="text-base md:text-xl px-8 md:px-12 h-14 md:h-16 border-2 border-primary/60 hover:bg-primary/20 hover:border-primary backdrop-blur-xl transition-all duration-300 hover:scale-105 w-full sm:w-auto">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              onClick={() => navigate("/auth")} 
+              className="text-base md:text-xl px-8 md:px-12 h-14 md:h-16 border-2 border-primary/60 hover:bg-primary/20 hover:border-primary backdrop-blur-xl transition-all duration-300 hover:scale-110 w-full sm:w-auto neon-border hover-3d"
+            >
               <Headphones className="w-4 h-4 md:w-5 md:h-5 mr-2" />
               SIGN IN
             </Button>
@@ -320,18 +341,22 @@ export default function Landing() {
           {/* Artist Features Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-12 md:mb-20">
             {artistFeatures.map((feature, idx) => (
-              <Card key={idx} className="glass-card p-6 md:p-8 relative group overflow-hidden hover:border-primary/60 transition-all duration-500 hover:scale-105">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative z-10 space-y-4">
-                  <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-500`}>
+              <EnhancedCard 
+                key={idx} 
+                glowColor={idx % 3 === 0 ? "primary" : idx % 3 === 1 ? "secondary" : "accent"}
+                className="animate-fade-in"
+                style={{ animationDelay: `${idx * 0.1}s` } as React.CSSProperties}
+              >
+                <div className="p-6 md:p-8 space-y-4">
+                  <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center group-hover:scale-125 group-hover:rotate-12 transition-all duration-500 float`}>
                     <feature.icon className="w-6 h-6 md:w-7 md:h-7 text-background" />
                   </div>
                   <div>
-                    <h3 className="text-lg md:text-xl font-display font-bold mb-2">{feature.title}</h3>
+                    <h3 className="text-lg md:text-xl font-display font-bold mb-2 glow-text">{feature.title}</h3>
                     <p className="text-sm md:text-base text-muted-foreground">{feature.description}</p>
                   </div>
                 </div>
-              </Card>
+              </EnhancedCard>
             ))}
           </div>
 
