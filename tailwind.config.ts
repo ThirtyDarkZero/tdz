@@ -95,6 +95,10 @@ export default {
           "0%": { transform: "translateY(-100%)", opacity: "0" },
           "100%": { transform: "translateY(0)", opacity: "1" },
         },
+        "slide": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(400%)" },
+        },
         "rotate-3d": {
           "0%": { transform: "rotateY(0deg) rotateX(0deg)" },
           "100%": { transform: "rotateY(360deg) rotateX(360deg)" },
@@ -124,6 +128,7 @@ export default {
         "scale-in": "scale-in 0.4s ease-out",
         "slide-up": "slide-up 0.5s ease-out",
         "slide-down": "slide-down 0.5s ease-out",
+        "slide": "slide 2s ease-in-out infinite",
         "rotate-3d": "rotate-3d 20s linear infinite",
         "float": "float 6s ease-in-out infinite",
         "float-slow": "float-slow 8s ease-in-out infinite",
