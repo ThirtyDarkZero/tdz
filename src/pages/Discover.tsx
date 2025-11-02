@@ -47,7 +47,7 @@ export default function Discover() {
     // Load tracks with motion cover support
     const { data: tracksData, error: tracksError } = await supabase
       .from("tracks")
-      .select("*, albums!inner(*)")
+      .select("*, albums(*)")
       .eq("is_published", true)
       .order("created_at", { ascending: false })
       .limit(20);
