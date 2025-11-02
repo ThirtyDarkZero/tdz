@@ -3,3 +3,6 @@ project_id = "rcjzvfskkoqygnlolrcs"
 [functions.label-staff-chat]
 # SECURITY: Re-enabled JWT verification - users must be authenticated
 # verify_jwt = false  # REMOVED FOR SECURITY
+
+[functions.quantum-advisor]
+verify_jwt = true

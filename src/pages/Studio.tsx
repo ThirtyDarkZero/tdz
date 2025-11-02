@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe, Image, Heart, BookOpen, Zap, Film, User, ShoppingBag } from "lucide-react";
+import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe, Image, Heart, BookOpen, Zap, Film, User, ShoppingBag, Sparkles } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { MusicLibrary } from "@/components/MusicLibrary";
 import { ArtistDashboard } from "@/components/ArtistDashboard";
@@ -18,6 +18,7 @@ import { MomentumTracker } from "@/components/MomentumTracker";
 import { CanvasManager } from "@/components/CanvasManager";
 import { ArtistProfileEditor } from "@/components/ArtistProfileEditor";
 import { MerchAndTickets } from "@/components/MerchAndTickets";
+import { QuantumAdvisor } from "@/components/QuantumAdvisor";
 import { TopBar } from "@/components/TopBar";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -228,6 +229,13 @@ const Studio = () => {
                 <ShoppingBag className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Merch</span>
               </TabsTrigger>
+              <TabsTrigger 
+                value="quantum" 
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap animate-pulse"
+              >
+                <Sparkles className="h-4 w-4 md:h-5 md:w-5" />
+                <span className="hidden sm:inline">Quantum</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -284,6 +292,10 @@ const Studio = () => {
 
             <TabsContent value="merch" className="mt-0">
               <MerchAndTickets />
+            </TabsContent>
+
+            <TabsContent value="quantum" className="mt-0">
+              <QuantumAdvisor />
             </TabsContent>
           </div>
         </Tabs>
