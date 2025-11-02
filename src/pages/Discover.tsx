@@ -268,7 +268,11 @@ export default function Discover() {
               </div>
             </div>
 
-            <Button variant="outline" size="icon">
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => navigate("/profile")}
+            >
               <User className="w-4 h-4" />
             </Button>
           </div>
