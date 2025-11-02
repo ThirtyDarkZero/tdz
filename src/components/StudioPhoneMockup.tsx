@@ -10,7 +10,8 @@ import {
   Heart,
   Star,
   Play,
-  ChevronRight
+  ChevronRight,
+  Film
 } from "lucide-react";
 
 interface PhoneMockupProps {
@@ -26,102 +27,190 @@ export function StudioPhoneMockup({ title, color }: PhoneMockupProps) {
       case "Analytics Dashboard":
         return (
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold">Streaming Performance</span>
-              <Badge className="bg-accent/20 text-accent text-xs">Live</Badge>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between p-2 bg-background/50 rounded">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-primary/20 rounded flex items-center justify-center">
-                    <Music className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold">Spotify</div>
-                    <div className="text-[10px] text-muted-foreground">+2.4K today</div>
+            {/* Key Metrics Grid */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="glass-card p-2 rounded-lg">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[9px] text-muted-foreground">Total Streams</p>
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
+                    <Play className="w-3 h-3" />
                   </div>
                 </div>
-                <div className="text-xs font-bold text-primary">45.2K</div>
+                <p className="text-lg font-black">127.5K</p>
+                <p className="text-[8px] text-muted-foreground">All platforms</p>
               </div>
-              <div className="flex items-center justify-between p-2 bg-background/50 rounded">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-accent/20 rounded flex items-center justify-center">
-                    <Music className="w-4 h-4 text-accent" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold">Apple Music</div>
-                    <div className="text-[10px] text-muted-foreground">+1.8K today</div>
+              <div className="glass-card p-2 rounded-lg">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[9px] text-muted-foreground">Revenue</p>
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-green-500/30 to-emerald-500/30 flex items-center justify-center">
+                    <TrendingUp className="w-3 h-3 text-green-500" />
                   </div>
                 </div>
-                <div className="text-xs font-bold text-accent">32.1K</div>
+                <p className="text-lg font-black text-green-500">$510</p>
+                <p className="text-[8px] text-muted-foreground">100% yours</p>
+              </div>
+              <div className="glass-card p-2 rounded-lg">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[9px] text-muted-foreground">Tracks</p>
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500/30 to-cyan-500/30 flex items-center justify-center">
+                    <Music className="w-3 h-3 text-blue-500" />
+                  </div>
+                </div>
+                <p className="text-lg font-black">24</p>
+                <p className="text-[8px] text-muted-foreground">Published</p>
+              </div>
+              <div className="glass-card p-2 rounded-lg">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[9px] text-muted-foreground">Listeners</p>
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-500/30 to-pink-500/30 flex items-center justify-center">
+                    <Users className="w-3 h-3 text-purple-500" />
+                  </div>
+                </div>
+                <p className="text-lg font-black">89.2K</p>
+                <p className="text-[8px] text-muted-foreground">Monthly</p>
               </div>
             </div>
-            <div className="bg-gradient-to-br from-primary/20 to-accent/20 p-3 rounded-lg">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-semibold">Revenue This Month</span>
-                <TrendingUp className="w-3 h-3 text-primary" />
+
+            {/* Platform Breakdown */}
+            <div className="glass-card p-3 rounded-lg">
+              <h4 className="text-[10px] font-semibold mb-2 flex items-center gap-1">
+                <span>Platform Distribution</span>
+              </h4>
+              <div className="space-y-2">
+                {[
+                  { name: "Spotify", pct: 45, color: "from-green-500 to-emerald-500" },
+                  { name: "Apple Music", pct: 25, color: "from-pink-500 to-red-500" },
+                  { name: "YouTube", pct: 15, color: "from-red-500 to-orange-500" },
+                  { name: "Amazon", pct: 10, color: "from-blue-500 to-cyan-500" },
+                  { name: "Others", pct: 5, color: "from-purple-500 to-pink-500" }
+                ].map((platform, idx) => (
+                  <div key={idx}>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[9px] font-medium">{platform.name}</span>
+                      <span className="text-[9px] text-muted-foreground">{platform.pct}%</span>
+                    </div>
+                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full bg-gradient-to-r ${platform.color} rounded-full`}
+                        style={{ width: `${platform.pct}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="text-xl font-black">$4,287</div>
-              <div className="text-[10px] text-muted-foreground">+38% vs last month</div>
             </div>
           </div>
         );
       case "Music Library":
         return (
           <div className="space-y-2">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold">Your Releases</span>
-              <span className="text-[10px] text-muted-foreground">24 tracks</span>
-            </div>
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-2 p-2 bg-background/50 rounded hover:bg-primary/10 transition-colors cursor-pointer">
-                <div className={`w-12 h-12 bg-gradient-to-br ${i === 1 ? 'from-primary to-accent' : i === 2 ? 'from-accent to-secondary' : 'from-secondary to-primary'} rounded flex items-center justify-center`}>
-                  <Music className="w-5 h-5 text-background" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-semibold truncate">Summer Nights {i}</div>
-                  <div className="text-[10px] text-muted-foreground">Released {i} week{i > 1 ? 's' : ''} ago</div>
-                </div>
-                <Play className="w-4 h-4 text-primary flex-shrink-0" />
+            <div className="flex items-center gap-2 mb-2">
+              <div className="flex-1 bg-muted/50 rounded-lg px-2 py-1">
+                <span className="text-[9px] text-muted-foreground">Search tracks...</span>
               </div>
-            ))}
-            <div className="bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 p-3 rounded-lg mt-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-semibold mb-1">Total Plays</div>
-                  <div className="text-xl font-black">127.5K</div>
+            </div>
+            
+            {/* Tab Pills */}
+            <div className="flex gap-1 mb-2 overflow-x-auto pb-1">
+              {["Unpublished", "Published", "Albums", "Liked"].map((tab, idx) => (
+                <div key={idx} className={`px-2 py-1 rounded-full text-[8px] font-medium whitespace-nowrap ${idx === 1 ? 'bg-primary text-primary-foreground' : 'bg-muted/50'}`}>
+                  {tab}
                 </div>
-                <TrendingUp className="w-6 h-6 text-primary" />
+              ))}
+            </div>
+
+            {/* Track List */}
+            <div className="space-y-1.5">
+              {[
+                { title: "Summer Nights", artist: "Your Name", plays: "45.2K", time: "3:24" },
+                { title: "Electric Dreams", artist: "Your Name", plays: "32.8K", time: "4:01" },
+                { title: "Midnight Drive", artist: "Your Name", plays: "28.4K", time: "3:47" },
+                { title: "Neon Lights", artist: "Your Name", plays: "21.1K", time: "3:15" }
+              ].map((track, idx) => (
+                <div key={idx} className="flex items-center gap-2 p-1.5 rounded hover:bg-accent/30 transition-colors group">
+                  <span className="text-[9px] text-muted-foreground w-3">{idx + 1}</span>
+                  <div className="w-9 h-9 bg-gradient-to-br from-primary/40 to-accent/40 rounded overflow-hidden flex-shrink-0">
+                    <img src="/placeholder.svg" alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-semibold truncate">{track.title}</p>
+                    <p className="text-[8px] text-muted-foreground truncate">{track.artist}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <span className="text-[8px] text-muted-foreground hidden group-hover:inline">{track.time}</span>
+                    <Play className="w-3 h-3 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Stats Footer */}
+            <div className="glass-card p-2 rounded-lg mt-2">
+              <div className="flex items-center justify-between text-[9px]">
+                <span className="text-muted-foreground">Total Plays</span>
+                <span className="font-black">127.5K</span>
               </div>
             </div>
           </div>
         );
-      case "AI Video Studio":
+      case "Canvas Manager":
         return (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold">Active Projects</span>
-              <Badge className="bg-primary/20 text-primary text-xs">3 rendering</Badge>
-            </div>
-            <div className="bg-gradient-to-br from-primary/30 to-accent/30 rounded-lg p-3">
-              <div className="aspect-video bg-background/20 rounded mb-2 flex items-center justify-center">
-                <Video className="w-8 h-8 text-primary" />
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 mb-3">
+              <Film className="w-4 h-4 text-primary" />
+              <div>
+                <h3 className="text-[10px] font-bold">Canvas Manager</h3>
+                <p className="text-[8px] text-muted-foreground">Looping visual art (3-8 sec)</p>
               </div>
-              <div className="text-xs font-semibold mb-1">Electric Dreams MV</div>
-              <div className="w-full bg-background/50 rounded-full h-1.5 mb-1">
-                <div className="bg-primary h-1.5 rounded-full" style={{ width: '68%' }}></div>
-              </div>
-              <div className="text-[10px] text-muted-foreground">Rendering: 68% complete</div>
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              {["Kling AI", "Runway", "Sora"].map((provider, i) => (
-                <div key={i} className="text-center p-2 bg-background/50 rounded">
-                  <div className="w-8 h-8 mx-auto mb-1 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full flex items-center justify-center">
-                    <Video className="w-4 h-4 text-primary" />
+
+            {/* Track List with Canvas */}
+            <div className="space-y-2">
+              {[
+                { title: "Summer Nights", artist: "Your Name", hasCanvas: true },
+                { title: "Electric Dreams", artist: "Your Name", hasCanvas: true },
+                { title: "Midnight Drive", artist: "Your Name", hasCanvas: false }
+              ].map((track, idx) => (
+                <div key={idx} className="glass-card p-2 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="relative w-12 h-12 rounded overflow-hidden bg-gradient-to-br from-primary/30 to-accent/30 flex-shrink-0">
+                      {track.hasCanvas ? (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Film className="w-5 h-5 text-primary animate-pulse" />
+                        </div>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Film className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-semibold truncate">{track.title}</p>
+                      <p className="text-[8px] text-muted-foreground truncate">{track.artist}</p>
+                    </div>
+                    {track.hasCanvas && (
+                      <Badge className="bg-primary/20 text-primary text-[7px] px-1.5 py-0.5">Active</Badge>
+                    )}
                   </div>
-                  <div className="text-[9px] font-semibold">{provider}</div>
+                  <div className="flex gap-1.5">
+                    <button className="flex-1 text-[9px] py-1.5 px-2 bg-primary/10 hover:bg-primary/20 rounded font-medium transition-colors">
+                      {track.hasCanvas ? "Replace" : "Upload"}
+                    </button>
+                    {track.hasCanvas && (
+                      <button className="text-[9px] py-1.5 px-2 bg-muted/50 hover:bg-muted rounded transition-colors">
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
+            </div>
+
+            {/* Info Footer */}
+            <div className="bg-accent/10 border border-accent/20 rounded-lg p-2 mt-2">
+              <p className="text-[8px] text-muted-foreground leading-relaxed">
+                Canvas adds looping visuals to your tracks, just like Spotify. Vertical format (9:16) works best.
+              </p>
             </div>
           </div>
         );
@@ -243,13 +332,13 @@ export function StudioPhoneMockups() {
 
           <div className="space-y-4">
             <StudioPhoneMockup 
-              title="AI Video Studio" 
+              title="Canvas Manager" 
               color="from-secondary/50 to-primary/50"
             />
             <div className="text-center space-y-2 px-4">
-              <h3 className="font-bold text-lg">Video Generation</h3>
+              <h3 className="font-bold text-lg">Visual Canvas</h3>
               <p className="text-sm text-muted-foreground">
-                Create professional music videos using Kling, Runway, Sora, and Veo AI in minutes
+                Add looping visual art to tracks like Spotify Canvas. Professional motion covers in seconds
               </p>
             </div>
           </div>
