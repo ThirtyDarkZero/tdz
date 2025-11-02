@@ -10,16 +10,30 @@ export const AudioVisualizer = ({ audioElement, isPlaying }: AudioVisualizerProp
   const animationRef = useRef<number>();
   const analyserRef = useRef<AnalyserNode | null>(null);
   const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
 
   useEffect(() => {
     if (!audioElement || !canvasRef.current) return;
 
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const analyser = audioContext.createAnalyser();
-    const source = audioContext.createMediaElementSource(audioElement);
-    
-    source.connect(analyser);
-    analyser.connect(audioContext.destination);
+    // Only create audio context and source once
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+
+    if (!sourceRef.current) {
+      try {
+        sourceRef.current = audioContextRef.current.createMediaElementSource(audioElement);
+      } catch (error) {
+        // Audio element already connected, this is okay in strict mode
+        console.warn("Audio element already connected to AudioContext");
+        return;
+      }
+    }
+
+    const analyser = audioContextRef.current.createAnalyser();
+    sourceRef.current.connect(analyser);
+    analyser.connect(audioContextRef.current.destination);
     analyser.fftSize = 256;
     
     const bufferLength = analyser.frequencyBinCount;
@@ -29,9 +43,9 @@ export const AudioVisualizer = ({ audioElement, isPlaying }: AudioVisualizerProp
     dataArrayRef.current = dataArray;
 
     return () => {
-      source.disconnect();
-      analyser.disconnect();
-      audioContext.close();
+      if (analyser) {
+        analyser.disconnect();
+      }
     };
   }, [audioElement]);
 
