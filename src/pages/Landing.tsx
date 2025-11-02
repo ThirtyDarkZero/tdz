@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Music, Upload, TrendingUp, Zap, Globe, Radio, Shield, Users, ArrowRight, CheckCircle2, DollarSign, BarChart3, Headphones, Heart, Play, Mic2, Layers } from "lucide-react";
+import { Music, Upload, TrendingUp, Zap, Globe, Radio, Shield, Users, ArrowRight, CheckCircle2, DollarSign, BarChart3, Headphones, Heart, Play, Mic2, Layers, Library, Image, BookOpen, Film, User, ShoppingBag, LayoutDashboard } from "lucide-react";
 import studioBackground from "@/assets/studio-background.jpg";
 import tdzLogo from "@/assets/tdz-logo.png";
+import { supabase } from "@/integrations/supabase/client";
 
 const artistFeatures = [
   {
@@ -62,31 +63,23 @@ const fanFeatures = [
   }
 ];
 
-const latestReleases = [
-  {
-    id: 1,
-    title: "Midnight Dreams",
-    artist: "Luna Sky",
-    cover: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=300&h=300&fit=crop"
-  },
-  {
-    id: 2,
-    title: "Electric Pulse",
-    artist: "Neon Wave",
-    cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop"
-  },
-  {
-    id: 3,
-    title: "Sunset Boulevard",
-    artist: "Valley Vista",
-    cover: "https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=300&h=300&fit=crop"
-  },
-  {
-    id: 4,
-    title: "Ocean Waves",
-    artist: "Blue Horizon",
-    cover: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=300&h=300&fit=crop"
-  }
+interface Track {
+  id: string;
+  title: string;
+  artist_name: string;
+  album_cover_path: string | null;
+  album_cover_bucket: string | null;
+}
+
+const studioTabs = [
+  { icon: Users, label: "Staff" },
+  { icon: Globe, label: "Release" },
+  { icon: TrendingUp, label: "Analytics" },
+  { icon: Library, label: "Library" },
+  { icon: Image, label: "Gallery" },
+  { icon: LayoutDashboard, label: "Dashboard" },
+  { icon: Heart, label: "Fans" },
+  { icon: BookOpen, label: "Story" },
 ];
 export default function Landing() {
   const [prompt, setPrompt] = useState("");
@@ -94,8 +87,26 @@ export default function Landing() {
     x: 0,
     y: 0
   });
+  const [latestReleases, setLatestReleases] = useState<Track[]>([]);
   const navigate = useNavigate();
   const heroRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const fetchTracks = async () => {
+      const { data } = await supabase
+        .from('tracks')
+        .select('id, title, artist_name, album_cover_path, album_cover_bucket')
+        .eq('is_published', true)
+        .order('created_at', { ascending: false })
+        .limit(4);
+      
+      if (data) {
+        setLatestReleases(data);
+      }
+    };
+    
+    fetchTracks();
+  }, []);
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({
@@ -326,40 +337,62 @@ export default function Landing() {
             <div className="glass-card p-3 rounded-3xl border-2 border-primary/40 overflow-hidden">
               <div className="relative aspect-[9/19] rounded-2xl overflow-hidden bg-background">
                 <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-transparent to-background/80" />
-                <div className="p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold">Studio</h3>
-                    <Badge className="bg-primary/20 text-primary border-primary/30">Demo</Badge>
+                <div className="p-4 space-y-3">
+                  {/* Studio Header */}
+                  <div className="text-center space-y-2">
+                    <h3 className="text-xl font-black bg-gradient-to-r from-primary via-primary-glow to-primary bg-clip-text text-transparent">
+                      TDZ Distribution
+                    </h3>
+                    <p className="text-xs text-muted-foreground">Complete Record Label Studio</p>
                   </div>
-                  <div className="space-y-3">
-                    <div className="glass-card p-4 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-secondary" />
-                        <div className="flex-1">
-                          <div className="h-3 bg-primary/40 rounded w-3/4 mb-2" />
-                          <div className="h-2 bg-muted/40 rounded w-1/2" />
+
+                  {/* Studio Tabs */}
+                  <div className="glass-card p-1 rounded-lg">
+                    <div className="grid grid-cols-4 gap-1">
+                      {studioTabs.map((tab, idx) => (
+                        <div key={idx} className={`flex flex-col items-center gap-1 p-2 rounded ${idx === 0 ? 'bg-primary/20' : ''}`}>
+                          <tab.icon className="w-3 h-3 text-primary" />
+                          <span className="text-[8px] text-muted-foreground">{tab.label}</span>
                         </div>
-                        <Play className="w-6 h-6 text-primary" />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Content Area */}
+                  <div className="space-y-2">
+                    <div className="glass-card p-3 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold">Recent Tracks</span>
+                        <Music className="w-3 h-3 text-primary" />
+                      </div>
+                      <div className="space-y-2">
+                        {[1, 2].map((i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded bg-gradient-to-br from-primary to-secondary flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="h-2 bg-primary/40 rounded w-full mb-1" />
+                              <div className="h-1.5 bg-muted/40 rounded w-2/3" />
+                            </div>
+                            <Play className="w-3 h-3 text-primary flex-shrink-0" />
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    <div className="glass-card p-4 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-secondary to-accent" />
-                        <div className="flex-1">
-                          <div className="h-3 bg-secondary/40 rounded w-2/3 mb-2" />
-                          <div className="h-2 bg-muted/40 rounded w-1/3" />
-                        </div>
-                        <Upload className="w-6 h-6 text-secondary" />
+
+                    <div className="glass-card p-3 rounded-xl">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold">Analytics</span>
+                        <TrendingUp className="w-3 h-3 text-secondary" />
                       </div>
-                    </div>
-                    <div className="glass-card p-4 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-accent to-primary" />
-                        <div className="flex-1">
-                          <div className="h-3 bg-accent/40 rounded w-4/5 mb-2" />
-                          <div className="h-2 bg-muted/40 rounded w-2/5" />
+                      <div className="mt-2 space-y-1">
+                        <div className="flex justify-between text-[10px]">
+                          <span className="text-muted-foreground">Streams</span>
+                          <span className="text-primary font-semibold">12.4K</span>
                         </div>
-                        <BarChart3 className="w-6 h-6 text-accent" />
+                        <div className="flex justify-between text-[10px]">
+                          <span className="text-muted-foreground">Revenue</span>
+                          <span className="text-secondary font-semibold">$249</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -417,24 +450,37 @@ export default function Landing() {
                 <div className="p-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-bold">Discover</h3>
-                    <Badge className="bg-secondary/20 text-secondary border-secondary/30">Demo</Badge>
+                    <Badge className="bg-secondary/20 text-secondary border-secondary/30">Live</Badge>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    {latestReleases.slice(0, 4).map((release) => (
-                      <div key={release.id} className="space-y-2">
-                        <div className="aspect-square rounded-lg overflow-hidden relative group cursor-pointer">
-                          <img src={release.cover} alt={release.title} className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <Play className="w-8 h-8 text-white" />
+                  {latestReleases.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      {latestReleases.map((release) => {
+                        const coverUrl = release.album_cover_path && release.album_cover_bucket
+                          ? supabase.storage.from(release.album_cover_bucket).getPublicUrl(release.album_cover_path).data.publicUrl
+                          : 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=300&h=300&fit=crop';
+                        
+                        return (
+                          <div key={release.id} className="space-y-2">
+                            <div className="aspect-square rounded-lg overflow-hidden relative group cursor-pointer">
+                              <img src={coverUrl} alt={release.title} className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Play className="w-8 h-8 text-white" />
+                              </div>
+                            </div>
+                            <div className="text-xs space-y-0.5">
+                              <p className="text-foreground/80 truncate font-medium">{release.title}</p>
+                              <p className="text-muted-foreground truncate">{release.artist_name}</p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="text-xs space-y-0.5">
-                          <p className="text-foreground/80 truncate font-medium">{release.title}</p>
-                          <p className="text-muted-foreground truncate">{release.artist}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 space-y-2">
+                      <Music className="w-12 h-12 mx-auto text-muted-foreground/40" />
+                      <p className="text-sm text-muted-foreground">No tracks released yet</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -459,39 +505,63 @@ export default function Landing() {
           </div>
 
           {/* Mobile: Swipeable, Desktop: Grid */}
-          <div className="md:hidden overflow-x-auto scrollbar-hide -mx-4 px-4">
-            <div className="flex gap-4 pb-4" style={{ width: `${latestReleases.length * 180}px` }}>
-              {latestReleases.map((release) => (
-                <div key={release.id} className="flex-shrink-0 w-40 space-y-2 cursor-pointer" onClick={() => navigate(`/track/${release.id}`)}>
-                  <div className="aspect-square rounded-lg overflow-hidden relative group">
-                    <img src={release.cover} alt={release.title} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-active:opacity-100 transition-opacity flex items-center justify-center">
-                      <Play className="w-10 h-10 text-white" />
-                    </div>
-                  </div>
-                  <div className="text-xs space-y-0.5">
-                    <p className="text-foreground truncate font-medium">{release.title}</p>
-                    <p className="text-muted-foreground truncate">{release.artist}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          {latestReleases.length > 0 ? (
+            <>
+              <div className="md:hidden overflow-x-auto scrollbar-hide -mx-4 px-4">
+                <div className="flex gap-4 pb-4" style={{ width: `${latestReleases.length * 180}px` }}>
+                  {latestReleases.map((release) => {
+                    const coverUrl = release.album_cover_path && release.album_cover_bucket
+                      ? supabase.storage.from(release.album_cover_bucket).getPublicUrl(release.album_cover_path).data.publicUrl
+                      : 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=300&h=300&fit=crop';
 
-          <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {latestReleases.map((release) => (
-              <Card key={release.id} className="glass-card p-4 cursor-pointer hover:scale-105 transition-all duration-300 hover:border-primary/60" onClick={() => navigate(`/track/${release.id}`)}>
-                <div className="aspect-square rounded-lg overflow-hidden mb-4 relative group">
-                  <img src={release.cover} alt={release.title} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Play className="w-12 h-12 text-white" />
-                  </div>
+                    return (
+                      <div key={release.id} className="flex-shrink-0 w-40 space-y-2 cursor-pointer" onClick={() => navigate(`/track/${release.id}`)}>
+                        <div className="aspect-square rounded-lg overflow-hidden relative group">
+                          <img src={coverUrl} alt={release.title} className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-active:opacity-100 transition-opacity flex items-center justify-center">
+                            <Play className="w-10 h-10 text-white" />
+                          </div>
+                        </div>
+                        <div className="text-xs space-y-0.5">
+                          <p className="text-foreground truncate font-medium">{release.title}</p>
+                          <p className="text-muted-foreground truncate">{release.artist_name}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <h3 className="font-bold truncate mb-1">{release.title}</h3>
-                <p className="text-sm text-muted-foreground truncate">{release.artist}</p>
-              </Card>
-            ))}
-          </div>
+              </div>
+
+              <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-6">
+                {latestReleases.map((release) => {
+                  const coverUrl = release.album_cover_path && release.album_cover_bucket
+                    ? supabase.storage.from(release.album_cover_bucket).getPublicUrl(release.album_cover_path).data.publicUrl
+                    : 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=300&h=300&fit=crop';
+
+                  return (
+                    <Card key={release.id} className="glass-card p-4 cursor-pointer hover:scale-105 transition-all duration-300 hover:border-primary/60" onClick={() => navigate(`/track/${release.id}`)}>
+                      <div className="aspect-square rounded-lg overflow-hidden mb-4 relative group">
+                        <img src={coverUrl} alt={release.title} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Play className="w-12 h-12 text-white" />
+                        </div>
+                      </div>
+                      <h3 className="font-bold truncate mb-1">{release.title}</h3>
+                      <p className="text-sm text-muted-foreground truncate">{release.artist_name}</p>
+                    </Card>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-12 space-y-4">
+              <Music className="w-16 h-16 mx-auto text-muted-foreground/40" />
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-foreground">No Tracks Released Yet</h3>
+                <p className="text-muted-foreground">Be the first to share your music with the world</p>
+              </div>
+            </div>
+          )}
 
           <div className="text-center mt-12">
             <Button size="lg" onClick={() => navigate("/discover")} className="bg-gradient-to-r from-accent via-primary to-secondary hover:scale-105 transition-all duration-300">
