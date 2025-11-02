@@ -43,18 +43,41 @@ export default function Discover() {
   };
 
   const loadTracks = async () => {
-    const { data, error } = await supabase
+    // Load tracks
+    const { data: tracksData, error: tracksError } = await supabase
       .from("published_tracks_view")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(20);
 
-    if (error) {
-      console.error("Error loading tracks:", error);
+    if (tracksError) {
+      console.error("Error loading tracks:", tracksError);
       toast.error("Failed to load tracks");
-    } else {
-      setTracks(data || []);
+      setLoading(false);
+      return;
     }
+
+    // Load all artist profiles to map artist names to user IDs
+    const { data: artistsData, error: artistsError } = await supabase
+      .from("artist_profiles")
+      .select("artist_name, user_id");
+
+    if (artistsError) {
+      console.error("Error loading artists:", artistsError);
+    }
+
+    // Create a map of artist names to user IDs
+    const artistMap = new Map(
+      (artistsData || []).map(artist => [artist.artist_name, artist.user_id])
+    );
+
+    // Enhance tracks with artist user IDs
+    const enhancedTracks = (tracksData || []).map(track => ({
+      ...track,
+      artist_user_id: artistMap.get(track.artist_name)
+    }));
+
+    setTracks(enhancedTracks);
     setLoading(false);
   };
 
@@ -384,7 +407,9 @@ export default function Discover() {
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/artist/${track.user_id}`);
+                            if (track.artist_user_id) {
+                              navigate(`/artist/${track.artist_user_id}`);
+                            }
                           }}
                           className="text-sm text-muted-foreground truncate font-medium hover:text-primary transition-colors block w-full text-left"
                         >
