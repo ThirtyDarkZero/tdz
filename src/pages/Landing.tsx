@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MotionCover } from "@/components/MotionCover";
 import { Hero3D } from "@/components/Hero3D";
 import { EnhancedCard } from "@/components/EnhancedCard";
+import { StudioPhoneMockups } from "@/components/StudioPhoneMockup";
 
 const artistFeatures = [
   {
@@ -360,74 +361,8 @@ export default function Landing() {
             ))}
           </div>
 
-          {/* Demo Phone - Studio */}
-          <div className="relative max-w-sm mx-auto">
-            <div className="glass-card p-3 rounded-3xl border-2 border-primary/40 overflow-hidden">
-              <div className="relative aspect-[9/19] rounded-2xl overflow-hidden bg-background">
-                <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-transparent to-background/80" />
-                <div className="p-4 space-y-3">
-                  {/* Studio Header */}
-                  <div className="text-center space-y-2">
-                    <h3 className="text-xl font-black bg-gradient-to-r from-primary via-primary-glow to-primary bg-clip-text text-transparent">
-                      TDZ Distribution
-                    </h3>
-                    <p className="text-xs text-muted-foreground">Complete Record Label Studio</p>
-                  </div>
-
-                  {/* Studio Tabs */}
-                  <div className="glass-card p-1 rounded-lg">
-                    <div className="grid grid-cols-4 gap-1">
-                      {studioTabs.map((tab, idx) => (
-                        <div key={idx} className={`flex flex-col items-center gap-1 p-2 rounded ${idx === 0 ? 'bg-primary/20' : ''}`}>
-                          <tab.icon className="w-3 h-3 text-primary" />
-                          <span className="text-[8px] text-muted-foreground">{tab.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Content Area */}
-                  <div className="space-y-2">
-                    <div className="glass-card p-3 rounded-xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold">Recent Tracks</span>
-                        <Music className="w-3 h-3 text-primary" />
-                      </div>
-                      <div className="space-y-2">
-                        {[1, 2].map((i) => (
-                          <div key={i} className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded bg-gradient-to-br from-primary to-secondary flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <div className="h-2 bg-primary/40 rounded w-full mb-1" />
-                              <div className="h-1.5 bg-muted/40 rounded w-2/3" />
-                            </div>
-                            <Play className="w-3 h-3 text-primary flex-shrink-0" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="glass-card p-3 rounded-xl">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold">Analytics</span>
-                        <TrendingUp className="w-3 h-3 text-secondary" />
-                      </div>
-                      <div className="mt-2 space-y-1">
-                        <div className="flex justify-between text-[10px]">
-                          <span className="text-muted-foreground">Streams</span>
-                          <span className="text-primary font-semibold">12.4K</span>
-                        </div>
-                        <div className="flex justify-between text-[10px]">
-                          <span className="text-muted-foreground">Revenue</span>
-                          <span className="text-secondary font-semibold">$249</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Interactive Studio Preview */}
+          <StudioPhoneMockups />
         </div>
       </section>
 

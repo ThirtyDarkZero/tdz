@@ -363,7 +363,7 @@ export function StudioPhoneMockup({ title, color }: PhoneMockupProps) {
       case "Canvas Manager":
         return (
           <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-2">
               <Film className="w-4 h-4 text-primary" />
               <div>
                 <h3 className="text-[10px] font-bold">Canvas Manager</h3>
@@ -372,12 +372,11 @@ export function StudioPhoneMockup({ title, color }: PhoneMockupProps) {
             </div>
 
             {/* Interactive Track List with Canvas */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {[
-                { title: "Summer Nights", artist: "Your Name", hasCanvas: true, isUploading: false },
-                { title: "Electric Dreams", artist: "Your Name", hasCanvas: true, isUploading: false },
-                { title: "Midnight Drive", artist: "Your Name", hasCanvas: false, isUploading: false },
-                { title: "Neon Lights", artist: "Your Name", hasCanvas: false, isUploading: false }
+                { title: "Summer Nights", artist: "Your Name", hasCanvas: true },
+                { title: "Electric Dreams", artist: "Your Name", hasCanvas: true },
+                { title: "Midnight Drive", artist: "Your Name", hasCanvas: false }
               ].map((track, idx) => {
                 const isSelected = selectedMetric === idx;
                 const hasCanvas = track.hasCanvas || isSelected;
@@ -386,58 +385,53 @@ export function StudioPhoneMockup({ title, color }: PhoneMockupProps) {
                 return (
                   <div 
                     key={idx}
-                    className={`glass-card p-2 rounded-lg transition-all ${
+                    className={`glass-card p-1.5 rounded-lg transition-all ${
                       isSelected ? 'ring-2 ring-primary shadow-lg' : ''
                     }`}
                   >
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-1.5">
                       <button
                         onClick={() => setSelectedMetric(idx)}
-                        className="relative w-12 h-12 rounded overflow-hidden bg-gradient-to-br from-primary/30 to-accent/30 flex-shrink-0 hover:scale-110 transition-transform"
+                        className="relative w-10 h-10 rounded overflow-hidden bg-gradient-to-br from-primary/30 to-accent/30 flex-shrink-0 hover:scale-110 transition-transform"
                       >
                         {hasCanvas ? (
                           <div className="w-full h-full flex items-center justify-center relative">
-                            {/* Animated canvas visualization */}
                             <div className="absolute inset-0 bg-gradient-to-br from-primary/40 via-accent/40 to-secondary/40 animate-pulse" />
-                            <Film className="w-5 h-5 text-primary relative z-10 animate-pulse" />
-                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary/50">
+                            <Film className="w-4 h-4 text-primary relative z-10" />
+                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary/50">
                               <div className="h-full bg-primary animate-[slide_2s_ease-in-out_infinite]" style={{ width: '30%' }} />
                             </div>
                           </div>
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Film className="w-4 h-4 text-muted-foreground" />
-                          </div>
+                          <Film className="w-3 h-3 text-muted-foreground" />
                         )}
                       </button>
                       
                       <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-semibold truncate">{track.title}</p>
-                        <p className="text-[8px] text-muted-foreground truncate">{track.artist}</p>
-                        {isUploading && (
-                          <div className="mt-1">
-                            <div className="h-1 bg-muted rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-1000"
-                                style={{ width: '75%' }}
-                              />
-                            </div>
-                            <p className="text-[7px] text-primary mt-0.5">Uploading... 75%</p>
-                          </div>
-                        )}
+                        <p className="text-[9px] font-semibold truncate">{track.title}</p>
+                        <p className="text-[7px] text-muted-foreground truncate">{track.artist}</p>
                       </div>
                       
                       {hasCanvas && !isUploading && (
-                        <Badge className="bg-primary/20 text-primary text-[7px] px-1.5 py-0.5 animate-fade-in">
-                          <div className="flex items-center gap-1">
-                            <div className="w-1 h-1 bg-primary rounded-full animate-pulse" />
-                            Active
-                          </div>
+                        <Badge className="bg-primary/20 text-primary text-[6px] px-1 py-0 animate-fade-in">
+                          Active
                         </Badge>
                       )}
                     </div>
                     
-                    <div className="flex gap-1.5">
+                    {isUploading && (
+                      <div className="mb-1">
+                        <div className="h-0.5 bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-1000"
+                            style={{ width: '75%' }}
+                          />
+                        </div>
+                        <p className="text-[6px] text-primary mt-0.5">Uploading... 75%</p>
+                      </div>
+                    )}
+                    
+                    <div className="flex gap-1">
                       <button 
                         onClick={() => {
                           setSelectedMetric(idx);
@@ -445,82 +439,31 @@ export function StudioPhoneMockup({ title, color }: PhoneMockupProps) {
                           setTimeout(() => setActiveView(0), 2000);
                         }}
                         disabled={isUploading}
-                        className={`flex-1 text-[9px] py-1.5 px-2 rounded font-medium transition-all ${
-                          isUploading 
-                            ? 'bg-primary/20 text-muted-foreground cursor-not-allowed' 
-                            : 'bg-primary/10 hover:bg-primary/20 hover:scale-105'
-                        }`}
+                        className="flex-1 text-[8px] py-1 px-1.5 rounded font-medium transition-all bg-primary/10 hover:bg-primary/20"
                       >
-                        <div className="flex items-center justify-center gap-1">
-                          {isUploading ? (
-                            <>
-                              <div className="w-2 h-2 border border-primary border-t-transparent rounded-full animate-spin" />
-                              <span>Uploading</span>
-                            </>
-                          ) : (
-                            <>
-                              <Upload className="w-3 h-3" />
-                              <span>{hasCanvas ? "Replace" : "Upload"}</span>
-                            </>
-                          )}
-                        </div>
+                        {isUploading ? "..." : hasCanvas ? "Replace" : "Upload"}
                       </button>
                       
                       {hasCanvas && !isUploading && (
                         <button 
-                          onClick={() => {
-                            if (selectedMetric === idx) {
-                              setSelectedMetric(-1);
-                            }
-                          }}
-                          className="text-[9px] py-1.5 px-2 bg-muted/50 hover:bg-destructive/20 hover:text-destructive rounded transition-all hover:scale-105"
+                          onClick={() => selectedMetric === idx && setSelectedMetric(-1)}
+                          className="text-[8px] py-1 px-1.5 bg-muted/50 hover:bg-destructive/20 rounded transition-all"
                         >
                           Remove
                         </button>
                       )}
                     </div>
-                    
-                    {/* Show preview controls when selected */}
-                    {isSelected && hasCanvas && !isUploading && (
-                      <div className="mt-2 pt-2 border-t border-border/50 animate-fade-in">
-                        <div className="flex items-center gap-2 text-[8px]">
-                          <button className="flex-1 py-1 bg-accent/10 hover:bg-accent/20 rounded transition-colors">
-                            Preview
-                          </button>
-                          <button className="flex-1 py-1 bg-accent/10 hover:bg-accent/20 rounded transition-colors">
-                            Settings
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })}
             </div>
 
-            {/* Interactive Info Footer */}
-            <div className="bg-gradient-to-r from-accent/10 via-primary/10 to-accent/10 border border-accent/20 rounded-lg p-2 mt-2 hover:shadow-lg transition-shadow cursor-pointer">
-              <div className="flex items-start gap-2">
-                <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Check className="w-3 h-3 text-accent" />
-                </div>
-                <div>
-                  <p className="text-[9px] font-semibold mb-1">Canvas Best Practices</p>
-                  <p className="text-[8px] text-muted-foreground leading-relaxed">
-                    • Vertical format (9:16) recommended<br/>
-                    • 3-8 seconds for perfect loop<br/>
-                    • High-quality visuals match your vibe
-                  </p>
-                </div>
-              </div>
-            </div>
-
             {/* Stats Summary */}
-            <div className="glass-card p-2 rounded-lg">
-              <div className="flex items-center justify-between text-[9px]">
+            <div className="glass-card p-1.5 rounded-lg mt-2">
+              <div className="flex items-center justify-between text-[8px]">
                 <div>
                   <p className="text-muted-foreground mb-0.5">Canvas Active</p>
-                  <p className="font-black">2 of 4 tracks</p>
+                  <p className="font-black">2 of 3 tracks</p>
                 </div>
                 <div className="text-right">
                   <p className="text-muted-foreground mb-0.5">Engagement</p>
