@@ -31,39 +31,52 @@ export const TopBar = ({ onUploadClick }: { onUploadClick?: () => void }) => {
   };
 
   return (
-    <header className="h-16 glass-card flex items-center justify-between px-6 border-b border-border/50 sticky top-0 z-40">
-      <div className="flex items-center gap-3">
-        <img src={tdzLogo} alt="TDZ Distribution" className="h-10 w-auto" style={{ mixBlendMode: 'screen' }} />
-        <div>
-          <h1 className="text-lg font-bold glow-text">
+    <header className="h-16 glass-card flex items-center justify-between px-3 md:px-6 border-b border-border/50 sticky top-0 z-40">
+      <div className="flex items-center gap-2 md:gap-3">
+        <img src={tdzLogo} alt="TDZ Distribution" className="h-8 md:h-10 w-auto" style={{ mixBlendMode: 'screen' }} />
+        <div className="hidden sm:block">
+          <h1 className="text-base md:text-lg font-bold glow-text">
             TDZ Distribution
           </h1>
-          <p className="text-xs text-muted-foreground">Your Complete Record Label</p>
+          <p className="text-xs text-muted-foreground hidden md:block">Your Complete Record Label</p>
         </div>
       </div>
       
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4">
         <Button
           onClick={handleUploadMusic}
           variant="outline"
           size="sm"
+          className="hidden md:flex"
         >
           <Upload className="w-4 h-4 mr-2" />
           Upload Music
         </Button>
+        
+        <Button
+          onClick={handleUploadMusic}
+          variant="outline"
+          size="icon"
+          className="md:hidden h-9 w-9"
+        >
+          <Upload className="w-4 h-4" />
+        </Button>
 
         <Button
           onClick={handleGoToPlayer}
-          className="bg-gradient-to-r from-primary to-secondary text-primary-foreground hover:shadow-glow transition-all"
+          size="sm"
+          className="bg-gradient-to-r from-primary to-secondary text-primary-foreground hover:shadow-glow transition-all hidden sm:flex"
         >
           <Headphones className="w-4 h-4 mr-2" />
-          Go to Music Player
+          <span className="hidden lg:inline">Go to Music Player</span>
+          <span className="lg:hidden">Player</span>
         </Button>
 
         <Button
           onClick={handleSignOut}
           variant="ghost"
           size="icon"
+          className="h-9 w-9"
         >
           <LogOut className="w-4 h-4" />
         </Button>

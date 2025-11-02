@@ -216,36 +216,38 @@ export default function ArtistProfile() {
     <div className="min-h-screen bg-background">
       {/* Top Navigation */}
       <div className="sticky top-0 z-50 glass-card border-b border-border/50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <Button 
               variant="ghost" 
               size="sm"
               onClick={() => navigate("/discover")}
+              className="h-9 px-2 sm:px-4"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Discover
+              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Back</span>
             </Button>
             <button 
               onClick={() => navigate("/discover")}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
-              <img src={tdzLogo} alt="TDZ" className="h-8 w-auto" style={{ mixBlendMode: 'screen' }} />
+              <img src={tdzLogo} alt="TDZ" className="h-6 sm:h-8 w-auto" style={{ mixBlendMode: 'screen' }} />
             </button>
           </div>
           <Button 
             variant="outline" 
             size="sm"
             onClick={() => navigate("/discover")}
+            className="h-9 px-2 sm:px-4"
           >
-            <Home className="w-4 h-4 mr-2" />
-            Discover
+            <Home className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Discover</span>
           </Button>
         </div>
       </div>
 
       {/* Hero Section */}
-      <div className="relative h-96 overflow-hidden">
+      <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden">
         {artist.banner_image_path ? (
           <img
             src={artist.banner_image_path}
@@ -257,10 +259,10 @@ export default function ArtistProfile() {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         
-        <div className="absolute bottom-0 left-0 right-0 p-8">
-          <div className="max-w-7xl mx-auto flex items-end gap-6">
-            <div className="relative">
-              <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-background shadow-glow">
+        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-end gap-4 sm:gap-6">
+            <div className="relative flex-shrink-0">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-2 sm:border-4 border-background shadow-glow">
                 {artist.profile_image_path ? (
                   <img
                     src={artist.profile_image_path}
@@ -269,42 +271,42 @@ export default function ArtistProfile() {
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center">
-                    <Music className="w-16 h-16 text-primary-foreground" />
+                    <Music className="w-8 h-8 sm:w-12 sm:h-12 md:w-16 md:h-16 text-primary-foreground" />
                   </div>
                 )}
               </div>
               {artist.verified && (
-                <Badge className="absolute bottom-2 right-2 bg-primary shadow-glow">
+                <Badge className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-primary shadow-glow text-xs">
                   ✓ Verified
                 </Badge>
               )}
             </div>
 
-            <div className="flex-1 pb-4">
-              <h1 className="text-6xl font-black mb-2 glow-text">{artist.artist_name}</h1>
-              <div className="flex items-center gap-4 text-muted-foreground mb-4">
-                <span>{artist.monthly_listeners?.toLocaleString()} monthly listeners</span>
-                <span>•</span>
-                <span>{artist.total_plays?.toLocaleString()} total plays</span>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-2 glow-text truncate">{artist.artist_name}</h1>
+              <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 flex-wrap">
+                <span>{artist.monthly_listeners?.toLocaleString()} listeners</span>
+                <span className="hidden sm:inline">•</span>
+                <span>{artist.total_plays?.toLocaleString()} plays</span>
               </div>
               
-              <div className="flex gap-3">
-                <Button onClick={toggleFollow} size="lg" className="shadow-glow">
+              <div className="flex flex-wrap gap-2 sm:gap-3">
+                <Button onClick={toggleFollow} size="sm" className="shadow-glow sm:size-lg">
                   {isFollowing ? (
                     <>
-                      <UserCheck className="w-5 h-5 mr-2" />
-                      Following
+                      <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
+                      <span className="text-xs sm:text-base">Following</span>
                     </>
                   ) : (
                     <>
-                      <UserPlus className="w-5 h-5 mr-2" />
-                      Follow
+                      <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
+                      <span className="text-xs sm:text-base">Follow</span>
                     </>
                   )}
                 </Button>
-                <Button variant="outline" size="lg">
-                  <Share2 className="w-5 h-5 mr-2" />
-                  Share
+                <Button variant="outline" size="sm" className="sm:size-lg">
+                  <Share2 className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
+                  <span className="text-xs sm:text-base">Share</span>
                 </Button>
               </div>
             </div>
@@ -313,24 +315,24 @@ export default function ArtistProfile() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-8 py-12">
-        <Tabs defaultValue="music" className="space-y-8">
-          <TabsList className="glass-card-premium p-2">
-            <TabsTrigger value="music" className="gap-2">
-              <Music className="w-4 h-4" />
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-8 py-6 sm:py-8 md:py-12">
+        <Tabs defaultValue="music" className="space-y-6 md:space-y-8">
+          <TabsList className="glass-card-premium p-1.5 md:p-2 w-full sm:w-auto">
+            <TabsTrigger value="music" className="gap-1.5 md:gap-2 flex-1 sm:flex-none text-xs sm:text-sm">
+              <Music className="w-3 h-3 sm:w-4 sm:h-4" />
               Music
             </TabsTrigger>
-            <TabsTrigger value="about" className="gap-2">
+            <TabsTrigger value="about" className="gap-1.5 md:gap-2 flex-1 sm:flex-none text-xs sm:text-sm">
               About
             </TabsTrigger>
-            <TabsTrigger value="gallery" className="gap-2">
-              <ImageIcon className="w-4 h-4" />
+            <TabsTrigger value="gallery" className="gap-1.5 md:gap-2 flex-1 sm:flex-none text-xs sm:text-sm">
+              <ImageIcon className="w-3 h-3 sm:w-4 sm:h-4" />
               Gallery
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="music" className="space-y-4">
-            <h2 className="text-3xl font-black glow-text mb-6">Releases</h2>
+            <h2 className="text-2xl sm:text-3xl font-black glow-text mb-4 sm:mb-6">Releases</h2>
             <div className="grid gap-4">
               {tracks.map(track => (
                 <Card key={track.id} className="glass-card-premium p-6 hover-lift">
@@ -413,8 +415,8 @@ export default function ArtistProfile() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="gallery" className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <TabsContent value="gallery" className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {gallery.map(photo => (
                 <Card key={photo.id} className="glass-card-premium overflow-hidden group relative hover-lift">
                   <img

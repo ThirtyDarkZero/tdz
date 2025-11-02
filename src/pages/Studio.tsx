@@ -105,127 +105,127 @@ const Studio = () => {
       
       <main className="container mx-auto px-4 py-12 relative z-10">
         {/* Epic hero section */}
-        <div className="mb-12 text-center space-y-6">
+        <div className="mb-8 md:mb-12 text-center space-y-4 md:space-y-6">
           <div className="inline-block">
             <div className="relative">
-              <h1 className="text-7xl md:text-8xl font-black bg-gradient-to-r from-primary via-primary-glow to-primary bg-clip-text text-transparent mb-4 glow-text-lg animate-fade-in tracking-tight">
+              <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black bg-gradient-to-r from-primary via-primary-glow to-primary bg-clip-text text-transparent mb-4 glow-text-lg animate-fade-in tracking-tight">
                 TDZ Distribution
               </h1>
               <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 blur-3xl -z-10 animate-pulse" />
             </div>
           </div>
           
-          <p className="text-2xl md:text-3xl text-muted-foreground font-light tracking-wide animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-muted-foreground font-light tracking-wide animate-fade-in px-4" style={{ animationDelay: '0.2s' }}>
             Your Complete <span className="text-primary font-semibold">Record Label Studio</span>
           </p>
           
-          <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: '0.4s' }}>
+          <div className="flex items-center justify-center gap-2 md:gap-3 text-xs sm:text-sm text-muted-foreground animate-fade-in flex-wrap px-4" style={{ animationDelay: '0.4s' }}>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
               <span>Live</span>
             </div>
             <span className="text-border">•</span>
             <span>Powered by AI</span>
-            <span className="text-border">•</span>
-            <span>Real-time Analytics</span>
+            <span className="text-border hidden sm:inline">•</span>
+            <span className="hidden sm:inline">Real-time Analytics</span>
           </div>
         </div>
 
         {/* Epic tabs with glass morphism */}
-        <Tabs defaultValue={role === 'manager' ? 'manager' : 'label-staff'} className="space-y-8">
-          <div className="flex justify-center animate-fade-in" style={{ animationDelay: '0.6s' }}>
-            <TabsList className="glass-card-premium p-2 gap-2 h-auto">
+        <Tabs defaultValue={role === 'manager' ? 'manager' : 'label-staff'} className="space-y-6 md:space-y-8">
+          <div className="flex justify-center animate-fade-in overflow-x-auto pb-2 -mx-4 px-4" style={{ animationDelay: '0.6s' }}>
+            <TabsList className="glass-card-premium p-1.5 md:p-2 gap-1 md:gap-2 h-auto inline-flex min-w-max">
               {role === 'manager' && (
                 <TabsTrigger 
                   value="manager" 
-                  className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+                  className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
                 >
-                  <Users className="h-5 w-5" />
+                  <Users className="h-4 w-4 md:h-5 md:w-5" />
                   <span className="hidden sm:inline">Manager</span>
                 </TabsTrigger>
               )}
               <TabsTrigger 
                 value="label-staff" 
-                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
               >
-                <Users className="h-5 w-5" />
-                <span className="hidden sm:inline">Label Staff</span>
+                <Users className="h-4 w-4 md:h-5 md:w-5" />
+                <span className="hidden sm:inline">Staff</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="release" 
-                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
               >
-                <Globe className="h-5 w-5" />
+                <Globe className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Release</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="analytics" 
-                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
               >
-                <TrendingUp className="h-5 w-5" />
+                <TrendingUp className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Analytics</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="library" 
-                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
               >
-                <Library className="h-5 w-5" />
+                <Library className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Library</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="gallery" 
-                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
               >
-                <Image className="h-5 w-5" />
+                <Image className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Gallery</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="dashboard" 
-                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
               >
-                <LayoutDashboard className="h-5 w-5" />
+                <LayoutDashboard className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Dashboard</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="fans" 
-                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
               >
-                <Heart className="h-5 w-5" />
+                <Heart className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Fans</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="storytelling" 
-                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
               >
-                <BookOpen className="h-5 w-5" />
+                <BookOpen className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Story</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="momentum" 
-                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
               >
-                <Zap className="h-5 w-5" />
+                <Zap className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Momentum</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="canvas" 
-                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
               >
-                <Film className="h-5 w-5" />
+                <Film className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Canvas</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="profile" 
-                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
               >
-                <User className="h-5 w-5" />
+                <User className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Profile</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="merch" 
-                className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105"
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
               >
-                <ShoppingBag className="h-5 w-5" />
+                <ShoppingBag className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Merch</span>
               </TabsTrigger>
             </TabsList>

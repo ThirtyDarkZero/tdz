@@ -247,23 +247,23 @@ export default function Discover() {
 
       {/* Header */}
       <header className="sticky top-0 z-50 glass-card-premium border-b neon-border-strong shadow-glow-lg">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <img src={tdzLogo} alt="TDZ" className="h-10 w-auto" />
-              <span className="font-display font-bold text-xl hidden md:block">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-3 md:py-4">
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <img src={tdzLogo} alt="TDZ" className="h-8 sm:h-10 w-auto flex-shrink-0" />
+              <span className="font-display font-bold text-sm sm:text-base md:text-xl hidden sm:block truncate">
                 TDZ DISTRIBUTION
               </span>
             </div>
 
-            <div className="flex-1 max-w-md">
+            <div className="flex-1 max-w-xs sm:max-w-md">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search tracks, artists..."
-                  className="pl-10 bg-background/80 backdrop-blur-sm"
+                  placeholder="Search..."
+                  className="pl-8 sm:pl-10 bg-background/80 backdrop-blur-sm text-sm h-9 sm:h-10"
                 />
               </div>
             </div>
@@ -272,88 +272,89 @@ export default function Discover() {
               variant="outline" 
               size="icon"
               onClick={() => navigate("/profile")}
+              className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0"
             >
-              <User className="w-4 h-4" />
+              <User className="w-3 h-3 sm:w-4 sm:h-4" />
             </Button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-12 relative z-10">
-        <Tabs defaultValue="discover" className="space-y-8">
-          <div className="flex justify-center animate-fade-in">
-            <TabsList className="glass-card-premium p-2 gap-2 h-auto shadow-glow">
-              <TabsTrigger value="discover" className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105">
-                <Flame className="w-5 h-5" />
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-6 sm:py-8 md:py-12 relative z-10">
+        <Tabs defaultValue="discover" className="space-y-6 md:space-y-8">
+          <div className="flex justify-center animate-fade-in overflow-x-auto pb-2 -mx-3 px-3">
+            <TabsList className="glass-card-premium p-1.5 md:p-2 gap-1 md:gap-2 h-auto shadow-glow inline-flex min-w-max">
+              <TabsTrigger value="discover" className="gap-1.5 md:gap-2 px-3 sm:px-4 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap">
+                <Flame className="w-4 h-4 md:w-5 md:h-5" />
                 <span className="hidden sm:inline">Discover</span>
               </TabsTrigger>
-              <TabsTrigger value="trending" className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105">
-                <TrendingUp className="w-5 h-5" />
+              <TabsTrigger value="trending" className="gap-1.5 md:gap-2 px-3 sm:px-4 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap">
+                <TrendingUp className="w-4 h-4 md:w-5 md:h-5" />
                 <span className="hidden sm:inline">Trending</span>
               </TabsTrigger>
-              <TabsTrigger value="artists" className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105">
-                <Music className="w-5 h-5" />
+              <TabsTrigger value="artists" className="gap-1.5 md:gap-2 px-3 sm:px-4 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap">
+                <Music className="w-4 h-4 md:w-5 md:h-5" />
                 <span className="hidden sm:inline">Artists</span>
               </TabsTrigger>
-              <TabsTrigger value="playlists" className="gap-2 px-6 py-3 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105">
-                <ListMusic className="w-5 h-5" />
-                <span className="hidden sm:inline">My Playlists</span>
+              <TabsTrigger value="playlists" className="gap-1.5 md:gap-2 px-3 sm:px-4 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap">
+                <ListMusic className="w-4 h-4 md:w-5 md:h-5" />
+                <span className="hidden sm:inline">Playlists</span>
               </TabsTrigger>
             </TabsList>
           </div>
 
-          <TabsContent value="discover" className="space-y-8 animate-fade-in">
+          <TabsContent value="discover" className="space-y-6 md:space-y-8 animate-fade-in">
             {/* Epic Hero Section */}
-            <div className="relative overflow-hidden rounded-3xl glass-card-premium p-16 border-primary/40 shadow-glow-lg hover-lift">
+            <div className="relative overflow-hidden rounded-2xl md:rounded-3xl glass-card-premium p-6 sm:p-8 md:p-12 lg:p-16 border-primary/40 shadow-glow-lg hover-lift">
               <div className="absolute inset-0 animated-gradient opacity-30" />
               <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary-glow/20 to-secondary/30" />
               <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 via-primary-glow/30 to-secondary/20 blur-3xl -z-10 animate-pulse" />
               
-              <div className="relative z-10 space-y-6">
-                <Badge className="bg-primary/30 text-primary-foreground border-primary/50 shadow-glow px-4 py-2 text-sm animate-fade-in">
-                  <Flame className="w-4 h-4 mr-2 animate-pulse" />
+              <div className="relative z-10 space-y-4 md:space-y-6">
+                <Badge className="bg-primary/30 text-primary-foreground border-primary/50 shadow-glow px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm animate-fade-in">
+                  <Flame className="w-3 h-3 md:w-4 md:h-4 mr-1.5 md:mr-2 animate-pulse" />
                   Hot This Week
                 </Badge>
                 
-                <div className="space-y-4">
-                  <h1 className="text-7xl md:text-8xl font-black tracking-tight animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                <div className="space-y-2 md:space-y-4">
+                  <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tight animate-fade-in" style={{ animationDelay: '0.1s' }}>
                     <span className="glow-text-lg bg-gradient-to-r from-primary via-primary-glow to-secondary bg-clip-text text-transparent">
                       DISCOVER
                     </span>
                   </h1>
-                  <h2 className="text-6xl md:text-7xl font-black tracking-tight text-foreground/90 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-foreground/90 animate-fade-in" style={{ animationDelay: '0.2s' }}>
                     NEW MUSIC
                   </h2>
                 </div>
                 
-                <p className="text-2xl md:text-3xl text-muted-foreground max-w-3xl font-light animate-fade-in" style={{ animationDelay: '0.3s' }}>
+                <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl text-muted-foreground max-w-3xl font-light animate-fade-in" style={{ animationDelay: '0.3s' }}>
                   Stream unlimited music from independent artists around the world
                 </p>
                 
-                <div className="flex items-center gap-3 text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: '0.4s' }}>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <div className="flex items-center gap-2 md:gap-3 text-xs sm:text-sm text-muted-foreground animate-fade-in flex-wrap" style={{ animationDelay: '0.4s' }}>
+                  <div className="flex items-center gap-1.5 md:gap-2">
+                    <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-primary animate-pulse" />
                     <span>Live</span>
                   </div>
                   <span className="text-border">•</span>
                   <span>Millions of Tracks</span>
-                  <span className="text-border">•</span>
-                  <span>Independent Artists</span>
+                  <span className="text-border hidden sm:inline">•</span>
+                  <span className="hidden sm:inline">Independent Artists</span>
                 </div>
               </div>
             </div>
 
             {/* Tracks Grid */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-4xl font-black tracking-tight glow-text">Latest Releases</h2>
-                <Badge variant="outline" className="text-sm px-4 py-2">
+            <div className="space-y-4 md:space-y-6">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight glow-text">Latest Releases</h2>
+                <Badge variant="outline" className="text-xs sm:text-sm px-2 sm:px-4 py-1 sm:py-2">
                   {filteredTracks.length} Tracks
                 </Badge>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
               {filteredTracks.map((track, index) => (
                   <Card 
                     key={track.id} 
