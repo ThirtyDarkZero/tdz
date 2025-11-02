@@ -7,12 +7,43 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
+import { z } from "zod";
+
+// Security: Input validation schema
+const authSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .email({ message: "Invalid email address" })
+    .max(255, { message: "Email must be less than 255 characters" })
+    .toLowerCase(),
+  password: z
+    .string()
+    .min(8, { message: "Password must be at least 8 characters" })
+    .max(72, { message: "Password must be less than 72 characters" })
+    .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
+    .regex(/[a-z]/, { message: "Password must contain at least one lowercase letter" })
+    .regex(/[0-9]/, { message: "Password must contain at least one number" })
+});
+
+const signInSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .email({ message: "Invalid email address" })
+    .max(255, { message: "Email must be less than 255 characters" })
+    .toLowerCase(),
+  password: z
+    .string()
+    .min(1, { message: "Password is required" })
+});
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<{ email?: string; password?: string }>({});
   const { signIn, signUp, user } = useAuth();
   const { role, loading: roleLoading } = useUserRole(user);
   const navigate = useNavigate();
@@ -40,21 +71,57 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setValidationErrors({});
 
     try {
+      // Security: Validate input before sending to server
+      const schema = isSignUp ? authSchema : signInSchema;
+      const result = schema.safeParse({ email, password });
+
+      if (!result.success) {
+        const errors: { email?: string; password?: string } = {};
+        result.error.issues.forEach((err) => {
+          if (err.path[0] === "email") errors.email = err.message;
+          if (err.path[0] === "password") errors.password = err.message;
+        });
+        setValidationErrors(errors);
+        setLoading(false);
+        return;
+      }
+
       if (isSignUp) {
-        const { error } = await signUp(email, password);
-        if (error) throw error;
+        const { error } = await signUp(result.data.email, result.data.password);
+        if (error) {
+          // Security: Don't expose detailed error messages
+          if (error.message.includes("already registered")) {
+            toast.error("This email is already registered. Please sign in instead.");
+          } else if (error.message.includes("Invalid email")) {
+            toast.error("Please enter a valid email address.");
+          } else if (error.message.includes("Password")) {
+            toast.error("Password does not meet security requirements.");
+          } else {
+            toast.error("Unable to create account. Please try again.");
+          }
+          setLoading(false);
+          return;
+        }
         toast.success("Account created! Choose your path...");
-        // Navigation will be handled by useEffect after user state updates
       } else {
-        const { error } = await signIn(email, password);
-        if (error) throw error;
+        const { error } = await signIn(result.data.email, result.data.password);
+        if (error) {
+          // Security: Generic error message to prevent user enumeration
+          toast.error("Invalid email or password.");
+          setLoading(false);
+          return;
+        }
         toast.success("Signed in successfully!");
-        // Navigation will be handled by useEffect
       }
     } catch (error: any) {
-      toast.error(error.message || "Authentication failed");
+      // Security: Don't log sensitive data in production
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Auth error:', error);
+      }
+      toast.error("Authentication failed. Please try again.");
       setLoading(false);
     }
   };
@@ -80,21 +147,48 @@ export default function Auth() {
               type="email"
               placeholder="Email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setValidationErrors((prev) => ({ ...prev, email: undefined }));
+              }}
               required
+              autoComplete="email"
               className="bg-background/50 border-border/50 focus:border-primary/50"
+              aria-invalid={!!validationErrors.email}
+              aria-describedby={validationErrors.email ? "email-error" : undefined}
             />
+            {validationErrors.email && (
+              <p id="email-error" className="text-sm text-destructive">
+                {validationErrors.email}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Input
               type="password"
               placeholder="Password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setValidationErrors((prev) => ({ ...prev, password: undefined }));
+              }}
               required
-              minLength={6}
+              autoComplete={isSignUp ? "new-password" : "current-password"}
+              minLength={isSignUp ? 8 : 1}
               className="bg-background/50 border-border/50 focus:border-primary/50"
+              aria-invalid={!!validationErrors.password}
+              aria-describedby={validationErrors.password ? "password-error" : undefined}
             />
+            {validationErrors.password && (
+              <p id="password-error" className="text-sm text-destructive">
+                {validationErrors.password}
+              </p>
+            )}
+            {isSignUp && !validationErrors.password && (
+              <p className="text-xs text-muted-foreground">
+                Password must be at least 8 characters with uppercase, lowercase, and numbers
+              </p>
+            )}
           </div>
 
           <Button

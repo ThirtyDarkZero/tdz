@@ -1,4 +1,5 @@
 project_id = "rcjzvfskkoqygnlolrcs"
 
 [functions.label-staff-chat]
-verify_jwt = false
+# SECURITY: Re-enabled JWT verification - users must be authenticated
+# verify_jwt = false  # REMOVED FOR SECURITY

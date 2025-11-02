@@ -1,8 +1,32 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+// SECURITY: Validate and sanitize messages
+const validateMessages = (messages: any[]): boolean => {
+  if (!Array.isArray(messages)) return false;
+  if (messages.length === 0 || messages.length > 100) return false; // Limit conversation length
+  
+  return messages.every((msg) => {
+    if (typeof msg !== 'object' || !msg.role || !msg.content) return false;
+    if (!['user', 'assistant', 'system'].includes(msg.role)) return false;
+    if (typeof msg.content !== 'string') return false;
+    if (msg.content.length > 10000) return false; // Limit message length
+    return true;
+  });
+};
+
+// SECURITY: Sanitize user input to prevent prompt injection
+const sanitizeUserMessage = (content: string): string => {
+  // Remove potential prompt injection patterns
+  return content
+    .replace(/###.*###/g, '') // Remove potential instruction delimiters
+    .replace(/<\|.*?\|>/g, '') // Remove special tokens
+    .substring(0, 5000); // Enforce hard limit
 };
 
 // Define our label staff with their expertise and personalities
@@ -98,11 +122,39 @@ serve(async (req) => {
   }
 
   try {
+    // SECURITY: Get authenticated user
+    const authHeader = req.headers.get("authorization");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: {
+        headers: { Authorization: authHeader! },
+      },
+    });
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { messages, staffMember } = await req.json();
     
+    // SECURITY: Validate inputs
     if (!staffMember || !staffMembers[staffMember as keyof typeof staffMembers]) {
       return new Response(
         JSON.stringify({ error: "Invalid staff member specified" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!validateMessages(messages)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid message format" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -114,6 +166,12 @@ serve(async (req) => {
 
     const staff = staffMembers[staffMember as keyof typeof staffMembers];
 
+    // SECURITY: Sanitize user messages
+    const sanitizedMessages = messages.map((msg: any) => ({
+      ...msg,
+      content: msg.role === 'user' ? sanitizeUserMessage(msg.content) : msg.content
+    }));
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -124,7 +182,7 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: staff.systemPrompt },
-          ...messages,
+          ...sanitizedMessages,
         ],
         stream: true,
       }),

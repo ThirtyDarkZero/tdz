@@ -170,6 +170,69 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: unknown
+          metadata: Json | null
+          resource_id: string | null
+          resource_type: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      auth_rate_limits: {
+        Row: {
+          attempt_count: number
+          blocked_until: string | null
+          created_at: string
+          id: string
+          identifier: string
+          window_start: string
+        }
+        Insert: {
+          attempt_count?: number
+          blocked_until?: string | null
+          created_at?: string
+          id?: string
+          identifier: string
+          window_start?: string
+        }
+        Update: {
+          attempt_count?: number
+          blocked_until?: string | null
+          created_at?: string
+          id?: string
+          identifier?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       characters: {
         Row: {
           created_at: string
@@ -1250,6 +1313,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      log_audit: {
+        Args: {
+          p_action: string
+          p_metadata?: Json
+          p_resource_id?: string
+          p_resource_type: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
