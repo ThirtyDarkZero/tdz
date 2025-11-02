@@ -348,11 +348,174 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
           </div>
         )}
         
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between gap-4">
+        <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
+          {/* Mobile Layout (< md) */}
+          <div className="md:hidden space-y-2">
+            {/* Track Info Row */}
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="relative w-12 h-12 rounded overflow-hidden shadow-lg flex-shrink-0">
+                {motionCoverUrl ? (
+                  <video
+                    src={motionCoverUrl}
+                    className="w-full h-full object-cover"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                  />
+                ) : (
+                  <img
+                    src={coverUrl}
+                    alt={currentTrack.title}
+                    className="w-full h-full object-cover"
+                  />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold truncate text-sm">{currentTrack.title}</p>
+                <p className="text-xs text-muted-foreground truncate">{currentTrack.artist_name}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleLike}
+                className={`flex-shrink-0 h-8 w-8 ${isLiked ? "text-primary" : ""}`}
+              >
+                <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
+              </Button>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground w-9 text-right font-mono">
+                {formatTime(currentTime)}
+              </span>
+              <Slider
+                value={[currentTime]}
+                max={currentTrack.duration}
+                step={0.1}
+                onValueChange={handleSeek}
+                className="flex-1"
+              />
+              <span className="text-[10px] text-muted-foreground w-9 font-mono">
+                {formatTime(currentTrack.duration)}
+              </span>
+            </div>
+            
+            {/* Controls Row */}
+            <div className="flex items-center justify-between">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShuffle(!shuffle)}
+                className={`h-8 w-8 ${shuffle ? "text-primary" : ""}`}
+              >
+                <Shuffle className="h-3.5 w-3.5" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={onPrevious}
+                className="h-8 w-8"
+              >
+                <SkipBack className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="default"
+                size="icon"
+                onClick={togglePlay}
+                className="h-10 w-10 rounded-full"
+              >
+                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={onNext}
+                className="h-8 w-8"
+              >
+                <SkipForward className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setRepeat(repeat === 'off' ? 'all' : repeat === 'all' ? 'one' : 'off')}
+                className={`h-8 w-8 ${repeat !== 'off' ? "text-primary" : ""}`}
+              >
+                <Repeat className="h-3.5 w-3.5" />
+                {repeat === 'one' && <span className="absolute text-[8px] font-bold">1</span>}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowQueue(true)}
+                className="h-8 w-8"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => setShowVisualizer(!showVisualizer)}>
+                    <Radio className="h-4 w-4 mr-2" />
+                    Visualizer
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowEqualizer(true)}>
+                    <Sliders className="h-4 w-4 mr-2" />
+                    Equalizer
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowLyrics(true)}>
+                    <Mic className="h-4 w-4 mr-2" />
+                    Lyrics
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowCredits(true)}>
+                    <Award className="h-4 w-4 mr-2" />
+                    Credits
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={shareTrack}>
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share Track
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={downloadTrack}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setShowSleepTimer(true)}>
+                    <Clock className="h-4 w-4 mr-2" />
+                    Sleep Timer
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <span className="text-sm mr-2">Speed:</span>
+                    <select 
+                      value={playbackRate}
+                      onChange={(e) => setPlaybackRate(Number(e.target.value))}
+                      className="bg-transparent text-sm"
+                    >
+                      <option value="0.5">0.5x</option>
+                      <option value="0.75">0.75x</option>
+                      <option value="1">1x</option>
+                      <option value="1.25">1.25x</option>
+                      <option value="1.5">1.5x</option>
+                      <option value="2">2x</option>
+                    </select>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+
+          {/* Desktop/Tablet Layout (≥ md) */}
+          <div className="hidden md:flex items-center justify-between gap-4">
             {/* Track Info with Motion Cover - Left Side */}
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="relative w-16 h-16 rounded-lg overflow-hidden shadow-lg">
+              <div className="relative w-14 h-14 lg:w-16 lg:h-16 rounded-lg overflow-hidden shadow-lg">
                 {motionCoverUrl ? (
                   <video
                     src={motionCoverUrl}
@@ -371,8 +534,8 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
                 )}
               </div>
               <div className="min-w-0">
-                <p className="font-semibold truncate text-base">{currentTrack.title}</p>
-                <p className="text-sm text-muted-foreground truncate">{currentTrack.artist_name}</p>
+                <p className="font-semibold truncate text-sm lg:text-base">{currentTrack.title}</p>
+                <p className="text-xs lg:text-sm text-muted-foreground truncate">{currentTrack.artist_name}</p>
               </div>
               <Button
                 variant="ghost"
@@ -380,61 +543,63 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
                 onClick={toggleLike}
                 className={`transition-colors ${isLiked ? "text-primary hover:text-primary/80" : ""}`}
               >
-                <Heart className={`h-5 w-5 ${isLiked ? "fill-current" : ""}`} />
+                <Heart className={`h-4 w-4 lg:h-5 lg:w-5 ${isLiked ? "fill-current" : ""}`} />
               </Button>
             </div>
 
             {/* Player Controls - Center */}
             <div className="flex flex-col items-center gap-2 flex-1 max-w-2xl">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 lg:gap-3">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setShuffle(!shuffle)}
-                  className={shuffle ? "text-primary" : ""}
+                  className={`h-8 w-8 lg:h-9 lg:w-9 ${shuffle ? "text-primary" : ""}`}
                   title="Shuffle (S)"
                 >
-                  <Shuffle className="h-4 w-4" />
+                  <Shuffle className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
                 </Button>
                 <Button 
                   variant="ghost" 
                   size="icon" 
                   onClick={onPrevious}
                   title="Previous"
+                  className="h-8 w-8 lg:h-9 lg:w-9"
                 >
-                  <SkipBack className="h-5 w-5" />
+                  <SkipBack className="h-4 w-4 lg:h-5 lg:w-5" />
                 </Button>
                 <Button
                   variant="default"
                   size="icon"
                   onClick={togglePlay}
-                  className="h-11 w-11 rounded-full shadow-lg hover:scale-105 transition-transform"
+                  className="h-10 w-10 lg:h-11 lg:w-11 rounded-full shadow-lg hover:scale-105 transition-transform"
                   title="Play/Pause (Space)"
                 >
-                  {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
+                  {isPlaying ? <Pause className="h-4 w-4 lg:h-5 lg:w-5" /> : <Play className="h-4 w-4 lg:h-5 lg:w-5 ml-0.5" />}
                 </Button>
                 <Button 
                   variant="ghost" 
                   size="icon" 
                   onClick={onNext}
                   title="Next"
+                  className="h-8 w-8 lg:h-9 lg:w-9"
                 >
-                  <SkipForward className="h-5 w-5" />
+                  <SkipForward className="h-4 w-4 lg:h-5 lg:w-5" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setRepeat(repeat === 'off' ? 'all' : repeat === 'all' ? 'one' : 'off')}
-                  className={repeat !== 'off' ? "text-primary" : ""}
+                  className={`h-8 w-8 lg:h-9 lg:w-9 ${repeat !== 'off' ? "text-primary" : ""}`}
                   title="Repeat"
                 >
-                  <Repeat className="h-4 w-4" />
+                  <Repeat className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
                   {repeat === 'one' && <span className="absolute text-[10px] font-bold">1</span>}
                 </Button>
               </div>
               
               <div className="flex items-center gap-2 w-full">
-                <span className="text-xs text-muted-foreground w-12 text-right font-mono">
+                <span className="text-xs text-muted-foreground w-10 lg:w-12 text-right font-mono">
                   {formatTime(currentTime)}
                 </span>
                 <Slider
@@ -444,7 +609,7 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
                   onValueChange={handleSeek}
                   className="flex-1 cursor-pointer"
                 />
-                <span className="text-xs text-muted-foreground w-12 font-mono">
+                <span className="text-xs text-muted-foreground w-10 lg:w-12 font-mono">
                   {formatTime(currentTrack.duration)}
                 </span>
               </div>
@@ -457,7 +622,7 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
                 size="icon"
                 onClick={() => setShowVisualizer(!showVisualizer)}
                 title="Visualizer"
-                className={showVisualizer ? "text-primary" : ""}
+                className={`hidden lg:flex ${showVisualizer ? "text-primary" : ""}`}
               >
                 <Radio className="h-5 w-5" />
               </Button>
@@ -466,6 +631,7 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
                 size="icon"
                 onClick={() => setShowEqualizer(true)}
                 title="Equalizer"
+                className="hidden lg:flex"
               >
                 <Sliders className="h-5 w-5" />
               </Button>
@@ -474,6 +640,7 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
                 size="icon"
                 onClick={() => setShowLyrics(true)}
                 title="Lyrics"
+                className="hidden xl:flex"
               >
                 <Mic className="h-5 w-5" />
               </Button>
@@ -482,6 +649,7 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
                 size="icon"
                 onClick={() => setShowCredits(true)}
                 title="Credits"
+                className="hidden xl:flex"
               >
                 <Award className="h-5 w-5" />
               </Button>
@@ -498,6 +666,7 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
                 size="icon"
                 onClick={() => setIsMuted(!isMuted)}
                 title="Mute"
+                className="hidden lg:flex"
               >
                 {isMuted || volume === 0 ? (
                   <VolumeX className="h-5 w-5" />
@@ -513,7 +682,7 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
                   setVolume(value[0]);
                   setIsMuted(false);
                 }}
-                className="w-24"
+                className="w-20 lg:w-24 hidden lg:flex"
               />
 
               <DropdownMenu>
