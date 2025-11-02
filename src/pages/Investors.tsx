@@ -264,6 +264,132 @@ export default function Investors() {
         </div>
       </section>
 
+      {/* Go-To-Market Strategy: TDZ Discovery */}
+      <section className="py-16 px-4 md:px-6 bg-gradient-to-b from-accent/5 via-primary/5 to-transparent relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,hsl(var(--accent)/0.1),transparent_70%)]" />
+        
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="text-center mb-12">
+            <Badge className="bg-accent/10 text-accent border-accent/20 px-4 py-2 mb-4">
+              <Star className="w-4 h-4 mr-2 inline" />
+              Revolutionary Go-To-Market Strategy
+            </Badge>
+            <h2 className="text-4xl md:text-6xl font-display font-black mb-4">
+              TDZ DISCOVERY
+            </h2>
+            <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent mb-6">
+              The World's First App-Powered Reality Music Competition
+            </p>
+            <p className="text-xl text-muted-foreground max-w-4xl mx-auto">
+              Where artists compete, fans decide, and the platform becomes the star
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 mb-12">
+            <Card className="bg-gradient-to-br from-primary/10 to-transparent border-primary/20 group hover:shadow-lg hover:shadow-primary/20 transition-all">
+              <CardContent className="p-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 rounded-full bg-primary/20">
+                    <Video className="w-8 h-8 text-primary" />
+                  </div>
+                  <h3 className="text-2xl font-bold">The Show Concept</h3>
+                </div>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  TDZ Discovery transforms music competition TV into an interactive phenomenon. Artists use our platform to create, produce, and release their competition entries—showcasing every feature from AI video generation to distribution. Fans don't just watch, they participate through real-time voting, engagement metrics, and social sharing.
+                </p>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-accent" />
+                    <span>Weekly challenges highlighting different platform features</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-accent" />
+                    <span>Celebrity judges + real-time fan voting integration</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-accent" />
+                    <span>Behind-the-scenes platform tutorials woven into content</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-accent/10 to-transparent border-accent/20 group hover:shadow-lg hover:shadow-accent/20 transition-all">
+              <CardContent className="p-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 rounded-full bg-accent/20">
+                    <TrendingUp className="w-8 h-8 text-accent" />
+                  </div>
+                  <h3 className="text-2xl font-bold">Viral User Acquisition</h3>
+                </div>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Every episode becomes a 60-minute platform demonstration to millions of viewers. Aspiring artists watching at home can immediately download the app and use the exact same tools as the contestants. This creates unprecedented conversion rates from viewers to users.
+                </p>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-accent" />
+                    <span>Projected 15-25% viewer-to-user conversion rate</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-accent" />
+                    <span>Multi-platform distribution (streaming + broadcast)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-accent" />
+                    <span>Social media amplification through fan voting</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="bg-gradient-to-br from-secondary/10 via-primary/5 to-accent/5 border-primary/20 mb-8">
+            <CardContent className="p-8">
+              <h3 className="text-2xl font-bold mb-6 text-center">Why This Is a Game-Changer</h3>
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20 mb-4">
+                    <Users className="w-8 h-8 text-primary" />
+                  </div>
+                  <h4 className="font-bold mb-2">Massive Reach</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Target: 5M+ viewers per season across streaming platforms and broadcast TV
+                  </p>
+                </div>
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/20 mb-4">
+                    <DollarSign className="w-8 h-8 text-accent" />
+                  </div>
+                  <h4 className="font-bold mb-2">Multiple Revenue Streams</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Sponsorships, advertising, user subscriptions, and artist licensing deals
+                  </p>
+                </div>
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-secondary/20 mb-4">
+                    <Sparkles className="w-8 h-8 text-secondary" />
+                  </div>
+                  <h4 className="font-bold mb-2">Platform as Product</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Every episode is a live product demo, reducing customer acquisition cost to near-zero
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 rounded-2xl p-8 text-center border border-primary/30">
+            <Rocket className="w-12 h-12 text-primary mx-auto mb-4" />
+            <h3 className="text-2xl font-bold mb-3">The Ultimate Competitive Moat</h3>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              While competitors spend millions on traditional marketing, TDZ Discovery turns entertainment into acquisition. 
+              This isn't just a show—it's a self-sustaining growth engine that pays for itself through media rights while 
+              building the world's largest community of independent artists.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Financial Projections */}
       <section className="py-16 px-4 md:px-6 bg-gradient-to-b from-secondary/5 to-transparent">
         <div className="max-w-7xl mx-auto">
