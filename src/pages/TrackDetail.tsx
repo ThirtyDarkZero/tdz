@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import tdzLogo from "@/assets/tdz-logo.png";
+import { MotionCover } from "@/components/MotionCover";
 
 export default function TrackDetail() {
   const { trackId } = useParams();
@@ -145,26 +146,14 @@ export default function TrackDetail() {
           {/* Album Art / Canvas */}
           <div className="space-y-4 md:space-y-6">
             <div className="aspect-square rounded-2xl md:rounded-3xl overflow-hidden shadow-glow-lg">
-              {track.ai_tags?.metadata?.isMotionCover && track.ai_tags?.metadata?.artworkUrl ? (
-                <video 
-                  src={track.ai_tags.metadata.artworkUrl}
-                  className="w-full h-full object-cover"
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                />
-              ) : track.album_cover_path ? (
-                <img 
-                  src={supabase.storage.from('album-covers').getPublicUrl(track.album_cover_path).data.publicUrl}
-                  alt={track.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
-                  <Music className="w-20 h-20 sm:w-32 sm:h-32 text-muted-foreground" />
-                </div>
-              )}
+              <MotionCover
+                motionCoverPath={track.motion_cover_path}
+                motionCoverBucket={track.motion_cover_bucket}
+                staticCoverPath={track.album_cover_path}
+                staticCoverBucket="album-covers"
+                alt={track.title}
+                className="w-full h-full"
+              />
             </div>
           </div>
 

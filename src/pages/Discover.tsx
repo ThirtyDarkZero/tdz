@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { MusicPlayer } from "@/components/MusicPlayer";
+import { MotionCover } from "@/components/MotionCover";
 
 export default function Discover() {
   const navigate = useNavigate();
@@ -43,10 +44,11 @@ export default function Discover() {
   };
 
   const loadTracks = async () => {
-    // Load tracks
+    // Load tracks with motion cover support
     const { data: tracksData, error: tracksError } = await supabase
-      .from("published_tracks_view")
-      .select("*")
+      .from("tracks")
+      .select("*, albums!inner(*)")
+      .eq("is_published", true)
       .order("created_at", { ascending: false })
       .limit(20);
 
@@ -71,10 +73,13 @@ export default function Discover() {
       (artistsData || []).map(artist => [artist.artist_name, artist.user_id])
     );
 
-    // Enhance tracks with artist user IDs
+    // Enhance tracks with artist user IDs and flatten album data
     const enhancedTracks = (tracksData || []).map(track => ({
       ...track,
-      artist_user_id: artistMap.get(track.artist_name)
+      artist_user_id: artistMap.get(track.artist_name),
+      album_cover_path: track.album_cover_path || track.albums?.cover_art_path,
+      motion_cover_path: track.motion_cover_path || track.albums?.motion_cover_path,
+      motion_cover_bucket: track.motion_cover_bucket || track.albums?.motion_cover_bucket,
     }));
 
     setTracks(enhancedTracks);
@@ -365,28 +370,14 @@ export default function Discover() {
                     >
                       <div className="space-y-2">
                         <div className="relative aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20">
-                          {track.ai_tags?.metadata?.isMotionCover && track.ai_tags?.metadata?.artworkUrl ? (
-                            <video 
-                              src={track.ai_tags.metadata.artworkUrl}
-                              className="w-full h-full object-cover"
-                              autoPlay
-                              loop
-                              muted
-                              playsInline
-                            />
-                          ) : track.album_cover_path && track.album_cover_bucket ? (
-                            <img 
-                              src={supabase.storage.from(track.album_cover_bucket).getPublicUrl(track.album_cover_path).data.publicUrl}
-                              alt={track.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : track.album_cover ? (
-                            <img 
-                              src={track.album_cover}
-                              alt={track.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : null}
+                          <MotionCover
+                            motionCoverPath={track.motion_cover_path}
+                            motionCoverBucket={track.motion_cover_bucket}
+                            staticCoverPath={track.album_cover_path}
+                            staticCoverBucket={track.album_cover_bucket || "album-covers"}
+                            alt={track.title}
+                            className="w-full h-full"
+                          />
                         </div>
                         <div className="space-y-0.5">
                           <p className="text-xs font-medium truncate">{track.title}</p>
@@ -408,28 +399,14 @@ export default function Discover() {
                   >
                     <div className="space-y-2">
                       <div className="relative aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20">
-                        {track.ai_tags?.metadata?.isMotionCover && track.ai_tags?.metadata?.artworkUrl ? (
-                          <video 
-                            src={track.ai_tags.metadata.artworkUrl}
-                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                            autoPlay
-                            loop
-                            muted
-                            playsInline
-                          />
-                        ) : track.album_cover_path && track.album_cover_bucket ? (
-                          <img 
-                            src={supabase.storage.from(track.album_cover_bucket).getPublicUrl(track.album_cover_path).data.publicUrl}
-                            alt={track.title}
-                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                          />
-                        ) : track.album_cover ? (
-                          <img 
-                            src={track.album_cover}
-                            alt={track.title}
-                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                          />
-                        ) : null}
+                        <MotionCover
+                          motionCoverPath={track.motion_cover_path}
+                          motionCoverBucket={track.motion_cover_bucket}
+                          staticCoverPath={track.album_cover_path}
+                          staticCoverBucket={track.album_cover_bucket || "album-covers"}
+                          alt={track.title}
+                          className="w-full h-full group-hover:scale-105 transition-transform"
+                        />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <Button 
                             size="icon" 

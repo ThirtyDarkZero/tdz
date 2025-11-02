@@ -8,6 +8,7 @@ import { Music, Upload, TrendingUp, Zap, Globe, Radio, Shield, Users, ArrowRight
 import studioBackground from "@/assets/studio-background.jpg";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { supabase } from "@/integrations/supabase/client";
+import { MotionCover } from "@/components/MotionCover";
 
 const artistFeatures = [
   {
@@ -69,6 +70,8 @@ interface Track {
   artist_name: string;
   album_cover_path: string | null;
   album_cover_bucket: string | null;
+  motion_cover_path: string | null;
+  motion_cover_bucket: string | null;
 }
 
 const studioTabs = [
@@ -95,7 +98,7 @@ export default function Landing() {
     const fetchTracks = async () => {
       const { data } = await supabase
         .from('tracks')
-        .select('id, title, artist_name, album_cover_path, album_cover_bucket')
+        .select('id, title, artist_name, album_cover_path, album_cover_bucket, motion_cover_path, motion_cover_bucket')
         .eq('is_published', true)
         .order('created_at', { ascending: false })
         .limit(4);
@@ -454,26 +457,27 @@ export default function Landing() {
                   </div>
                   {latestReleases.length > 0 ? (
                     <div className="grid grid-cols-2 gap-3">
-                      {latestReleases.map((release) => {
-                        const coverUrl = release.album_cover_path && release.album_cover_bucket
-                          ? supabase.storage.from(release.album_cover_bucket).getPublicUrl(release.album_cover_path).data.publicUrl
-                          : 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=300&h=300&fit=crop';
-                        
-                        return (
-                          <div key={release.id} className="space-y-2">
-                            <div className="aspect-square rounded-lg overflow-hidden relative group cursor-pointer">
-                              <img src={coverUrl} alt={release.title} className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <Play className="w-8 h-8 text-white" />
-                              </div>
-                            </div>
-                            <div className="text-xs space-y-0.5">
-                              <p className="text-foreground/80 truncate font-medium">{release.title}</p>
-                              <p className="text-muted-foreground truncate">{release.artist_name}</p>
+                      {latestReleases.map((release) => (
+                        <div key={release.id} className="space-y-2">
+                          <div className="aspect-square rounded-lg overflow-hidden relative group cursor-pointer">
+                            <MotionCover
+                              motionCoverPath={release.motion_cover_path}
+                              motionCoverBucket={release.motion_cover_bucket}
+                              staticCoverPath={release.album_cover_path}
+                              staticCoverBucket={release.album_cover_bucket}
+                              alt={release.title}
+                              className="w-full h-full"
+                            />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Play className="w-8 h-8 text-white" />
                             </div>
                           </div>
-                        );
-                      })}
+                          <div className="text-xs space-y-0.5">
+                            <p className="text-foreground/80 truncate font-medium">{release.title}</p>
+                            <p className="text-muted-foreground truncate">{release.artist_name}</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ) : (
                     <div className="text-center py-8 space-y-2">
@@ -509,48 +513,50 @@ export default function Landing() {
             <>
               <div className="md:hidden overflow-x-auto scrollbar-hide -mx-4 px-4">
                 <div className="flex gap-4 pb-4" style={{ width: `${latestReleases.length * 180}px` }}>
-                  {latestReleases.map((release) => {
-                    const coverUrl = release.album_cover_path && release.album_cover_bucket
-                      ? supabase.storage.from(release.album_cover_bucket).getPublicUrl(release.album_cover_path).data.publicUrl
-                      : 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=300&h=300&fit=crop';
-
-                    return (
-                      <div key={release.id} className="flex-shrink-0 w-40 space-y-2 cursor-pointer" onClick={() => navigate(`/track/${release.id}`)}>
-                        <div className="aspect-square rounded-lg overflow-hidden relative group">
-                          <img src={coverUrl} alt={release.title} className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-active:opacity-100 transition-opacity flex items-center justify-center">
-                            <Play className="w-10 h-10 text-white" />
-                          </div>
-                        </div>
-                        <div className="text-xs space-y-0.5">
-                          <p className="text-foreground truncate font-medium">{release.title}</p>
-                          <p className="text-muted-foreground truncate">{release.artist_name}</p>
+                  {latestReleases.map((release) => (
+                    <div key={release.id} className="flex-shrink-0 w-40 space-y-2 cursor-pointer" onClick={() => navigate(`/track/${release.id}`)}>
+                      <div className="aspect-square rounded-lg overflow-hidden relative group">
+                        <MotionCover
+                          motionCoverPath={release.motion_cover_path}
+                          motionCoverBucket={release.motion_cover_bucket}
+                          staticCoverPath={release.album_cover_path}
+                          staticCoverBucket={release.album_cover_bucket}
+                          alt={release.title}
+                          className="w-full h-full"
+                        />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-active:opacity-100 transition-opacity flex items-center justify-center">
+                          <Play className="w-10 h-10 text-white" />
                         </div>
                       </div>
-                    );
-                  })}
+                      <div className="text-xs space-y-0.5">
+                        <p className="text-foreground truncate font-medium">{release.title}</p>
+                        <p className="text-muted-foreground truncate">{release.artist_name}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-6">
-                {latestReleases.map((release) => {
-                  const coverUrl = release.album_cover_path && release.album_cover_bucket
-                    ? supabase.storage.from(release.album_cover_bucket).getPublicUrl(release.album_cover_path).data.publicUrl
-                    : 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=300&h=300&fit=crop';
-
-                  return (
-                    <Card key={release.id} className="glass-card p-4 cursor-pointer hover:scale-105 transition-all duration-300 hover:border-primary/60" onClick={() => navigate(`/track/${release.id}`)}>
-                      <div className="aspect-square rounded-lg overflow-hidden mb-4 relative group">
-                        <img src={coverUrl} alt={release.title} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <Play className="w-12 h-12 text-white" />
-                        </div>
+                {latestReleases.map((release) => (
+                  <Card key={release.id} className="glass-card p-4 cursor-pointer hover:scale-105 transition-all duration-300 hover:border-primary/60" onClick={() => navigate(`/track/${release.id}`)}>
+                    <div className="aspect-square rounded-lg overflow-hidden mb-4 relative group">
+                      <MotionCover
+                        motionCoverPath={release.motion_cover_path}
+                        motionCoverBucket={release.motion_cover_bucket}
+                        staticCoverPath={release.album_cover_path}
+                        staticCoverBucket={release.album_cover_bucket}
+                        alt={release.title}
+                        className="w-full h-full"
+                      />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Play className="w-12 h-12 text-white" />
                       </div>
-                      <h3 className="font-bold truncate mb-1">{release.title}</h3>
-                      <p className="text-sm text-muted-foreground truncate">{release.artist_name}</p>
-                    </Card>
-                  );
-                })}
+                    </div>
+                    <h3 className="font-bold truncate mb-1">{release.title}</h3>
+                    <p className="text-sm text-muted-foreground truncate">{release.artist_name}</p>
+                  </Card>
+                ))}
               </div>
             </>
           ) : (

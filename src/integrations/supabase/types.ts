@@ -23,6 +23,8 @@ export type Database = {
           genre: string | null
           id: string
           is_published: boolean | null
+          motion_cover_bucket: string | null
+          motion_cover_path: string | null
           play_count: number | null
           release_date: string | null
           scheduled_release_date: string | null
@@ -40,6 +42,8 @@ export type Database = {
           genre?: string | null
           id?: string
           is_published?: boolean | null
+          motion_cover_bucket?: string | null
+          motion_cover_path?: string | null
           play_count?: number | null
           release_date?: string | null
           scheduled_release_date?: string | null
@@ -57,6 +61,8 @@ export type Database = {
           genre?: string | null
           id?: string
           is_published?: boolean | null
+          motion_cover_bucket?: string | null
+          motion_cover_path?: string | null
           play_count?: number | null
           release_date?: string | null
           scheduled_release_date?: string | null
@@ -204,6 +210,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      comment_likes: {
+        Row: {
+          comment_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       credit_transactions: {
         Row: {
@@ -816,6 +843,33 @@ export type Database = {
           },
         ]
       }
+      track_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          track_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          track_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          track_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       track_likes: {
         Row: {
           created_at: string
@@ -911,6 +965,8 @@ export type Database = {
           key: string | null
           like_count: number | null
           mood: string | null
+          motion_cover_bucket: string | null
+          motion_cover_path: string | null
           play_count: number | null
           release_date: string | null
           title: string
@@ -935,6 +991,8 @@ export type Database = {
           key?: string | null
           like_count?: number | null
           mood?: string | null
+          motion_cover_bucket?: string | null
+          motion_cover_path?: string | null
           play_count?: number | null
           release_date?: string | null
           title: string
@@ -959,6 +1017,8 @@ export type Database = {
           key?: string | null
           like_count?: number | null
           mood?: string | null
+          motion_cover_bucket?: string | null
+          motion_cover_path?: string | null
           play_count?: number | null
           release_date?: string | null
           title?: string
