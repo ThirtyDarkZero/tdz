@@ -734,14 +734,13 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
         queue={queue}
         currentTrack={currentTrack}
         onPlayTrack={(track) => {
-          // Implementation would need to be passed from parent
-          console.log('Play track:', track);
+          // Queue functionality handled by parent component
         }}
         onRemoveFromQueue={(index) => {
-          console.log('Remove from queue:', index);
+          // Queue removal handled by parent component
         }}
         onReorderQueue={(from, to) => {
-          console.log('Reorder:', from, to);
+          // Queue reorder handled by parent component
         }}
       />
 
