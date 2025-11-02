@@ -1,44 +1,49 @@
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, Users, TrendingUp, Star } from "lucide-react";
-
-const recommendations = [
-  {
-    city: "Los Angeles, CA",
-    reason: "High listener concentration (2,345 monthly listeners)",
-    venues: ["The Troubadour", "Hotel Café", "The Mint"],
-    bestMonth: "March 2025",
-    audienceSize: "2.3K",
-    matchScore: 95
-  },
-  {
-    city: "New York, NY",
-    reason: "Growing fanbase (1,823 monthly listeners)",
-    venues: ["Mercury Lounge", "Bowery Ballroom", "Arlene's Grocery"],
-    bestMonth: "April 2025",
-    audienceSize: "1.8K",
-    matchScore: 88
-  },
-  {
-    city: "Austin, TX",
-    reason: "Genre match & festival opportunities",
-    venues: ["Antone's Nightclub", "Mohawk", "The Parish"],
-    bestMonth: "March 2025 (SXSW)",
-    audienceSize: "1.2K",
-    matchScore: 82
-  },
-  {
-    city: "Nashville, TN",
-    reason: "Industry presence & networking",
-    venues: ["The Bluebird Cafe", "Exit/In", "The Basement"],
-    bestMonth: "May 2025",
-    audienceSize: "967",
-    matchScore: 75
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const TourRecommendations = () => {
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadRecommendations();
+  }, []);
+
+  const loadRecommendations = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("tour_recommendations")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("match_score", { ascending: false });
+
+      if (error) throw error;
+      setRecommendations(data || []);
+    } catch (error) {
+      console.error("Error loading recommendations:", error);
+      toast.error("Failed to load tour recommendations");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card className="glass-card p-12 text-center">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-muted-foreground">Loading recommendations...</p>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -51,8 +56,17 @@ export const TourRecommendations = () => {
         </div>
       </div>
 
-      <div className="grid gap-4">
-        {recommendations.map((rec, idx) => (
+      {recommendations.length === 0 ? (
+        <Card className="glass-card p-12 text-center">
+          <MapPin className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-semibold mb-2">No Recommendations Yet</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Tour recommendations are generated based on your listener data. Upload and promote your music to get personalized venue suggestions!
+          </p>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {recommendations.map((rec, idx) => (
           <Card 
             key={idx} 
             className="glass-card p-6 hover:border-primary/60 hover:scale-102 transition-all group cursor-pointer animate-fade-in"
@@ -96,7 +110,7 @@ export const TourRecommendations = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  {rec.venues.map((venue, vidx) => (
+                  {(rec.venues || []).map((venue: string, vidx: number) => (
                     <Badge key={vidx} variant="outline" className="text-xs">
                       {venue}
                     </Badge>
@@ -115,8 +129,9 @@ export const TourRecommendations = () => {
               </div>
             </div>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <Card className="glass-card p-6 bg-accent/10 border-accent/20">
         <div className="flex gap-3">

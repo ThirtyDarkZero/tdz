@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -5,55 +6,62 @@ import {
   Sparkles, DollarSign, Calendar, Users, 
   TrendingUp, Star, Music, Film 
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-const opportunities = [
-  {
-    title: "Netflix Series Sync Placement",
-    type: "Sync Licensing",
-    budget: "$5,000 - $15,000",
-    deadline: "March 15, 2025",
-    genre: ["Pop", "Indie"],
-    status: "Hot",
-    description: "Seeking upbeat indie-pop tracks for upcoming teen drama series",
-    icon: Film,
-    color: "from-red-500 to-orange-500"
-  },
-  {
-    title: "Brand Campaign - Athletic Wear",
-    type: "Brand Partnership",
-    budget: "$10,000 - $25,000",
-    deadline: "March 20, 2025",
-    genre: ["Electronic", "Hip-Hop"],
-    status: "Exclusive",
-    description: "Major athletic brand seeking high-energy tracks for spring campaign",
-    icon: TrendingUp,
-    color: "from-blue-500 to-cyan-500"
-  },
-  {
-    title: "Festival Headliner Opening Act",
-    type: "Performance",
-    budget: "$3,000 + Exposure",
-    deadline: "April 1, 2025",
-    genre: ["Rock", "Alternative"],
-    status: "Featured",
-    description: "Open for major headliner at 50K capacity summer festival",
-    icon: Users,
-    color: "from-purple-500 to-pink-500"
-  },
-  {
-    title: "Video Game Soundtrack",
-    type: "Sync Licensing",
-    budget: "$8,000 - $20,000",
-    deadline: "March 30, 2025",
-    genre: ["Electronic", "Ambient"],
-    status: "New",
-    description: "Indie game studio needs atmospheric tracks for open-world adventure",
-    icon: Music,
-    color: "from-green-500 to-emerald-500"
-  },
-];
+const getIconByType = (type: string) => {
+  switch (type) {
+    case "Sync Licensing": return Film;
+    case "Brand Partnership": return TrendingUp;
+    case "Performance": return Users;
+    default: return Music;
+  }
+};
+
+const getColorByType = (type: string) => {
+  switch (type) {
+    case "Sync Licensing": return "from-red-500 to-orange-500";
+    case "Brand Partnership": return "from-blue-500 to-cyan-500";
+    case "Performance": return "from-purple-500 to-pink-500";
+    default: return "from-green-500 to-emerald-500";
+  }
+};
 
 export const OpportunitiesMarketplace = () => {
+  const [opportunities, setOpportunities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadOpportunities();
+  }, []);
+
+  const loadOpportunities = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("opportunities")
+        .select("*")
+        .gte("deadline", new Date().toISOString().split('T')[0])
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setOpportunities(data || []);
+    } catch (error) {
+      console.error("Error loading opportunities:", error);
+      toast.error("Failed to load opportunities");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card className="glass-card p-12 text-center">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-muted-foreground">Loading opportunities...</p>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -66,12 +74,24 @@ export const OpportunitiesMarketplace = () => {
         </div>
       </div>
 
-      <div className="grid gap-4">
-        {opportunities.map((opp, idx) => (
-          <Card key={idx} className="glass-card p-6 hover:border-primary/60 transition-all">
-            <div className="flex flex-col lg:flex-row gap-4">
-              <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${opp.color} flex items-center justify-center flex-shrink-0`}>
-                <opp.icon className="w-8 h-8 text-white" />
+      {opportunities.length === 0 ? (
+        <Card className="glass-card p-12 text-center">
+          <Sparkles className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-semibold mb-2">No Opportunities Available</h3>
+          <p className="text-sm text-muted-foreground">
+            New exclusive deals and placements are added regularly. Check back soon!
+          </p>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {opportunities.map((opp, idx) => {
+            const Icon = getIconByType(opp.type);
+            const color = getColorByType(opp.type);
+            return (
+              <Card key={opp.id} className="glass-card p-6 hover:border-primary/60 transition-all">
+                <div className="flex flex-col lg:flex-row gap-4">
+                  <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center flex-shrink-0`}>
+                    <Icon className="w-8 h-8 text-white" />
               </div>
 
               <div className="flex-1 space-y-3">
@@ -110,7 +130,7 @@ export const OpportunitiesMarketplace = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  {opp.genre.map((g, gidx) => (
+                  {(opp.genre || []).map((g: string, gidx: number) => (
                     <Badge key={gidx} variant="outline" className="text-xs">
                       {g}
                     </Badge>
@@ -128,8 +148,10 @@ export const OpportunitiesMarketplace = () => {
               </div>
             </div>
           </Card>
-        ))}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       <Card className="glass-card p-6 bg-primary/10 border-primary/20">
         <div className="flex gap-3">

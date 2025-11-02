@@ -396,6 +396,36 @@ export type Database = {
           },
         ]
       }
+      fan_metrics: {
+        Row: {
+          conversion_rate: number
+          email_list_size: number
+          id: string
+          open_rate: number
+          super_fans_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          conversion_rate?: number
+          email_list_size?: number
+          id?: string
+          open_rate?: number
+          super_fans_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          conversion_rate?: number
+          email_list_size?: number
+          id?: string
+          open_rate?: number
+          super_fans_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       listener_profiles: {
         Row: {
           bio: string | null
@@ -557,6 +587,165 @@ export type Database = {
           id?: string
           manager_id?: string
           notes?: string | null
+        }
+        Relationships: []
+      }
+      master_classes: {
+        Row: {
+          available: boolean
+          created_at: string
+          duration: string
+          enrolled: number
+          id: string
+          instructor: string
+          level: string
+          price: string
+          rating: number
+          thumbnail: string | null
+          title: string
+          topics: Json
+          updated_at: string
+        }
+        Insert: {
+          available?: boolean
+          created_at?: string
+          duration: string
+          enrolled?: number
+          id?: string
+          instructor: string
+          level: string
+          price: string
+          rating?: number
+          thumbnail?: string | null
+          title: string
+          topics?: Json
+          updated_at?: string
+        }
+        Update: {
+          available?: boolean
+          created_at?: string
+          duration?: string
+          enrolled?: number
+          id?: string
+          instructor?: string
+          level?: string
+          price?: string
+          rating?: number
+          thumbnail?: string | null
+          title?: string
+          topics?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      milestones: {
+        Row: {
+          achieved: boolean
+          created_at: string
+          current_value: number | null
+          date_achieved: string | null
+          id: string
+          momentum_impact: number
+          target_value: number | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          achieved?: boolean
+          created_at?: string
+          current_value?: number | null
+          date_achieved?: string | null
+          id?: string
+          momentum_impact: number
+          target_value?: number | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          achieved?: boolean
+          created_at?: string
+          current_value?: number | null
+          date_achieved?: string | null
+          id?: string
+          momentum_impact?: number
+          target_value?: number | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      momentum_scores: {
+        Row: {
+          content_consistency: number
+          created_at: string
+          engagement_rate: number
+          fan_growth: number
+          id: string
+          release_velocity: number
+          score: number
+          streak_days: number
+          user_id: string
+        }
+        Insert: {
+          content_consistency?: number
+          created_at?: string
+          engagement_rate?: number
+          fan_growth?: number
+          id?: string
+          release_velocity?: number
+          score?: number
+          streak_days?: number
+          user_id: string
+        }
+        Update: {
+          content_consistency?: number
+          created_at?: string
+          engagement_rate?: number
+          fan_growth?: number
+          id?: string
+          release_velocity?: number
+          score?: number
+          streak_days?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      opportunities: {
+        Row: {
+          budget: string
+          created_at: string
+          deadline: string
+          description: string
+          genre: Json
+          id: string
+          status: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          budget: string
+          created_at?: string
+          deadline: string
+          description: string
+          genre?: Json
+          id?: string
+          status?: string
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          budget?: string
+          created_at?: string
+          deadline?: string
+          description?: string
+          genre?: Json
+          id?: string
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -871,6 +1060,45 @@ export type Database = {
           },
         ]
       }
+      social_connections: {
+        Row: {
+          access_token: string | null
+          connected: boolean
+          created_at: string
+          expires_at: string | null
+          id: string
+          platform: string
+          platform_name: string
+          refresh_token: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          connected?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          platform: string
+          platform_name: string
+          refresh_token?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          connected?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          platform?: string
+          platform_name?: string
+          refresh_token?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tempo_maps: {
         Row: {
           beat_grid: Json
@@ -905,6 +1133,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tour_recommendations: {
+        Row: {
+          audience_size: string
+          best_month: string
+          city: string
+          created_at: string
+          id: string
+          match_score: number
+          reason: string
+          user_id: string
+          venues: Json
+        }
+        Insert: {
+          audience_size: string
+          best_month: string
+          city: string
+          created_at?: string
+          id?: string
+          match_score: number
+          reason: string
+          user_id: string
+          venues?: Json
+        }
+        Update: {
+          audience_size?: string
+          best_month?: string
+          city?: string
+          created_at?: string
+          id?: string
+          match_score?: number
+          reason?: string
+          user_id?: string
+          venues?: Json
+        }
+        Relationships: []
       }
       track_comments: {
         Row: {

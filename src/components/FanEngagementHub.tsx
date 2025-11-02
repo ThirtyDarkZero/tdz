@@ -11,13 +11,53 @@ import {
   Users, Mail, MessageSquare, Heart, TrendingUp, 
   Target, Zap, Gift, Bell, Send 
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 // Pillar 1: Trusted Attention Access
 // Pillar 3: Conversion Infrastructure
 export const FanEngagementHub = () => {
-  const [emailList, setEmailList] = useState(1247);
-  const [conversionRate, setConversionRate] = useState(3.2);
+  const [metrics, setMetrics] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadMetrics();
+  }, []);
+
+  const loadMetrics = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("fan_metrics")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      setMetrics(data || {
+        email_list_size: 0,
+        open_rate: 0,
+        conversion_rate: 0,
+        super_fans_count: 0
+      });
+    } catch (error) {
+      console.error("Error loading metrics:", error);
+      toast.error("Failed to load engagement metrics");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card className="glass-card p-12 text-center">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-muted-foreground">Loading engagement data...</p>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -41,7 +81,7 @@ export const FanEngagementHub = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{emailList.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{(metrics?.email_list_size || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Direct reach</p>
           </CardContent>
         </Card>
@@ -54,7 +94,7 @@ export const FanEngagementHub = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-500">42.3%</div>
+            <div className="text-2xl font-bold text-green-500">{(metrics?.open_rate || 0).toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">Industry avg: 18%</p>
           </CardContent>
         </Card>
@@ -67,7 +107,7 @@ export const FanEngagementHub = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-500">{conversionRate}%</div>
+            <div className="text-2xl font-bold text-blue-500">{(metrics?.conversion_rate || 0).toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">Attention → Sales</p>
           </CardContent>
         </Card>
@@ -80,7 +120,7 @@ export const FanEngagementHub = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-500">324</div>
+            <div className="text-2xl font-bold text-red-500">{metrics?.super_fans_count || 0}</div>
             <p className="text-xs text-muted-foreground">High engagement</p>
           </CardContent>
         </Card>
@@ -224,7 +264,7 @@ export const FanEngagementHub = () => {
                 <Card className="p-4">
                   <h4 className="font-semibold mb-2 flex items-center gap-2">
                     Smart Links
-                    <Badge className="bg-green-500/20 text-green-500">+{conversionRate}%</Badge>
+                    <Badge className="bg-green-500/20 text-green-500">Optimized</Badge>
                   </h4>
                   <p className="text-sm text-muted-foreground mb-3">
                     Optimize every link for maximum conversion
@@ -247,7 +287,10 @@ export const FanEngagementHub = () => {
                 </Card>
 
                 <Card className="p-4">
-                  <h4 className="font-semibold mb-2">Direct Sales</h4>
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    Direct Sales
+                    <Badge className="bg-green-500/20 text-green-500">+{(metrics?.conversion_rate || 0).toFixed(1)}%</Badge>
+                  </h4>
                   <p className="text-sm text-muted-foreground mb-3">
                     Sell merch, exclusives, experiences
                   </p>
@@ -274,9 +317,9 @@ export const FanEngagementHub = () => {
                   <Progress value={87} className="h-2" />
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Email → Purchase rate</span>
-                    <span className="font-semibold">{conversionRate}%</span>
+                    <span className="font-semibold">{(metrics?.conversion_rate || 0).toFixed(1)}%</span>
                   </div>
-                  <Progress value={32} className="h-2" />
+                  <Progress value={metrics?.conversion_rate || 0} className="h-2" />
                 </div>
               </Card>
             </CardContent>

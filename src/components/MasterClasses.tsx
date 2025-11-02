@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -5,83 +6,44 @@ import {
   GraduationCap, Play, Clock, Users, 
   Star, CheckCircle2, Lock 
 } from "lucide-react";
-
-const masterclasses = [
-  {
-    title: "Music Production Fundamentals",
-    instructor: "Grammy-winning producer Marcus Stone",
-    duration: "6 weeks",
-    level: "Beginner",
-    enrolled: 234,
-    rating: 4.9,
-    price: "Free for TDZ Artists",
-    thumbnail: "🎛️",
-    topics: ["DAW Basics", "Mixing", "Mastering", "Sound Design"],
-    available: true
-  },
-  {
-    title: "Playlist Pitching Masterclass",
-    instructor: "Former Spotify Curator Sarah Chen",
-    duration: "3 weeks",
-    level: "Intermediate",
-    enrolled: 189,
-    rating: 4.8,
-    price: "Free for TDZ Artists",
-    thumbnail: "🎵",
-    topics: ["Curator Psychology", "Perfect Pitch", "Follow-up Strategy"],
-    available: true
-  },
-  {
-    title: "Social Media for Musicians 2025",
-    instructor: "Viral marketing expert Jake Williams",
-    duration: "4 weeks",
-    level: "All Levels",
-    enrolled: 456,
-    rating: 4.9,
-    price: "Free for TDZ Artists",
-    thumbnail: "📱",
-    topics: ["TikTok Strategy", "Instagram Reels", "Content Calendar"],
-    available: true
-  },
-  {
-    title: "Sync Licensing & Music Supervision",
-    instructor: "Music supervisor Laura Martinez",
-    duration: "5 weeks",
-    level: "Advanced",
-    enrolled: 145,
-    rating: 4.7,
-    price: "Premium - $199",
-    thumbnail: "🎬",
-    topics: ["Deal Negotiation", "Rights Management", "Supervisor Networking"],
-    available: false
-  },
-  {
-    title: "Live Performance & Stage Presence",
-    instructor: "Touring artist & coach David Rivers",
-    duration: "4 weeks",
-    level: "Intermediate",
-    enrolled: 298,
-    rating: 4.8,
-    price: "Free for TDZ Artists",
-    thumbnail: "🎤",
-    topics: ["Stage Energy", "Crowd Engagement", "Tour Management"],
-    available: true
-  },
-  {
-    title: "Music Business & Contracts",
-    instructor: "Entertainment attorney Michael Brown",
-    duration: "6 weeks",
-    level: "All Levels",
-    enrolled: 367,
-    rating: 4.9,
-    price: "Free for TDZ Artists",
-    thumbnail: "💼",
-    topics: ["Contract Review", "Publishing Rights", "Royalty Splits"],
-    available: true
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const MasterClasses = () => {
+  const [masterclasses, setMasterclasses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadMasterClasses();
+  }, []);
+
+  const loadMasterClasses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("master_classes")
+        .select("*")
+        .eq("available", true)
+        .order("rating", { ascending: false });
+
+      if (error) throw error;
+      setMasterclasses(data || []);
+    } catch (error) {
+      console.error("Error loading master classes:", error);
+      toast.error("Failed to load master classes");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card className="glass-card p-12 text-center">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-muted-foreground">Loading master classes...</p>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -94,8 +56,17 @@ export const MasterClasses = () => {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {masterclasses.map((course, idx) => (
+      {masterclasses.length === 0 ? (
+        <Card className="glass-card p-12 text-center">
+          <GraduationCap className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-semibold mb-2">No Master Classes Available</h3>
+          <p className="text-sm text-muted-foreground">
+            Check back soon for new courses from industry professionals!
+          </p>
+        </Card>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {masterclasses.map((course, idx) => (
           <Card key={idx} className="glass-card overflow-hidden hover:border-primary/60 transition-all">
             <div className="p-6 space-y-4">
               <div className="flex items-start justify-between">
@@ -130,7 +101,7 @@ export const MasterClasses = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-1 mb-3">
-                  {course.topics.map((topic, tidx) => (
+                  {(course.topics || []).map((topic: string, tidx: number) => (
                     <Badge key={tidx} variant="outline" className="text-xs">
                       {topic}
                     </Badge>
@@ -164,8 +135,9 @@ export const MasterClasses = () => {
               </Button>
             </div>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <Card className="glass-card p-6 bg-accent/10 border-accent/20">
         <div className="flex gap-3">
