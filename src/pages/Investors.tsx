@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import tdzLogo from "@/assets/tdz-logo.png";
+import { StudioPhoneMockups } from "@/components/StudioPhoneMockup";
 
 export default function Investors() {
   const navigate = useNavigate();
@@ -242,6 +243,9 @@ export default function Investors() {
           </div>
         </div>
       </section>
+
+      {/* Interactive Studio Preview */}
+      <StudioPhoneMockups />
 
       {/* Competitive Advantages */}
       <section className="py-16 px-4 md:px-6">
