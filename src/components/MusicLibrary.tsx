@@ -163,28 +163,28 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
       {trackList.map((track, index) => (
         <div
           key={track.id}
-          className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors group"
+          className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg hover:bg-accent/50 transition-colors group"
         >
           <Button
             variant="ghost"
             size="icon"
             onClick={() => onPlayTrack(track, trackList)}
-            className="opacity-0 group-hover:opacity-100"
+            className="opacity-0 group-hover:opacity-100 hidden sm:flex"
           >
             <Play className="h-4 w-4" />
           </Button>
-          <span className="text-muted-foreground w-6 group-hover:hidden">{index + 1}</span>
+          <span className="text-muted-foreground w-6 group-hover:hidden text-sm">{index + 1}</span>
           
-          <CoverArt track={track} className="w-12 h-12 rounded object-cover" />
+          <CoverArt track={track} className="w-10 h-10 sm:w-12 sm:h-12 rounded object-cover flex-shrink-0" />
           
           <div className="flex-1 min-w-0">
-            <p className="font-medium truncate">{track.title}</p>
-            <p className="text-sm text-muted-foreground truncate">{track.artist_name}</p>
+            <p className="font-medium truncate text-sm sm:text-base">{track.title}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground truncate">{track.artist_name}</p>
           </div>
           
-          <span className="text-sm text-muted-foreground">{track.genre}</span>
-          <span className="text-sm text-muted-foreground">{formatDuration(track.duration)}</span>
-          {!showPublish && <span className="text-sm text-muted-foreground">{track.play_count.toLocaleString()} plays</span>}
+          <span className="text-xs sm:text-sm text-muted-foreground hidden lg:inline">{track.genre}</span>
+          <span className="text-xs sm:text-sm text-muted-foreground hidden md:inline">{formatDuration(track.duration)}</span>
+          {!showPublish && <span className="text-xs sm:text-sm text-muted-foreground hidden xl:inline">{track.play_count.toLocaleString()} plays</span>}
           
           {showPublish && (
             <QuickPublishButton 
@@ -194,7 +194,7 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
             />
           )}
           
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" className="flex-shrink-0">
             <MoreVertical className="h-4 w-4" />
           </Button>
         </div>
@@ -207,18 +207,22 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-4xl font-bold">Your Library</h1>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">Your Library</h1>
       </div>
 
-      <Tabs defaultValue="unpublished" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="unpublished">Unpublished ({unpublishedTracks.length})</TabsTrigger>
-          <TabsTrigger value="tracks">Published Tracks</TabsTrigger>
-          <TabsTrigger value="albums">Albums</TabsTrigger>
-          <TabsTrigger value="liked">Liked Songs</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="unpublished" className="space-y-4 md:space-y-6">
+        <div className="overflow-x-auto -mx-4 px-4">
+          <TabsList className="inline-flex min-w-max">
+            <TabsTrigger value="unpublished" className="text-xs sm:text-sm">
+              Unpublished ({unpublishedTracks.length})
+            </TabsTrigger>
+            <TabsTrigger value="tracks" className="text-xs sm:text-sm">Published</TabsTrigger>
+            <TabsTrigger value="albums" className="text-xs sm:text-sm">Albums</TabsTrigger>
+            <TabsTrigger value="liked" className="text-xs sm:text-sm">Liked</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="unpublished">
           {unpublishedTracks.length === 0 ? (
@@ -247,16 +251,16 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
         </TabsContent>
 
         <TabsContent value="albums">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {albums.map((album) => (
-              <Card key={album.id} className="p-4 hover:bg-accent/50 transition-colors cursor-pointer">
+              <Card key={album.id} className="p-3 md:p-4 hover:bg-accent/50 transition-colors cursor-pointer">
                 <img
                   src={getCoverUrl(album.cover_art_path)}
                   alt={album.title}
-                  className="w-full aspect-square rounded-lg object-cover mb-3"
+                  className="w-full aspect-square rounded-lg object-cover mb-2 md:mb-3"
                 />
-                <p className="font-medium truncate">{album.title}</p>
-                <p className="text-sm text-muted-foreground truncate">{album.artist_name}</p>
+                <p className="font-medium truncate text-sm md:text-base">{album.title}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">{album.artist_name}</p>
                 <p className="text-xs text-muted-foreground mt-1">{album.total_tracks} tracks</p>
               </Card>
             ))}

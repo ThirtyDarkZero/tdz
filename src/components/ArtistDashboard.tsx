@@ -107,17 +107,18 @@ export const ArtistDashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold">Artist Dashboard</h1>
-          <p className="text-muted-foreground mt-2">Your complete record label suite</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">Artist Dashboard</h1>
+          <p className="text-sm md:text-base text-muted-foreground mt-1 md:mt-2">Your complete record label suite</p>
         </div>
         <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
           <DialogTrigger asChild>
-            <Button size="lg" data-upload-track>
+            <Button size="default" className="w-full sm:w-auto" data-upload-track>
               <Upload className="h-4 w-4 mr-2" />
-              Upload Music
+              <span className="hidden sm:inline">Upload Music</span>
+              <span className="sm:hidden">Upload</span>
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -135,79 +136,81 @@ export const ArtistDashboard = () => {
         </Dialog>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Plays</CardTitle>
-            <Play className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Total Plays</CardTitle>
+            <Play className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalPlays.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">All time plays</p>
+            <div className="text-xl sm:text-2xl font-bold">{stats.totalPlays.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">All time</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Listeners</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Listeners</CardTitle>
+            <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.monthlyListeners.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Last 30 days</p>
+            <div className="text-xl sm:text-2xl font-bold">{stats.monthlyListeners.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">30 days</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Tracks</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Tracks</CardTitle>
+            <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalTracks}</div>
+            <div className="text-xl sm:text-2xl font-bold">{stats.totalTracks}</div>
             <p className="text-xs text-muted-foreground">{stats.totalAlbums} albums</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Estimated Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs sm:text-sm font-medium">Revenue</CardTitle>
+            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${(stats.totalPlays * 0.004).toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">Based on streams</p>
+            <div className="text-xl sm:text-2xl font-bold">${(stats.totalPlays * 0.004).toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">Streams</p>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6 lg:w-auto">
-          <TabsTrigger value="overview" className="gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="social" className="gap-2">
-            <Users className="h-4 w-4" />
-            Social
-          </TabsTrigger>
-          <TabsTrigger value="tour" className="gap-2">
-            <MapPin className="h-4 w-4" />
-            Tours
-          </TabsTrigger>
-          <TabsTrigger value="pitching" className="gap-2">
-            <Target className="h-4 w-4" />
-            Pitching
-          </TabsTrigger>
-          <TabsTrigger value="opportunities" className="gap-2">
-            <Sparkles className="h-4 w-4" />
-            Opportunities
-          </TabsTrigger>
-          <TabsTrigger value="education" className="gap-2">
-            <GraduationCap className="h-4 w-4" />
-            Learn
-          </TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="overview" className="space-y-4 md:space-y-6">
+        <div className="overflow-x-auto -mx-4 px-4">
+          <TabsList className="inline-flex min-w-max">
+            <TabsTrigger value="overview" className="gap-1 md:gap-2 text-xs md:text-sm">
+              <BarChart3 className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Overview</span>
+            </TabsTrigger>
+            <TabsTrigger value="social" className="gap-1 md:gap-2 text-xs md:text-sm">
+              <Users className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Social</span>
+            </TabsTrigger>
+            <TabsTrigger value="tour" className="gap-1 md:gap-2 text-xs md:text-sm">
+              <MapPin className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Tours</span>
+            </TabsTrigger>
+            <TabsTrigger value="pitching" className="gap-1 md:gap-2 text-xs md:text-sm">
+              <Target className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Pitching</span>
+            </TabsTrigger>
+            <TabsTrigger value="opportunities" className="gap-1 md:gap-2 text-xs md:text-sm">
+              <Sparkles className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Opps</span>
+            </TabsTrigger>
+            <TabsTrigger value="education" className="gap-1 md:gap-2 text-xs md:text-sm">
+              <GraduationCap className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="hidden sm:inline">Learn</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="overview">
           <Card>

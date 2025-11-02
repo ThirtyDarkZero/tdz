@@ -121,24 +121,24 @@ export const CanvasManager = () => {
     <Card className="glass-card-premium">
       <CardHeader>
         <div className="flex items-center gap-2">
-          <Film className="w-6 h-6" />
-          <CardTitle>Canvas Manager</CardTitle>
+          <Film className="w-5 h-5 md:w-6 md:h-6" />
+          <CardTitle className="text-lg md:text-xl">Canvas Manager</CardTitle>
         </div>
-        <CardDescription>
+        <CardDescription className="text-sm">
           Add looping visual art to your tracks (like Spotify Canvas). Videos should be 3-8 seconds, vertical format (9:16).
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           {tracks.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
+            <p className="text-center text-muted-foreground py-8 text-sm md:text-base">
               No tracks yet. Upload your first track!
             </p>
           ) : (
             tracks.map(track => (
-              <div key={track.id} className="flex items-center justify-between p-4 rounded-lg border">
-                <div className="flex items-center gap-4">
-                  <div className="relative w-16 h-16 rounded-lg overflow-hidden">
+              <div key={track.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 md:p-4 rounded-lg border">
+                <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0 w-full sm:w-auto">
+                  <div className="relative w-14 h-14 md:w-16 md:h-16 rounded-lg overflow-hidden flex-shrink-0">
                     {track.ai_tags?.metadata?.isMotionCover && track.ai_tags?.metadata?.artworkUrl ? (
                       <video 
                         src={track.ai_tags.metadata.artworkUrl}
@@ -150,47 +150,50 @@ export const CanvasManager = () => {
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
-                        <Film className="w-6 h-6 text-muted-foreground" />
+                        <Film className="w-5 h-5 md:w-6 md:h-6 text-muted-foreground" />
                       </div>
                     )}
                   </div>
-                  <div>
-                    <h3 className="font-bold">{track.title}</h3>
-                    <p className="text-sm text-muted-foreground">{track.artist_name}</p>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-sm md:text-base truncate">{track.title}</h3>
+                    <p className="text-xs md:text-sm text-muted-foreground truncate">{track.artist_name}</p>
                   </div>
                   {track.ai_tags?.metadata?.isMotionCover && (
-                    <Badge className="bg-primary/20">Canvas Active</Badge>
+                    <Badge className="bg-primary/20 text-xs hidden sm:inline-flex">Canvas Active</Badge>
                   )}
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                   {track.ai_tags?.metadata?.isMotionCover ? (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleRemoveCanvas(track.id)}
+                      className="flex-1 sm:flex-initial text-xs md:text-sm"
                     >
-                      <Trash2 className="w-4 h-4 mr-2" />
+                      <Trash2 className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                       Remove
                     </Button>
                   ) : null}
-                  <label>
+                  <label className="flex-1 sm:flex-initial">
                     <Button 
                       size="sm" 
                       disabled={uploading === track.id}
                       asChild
-                      className="cursor-pointer"
+                      className="cursor-pointer w-full text-xs md:text-sm"
                     >
                       <span>
                         {uploading === track.id ? (
                           <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Uploading...
+                            <Loader2 className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2 animate-spin" />
+                            <span className="hidden sm:inline">Uploading...</span>
+                            <span className="sm:hidden">...</span>
                           </>
                         ) : (
                           <>
-                            <Upload className="w-4 h-4 mr-2" />
-                            {track.ai_tags?.metadata?.isMotionCover ? "Replace" : "Upload"} Canvas
+                            <Upload className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                            <span className="hidden sm:inline">{track.ai_tags?.metadata?.isMotionCover ? "Replace" : "Upload"} Canvas</span>
+                            <span className="sm:hidden">{track.ai_tags?.metadata?.isMotionCover ? "Replace" : "Upload"}</span>
                           </>
                         )}
                       </span>

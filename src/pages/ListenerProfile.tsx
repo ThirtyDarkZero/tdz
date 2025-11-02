@@ -184,86 +184,89 @@ export default function ListenerProfile() {
       </header>
 
       {/* Profile Content */}
-      <main className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid gap-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 md:py-12">
+        <div className="grid gap-4 md:gap-8">
           {/* Profile Header */}
-          <Card className="glass-card-premium p-8">
-            <div className="flex items-start gap-6">
-              <Avatar className="w-32 h-32">
+          <Card className="glass-card-premium p-4 sm:p-6 md:p-8">
+            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
+              <Avatar className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 mx-auto sm:mx-0">
                 <AvatarImage src={profile?.profile_image_path} />
-                <AvatarFallback className="text-4xl">
+                <AvatarFallback className="text-2xl sm:text-3xl md:text-4xl">
                   {formData.display_name?.charAt(0)?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
               
-              <div className="flex-1 space-y-4">
+              <div className="flex-1 space-y-3 md:space-y-4 w-full">
                 {editing ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3 md:space-y-4">
                     <Input
                       value={formData.display_name}
                       onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
                       placeholder="Display Name"
-                      className="text-2xl font-bold"
+                      className="text-lg sm:text-xl md:text-2xl font-bold"
                     />
                     <Textarea
                       value={formData.bio}
                       onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                       placeholder="Tell us about yourself..."
-                      className="min-h-[100px]"
+                      className="min-h-[80px] md:min-h-[100px] text-sm md:text-base"
                     />
                     <Input
                       value={formData.location}
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                       placeholder="Location"
+                      className="text-sm md:text-base"
                     />
                   </div>
                 ) : (
                   <>
-                    <h1 className="text-4xl font-black">{formData.display_name || "Music Lover"}</h1>
-                    {formData.bio && <p className="text-muted-foreground text-lg">{formData.bio}</p>}
-                    {formData.location && <p className="text-sm text-muted-foreground">📍 {formData.location}</p>}
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-center sm:text-left">{formData.display_name || "Music Lover"}</h1>
+                    {formData.bio && <p className="text-muted-foreground text-sm sm:text-base md:text-lg text-center sm:text-left">{formData.bio}</p>}
+                    {formData.location && <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">📍 {formData.location}</p>}
                   </>
                 )}
                 
-                <Badge variant="outline" className="text-sm">
-                  Listener
-                </Badge>
+                <div className="flex justify-center sm:justify-start">
+                  <Badge variant="outline" className="text-xs sm:text-sm">
+                    Listener
+                  </Badge>
+                </div>
               </div>
             </div>
           </Card>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="glass-card-premium p-6 text-center">
-              <Heart className="w-8 h-8 mx-auto mb-2 text-primary" />
-              <div className="text-3xl font-bold">{likedTracks.length}</div>
-              <div className="text-sm text-muted-foreground">Liked Tracks</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
+            <Card className="glass-card-premium p-4 md:p-6 text-center">
+              <Heart className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 mx-auto mb-2 text-primary" />
+              <div className="text-2xl sm:text-3xl font-bold">{likedTracks.length}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Liked Tracks</div>
             </Card>
-            <Card className="glass-card-premium p-6 text-center">
-              <Music className="w-8 h-8 mx-auto mb-2 text-primary" />
-              <div className="text-3xl font-bold">{recentlyPlayed.length}</div>
-              <div className="text-sm text-muted-foreground">Recently Played</div>
+            <Card className="glass-card-premium p-4 md:p-6 text-center">
+              <Music className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 mx-auto mb-2 text-primary" />
+              <div className="text-2xl sm:text-3xl font-bold">{recentlyPlayed.length}</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Recently Played</div>
             </Card>
-            <Card className="glass-card-premium p-6 text-center">
-              <Clock className="w-8 h-8 mx-auto mb-2 text-primary" />
-              <div className="text-3xl font-bold">0</div>
-              <div className="text-sm text-muted-foreground">Hours Listened</div>
+            <Card className="glass-card-premium p-4 md:p-6 text-center">
+              <Clock className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 mx-auto mb-2 text-primary" />
+              <div className="text-2xl sm:text-3xl font-bold">0</div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Hours Listened</div>
             </Card>
           </div>
 
           {/* Liked Tracks */}
           {likedTracks.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-2xl font-black">Liked Tracks</h2>
-              <div className="grid gap-4">
+            <div className="space-y-3 md:space-y-4">
+              <h2 className="text-xl sm:text-2xl font-black">Liked Tracks</h2>
+              <div className="grid gap-3 md:gap-4">
                 {likedTracks.map((track) => (
                   <Card 
                     key={track.id}
-                    className="glass-card-premium p-4 hover:border-primary/50 transition-all cursor-pointer"
+                    className="glass-card-premium p-3 md:p-4 hover:border-primary/50 transition-all cursor-pointer"
                     onClick={() => navigate(`/track/${track.id}`)}
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded bg-gradient-to-br from-primary/30 to-secondary/30">
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded bg-gradient-to-br from-primary/30 to-secondary/30 flex-shrink-0">
                         {track.album_cover_path && track.album_cover_bucket && (
                           <img
                             src={supabase.storage.from(track.album_cover_bucket).getPublicUrl(track.album_cover_path).data.publicUrl}
@@ -272,11 +275,11 @@ export default function ListenerProfile() {
                           />
                         )}
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold">{track.title}</h3>
-                        <p className="text-sm text-muted-foreground">{track.artist_name}</p>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-sm sm:text-base truncate">{track.title}</h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">{track.artist_name}</p>
                       </div>
-                      <Badge variant="outline">{formatDuration(track.duration)}</Badge>
+                      <Badge variant="outline" className="text-xs flex-shrink-0">{formatDuration(track.duration)}</Badge>
                     </div>
                   </Card>
                 ))}
@@ -286,21 +289,21 @@ export default function ListenerProfile() {
 
           {/* Recently Played */}
           {recentlyPlayed.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-2xl font-black">Recently Played</h2>
-              <div className="grid gap-4">
+            <div className="space-y-3 md:space-y-4">
+              <h2 className="text-xl sm:text-2xl font-black">Recently Played</h2>
+              <div className="grid gap-3 md:gap-4">
                 {recentlyPlayed.map((track, index) => (
                   <Card 
                     key={`${track.id}-${index}`}
-                    className="glass-card-premium p-4 hover:border-primary/50 transition-all cursor-pointer"
+                    className="glass-card-premium p-3 md:p-4 hover:border-primary/50 transition-all cursor-pointer"
                     onClick={() => navigate(`/track/${track.id}`)}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-bold">{track.title}</h3>
-                        <p className="text-sm text-muted-foreground">{track.artist_name}</p>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-sm sm:text-base truncate">{track.title}</h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">{track.artist_name}</p>
                       </div>
-                      <div className="text-right text-sm text-muted-foreground">
+                      <div className="text-right text-xs sm:text-sm text-muted-foreground flex-shrink-0">
                         {new Date(track.played_at).toLocaleDateString()}
                       </div>
                     </div>
