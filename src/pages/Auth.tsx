@@ -8,6 +8,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
 
 // Security: Input validation schema
 const authSchema = z.object({
@@ -44,12 +45,32 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{ email?: string; password?: string }>({});
+  const [justAuthenticated, setJustAuthenticated] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const { role, loading: roleLoading } = useUserRole(user);
   const navigate = useNavigate();
 
+  // Validate session on mount
   useEffect(() => {
-    if (!user || roleLoading) return;
+    const validateSession = async () => {
+      if (!user) return;
+      
+      // Check if user actually exists in database
+      const { data, error } = await supabase.auth.getUser();
+      
+      if (error || !data.user) {
+        // Invalid session - clear it
+        await supabase.auth.signOut();
+        toast.error("Session expired. Please sign in again.");
+      }
+    };
+    
+    validateSession();
+  }, []);
+
+  // Only redirect after successful authentication
+  useEffect(() => {
+    if (!user || roleLoading || !justAuthenticated) return;
 
     // Check if user has a role
     if (!role) {
@@ -63,10 +84,9 @@ export default function Auth() {
     } else if (role === "listener") {
       navigate("/discover");
     } else {
-      // Default fallback for other roles
       navigate("/discover");
     }
-  }, [user, role, roleLoading, navigate]);
+  }, [user, role, roleLoading, justAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,6 +126,7 @@ export default function Auth() {
           return;
         }
         toast.success("Account created! Choose your path...");
+        setJustAuthenticated(true);
       } else {
         const { error } = await signIn(result.data.email, result.data.password);
         if (error) {
@@ -115,6 +136,7 @@ export default function Auth() {
           return;
         }
         toast.success("Signed in successfully!");
+        setJustAuthenticated(true);
       }
     } catch (error: any) {
       // Security: Don't log sensitive data in production
