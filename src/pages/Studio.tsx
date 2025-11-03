@@ -22,6 +22,7 @@ import { QuantumAdvisor } from "@/components/QuantumAdvisor";
 import { TopBar } from "@/components/TopBar";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Track {
   id: string;
@@ -44,12 +45,33 @@ const Studio = () => {
   const [queue, setQueue] = useState<Track[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [artistName, setArtistName] = useState<string>("");
 
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
     }
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    const fetchArtistProfile = async () => {
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from("artist_profiles")
+        .select("artist_name")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (data && data.artist_name) {
+        setArtistName(data.artist_name);
+      } else {
+        setArtistName("Artist");
+      }
+    };
+    
+    fetchArtistProfile();
+  }, [user]);
 
   if (loading || roleLoading) {
     return (
@@ -110,7 +132,7 @@ const Studio = () => {
           <div className="inline-block">
             <div className="relative">
               <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black bg-gradient-to-r from-primary via-primary-glow to-primary bg-clip-text text-transparent mb-4 glow-text-lg animate-fade-in tracking-tight">
-                TDZ Distribution
+                Welcome {artistName}
               </h1>
               <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 blur-3xl -z-10 animate-pulse" />
             </div>
