@@ -18,14 +18,54 @@ import {
   ArrowRight,
   CheckCircle2,
   Crown,
-  Shield
+  Shield,
+  AlertTriangle,
+  Swords,
+  TrendingDown
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { StudioPhoneMockups, MusicPlayerPhoneMockups } from "@/components/StudioPhoneMockup";
+import { LineChart as RechartsLine, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 export default function Investors() {
   const navigate = useNavigate();
+  const [activeGraph, setActiveGraph] = useState("revenue");
+
+  // Financial projection data
+  const revenueData = [
+    { year: "Year 1", revenue: 23.1, artists: 50, profit: 8.2 },
+    { year: "Year 2", revenue: 52.4, artists: 120, profit: 21.5 },
+    { year: "Year 3", revenue: 89.7, artists: 220, profit: 42.8 },
+    { year: "Year 4", revenue: 136.2, artists: 360, profit: 71.3 },
+    { year: "Year 5", revenue: 194.5, artists: 500, profit: 108.6 }
+  ];
+
+  const marketShareData = [
+    { year: "2024", tdz: 0.5, distrokid: 22, tunecore: 18, cdbaby: 15, others: 44.5 },
+    { year: "2025", tdz: 2.8, distrokid: 21, tunecore: 17, cdbaby: 14, others: 45.2 },
+    { year: "2026", tdz: 6.2, distrokid: 20, tunecore: 16, cdbaby: 13, others: 44.8 },
+    { year: "2027", tdz: 11.5, distrokid: 19, tunecore: 15, cdbaby: 12, others: 42.5 },
+    { year: "2028", tdz: 18.3, distrokid: 18, tunecore: 14, cdbaby: 11, others: 38.7 }
+  ];
+
+  const revenueStreamsData = [
+    { name: "Subscriptions", value: 68, color: "hsl(var(--primary))" },
+    { name: "Distribution Fees", value: 15, color: "hsl(var(--secondary))" },
+    { name: "Management Services", value: 9, color: "hsl(var(--accent))" },
+    { name: "TDZ Discovery Show", value: 8, color: "hsl(var(--chart-1))" }
+  ];
+
+  const userGrowthData = [
+    { month: "Jan", artists: 5000, listeners: 50000, engagement: 72 },
+    { month: "Feb", artists: 8500, listeners: 95000, engagement: 75 },
+    { month: "Mar", artists: 14000, listeners: 168000, engagement: 78 },
+    { month: "Apr", artists: 22000, listeners: 286000, engagement: 81 },
+    { month: "May", artists: 32000, listeners: 448000, engagement: 84 },
+    { month: "Jun", artists: 45000, listeners: 675000, engagement: 87 },
+    { month: "Jul", artists: 50000, listeners: 850000, engagement: 89 }
+  ];
 
   const unicornFeatures = [
     {
@@ -119,10 +159,10 @@ export default function Investors() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary/5">
-      {/* Hero Section */}
+      {/* Hero Section - The Crisis */}
       <section className="relative py-20 px-4 md:px-6 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.15),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,hsl(var(--secondary)/0.15),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--destructive)/0.15),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,hsl(var(--primary)/0.15),transparent_50%)]" />
         
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="flex items-center justify-between mb-12">
@@ -133,58 +173,155 @@ export default function Investors() {
           </div>
 
           <div className="text-center space-y-6 mb-16">
-            <Badge className="bg-primary/10 text-primary border-primary/20 px-4 py-2 text-sm">
-              <Crown className="w-4 h-4 mr-2 inline" />
-              Investment Opportunity
+            <Badge className="bg-destructive/10 text-destructive border-destructive/20 px-4 py-2 text-sm animate-pulse">
+              <AlertTriangle className="w-4 h-4 mr-2 inline" />
+              THE MUSIC INDUSTRY IS BROKEN
             </Badge>
-            <h1 className="text-5xl md:text-7xl font-display font-black">
-              THE FUTURE OF
-              <span className="block bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mt-2">
-                MUSIC DISTRIBUTION
+            <h1 className="text-5xl md:text-7xl font-display font-black leading-tight">
+              ARTISTS ARE BEING
+              <span className="block bg-gradient-to-r from-destructive via-orange-500 to-red-600 bg-clip-text text-transparent mt-2">
+                EXPLOITED & IGNORED
               </span>
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto">
-              Thirty Dark Zero Records is revolutionizing the $76.9B global music industry with AI-powered tools that empower independent artists to compete with major labels.
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+              For decades, major labels have controlled the industry, taking 80-90% of artist revenue while independent artists struggle with fragmented tools, zero support, and impossible barriers to success.
             </p>
           </div>
 
-          {/* Key Metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-            {metrics.map((metric, idx) => (
-              <Card key={idx} className="bg-card/50 backdrop-blur border-primary/20">
-                <CardContent className="p-6 text-center">
-                  <div className="text-3xl md:text-4xl font-black text-primary mb-2">
-                    {metric.value}
+          {/* The Enemy - Industry Problems */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
+            <Card className="bg-destructive/5 backdrop-blur border-destructive/20 hover:border-destructive/40 transition-all">
+              <CardContent className="p-6 text-center">
+                <TrendingDown className="w-8 h-8 text-destructive mx-auto mb-3" />
+                <div className="text-3xl md:text-4xl font-black text-destructive mb-2">
+                  88%
+                </div>
+                <div className="font-semibold text-sm mb-1">Artist Revenue Lost</div>
+                <div className="text-xs text-muted-foreground">to labels and middlemen</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-destructive/5 backdrop-blur border-destructive/20 hover:border-destructive/40 transition-all">
+              <CardContent className="p-6 text-center">
+                <Swords className="w-8 h-8 text-destructive mx-auto mb-3" />
+                <div className="text-3xl md:text-4xl font-black text-destructive mb-2">
+                  $0.003
+                </div>
+                <div className="font-semibold text-sm mb-1">Per Stream</div>
+                <div className="text-xs text-muted-foreground">Artists barely survive</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-destructive/5 backdrop-blur border-destructive/20 hover:border-destructive/40 transition-all">
+              <CardContent className="p-6 text-center">
+                <AlertTriangle className="w-8 h-8 text-destructive mx-auto mb-3" />
+                <div className="text-3xl md:text-4xl font-black text-destructive mb-2">
+                  90%
+                </div>
+                <div className="font-semibold text-sm mb-1">Quit Within 2 Years</div>
+                <div className="text-xs text-muted-foreground">Due to lack of support</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-destructive/5 backdrop-blur border-destructive/20 hover:border-destructive/40 transition-all">
+              <CardContent className="p-6 text-center">
+                <TrendingDown className="w-8 h-8 text-destructive mx-auto mb-3" />
+                <div className="text-3xl md:text-4xl font-black text-destructive mb-2">
+                  Zero
+                </div>
+                <div className="font-semibold text-sm mb-1">Creator Tools</div>
+                <div className="text-xs text-muted-foreground">All platforms are fragmented</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* The Solution - TDZ as Hero */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20 blur-3xl" />
+            <Card className="relative bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 border-primary/40 backdrop-blur">
+              <CardContent className="p-12 text-center">
+                <Badge className="bg-primary text-primary-foreground px-6 py-3 text-lg mb-6">
+                  <Crown className="w-6 h-6 mr-3 inline" />
+                  THE HERO HAS ARRIVED
+                </Badge>
+                <h2 className="text-4xl md:text-6xl font-display font-black mb-6">
+                  <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+                    THIRTY DARK ZERO RECORDS
+                  </span>
+                </h2>
+                <p className="text-xl md:text-2xl text-foreground max-w-4xl mx-auto leading-relaxed mb-8">
+                  We are the <span className="font-black text-primary">cavalry</span> for independent artists. Armed with military-grade AI precision, comprehensive creator tools, and a revolutionary distribution model, we're <span className="font-black text-secondary">obliterating</span> the old system and building a new music industry where <span className="font-black text-accent">artists keep their power and profits</span>.
+                </p>
+                <div className="grid md:grid-cols-4 gap-6 mt-12">
+                  <div>
+                    <div className="text-4xl font-black text-primary mb-2">100%</div>
+                    <div className="text-sm font-semibold">Rights Retention</div>
                   </div>
-                  <div className="font-semibold text-sm mb-1">{metric.label}</div>
-                  <div className="text-xs text-muted-foreground">{metric.sublabel}</div>
-                </CardContent>
-              </Card>
-            ))}
+                  <div>
+                    <div className="text-4xl font-black text-secondary mb-2">95%</div>
+                    <div className="text-sm font-semibold">Cost Reduction</div>
+                  </div>
+                  <div>
+                    <div className="text-4xl font-black text-accent mb-2">24hrs</div>
+                    <div className="text-sm font-semibold">To Global Release</div>
+                  </div>
+                  <div>
+                    <div className="text-4xl font-black text-primary mb-2">All-in-One</div>
+                    <div className="text-sm font-semibold">Complete Platform</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
 
-      {/* Mission & Vision */}
-      <section className="py-16 px-4 md:px-6">
+      {/* The Battle Plan - Our Mission */}
+      <section className="py-16 px-4 md:px-6 bg-gradient-to-b from-primary/5 to-transparent">
         <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-8">
-            <Card className="bg-gradient-to-br from-primary/10 to-transparent border-primary/20">
+          <div className="text-center mb-12">
+            <Badge className="bg-primary/10 text-primary border-primary/20 px-4 py-2 mb-4">
+              <Shield className="w-4 h-4 mr-2 inline" />
+              OUR BATTLE PLAN
+            </Badge>
+            <h2 className="text-4xl md:text-6xl font-display font-black mb-4">
+              How We Win The War
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              A three-front assault on the broken music industry status quo
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card className="bg-gradient-to-br from-primary/10 to-transparent border-primary/20 hover:shadow-lg hover:shadow-primary/20 transition-all">
               <CardContent className="p-8">
-                <Shield className="w-12 h-12 text-primary mb-4" />
-                <h3 className="text-2xl font-bold mb-4">Our Mission</h3>
+                <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-6">
+                  <span className="text-3xl font-black text-primary">1</span>
+                </div>
+                <h3 className="text-2xl font-bold mb-4">Arm Artists With AI</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  To empower independent artists with cutting-edge AI technology and comprehensive tools that level the playing field. Inspired by "Zero Dark Thirty" military precision, we provide artists with the arsenal they need to succeed in the modern music industry.
+                  Deploy quantum-powered AI tools that give independent artists the same capabilities as billion-dollar labels—video production, distribution, marketing, analytics, and revenue optimization—all in one platform.
                 </p>
               </CardContent>
             </Card>
-            
-            <Card className="bg-gradient-to-br from-secondary/10 to-transparent border-secondary/20">
+
+            <Card className="bg-gradient-to-br from-secondary/10 to-transparent border-secondary/20 hover:shadow-lg hover:shadow-secondary/20 transition-all">
               <CardContent className="p-8">
-                <Rocket className="w-12 h-12 text-secondary mb-4" />
-                <h3 className="text-2xl font-bold mb-4">Market Opportunity</h3>
+                <div className="w-16 h-16 rounded-full bg-secondary/20 flex items-center justify-center mb-6">
+                  <span className="text-3xl font-black text-secondary">2</span>
+                </div>
+                <h3 className="text-2xl font-bold mb-4">Destroy The Middlemen</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  The global music streaming market is projected to reach $76.9B by 2027. Independent artists represent the fastest-growing segment, seeking innovative platforms to establish their presence and connect with global audiences. We're positioned to capture significant market share.
+                  Cut out exploitative intermediaries with direct-to-platform distribution to 150+ streaming services. Artists keep 100% of their rights and the lion's share of revenue—no more 80/20 label splits.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-accent/10 to-transparent border-accent/20 hover:shadow-lg hover:shadow-accent/20 transition-all">
+              <CardContent className="p-8">
+                <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center mb-6">
+                  <span className="text-3xl font-black text-accent">3</span>
+                </div>
+                <h3 className="text-2xl font-bold mb-4">Build A New System</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Launch TDZ Discovery—a reality show that becomes a viral acquisition engine, recruiting millions of artists while showcasing our platform's power. Entertainment meets user growth at unprecedented scale.
                 </p>
               </CardContent>
             </Card>
@@ -397,72 +534,280 @@ export default function Investors() {
         </div>
       </section>
 
-      {/* Financial Projections */}
+      {/* Financial Projections - Interactive Graphs */}
       <section className="py-16 px-4 md:px-6 bg-gradient-to-b from-secondary/5 to-transparent">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-display font-black mb-4">
+            <Badge className="bg-primary/10 text-primary border-primary/20 px-4 py-2 mb-4">
+              <TrendingUp className="w-4 h-4 mr-2 inline" />
+              VICTORY METRICS
+            </Badge>
+            <h2 className="text-4xl md:text-6xl font-display font-black mb-4">
               Financial Projections
             </h2>
-            <p className="text-xl text-muted-foreground">
-              Strong revenue model with multiple streams and predictable growth
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Explosive growth backed by multiple revenue streams and unstoppable market momentum
             </p>
           </div>
 
+          {/* Quick Stats */}
           <div className="grid md:grid-cols-3 gap-6 mb-12">
-            <Card className="bg-card/50 backdrop-blur border-primary/20">
-              <CardContent className="p-6">
-                <DollarSign className="w-8 h-8 text-primary mb-4" />
-                <div className="text-3xl font-black mb-2">$23.1M</div>
-                <div className="font-semibold mb-2">Year 1 Revenue</div>
+            <Card className="bg-gradient-to-br from-primary/10 to-transparent border-primary/20 hover:shadow-lg hover:shadow-primary/20 transition-all">
+              <CardContent className="p-8 text-center">
+                <DollarSign className="w-12 h-12 text-primary mx-auto mb-4" />
+                <div className="text-5xl font-black text-primary mb-3">$23.1M</div>
+                <div className="font-bold text-lg mb-2">Year 1 Revenue</div>
                 <div className="text-sm text-muted-foreground">
-                  50,000 artists across three subscription tiers plus distribution fees
+                  50,000 artists • 3 subscription tiers • Distribution fees
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-card/50 backdrop-blur border-secondary/20">
-              <CardContent className="p-6">
-                <Users className="w-8 h-8 text-secondary mb-4" />
-                <div className="text-3xl font-black mb-2">500K+</div>
-                <div className="font-semibold mb-2">Year 5 Target</div>
+            <Card className="bg-gradient-to-br from-secondary/10 to-transparent border-secondary/20 hover:shadow-lg hover:shadow-secondary/20 transition-all">
+              <CardContent className="p-8 text-center">
+                <Users className="w-12 h-12 text-secondary mx-auto mb-4" />
+                <div className="text-5xl font-black text-secondary mb-3">500K+</div>
+                <div className="font-bold text-lg mb-2">Year 5 Artists</div>
                 <div className="text-sm text-muted-foreground">
-                  Projected artist base with 94% retention rate
+                  94% retention rate • Viral TDZ Discovery growth
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-card/50 backdrop-blur border-accent/20">
-              <CardContent className="p-6">
-                <Zap className="w-8 h-8 text-accent mb-4" />
-                <div className="text-3xl font-black mb-2">$194M+</div>
-                <div className="font-semibold mb-2">Year 5 Revenue</div>
+            <Card className="bg-gradient-to-br from-accent/10 to-transparent border-accent/20 hover:shadow-lg hover:shadow-accent/20 transition-all">
+              <CardContent className="p-8 text-center">
+                <Rocket className="w-12 h-12 text-accent mx-auto mb-4" />
+                <div className="text-5xl font-black text-accent mb-3">$194M</div>
+                <div className="font-bold text-lg mb-2">Year 5 Revenue</div>
                 <div className="text-sm text-muted-foreground">
-                  Driven by scale, premium features, and enterprise partnerships
+                  10x scale • Premium features • Enterprise deals
                 </div>
               </CardContent>
             </Card>
           </div>
 
+          {/* Graph Navigation */}
+          <div className="flex flex-wrap gap-3 justify-center mb-8">
+            <Button 
+              variant={activeGraph === "revenue" ? "default" : "outline"}
+              onClick={() => setActiveGraph("revenue")}
+              className="font-semibold"
+            >
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Revenue Growth
+            </Button>
+            <Button 
+              variant={activeGraph === "users" ? "default" : "outline"}
+              onClick={() => setActiveGraph("users")}
+              className="font-semibold"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              User Growth
+            </Button>
+            <Button 
+              variant={activeGraph === "market" ? "default" : "outline"}
+              onClick={() => setActiveGraph("market")}
+              className="font-semibold"
+            >
+              <Target className="w-4 h-4 mr-2" />
+              Market Share
+            </Button>
+            <Button 
+              variant={activeGraph === "streams" ? "default" : "outline"}
+              onClick={() => setActiveGraph("streams")}
+              className="font-semibold"
+            >
+              <DollarSign className="w-4 h-4 mr-2" />
+              Revenue Breakdown
+            </Button>
+          </div>
+
+          {/* Interactive Graph Display */}
+          <Card className="bg-gradient-to-br from-card/80 to-card/60 backdrop-blur border-primary/20 mb-12">
+            <CardContent className="p-8">
+              {activeGraph === "revenue" && (
+                <div>
+                  <h3 className="text-2xl font-bold mb-6 text-center">5-Year Revenue & Profit Trajectory</h3>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <AreaChart data={revenueData}>
+                      <defs>
+                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--secondary))" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="hsl(var(--secondary))" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                      <XAxis dataKey="year" stroke="hsl(var(--muted-foreground))" />
+                      <YAxis stroke="hsl(var(--muted-foreground))" label={{ value: 'Revenue ($M)', angle: -90, position: 'insideLeft' }} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--primary)/0.2)',
+                          borderRadius: '8px'
+                        }} 
+                      />
+                      <Legend />
+                      <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorRevenue)" strokeWidth={3} name="Revenue ($M)" />
+                      <Area type="monotone" dataKey="profit" stroke="hsl(var(--secondary))" fillOpacity={1} fill="url(#colorProfit)" strokeWidth={3} name="Profit ($M)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {activeGraph === "users" && (
+                <div>
+                  <h3 className="text-2xl font-bold mb-6 text-center">First Year User Acquisition & Engagement</h3>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={userGrowthData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                      <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
+                      <YAxis yAxisId="left" stroke="hsl(var(--muted-foreground))" />
+                      <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--accent))" />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--primary)/0.2)',
+                          borderRadius: '8px'
+                        }} 
+                      />
+                      <Legend />
+                      <Bar yAxisId="left" dataKey="artists" fill="hsl(var(--primary))" name="Artists" radius={[8, 8, 0, 0]} />
+                      <Bar yAxisId="left" dataKey="listeners" fill="hsl(var(--secondary))" name="Listeners (K)" radius={[8, 8, 0, 0]} />
+                      <Line yAxisId="right" type="monotone" dataKey="engagement" stroke="hsl(var(--accent))" strokeWidth={3} name="Engagement %" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {activeGraph === "market" && (
+                <div>
+                  <h3 className="text-2xl font-bold mb-6 text-center">Market Share Domination (2024-2028)</h3>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <AreaChart data={marketShareData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                      <XAxis dataKey="year" stroke="hsl(var(--muted-foreground))" />
+                      <YAxis stroke="hsl(var(--muted-foreground))" label={{ value: 'Market Share (%)', angle: -90, position: 'insideLeft' }} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--primary)/0.2)',
+                          borderRadius: '8px'
+                        }} 
+                      />
+                      <Legend />
+                      <Area type="monotone" dataKey="tdz" stackId="1" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.8} name="TDZ Records" strokeWidth={2} />
+                      <Area type="monotone" dataKey="distrokid" stackId="1" stroke="hsl(var(--secondary))" fill="hsl(var(--secondary))" fillOpacity={0.6} name="DistroKid" />
+                      <Area type="monotone" dataKey="tunecore" stackId="1" stroke="hsl(var(--accent))" fill="hsl(var(--accent))" fillOpacity={0.6} name="TuneCore" />
+                      <Area type="monotone" dataKey="cdbaby" stackId="1" stroke="hsl(var(--chart-1))" fill="hsl(var(--chart-1))" fillOpacity={0.6} name="CD Baby" />
+                      <Area type="monotone" dataKey="others" stackId="1" stroke="hsl(var(--muted))" fill="hsl(var(--muted))" fillOpacity={0.4} name="Others" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {activeGraph === "streams" && (
+                <div>
+                  <h3 className="text-2xl font-bold mb-6 text-center">Revenue Stream Distribution (Year 1)</h3>
+                  <div className="flex flex-col md:flex-row items-center justify-center gap-8">
+                    <ResponsiveContainer width="100%" height={400}>
+                      <PieChart>
+                        <Pie
+                          data={revenueStreamsData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, value }) => `${name}: ${value}%`}
+                          outerRadius={140}
+                          fill="#8884d8"
+                          dataKey="value"
+                          animationBegin={0}
+                          animationDuration={800}
+                        >
+                          {revenueStreamsData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'hsl(var(--card))', 
+                            border: '1px solid hsl(var(--primary)/0.2)',
+                            borderRadius: '8px'
+                          }} 
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="space-y-4">
+                      {revenueStreamsData.map((stream, idx) => (
+                        <div key={idx} className="flex items-center gap-3">
+                          <div className="w-4 h-4 rounded" style={{ backgroundColor: stream.color }} />
+                          <div>
+                            <div className="font-bold">{stream.name}</div>
+                            <div className="text-sm text-muted-foreground">{stream.value}% of total revenue</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Revenue Model Details */}
           <Card className="bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 border-primary/20">
             <CardContent className="p-8">
-              <h3 className="text-2xl font-bold mb-6">Revenue Streams</h3>
-              <div className="grid md:grid-cols-2 gap-6">
+              <h3 className="text-2xl font-bold mb-6 text-center">Revenue Model Breakdown</h3>
+              <div className="grid md:grid-cols-2 gap-8">
                 <div>
-                  <h4 className="font-semibold mb-3 text-primary">Subscription Tiers</h4>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>• Basic ($10/mo): Distribution + basic tools</li>
-                    <li>• Premium ($25/mo): Advanced features + AI insights</li>
-                    <li>• Pro ($50/mo): Full suite + priority support</li>
-                  </ul>
+                  <h4 className="font-bold text-lg mb-4 text-primary flex items-center gap-2">
+                    <DollarSign className="w-5 h-5" />
+                    Subscription Tiers
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-card/50">
+                      <span className="font-semibold">Basic ($10/mo)</span>
+                      <span className="text-sm text-muted-foreground">Distribution + Tools</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-card/50">
+                      <span className="font-semibold">Premium ($25/mo)</span>
+                      <span className="text-sm text-muted-foreground">Advanced + AI</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-card/50">
+                      <span className="font-semibold">Pro ($50/mo)</span>
+                      <span className="text-sm text-muted-foreground">Full Suite + Priority</span>
+                    </div>
+                  </div>
                 </div>
                 <div>
-                  <h4 className="font-semibold mb-3 text-primary">Additional Revenue</h4>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>• Distribution fees (per release)</li>
-                    <li>• Artist management services</li>
-                    <li>• Tour management commissions</li>
-                    <li>• Master class partnerships</li>
+                  <h4 className="font-bold text-lg mb-4 text-secondary flex items-center gap-2">
+                    <Sparkles className="w-5 h-5" />
+                    Additional Revenue Streams
+                  </h4>
+                  <ul className="space-y-3 text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                      <span>Distribution fees (per release)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                      <span>Artist management services (15% commission)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                      <span>Tour management commissions</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                      <span>Master class partnerships & licensing</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                      <span>TDZ Discovery media rights & sponsorships</span>
+                    </li>
                   </ul>
                 </div>
               </div>
