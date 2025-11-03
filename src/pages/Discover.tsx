@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Play, Heart, Share2, Music, TrendingUp, Flame, 
-  Search, User, ListMusic, Plus, UserPlus 
+  Search, User, ListMusic, Plus, UserPlus, Mic2
 } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { MusicPlayer } from "@/components/MusicPlayer";
@@ -28,6 +29,7 @@ export default function Discover() {
   const [currentTrack, setCurrentTrack] = useState<any>(null);
   const [queue, setQueue] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const { role } = useUserRole(user);
 
   useEffect(() => {
     loadUser();
@@ -273,14 +275,26 @@ export default function Discover() {
               </div>
             </div>
 
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={() => navigate("/profile")}
-              className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0"
-            >
-              <User className="w-3 h-3 sm:w-4 sm:h-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              {(role === 'artist' || role === 'verified_artist' || role === 'manager') && (
+                <Button 
+                  variant="outline"
+                  onClick={() => navigate("/studio")}
+                  className="gap-2 h-9 sm:h-10"
+                >
+                  <Mic2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Studio</span>
+                </Button>
+              )}
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => navigate("/profile")}
+                className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0"
+              >
+                <User className="w-3 h-3 sm:w-4 sm:h-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>

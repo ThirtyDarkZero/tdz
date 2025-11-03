@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe, Image, Heart, BookOpen, Zap, Film, User, ShoppingBag, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe, Image, Heart, BookOpen, Zap, Film, User, ShoppingBag, Sparkles, Compass } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { MusicLibrary } from "@/components/MusicLibrary";
 import { ArtistDashboard } from "@/components/ArtistDashboard";
@@ -142,7 +143,19 @@ const Studio = () => {
         <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[100px]" />
       </div>
       
-      <TopBar onUploadClick={() => setUploadDialogOpen(true)} />
+      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <TopBar onUploadClick={() => setUploadDialogOpen(true)} />
+          <Button
+            variant="outline"
+            onClick={() => navigate("/discover")}
+            className="gap-2"
+          >
+            <Compass className="h-4 w-4" />
+            Discover
+          </Button>
+        </div>
+      </div>
       
       <main className="container mx-auto px-4 py-12 relative z-10">
         {/* Epic hero section */}
