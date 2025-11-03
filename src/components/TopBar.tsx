@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Music, LogOut, Upload, Headphones } from "lucide-react";
+import { LogOut, Upload } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
@@ -15,14 +15,6 @@ export const TopBar = ({ onUploadClick }: { onUploadClick?: () => void }) => {
         description: "Navigate to Library to upload your tracks"
       });
     }
-  };
-
-  const handleGoToPlayer = () => {
-    // Scroll to the music player at bottom
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-    toast.info("Music Player", {
-      description: "Player controls are at the bottom of the page"
-    });
   };
 
   const handleSignOut = async () => {
@@ -60,16 +52,6 @@ export const TopBar = ({ onUploadClick }: { onUploadClick?: () => void }) => {
           className="md:hidden h-9 w-9"
         >
           <Upload className="w-4 h-4" />
-        </Button>
-
-        <Button
-          onClick={handleGoToPlayer}
-          size="sm"
-          className="bg-gradient-to-r from-primary to-secondary text-primary-foreground hover:shadow-glow transition-all hidden sm:flex"
-        >
-          <Headphones className="w-4 h-4 mr-2" />
-          <span className="hidden lg:inline">Go to Music Player</span>
-          <span className="lg:hidden">Player</span>
         </Button>
 
         <Button
