@@ -61,9 +61,27 @@ const Studio = () => {
         .from("artist_profiles")
         .select("artist_name")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
       
-      if (data && data.artist_name) {
+      if (error) {
+        console.error("Error fetching artist profile:", error);
+        return;
+      }
+      
+      // If no profile exists, we need to create one
+      if (!data) {
+        console.log("No artist profile found, redirecting to complete setup");
+        // Clear the role so they can complete the profile setup
+        await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", user.id);
+        
+        navigate("/role-selection");
+        return;
+      }
+      
+      if (data.artist_name) {
         setArtistName(data.artist_name);
       } else {
         setArtistName("Artist");
@@ -71,7 +89,7 @@ const Studio = () => {
     };
     
     fetchArtistProfile();
-  }, [user]);
+  }, [user, navigate]);
 
   if (loading || roleLoading) {
     return (
