@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MotionCover } from "@/components/MotionCover";
 import { Hero3D } from "@/components/Hero3D";
 import { EnhancedCard } from "@/components/EnhancedCard";
-import { StudioPhoneMockups } from "@/components/StudioPhoneMockup";
+import { StudioPhoneMockups, MusicPlayerPhoneMockups } from "@/components/StudioPhoneMockup";
 
 const artistFeatures = [
   {
@@ -405,50 +405,8 @@ export default function Landing() {
             ))}
           </div>
 
-          {/* Demo Phone - Discovery */}
-          <div className="relative max-w-sm mx-auto">
-            <div className="glass-card p-3 rounded-3xl border-2 border-secondary/40 overflow-hidden">
-              <div className="relative aspect-[9/19] rounded-2xl overflow-hidden bg-background">
-                <div className="absolute inset-0 bg-gradient-to-b from-secondary/20 via-transparent to-background/80" />
-                <div className="p-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold">Discover</h3>
-                    <Badge className="bg-secondary/20 text-secondary border-secondary/30">Live</Badge>
-                  </div>
-                  {latestReleases.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      {latestReleases.map((release) => (
-                        <div key={release.id} className="space-y-2">
-                          <div className="aspect-square rounded-lg overflow-hidden relative group cursor-pointer">
-                            <MotionCover
-                              motionCoverPath={release.motion_cover_path}
-                              motionCoverBucket={release.motion_cover_bucket}
-                              staticCoverPath={release.album_cover_path}
-                              staticCoverBucket={release.album_cover_bucket}
-                              alt={release.title}
-                              className="w-full h-full"
-                            />
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <Play className="w-8 h-8 text-white" />
-                            </div>
-                          </div>
-                          <div className="text-xs space-y-0.5">
-                            <p className="text-foreground/80 truncate font-medium">{release.title}</p>
-                            <p className="text-muted-foreground truncate">{release.artist_name}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 space-y-2">
-                      <Music className="w-12 h-12 mx-auto text-muted-foreground/40" />
-                      <p className="text-sm text-muted-foreground">No tracks released yet</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Music Player Demo Phones */}
+          <MusicPlayerPhoneMockups />
         </div>
       </section>
 
