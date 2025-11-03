@@ -714,6 +714,113 @@ export function StudioPhoneMockup({ title, color }: PhoneMockupProps) {
           </div>
         );
       
+      case "Now Playing":
+        return (
+          <div className="space-y-3">
+            {/* Album Art with Motion Effect */}
+            <div className="relative aspect-square w-full rounded-xl overflow-hidden shadow-2xl">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/60 via-accent/60 to-secondary/60 animate-pulse">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Music className="w-20 h-20 text-white/40" />
+                </div>
+              </div>
+              <div className="absolute top-3 right-3 flex gap-2">
+                <button
+                  onClick={() => setIsLiked(!isLiked)}
+                  className={`w-8 h-8 rounded-full backdrop-blur-md flex items-center justify-center transition-all ${
+                    isLiked ? 'bg-red-500/80 text-white' : 'bg-black/40 text-white/80'
+                  }`}
+                >
+                  <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+                </button>
+              </div>
+            </div>
+
+            {/* Track Info */}
+            <div className="text-center space-y-1">
+              <h3 className="text-lg font-black truncate">Midnight Drive</h3>
+              <p className="text-sm text-muted-foreground truncate">Your Name • Electric Dreams EP</p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="space-y-1">
+              <div className="h-1.5 bg-muted rounded-full overflow-hidden cursor-pointer">
+                <div 
+                  className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all"
+                  style={{ width: `${(currentTime / 204) * 100}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[9px] text-muted-foreground">
+                <span>{Math.floor(currentTime / 60)}:{(currentTime % 60).toString().padStart(2, '0')}</span>
+                <span>3:24</span>
+              </div>
+            </div>
+
+            {/* Main Controls */}
+            <div className="flex items-center justify-center gap-4 py-2">
+              <button
+                onClick={() => setShuffle(!shuffle)}
+                className={`transition-colors ${shuffle ? 'text-primary' : 'text-muted-foreground'}`}
+              >
+                <Shuffle className="w-5 h-5" />
+              </button>
+              <button className="text-foreground hover:text-primary transition-colors">
+                <SkipBack className="w-6 h-6" />
+              </button>
+              <button
+                onClick={() => setIsPlaying(!isPlaying)}
+                className="w-14 h-14 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
+              >
+                {isPlaying ? (
+                  <Pause className="w-7 h-7 text-white" />
+                ) : (
+                  <Play className="w-7 h-7 text-white ml-1" />
+                )}
+              </button>
+              <button className="text-foreground hover:text-primary transition-colors">
+                <SkipForward className="w-6 h-6" />
+              </button>
+              <button
+                onClick={() => setRepeat(repeat === 'off' ? 'all' : repeat === 'all' ? 'one' : 'off')}
+                className={`transition-colors relative ${repeat !== 'off' ? 'text-primary' : 'text-muted-foreground'}`}
+              >
+                <Repeat className="w-5 h-5" />
+                {repeat === 'one' && (
+                  <span className="absolute -top-1 -right-1 text-[8px] font-bold">1</span>
+                )}
+              </button>
+            </div>
+
+            {/* Additional Controls */}
+            <div className="flex items-center justify-between px-2">
+              <button
+                onClick={() => setShowEqualizer(!showEqualizer)}
+                className={`transition-colors ${showEqualizer ? 'text-primary' : 'text-muted-foreground'}`}
+              >
+                <Sliders className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] text-muted-foreground">Quality:</span>
+                <Badge className="text-[7px] px-1.5 py-0.5 bg-primary/20 text-primary">HD</Badge>
+              </div>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="glass-card p-2 rounded-lg">
+              <div className="flex items-center justify-between text-[9px]">
+                <div className="flex items-center gap-1">
+                  <Play className="w-3 h-3 text-primary" />
+                  <span className="text-muted-foreground">45.2K plays</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Heart className="w-3 h-3 text-red-500" />
+                  <span className="text-muted-foreground">12.8K likes</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      
       case "Queue & Lyrics":
         return (
           <div className="space-y-2">
@@ -733,134 +840,7 @@ export function StudioPhoneMockup({ title, color }: PhoneMockupProps) {
                 </button>
               ))}
             </div>
-
-            {activeView === 0 ? (
-              <div className="space-y-2 animate-fade-in">
-                {/* Now Playing */}
-                <div className="glass-card p-2 rounded-lg border-l-2 border-primary">
-                  <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 rounded bg-gradient-to-br from-primary/40 to-accent/40 flex items-center justify-center flex-shrink-0">
-                      <div className="flex gap-0.5">
-                        <div className="w-0.5 h-4 bg-primary animate-pulse" />
-                        <div className="w-0.5 h-5 bg-primary animate-pulse" style={{ animationDelay: '0.2s' }} />
-                        <div className="w-0.5 h-3 bg-primary animate-pulse" style={{ animationDelay: '0.4s' }} />
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-bold truncate">Midnight Drive</p>
-                      <p className="text-[8px] text-muted-foreground truncate">Your Name • 3:47</p>
-                    </div>
-                    <Badge className="text-[7px] px-1.5 py-0.5 bg-primary/20 text-primary">Now</Badge>
-                  </div>
-                </div>
-
-                {/* Up Next */}
-                <div>
-                  <div className="flex items-center justify-between px-1 mb-1">
-                    <span className="text-[9px] font-semibold text-muted-foreground">Up Next</span>
-                    <span className="text-[8px] text-muted-foreground">5 tracks</span>
-                  </div>
-                  <div className="space-y-1">
-                    {[
-                      { title: "Neon Lights", artist: "Your Name", time: "3:15" },
-                      { title: "Urban Pulse", artist: "Your Name", time: "3:33" },
-                      { title: "Starlight", artist: "Featured Artist", time: "4:12" },
-                      { title: "Ocean Waves", artist: "Your Name", time: "3:56" }
-                    ].map((track, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setPlayingTrack(playingTrack === idx ? null : idx)}
-                        className={`w-full flex items-center gap-2 p-1.5 rounded transition-all ${
-                          playingTrack === idx 
-                            ? 'glass-card scale-105' 
-                            : 'hover:bg-accent/20'
-                        } group`}
-                      >
-                        <span className="text-[9px] text-muted-foreground w-4">{idx + 1}</span>
-                        <div className="w-8 h-8 rounded bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center flex-shrink-0">
-                          <Music className="w-3 h-3 text-primary/60" />
-                        </div>
-                        <div className="flex-1 min-w-0 text-left">
-                          <p className="text-[9px] font-medium truncate">{track.title}</p>
-                          <p className="text-[7px] text-muted-foreground truncate">{track.artist}</p>
-                        </div>
-                        <span className="text-[8px] text-muted-foreground">{track.time}</span>
-                        <button className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          <MoreHorizontal className="w-3 h-3" />
-                        </button>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Queue Actions */}
-                <div className="flex gap-1.5 pt-1">
-                  <button className="flex-1 glass-card py-1.5 rounded text-[8px] font-medium hover:bg-accent/20 transition-colors">
-                    Clear Queue
-                  </button>
-                  <button className="flex-1 glass-card py-1.5 rounded text-[8px] font-medium hover:bg-accent/20 transition-colors">
-                    Save as Playlist
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2 animate-fade-in">
-                {/* Lyrics Header */}
-                <div className="glass-card p-2 rounded-lg">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-1.5">
-                      <Mic className="w-3.5 h-3.5 text-primary" />
-                      <span className="text-[9px] font-semibold">Synced Lyrics</span>
-                    </div>
-                    <Badge className="text-[7px] px-1.5 py-0.5 bg-green-500/20 text-green-500">Live</Badge>
-                  </div>
-                  <p className="text-[8px] text-muted-foreground">Midnight Drive • Your Name</p>
-                </div>
-
-                {/* Scrollable Lyrics */}
-                <div className="glass-card p-2 rounded-lg h-48 overflow-y-auto space-y-2 scroll-smooth">
-                  {[
-                    { time: "0:15", text: "Driving through the city lights", active: false },
-                    { time: "0:20", text: "Stars are shining bright tonight", active: false },
-                    { time: "0:25", text: "Feel the rhythm, feel alive", active: true },
-                    { time: "0:30", text: "On this endless midnight drive", active: false },
-                    { time: "0:45", text: "Music flowing through my soul", active: false },
-                    { time: "0:50", text: "Lost in sound, I'm in control", active: false },
-                    { time: "1:00", text: "Every beat tells a story", active: false },
-                    { time: "1:05", text: "In this moment, feel the glory", active: false }
-                  ].map((line, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setSelectedMetric(idx)}
-                      className={`w-full text-left p-1.5 rounded transition-all ${
-                        line.active || selectedMetric === idx
-                          ? 'bg-primary/20 scale-105' 
-                          : 'hover:bg-accent/10'
-                      }`}
-                    >
-                      <p className={`text-[10px] leading-relaxed ${
-                        line.active || selectedMetric === idx
-                          ? 'text-foreground font-bold' 
-                          : 'text-muted-foreground'
-                      }`}>
-                        {line.text}
-                      </p>
-                      <span className="text-[7px] text-muted-foreground">{line.time}</span>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Lyrics Actions */}
-                <div className="flex gap-1.5">
-                  <button className="flex-1 glass-card py-1.5 rounded text-[8px] font-medium hover:bg-accent/20 transition-colors">
-                    Share Lyrics
-                  </button>
-                  <button className="flex-1 glass-card py-1.5 rounded text-[8px] font-medium hover:bg-accent/20 transition-colors">
-                    Full Screen
-                  </button>
-                </div>
-              </div>
-            )}
+...
           </div>
         );
       default:
@@ -1018,7 +998,7 @@ export function MusicPlayerPhoneMockups() {
         <div className="text-center mb-12">
           <Badge className="bg-primary/10 text-primary border-primary/20 px-4 py-2 mb-4">
             <Headphones className="w-4 h-4 mr-2 inline" />
-            Discover New Music
+            TDZ Distribution
           </Badge>
           <h2 className="text-4xl md:text-5xl font-display font-black mb-4">
             Immersive Music Experience
