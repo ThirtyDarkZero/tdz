@@ -24,6 +24,7 @@ import { TopBar } from "@/components/TopBar";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Track {
   id: string;
@@ -53,6 +54,14 @@ const Studio = () => {
       navigate("/auth");
     }
   }, [user, loading, navigate]);
+
+  // Protect studio from listeners/fans
+  useEffect(() => {
+    if (!roleLoading && role && role === 'listener') {
+      toast.error("Studio access is only available for artists and managers");
+      navigate("/discover");
+    }
+  }, [role, roleLoading, navigate]);
 
   useEffect(() => {
     const fetchArtistProfile = async () => {

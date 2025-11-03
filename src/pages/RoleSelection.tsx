@@ -18,6 +18,8 @@ export default function RoleSelection() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const [existingRole, setExistingRole] = useState<string | null>(null);
+
   // Check if user already has a role/profile
   useEffect(() => {
     const checkExistingProfile = async () => {
@@ -33,6 +35,7 @@ export default function RoleSelection() {
           .single();
 
         if (roleData) {
+          setExistingRole(roleData.role);
           // User already has a role, redirect to appropriate page
           if (roleData.role === "listener") {
             navigate("/discover");
@@ -52,6 +55,12 @@ export default function RoleSelection() {
   const handleSubmit = async () => {
     if (!selectedRole || !displayName) {
       toast.error("Please complete all fields");
+      return;
+    }
+
+    // Prevent artists/managers from creating listener accounts
+    if (existingRole && (existingRole === 'artist' || existingRole === 'verified_artist' || existingRole === 'manager') && selectedRole === 'listener') {
+      toast.error("Artists and managers cannot create fan accounts");
       return;
     }
 
@@ -161,6 +170,14 @@ export default function RoleSelection() {
 
         {!selectedRole ? (
           <div className="grid md:grid-cols-3 gap-6">
+            {/* Show warning if artist/manager trying to create listener account */}
+            {existingRole && (existingRole === 'artist' || existingRole === 'verified_artist' || existingRole === 'manager') && (
+              <div className="col-span-full mb-4 p-4 rounded-lg bg-destructive/10 border border-destructive/50 text-center">
+                <p className="text-sm text-destructive font-medium">
+                  You already have an artist/manager account. You cannot create a fan account.
+                </p>
+              </div>
+            )}
             {/* Artist Card */}
             <Card
               className="relative group cursor-pointer glass-card p-8 hover:border-primary transition-all duration-300 hover:scale-105"
@@ -209,8 +226,18 @@ export default function RoleSelection() {
 
             {/* Listener Card */}
             <Card
-              className="relative group cursor-pointer glass-card p-8 hover:border-secondary transition-all duration-300 hover:scale-105"
-              onClick={() => setSelectedRole("listener")}
+              className={`relative group glass-card p-8 hover:border-secondary transition-all duration-300 ${
+                existingRole && (existingRole === 'artist' || existingRole === 'verified_artist' || existingRole === 'manager')
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'cursor-pointer hover:scale-105'
+              }`}
+              onClick={() => {
+                if (existingRole && (existingRole === 'artist' || existingRole === 'verified_artist' || existingRole === 'manager')) {
+                  toast.error("Artists and managers cannot create fan accounts");
+                  return;
+                }
+                setSelectedRole("listener");
+              }}
             >
               <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-lg" />
               <div className="relative z-10 text-center space-y-6">
