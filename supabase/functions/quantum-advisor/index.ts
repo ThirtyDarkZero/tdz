@@ -35,54 +35,48 @@ serve(async (req) => {
 
     const { message } = await req.json();
 
-    // Fetch artist data for context
+    // Fetch aggregated artist data for context (minimized for privacy)
     const [tracksData, momentumData, fanData, artistProfile] = await Promise.all([
       supabase.from('tracks')
-        .select('title, play_count, like_count, is_published, created_at, release_date, genre')
+        .select('is_published, created_at, genre')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(20),
       supabase.from('momentum_scores')
-        .select('*')
+        .select('score, streak_days')
         .eq('user_id', user.id)
         .single(),
       supabase.from('fan_metrics')
-        .select('*')
+        .select('email_list_size, super_fans_count')
         .eq('user_id', user.id)
         .single(),
       supabase.from('artist_profiles')
-        .select('artist_name, total_plays, monthly_listeners, verified')
+        .select('monthly_listeners, verified')
         .eq('user_id', user.id)
         .single()
     ]);
 
     const contextData = {
-      tracks: tracksData.data || [],
-      momentum: momentumData.data,
-      fanMetrics: fanData.data,
-      profile: artistProfile.data,
       totalTracks: tracksData.data?.length || 0,
       publishedTracks: tracksData.data?.filter(t => t.is_published).length || 0,
-      totalPlays: tracksData.data?.reduce((sum, t) => sum + (t.play_count || 0), 0) || 0,
-      totalLikes: tracksData.data?.reduce((sum, t) => sum + (t.like_count || 0), 0) || 0
+      recentGenres: [...new Set(tracksData.data?.slice(0, 5).map(t => t.genre).filter(Boolean))] || [],
+      momentum: momentumData.data,
+      fanMetrics: fanData.data,
+      profile: artistProfile.data
     };
 
     const systemPrompt = `You are the Quantum Advisor - an advanced AI music industry strategist powered by quantum intelligence. You analyze artist data and provide actionable insights to help them sell more records and maximize revenue.
 
-Artist Data:
+Artist Metrics (Aggregated):
 - Total Tracks: ${contextData.totalTracks}
 - Published Tracks: ${contextData.publishedTracks}
-- Total Plays: ${contextData.totalPlays}
-- Total Likes: ${contextData.totalLikes}
-- Artist Name: ${contextData.profile?.artist_name || 'Unknown'}
+- Recent Genres: ${contextData.recentGenres.join(', ') || 'Various'}
 - Monthly Listeners: ${contextData.profile?.monthly_listeners || 0}
-- Verified: ${contextData.profile?.verified ? 'Yes' : 'No'}
+- Verified Status: ${contextData.profile?.verified ? 'Yes' : 'No'}
 - Momentum Score: ${contextData.momentum?.score || 0}/100
 - Streak Days: ${contextData.momentum?.streak_days || 0}
-- Email List: ${contextData.fanMetrics?.email_list_size || 0} subscribers
-- Super Fans: ${contextData.fanMetrics?.super_fans_count || 0}
-
-Recent tracks: ${JSON.stringify(contextData.tracks.slice(0, 5), null, 2)}
+- Email List Size: ${contextData.fanMetrics?.email_list_size || 0}
+- Super Fans Count: ${contextData.fanMetrics?.super_fans_count || 0}
 
 Your role:
 - Provide specific, actionable advice backed by data

@@ -78,15 +78,12 @@ const Studio = () => {
         return;
       }
       
-      // If no profile exists, we need to create one
+      // If no profile exists, redirect to complete setup without deleting roles
       if (!data) {
         console.log("No artist profile found, redirecting to complete setup");
-        // Clear the role so they can complete the profile setup
-        await supabase
-          .from("user_roles")
-          .delete()
-          .eq("user_id", user.id);
-        
+        toast.error("Profile incomplete", {
+          description: "Please complete your artist profile setup"
+        });
         navigate("/role-selection");
         return;
       }

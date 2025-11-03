@@ -125,8 +125,12 @@ export default function Landing() {
   }, []);
   const handleQuickGenerate = () => {
     if (prompt.trim()) {
-      localStorage.setItem("quickPrompt", prompt);
-      navigate("/auth");
+      // Validate and sanitize prompt before storing
+      const sanitized = prompt.trim().slice(0, 500); // Limit length
+      if (sanitized.length > 0) {
+        localStorage.setItem("quickPrompt", sanitized);
+        navigate("/auth");
+      }
     }
   };
   return <div className="min-h-screen relative overflow-hidden">
