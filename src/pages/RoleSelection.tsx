@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -18,6 +18,37 @@ export default function RoleSelection() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Check if user already has a role/profile
+  useEffect(() => {
+    const checkExistingProfile = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Check for existing role
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .single();
+
+        if (roleData) {
+          // User already has a role, redirect to appropriate page
+          if (roleData.role === "listener") {
+            navigate("/discover");
+          } else {
+            navigate("/studio");
+          }
+        }
+      } catch (error) {
+        // If no role found, stay on this page
+        console.log("No existing profile found");
+      }
+    };
+
+    checkExistingProfile();
+  }, [navigate]);
+
   const handleSubmit = async () => {
     if (!selectedRole || !displayName) {
       toast.error("Please complete all fields");
@@ -30,35 +61,56 @@ export default function RoleSelection() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Assign role
+      // Assign role (using upsert to handle duplicates gracefully)
       const { error: roleError } = await supabase
         .from("user_roles")
-        .insert({ user_id: user.id, role: selectedRole });
+        .upsert(
+          { user_id: user.id, role: selectedRole },
+          { onConflict: 'user_id,role', ignoreDuplicates: true }
+        );
 
       if (roleError) throw roleError;
 
       // Create profile based on role
       if (selectedRole === "artist" || selectedRole === "manager") {
-        const { error: profileError } = await supabase
+        // Check if artist profile already exists
+        const { data: existingProfile } = await supabase
           .from("artist_profiles")
-          .insert({
-            user_id: user.id,
-            artist_name: artistName || displayName,
-            bio: bio || null,
-          });
+          .select("id")
+          .eq("user_id", user.id)
+          .single();
 
-        if (profileError) throw profileError;
+        if (!existingProfile) {
+          const { error: profileError } = await supabase
+            .from("artist_profiles")
+            .insert({
+              user_id: user.id,
+              artist_name: artistName || displayName,
+              bio: bio || null,
+            });
+
+          if (profileError) throw profileError;
+        }
         navigate("/studio");
       } else {
-        const { error: profileError } = await supabase
+        // Check if listener profile already exists
+        const { data: existingProfile } = await supabase
           .from("listener_profiles")
-          .insert({
-            user_id: user.id,
-            display_name: displayName,
-            bio: bio || null,
-          });
+          .select("id")
+          .eq("user_id", user.id)
+          .single();
 
-        if (profileError) throw profileError;
+        if (!existingProfile) {
+          const { error: profileError } = await supabase
+            .from("listener_profiles")
+            .insert({
+              user_id: user.id,
+              display_name: displayName,
+              bio: bio || null,
+            });
+
+          if (profileError) throw profileError;
+        }
         navigate("/discover");
       }
 
