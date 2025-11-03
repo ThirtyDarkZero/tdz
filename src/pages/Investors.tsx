@@ -866,8 +866,21 @@ export default function Investors() {
               Experience the Platform
             </Button>
           </div>
-          <div className="pt-8 text-sm text-muted-foreground">
-            For investment inquiries: investors@tdzrecords.com
+          <div className="pt-8 space-y-3">
+            <div className="text-sm text-muted-foreground">
+              For investment inquiries: <a href="mailto:info@thirtydarkzero.com" className="text-primary hover:underline font-semibold">info@thirtydarkzero.com</a>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
+              <Badge variant="outline" className="bg-primary/5 border-primary/20">
+                <Shield className="w-3 h-3 mr-1.5" />
+                SBA SDVOSB Certified
+              </Badge>
+              <Badge variant="outline" className="bg-secondary/5 border-secondary/20">
+                SAM.GOV Registered
+              </Badge>
+              <span className="hidden sm:inline">•</span>
+              <span className="text-center sm:text-left">Government Contract Procurement • Live Entertainment Specialist</span>
+            </div>
           </div>
         </div>
       </section>
