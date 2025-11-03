@@ -76,6 +76,12 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
     background: linear-gradient(180deg, hsl(0 0% 8%) 0%, hsl(0 0% 12%) 100%);
     background-attachment: fixed;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    letter-spacing: 0.02em;
   }
 }
 
