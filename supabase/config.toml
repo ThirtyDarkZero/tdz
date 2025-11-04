@@ -5,3 +5,69 @@ verify_jwt = true
 
 [functions.quantum-advisor]
 verify_jwt = true
+
+[functions.align-lyrics]
+verify_jwt = true
+
+[functions.analyze-audio]
+verify_jwt = true
+
+[functions.analyze-lyrics]
+verify_jwt = true
+
+[functions.analyze-tempo]
+verify_jwt = true
+
+[functions.analyze-track-metadata]
+verify_jwt = true
+
+[functions.auto-publish-tracks]
+verify_jwt = true
+
+[functions.check-provider-health]
+verify_jwt = true
+
+[functions.create-upload-session]
+verify_jwt = true
+
+[functions.create-version]
+verify_jwt = true
+
+[functions.deduct-credits]
+verify_jwt = true
+
+[functions.export-video]
+verify_jwt = true
+
+[functions.extract-lyrics]
+verify_jwt = true
+
+[functions.generate-scenes]
+verify_jwt = true
+
+[functions.generate-video]
+verify_jwt = true
+
+[functions.generate-video-kling]
+verify_jwt = true
+
+[functions.generate-video-runway]
+verify_jwt = true
+
+[functions.generate-video-sora]
+verify_jwt = true
+
+[functions.generate-video-veo]
+verify_jwt = true
+
+[functions.get-recommendations]
+verify_jwt = true
+
+[functions.process-export]
+verify_jwt = true
+
+[functions.upload-chunk]
+verify_jwt = true
+
+[functions.validate-track-upload]
+verify_jwt = true
