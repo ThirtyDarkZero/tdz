@@ -257,67 +257,29 @@ export default function AlbumDetail() {
         <meta name="twitter:image" content={getCoverUrl(album?.cover_art_path)} />
       </Helmet>
 
-      {/* Top Navigation */}
-      <div className="sticky top-0 z-50 glass-card border-b border-border/50">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => {
-                // If user is the owner, go to studio; otherwise go back
-                if (isOwner) {
-                  navigate("/studio");
-                } else {
-                  navigate("/discover");
-                }
-              }}
-              className="h-9 px-2 sm:px-4"
-            >
-              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Back</span>
-            </Button>
-            <button 
-              onClick={() => navigate("/discover")}
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-            >
-              <img src={tdzLogo} alt="TDZ" className="h-6 sm:h-8 w-auto" style={{ mixBlendMode: 'screen' }} />
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
-            {isOwner && (
-              <>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setEditingAlbum(true)}
-                  className="h-9 gap-2"
-                >
-                  <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Edit Album</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => navigate("/studio")}
-                  className="h-9"
-                >
-                  Studio
-                </Button>
-              </>
-            )}
+      {/* Minimal Top Bar */}
+      <div className="fixed top-0 left-0 right-0 z-50 glass-card border-b border-border/50">
+        <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
+          <button 
+            onClick={() => navigate("/discover")}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <img src={tdzLogo} alt="TDZ" className="h-8 w-auto" style={{ mixBlendMode: 'screen' }} />
+          </button>
+          {isOwner && (
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => navigate("/discover")}
-              className="h-9 px-2 sm:px-4"
+              onClick={() => setEditingAlbum(true)}
+              className="gap-2"
             >
-              <Home className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Discover</span>
+              <Edit2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Edit</span>
             </Button>
-          </div>
+          )}
         </div>
       </div>
+      <div className="h-14" />
 
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-0 w-[1200px] h-[1200px] bg-primary/15 rounded-full blur-[200px] animate-pulse" />

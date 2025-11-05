@@ -4,6 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { CommandPalette } from "@/components/CommandPalette";
+import { SmartFAB } from "@/components/SmartFAB";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Studio from "./pages/Studio";
@@ -24,6 +26,8 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <CommandPalette />
+        <SmartFAB />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />

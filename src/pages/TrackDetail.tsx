@@ -132,49 +132,23 @@ export default function TrackDetail() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top Navigation */}
-      <div className="sticky top-0 z-50 glass-card border-b border-border/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-4">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => {
-                // Smart back navigation
-                if (track.album_id && track.albums) {
-                  // If track is part of an album, go back to album page
-                  navigate(`/album/${track.album_id}`);
-                } else if (isOwner) {
-                  // If owner viewing single track, go to studio
-                  navigate("/studio");
-                } else {
-                  // Otherwise go to discover
-                  navigate("/discover");
-                }
-              }}
-              className="h-8 sm:h-9"
-            >
-              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              <span className="text-xs sm:text-sm">Back</span>
-            </Button>
-            <button 
-              onClick={() => navigate("/discover")}
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-            >
-              <img src={tdzLogo} alt="TDZ" className="h-6 sm:h-8 w-auto" style={{ mixBlendMode: 'screen' }} />
-            </button>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm"
+      {/* Minimal Top Bar */}
+      <div className="fixed top-0 left-0 right-0 z-50 glass-card border-b border-border/50">
+        <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
+          <button 
             onClick={() => navigate("/discover")}
-            className="h-8 sm:h-9 text-xs sm:text-sm"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <Home className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-            <span className="hidden sm:inline">Discover</span>
-          </Button>
+            <img src={tdzLogo} alt="TDZ" className="h-8 w-auto" style={{ mixBlendMode: 'screen' }} />
+          </button>
+          <div className="text-sm text-muted-foreground hidden sm:block">
+            Press{" "}
+            <kbd className="px-2 py-1 text-xs bg-muted rounded">⌘K</kbd>
+            {" "}for quick actions
+          </div>
         </div>
       </div>
+      <div className="h-14" />
 
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-0 w-[1200px] h-[1200px] bg-primary/15 rounded-full blur-[200px] animate-pulse" />
