@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { QuickPublishButton } from "./QuickPublishButton";
 import { TrackEditDialog } from "./TrackEditDialog";
 import { CreateAlbumDialog } from "./CreateAlbumDialog";
+import { EditAlbumDialog } from "./EditAlbumDialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -46,6 +47,11 @@ interface Album {
   cover_art_path?: string;
   total_tracks: number;
   play_count: number;
+  genre?: string;
+  description?: string;
+  is_published?: boolean;
+  release_date?: string;
+  scheduled_release_date?: string;
 }
 
 interface MusicLibraryProps {
@@ -61,6 +67,7 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
   const [editingTrack, setEditingTrack] = useState<Track | null>(null);
   const [deletingTrack, setDeletingTrack] = useState<Track | null>(null);
   const [archivingTrack, setArchivingTrack] = useState<Track | null>(null);
+  const [editingAlbum, setEditingAlbum] = useState<Album | null>(null);
   const [selectedTracks, setSelectedTracks] = useState<string[]>([]);
   const [showCreateAlbum, setShowCreateAlbum] = useState(false);
   const [schedulingTrack, setSchedulingTrack] = useState<Track | null>(null);
@@ -422,7 +429,22 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
         <TabsContent value="albums">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {albums.map((album) => (
-              <Card key={album.id} className="p-3 md:p-4 hover:bg-accent/50 transition-colors cursor-pointer">
+              <Card key={album.id} className="group relative p-3 md:p-4 hover:bg-accent/50 transition-colors">
+                <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 bg-background/80 backdrop-blur-sm">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setEditingAlbum(album)}>
+                        <Edit2 className="h-4 w-4 mr-2" />
+                        Edit Album
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
                 <img
                   src={getCoverUrl(album.cover_art_path)}
                   alt={album.title}
@@ -430,7 +452,12 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
                 />
                 <p className="font-medium truncate text-sm md:text-base">{album.title}</p>
                 <p className="text-xs sm:text-sm text-muted-foreground truncate">{album.artist_name}</p>
-                <p className="text-xs text-muted-foreground mt-1">{album.total_tracks} tracks</p>
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-xs text-muted-foreground">{album.total_tracks} tracks</p>
+                  {album.is_published && (
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">Published</span>
+                  )}
+                </div>
               </Card>
             ))}
           </div>
@@ -455,6 +482,13 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
         track={editingTrack}
         open={!!editingTrack}
         onOpenChange={(open) => !open && setEditingTrack(null)}
+        onSuccess={loadLibrary}
+      />
+
+      <EditAlbumDialog
+        album={editingAlbum}
+        open={!!editingAlbum}
+        onOpenChange={(open) => !open && setEditingAlbum(null)}
         onSuccess={loadLibrary}
       />
 
