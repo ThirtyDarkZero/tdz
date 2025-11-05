@@ -9,6 +9,9 @@ import { MusicLibrary } from "@/components/MusicLibrary";
 import { ArtistDashboard } from "@/components/ArtistDashboard";
 import { ManagerDashboard } from "@/components/ManagerDashboard";
 import { LabelStaff } from "@/components/LabelStaff";
+import { PendingInvitesPanel } from "@/components/PendingInvitesPanel";
+import { CollaboratorsList } from "@/components/CollaboratorsList";
+import { CollaboratorInviteDialog } from "@/components/CollaboratorInviteDialog";
 import { ReleaseManager } from "@/components/ReleaseManager";
 import { DistributionAnalytics } from "@/components/DistributionAnalytics";
 import { MultiTrackUploader } from "@/components/MultiTrackUploader";
@@ -48,6 +51,8 @@ const Studio = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [artistName, setArtistName] = useState<string>("");
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [collaboratorsKey, setCollaboratorsKey] = useState(0);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -168,6 +173,8 @@ const Studio = () => {
       </div>
       
       <main className="container mx-auto px-4 py-12 relative z-10">
+        <PendingInvitesPanel />
+        
         {/* Epic hero section */}
         <div className="mb-8 md:mb-12 text-center space-y-4 md:space-y-6">
           <div className="inline-block">
@@ -299,6 +306,13 @@ const Studio = () => {
                 <Sparkles className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Quantum</span>
               </TabsTrigger>
+              <TabsTrigger 
+                value="collaborators" 
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
+              >
+                <Users className="h-4 w-4 md:h-5 md:w-5" />
+                <span className="hidden sm:inline">Collaborators</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -360,6 +374,18 @@ const Studio = () => {
             <TabsContent value="quantum" className="mt-0">
               <QuantumAdvisor />
             </TabsContent>
+
+            <TabsContent value="collaborators" className="mt-0">
+              <div className="space-y-6">
+                <div className="flex justify-end">
+                  <Button onClick={() => setShowInviteDialog(true)} className="gap-2">
+                    <Users className="h-4 w-4" />
+                    Invite Collaborator
+                  </Button>
+                </div>
+                <CollaboratorsList key={collaboratorsKey} />
+              </div>
+            </TabsContent>
           </div>
         </Tabs>
       </main>
@@ -382,6 +408,12 @@ const Studio = () => {
           <MultiTrackUploader onSuccess={() => setUploadDialogOpen(false)} />
         </DialogContent>
       </Dialog>
+
+      <CollaboratorInviteDialog 
+        open={showInviteDialog} 
+        onOpenChange={setShowInviteDialog}
+        onInviteSent={() => setCollaboratorsKey(prev => prev + 1)}
+      />
     </div>
   );
 };

@@ -74,6 +74,44 @@ export type Database = {
         }
         Relationships: []
       }
+      artist_collaborators: {
+        Row: {
+          artist_id: string
+          collaborator_id: string
+          created_at: string
+          id: string
+          invite_id: string | null
+          permissions: Json
+          updated_at: string
+        }
+        Insert: {
+          artist_id: string
+          collaborator_id: string
+          created_at?: string
+          id?: string
+          invite_id?: string | null
+          permissions?: Json
+          updated_at?: string
+        }
+        Update: {
+          artist_id?: string
+          collaborator_id?: string
+          created_at?: string
+          id?: string
+          invite_id?: string | null
+          permissions?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_collaborators_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "collaborator_invites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       artist_follows: {
         Row: {
           artist_id: string
@@ -273,6 +311,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      collaborator_invites: {
+        Row: {
+          artist_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          invited_email: string
+          message: string | null
+          permissions: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          artist_id: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invited_email: string
+          message?: string | null
+          permissions?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          artist_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invited_email?: string
+          message?: string | null
+          permissions?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       comment_likes: {
         Row: {
@@ -1596,6 +1670,13 @@ export type Database = {
         | "user"
         | "listener"
         | "manager"
+      collaboration_permission:
+        | "view_tracks"
+        | "edit_tracks"
+        | "upload_tracks"
+        | "delete_tracks"
+        | "view_analytics"
+        | "manage_albums"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1730,6 +1811,14 @@ export const Constants = {
         "user",
         "listener",
         "manager",
+      ],
+      collaboration_permission: [
+        "view_tracks",
+        "edit_tracks",
+        "upload_tracks",
+        "delete_tracks",
+        "view_analytics",
+        "manage_albums",
       ],
     },
   },

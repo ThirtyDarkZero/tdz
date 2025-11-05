@@ -30,6 +30,7 @@ import {
   LogOut,
   Moon,
   Sun,
+  UserPlus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -142,6 +143,26 @@ export function CommandPalette() {
       },
       category: "Quick Actions",
       keywords: ["album", "create", "new"],
+    },
+    {
+      id: "invite-collaborator",
+      label: "Invite Collaborator",
+      icon: UserPlus,
+      action: () => {
+        if (user) {
+          navigate("/studio");
+          // Trigger the collaborators tab and invite dialog
+          setTimeout(() => {
+            const collabTab = document.querySelector('[value="collaborators"]') as HTMLElement;
+            collabTab?.click();
+          }, 100);
+          toast.info("Opening collaborator invite");
+        } else {
+          toast.error("Please sign in to invite collaborators");
+        }
+      },
+      category: "Quick Actions",
+      keywords: ["invite", "collaborator", "team", "share"],
     },
     {
       id: "liked-songs",
