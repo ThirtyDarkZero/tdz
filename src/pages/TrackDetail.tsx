@@ -9,6 +9,7 @@ import {
   Play, Heart, Share2, ArrowLeft, Music, Calendar, Clock, Home
 } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
+import { TrackAnalytics } from "@/components/TrackAnalytics";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { MotionCover } from "@/components/MotionCover";
 
@@ -70,7 +71,7 @@ export default function TrackDetail() {
       .select("id")
       .eq("user_id", userId)
       .eq("track_id", trackId)
-      .single();
+      .maybeSingle();
 
     setIsLiked(!!data);
   };
@@ -265,6 +266,13 @@ export default function TrackDetail() {
               </div>
             </div>
           </Card>
+        )}
+
+        {/* Track Analytics - Only visible to track owner */}
+        {user && track && user.id === track.user_id && (
+          <div className="mt-12">
+            <TrackAnalytics trackId={trackId!} isOwner={true} />
+          </div>
         )}
       </div>
 
