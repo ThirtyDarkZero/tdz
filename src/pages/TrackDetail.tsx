@@ -41,7 +41,8 @@ export default function TrackDetail() {
         albums (
           id,
           title,
-          cover_art_path
+          cover_art_path,
+          is_published
         )
       `)
       .eq("id", trackId)
@@ -50,9 +51,17 @@ export default function TrackDetail() {
     if (error) {
       console.error("Error loading track:", error);
       toast.error("Failed to load track");
-    } else {
-      setTrack(data);
+      return;
     }
+
+    // Check if track belongs to an unpublished album
+    if (data.albums && data.albums.is_published === false) {
+      toast.error("This track is not available");
+      navigate("/discover");
+      return;
+    }
+
+    setTrack(data);
   };
 
   const checkIfLiked = async (userId: string) => {

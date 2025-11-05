@@ -75,13 +75,17 @@ export default function ArtistProfile() {
   const loadTracks = async () => {
     const { data, error } = await supabase
       .from("tracks")
-      .select("*")
+      .select("*, albums(*)")
       .eq("user_id", artistId)
       .eq("is_published", true)
       .order("created_at", { ascending: false });
 
     if (!error && data) {
-      setTracks(data);
+      // Filter out tracks from unpublished albums
+      const publishedTracks = data.filter(track => 
+        !track.albums || track.albums.is_published !== false
+      );
+      setTracks(publishedTracks);
     }
   };
 

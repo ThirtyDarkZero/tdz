@@ -75,14 +75,16 @@ export default function Discover() {
       (artistsData || []).map(artist => [artist.artist_name, artist.user_id])
     );
 
-    // Enhance tracks with artist user IDs and flatten album data
-    const enhancedTracks = (tracksData || []).map(track => ({
-      ...track,
-      artist_user_id: artistMap.get(track.artist_name),
-      album_cover_path: track.album_cover_path || track.albums?.cover_art_path,
-      motion_cover_path: track.motion_cover_path || track.albums?.motion_cover_path,
-      motion_cover_bucket: track.motion_cover_bucket || track.albums?.motion_cover_bucket,
-    }));
+    // Filter out tracks from unpublished albums and enhance tracks with artist user IDs
+    const enhancedTracks = (tracksData || [])
+      .filter(track => !track.albums || track.albums.is_published !== false)
+      .map(track => ({
+        ...track,
+        artist_user_id: artistMap.get(track.artist_name),
+        album_cover_path: track.album_cover_path || track.albums?.cover_art_path,
+        motion_cover_path: track.motion_cover_path || track.albums?.motion_cover_path,
+        motion_cover_bucket: track.motion_cover_bucket || track.albums?.motion_cover_bucket,
+      }));
 
     setTracks(enhancedTracks);
     setLoading(false);
