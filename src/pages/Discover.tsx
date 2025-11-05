@@ -607,6 +607,170 @@ export default function Discover() {
               </p>
             </div>
 
+            {/* Hot 100 - Overall Chart */}
+            {(() => {
+              const allTracks = Object.values(trendingByGenre)
+                .flat()
+                .sort((a, b) => b.trending_score - a.trending_score)
+                .slice(0, 100);
+
+              if (allTracks.length === 0) return null;
+
+              return (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="relative overflow-hidden rounded-2xl glass-card-premium p-6 border-primary/40 shadow-glow-lg">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary-glow/10 to-secondary/20" />
+                    <div className="relative z-10 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <Flame className="w-12 h-12 text-primary animate-pulse" />
+                          <div className="absolute -inset-2 bg-primary/20 rounded-full blur-xl -z-10" />
+                        </div>
+                        <div>
+                          <h2 className="text-4xl font-black tracking-tight glow-text">HOT 100</h2>
+                          <p className="text-sm text-muted-foreground">The biggest tracks across all genres</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="default"
+                        onClick={() => {
+                          setQueue(allTracks);
+                          setCurrentTrack(allTracks[0]);
+                          setCurrentIndex(0);
+                        }}
+                        className="gap-2 bg-gradient-to-r from-primary via-primary-glow to-secondary shadow-glow hover-lift"
+                      >
+                        <Play className="w-4 h-4" fill="currentColor" />
+                        Play Hot 100
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Card className="glass-card-premium overflow-hidden border-primary/30 shadow-glow">
+                    <div className="divide-y divide-border/50">
+                      {allTracks.map((track, index) => (
+                        <div
+                          key={track.id}
+                          className="flex items-center gap-4 p-4 hover:bg-primary/5 transition-colors group cursor-pointer"
+                          onClick={() => {
+                            setQueue(allTracks);
+                            setCurrentTrack(track);
+                            setCurrentIndex(index);
+                          }}
+                        >
+                          {/* Chart Position */}
+                          <div className="flex-shrink-0 w-10 text-center">
+                            {index < 3 ? (
+                              <div className="relative inline-block">
+                                <div className={`text-3xl font-black ${
+                                  index === 0 ? 'text-yellow-500 glow-text' :
+                                  index === 1 ? 'text-gray-400' :
+                                  'text-amber-700'
+                                }`}>
+                                  {index + 1}
+                                </div>
+                                {index === 0 && (
+                                  <div className="absolute -inset-2 bg-yellow-500/20 rounded-full blur-lg -z-10 animate-pulse" />
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-xl font-bold text-muted-foreground">
+                                {index + 1}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Cover Art */}
+                          <div className="relative flex-shrink-0">
+                            <div className="w-16 h-16 rounded overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20 ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all">
+                              <MotionCover
+                                motionCoverPath={track.motion_cover_path}
+                                motionCoverBucket={track.motion_cover_bucket}
+                                staticCoverPath={track.album_cover_path}
+                                staticCoverBucket={track.album_cover_bucket || "album-covers"}
+                                alt={track.title}
+                                className="w-full h-full"
+                              />
+                            </div>
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded">
+                              <Play className="w-6 h-6 text-white" fill="currentColor" />
+                            </div>
+                          </div>
+
+                          {/* Track Info */}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold truncate text-lg">{track.title}</p>
+                            <p className="text-sm text-muted-foreground truncate">{track.artist_name}</p>
+                            <Badge variant="outline" className="mt-1 text-xs">
+                              {track.genre || 'Unknown'}
+                            </Badge>
+                          </div>
+
+                          {/* Stats */}
+                          <div className="hidden lg:flex items-center gap-6 text-sm">
+                            <div className="flex items-center gap-2">
+                              <Play className="w-4 h-4 text-primary" />
+                              <span className="font-semibold">{(track.play_count || 0).toLocaleString()}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Heart className="w-4 h-4 text-primary" />
+                              <span className="font-semibold">{(track.like_count || 0).toLocaleString()}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <TrendingUp className="w-4 h-4 text-primary" />
+                              <Badge className="bg-primary/20 text-primary border-primary/30 font-bold">
+                                {Math.round(track.trending_score)}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          {/* Duration */}
+                          <div className="hidden md:block text-sm text-muted-foreground flex-shrink-0 font-medium">
+                            {formatDuration(track.duration || 0)}
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleLike(track.id);
+                              }}
+                              className={likedTracks.has(track.id) ? "text-primary" : ""}
+                            >
+                              <Heart
+                                className="w-5 h-5"
+                                fill={likedTracks.has(track.id) ? "currentColor" : "none"}
+                              />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/track/${track.id}`);
+                              }}
+                            >
+                              <Share2 className="w-5 h-5" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                </div>
+              );
+            })()}
+
+            {/* Genre-Specific Charts */}
+            <div className="pt-8 border-t border-primary/20">
+              <h2 className="text-3xl font-black mb-6 tracking-tight">
+                <span className="glow-text">Charts By Genre</span>
+              </h2>
+            </div>
+
             {Object.entries(trendingByGenre)
               .filter(([_, tracks]) => tracks.length > 0)
               .sort(([a], [b]) => {
