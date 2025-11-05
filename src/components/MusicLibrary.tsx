@@ -60,6 +60,7 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
   const [loading, setLoading] = useState(true);
   const [editingTrack, setEditingTrack] = useState<Track | null>(null);
   const [deletingTrack, setDeletingTrack] = useState<Track | null>(null);
+  const [archivingTrack, setArchivingTrack] = useState<Track | null>(null);
   const [selectedTracks, setSelectedTracks] = useState<string[]>([]);
   const [showCreateAlbum, setShowCreateAlbum] = useState(false);
   const [schedulingTrack, setSchedulingTrack] = useState<Track | null>(null);
@@ -179,6 +180,34 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
     setSelectedTracks(prev =>
       prev.includes(trackId) ? prev.filter(id => id !== trackId) : [...prev, trackId]
     );
+  };
+
+  const handleArchiveTrack = async () => {
+    if (!archivingTrack) return;
+
+    try {
+      // Update track to set is_published to false (archive it)
+      const { error } = await supabase
+        .from('tracks')
+        .update({ is_published: false })
+        .eq('id', archivingTrack.id);
+
+      if (error) throw error;
+
+      toast({ 
+        title: "Track archived",
+        description: "Moved to unpublished tracks"
+      });
+      loadLibrary();
+      setArchivingTrack(null);
+    } catch (error: any) {
+      console.error('Error archiving track:', error);
+      toast({
+        title: "Failed to archive track",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   const handleScheduleRelease = async () => {
@@ -309,10 +338,15 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
                 <Edit2 className="h-4 w-4 mr-2" />
                 Edit Track
               </DropdownMenuItem>
-              {showPublish && (
+              {showPublish ? (
                 <DropdownMenuItem onClick={() => setSchedulingTrack(track)}>
                   <Calendar className="h-4 w-4 mr-2" />
                   Schedule Release
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={() => setArchivingTrack(track)}>
+                  <Album className="h-4 w-4 mr-2" />
+                  Archive Track
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem 
@@ -446,6 +480,23 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteTrack} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!archivingTrack} onOpenChange={(open) => !open && setArchivingTrack(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive Track</AlertDialogTitle>
+            <AlertDialogDescription>
+              Archive "{archivingTrack?.title}"? It will be moved to your unpublished tracks and removed from public view.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleArchiveTrack}>
+              Archive
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
