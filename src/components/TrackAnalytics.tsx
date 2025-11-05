@@ -3,9 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { TrendingUp, Users, DollarSign, Play, Heart, MessageCircle, MapPin, TrendingDown, Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TrendingUp, Users, DollarSign, Play, Heart, MessageCircle, MapPin, TrendingDown, Eye, Download } from "lucide-react";
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis, ResponsiveContainer, BarChart, Bar, Cell } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { toast } from "sonner";
 
 interface TrackAnalyticsProps {
   trackId: string;
@@ -15,6 +17,7 @@ interface TrackAnalyticsProps {
 export function TrackAnalytics({ trackId, isOwner }: TrackAnalyticsProps) {
   const [analytics, setAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     loadAnalytics();
@@ -138,6 +141,42 @@ export function TrackAnalytics({ trackId, isOwner }: TrackAnalyticsProps) {
 
   if (!analytics) return null;
 
+  const handleExportPDF = async () => {
+    setExporting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('export-analytics', {
+        body: {
+          type: 'track',
+          id: trackId,
+          title: analytics.track.title,
+          artistName: analytics.track.artist_name,
+          analytics: analytics
+        }
+      });
+
+      if (error) throw error;
+
+      // Create a blob from the HTML and trigger download
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(data.html);
+        printWindow.document.close();
+        
+        // Wait for content to load then trigger print
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+      }
+
+      toast.success('Analytics report opened in new window. Use Print > Save as PDF');
+    } catch (error) {
+      console.error('Error exporting analytics:', error);
+      toast.error('Failed to export analytics');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const StatCard = ({ icon: Icon, label, value, subtext, trend }: any) => {
     return (
       <Card className="glass-card p-6 hover:shadow-glow transition-all">
@@ -165,7 +204,18 @@ export function TrackAnalytics({ trackId, isOwner }: TrackAnalyticsProps) {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold glow-text">Track Analytics</h2>
-        <Badge variant="outline">Owner View</Badge>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={handleExportPDF}
+            disabled={exporting}
+            variant="outline"
+            size="sm"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            {exporting ? 'Exporting...' : 'Export PDF'}
+          </Button>
+          <Badge variant="outline">Owner View</Badge>
+        </div>
       </div>
 
       {/* Key Metrics */}

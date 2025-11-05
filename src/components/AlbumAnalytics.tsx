@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { TrendingUp, Users, DollarSign, Music, Play, Eye, Heart, MessageCircle, MapPin, TrendingDown } from "lucide-react";
+import { TrendingUp, Users, DollarSign, Music, Play, Eye, Heart, MessageCircle, MapPin, TrendingDown, Download } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, AreaChart, Area, CartesianGrid, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { toast } from "sonner";
 
 interface AlbumAnalyticsProps {
   albumId: string;
@@ -25,6 +27,8 @@ interface AnalyticsData {
 export function AlbumAnalytics({ albumId }: AlbumAnalyticsProps) {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const [albumInfo, setAlbumInfo] = useState<any>(null);
 
   useEffect(() => {
     loadAnalytics();
@@ -32,6 +36,16 @@ export function AlbumAnalytics({ albumId }: AlbumAnalyticsProps) {
 
   const loadAnalytics = async () => {
     try {
+      // Load album info
+      const { data: album, error: albumError } = await supabase
+        .from("albums")
+        .select("*")
+        .eq("id", albumId)
+        .single();
+
+      if (albumError) throw albumError;
+      setAlbumInfo(album);
+
       const { data: tracks, error: tracksError } = await supabase
         .from("tracks")
         .select("*")
@@ -124,6 +138,44 @@ export function AlbumAnalytics({ albumId }: AlbumAnalyticsProps) {
 
   if (!analytics) return null;
 
+  const handleExportPDF = async () => {
+    if (!albumInfo) return;
+    
+    setExporting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('export-analytics', {
+        body: {
+          type: 'album',
+          id: albumId,
+          title: albumInfo.title,
+          artistName: albumInfo.artist_name,
+          analytics: analytics
+        }
+      });
+
+      if (error) throw error;
+
+      // Create a blob from the HTML and trigger download
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(data.html);
+        printWindow.document.close();
+        
+        // Wait for content to load then trigger print
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+      }
+
+      toast.success('Analytics report opened in new window. Use Print > Save as PDF');
+    } catch (error) {
+      console.error('Error exporting analytics:', error);
+      toast.error('Failed to export analytics');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const StatCard = ({ icon: Icon, label, value, subtext, trend }: any) => {
     return (
       <Card className="glass-card p-6 hover:shadow-glow transition-all">
@@ -151,6 +203,15 @@ export function AlbumAnalytics({ albumId }: AlbumAnalyticsProps) {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold glow-text">Album Analytics</h2>
+        <Button
+          onClick={handleExportPDF}
+          disabled={exporting || !albumInfo}
+          variant="outline"
+          size="sm"
+        >
+          <Download className="w-4 h-4 mr-2" />
+          {exporting ? 'Exporting...' : 'Export PDF'}
+        </Button>
       </div>
 
       {/* Key Metrics */}
