@@ -39,6 +39,14 @@ export const CreateAlbumDialog = ({ selectedTracks, open, onOpenChange, onSucces
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Get the first track's cover art
+      const { data: firstTrack } = await supabase
+        .from('tracks')
+        .select('album_cover_path')
+        .in('id', selectedTracks)
+        .limit(1)
+        .maybeSingle();
+
       // Create album
       const { data: albumData, error: albumError } = await supabase
         .from('albums')
@@ -51,20 +59,26 @@ export const CreateAlbumDialog = ({ selectedTracks, open, onOpenChange, onSucces
           total_tracks: selectedTracks.length,
           is_published: false,
           release_date: releaseDate ? format(releaseDate, 'yyyy-MM-dd') : null,
-          scheduled_release_date: releaseDate ? format(releaseDate, 'yyyy-MM-dd') : null
+          scheduled_release_date: releaseDate ? format(releaseDate, 'yyyy-MM-dd') : null,
+          cover_art_path: firstTrack?.album_cover_path || null
         })
         .select()
         .single();
 
       if (albumError) throw albumError;
 
-      // Update tracks with album_id
-      const { error: updateError } = await supabase
-        .from('tracks')
-        .update({ album_id: albumData.id })
-        .in('id', selectedTracks);
+      // Update tracks with album_id and track_number
+      for (let i = 0; i < selectedTracks.length; i++) {
+        const { error: updateError } = await supabase
+          .from('tracks')
+          .update({ 
+            album_id: albumData.id,
+            track_number: i + 1
+          })
+          .eq('id', selectedTracks[i]);
 
-      if (updateError) throw updateError;
+        if (updateError) throw updateError;
+      }
 
       toast({ 
         title: "Album created successfully",
