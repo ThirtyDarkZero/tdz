@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Upload, Music, Disc, Album as AlbumIcon, GripVertical } from "lucide-react";
+import { Upload, Music, Disc, Album as AlbumIcon, GripVertical, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { SortableTrackItem } from './SortableTrackItem';
+import { BulkEditDialog, BulkMetadata } from './BulkEditDialog';
 
 interface TrackFile {
   id: string;
@@ -44,6 +45,7 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
   const [genre, setGenre] = useState("");
   const [description, setDescription] = useState("");
   const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
   const { toast } = useToast();
 
   const handleFileSelect = async (files: FileList) => {
@@ -104,6 +106,21 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
         return arrayMove(items, oldIndex, newIndex);
       });
     }
+  };
+
+  const handleBulkEdit = (metadata: BulkMetadata) => {
+    // Apply bulk metadata to form fields
+    if (metadata.artistName !== undefined) {
+      setArtistName(metadata.artistName);
+    }
+    if (metadata.genre !== undefined) {
+      setGenre(metadata.genre);
+    }
+
+    toast({
+      title: "Metadata applied",
+      description: `Updated ${tracks.length} track${tracks.length !== 1 ? 's' : ''}`
+    });
   };
 
   const handleUpload = async () => {
@@ -297,12 +314,27 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label>Tracks ({tracks.length})</Label>
-            {tracks.length > 1 && (
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <GripVertical className="h-3 w-3" />
-                Drag to reorder
-              </p>
-            )}
+            <div className="flex items-center gap-2">
+              {tracks.length > 1 && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowBulkEdit(true)}
+                    disabled={uploading}
+                    className="h-8 text-xs"
+                  >
+                    <Edit className="h-3 w-3 mr-1" />
+                    Bulk Edit
+                  </Button>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <GripVertical className="h-3 w-3" />
+                    Drag to reorder
+                  </p>
+                </>
+              )}
+            </div>
           </div>
           <DndContext
             sensors={sensors}
@@ -412,6 +444,15 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
       >
         {uploading ? "Uploading..." : `Upload ${releaseType === 'single' ? 'Track' : tracks.length + ' Tracks'}`}
       </Button>
+
+      <BulkEditDialog
+        open={showBulkEdit}
+        onOpenChange={setShowBulkEdit}
+        onApply={handleBulkEdit}
+        trackCount={tracks.length}
+        currentArtistName={artistName}
+        currentGenre={genre}
+      />
     </div>
   );
 };
