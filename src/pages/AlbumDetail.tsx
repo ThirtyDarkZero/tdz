@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { EditAlbumDialog } from "@/components/EditAlbumDialog";
+import { AlbumAnalytics } from "@/components/AlbumAnalytics";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { Helmet } from "react-helmet";
 
@@ -473,6 +474,13 @@ export default function AlbumDetail() {
             ))}
           </div>
         </Card>
+
+        {/* Analytics Section - Only visible to album owner */}
+        {isOwner && album.is_published && (
+          <div className="mt-12">
+            <AlbumAnalytics albumId={albumId!} />
+          </div>
+        )}
       </div>
 
       <MusicPlayer
