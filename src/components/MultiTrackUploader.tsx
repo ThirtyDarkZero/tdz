@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Upload, X, Edit2, Music, Disc, Album as AlbumIcon } from "lucide-react";
+import { Upload, Music, Disc, Album as AlbumIcon, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { SortableTrackItem } from './SortableTrackItem';
 
 interface TrackFile {
   id: string;
@@ -72,6 +87,23 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
 
   const removeTrack = (id: string) => {
     setTracks(tracks.filter(t => t.id !== id));
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor)
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setTracks((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
   };
 
   const handleUpload = async () => {
@@ -260,49 +292,43 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
         </Label>
       </div>
 
-      {/* Track List */}
+      {/* Track List with Drag & Drop */}
       {tracks.length > 0 && (
         <div className="space-y-2">
-          <Label>Tracks ({tracks.length})</Label>
-          {tracks.map((track, index) => (
-            <Card key={track.id} className="p-3">
-              <div className="flex items-center gap-3">
-                <span className="text-muted-foreground w-6">{index + 1}</span>
-                {editingTrackId === track.id ? (
-                  <Input
-                    value={track.title}
-                    onChange={(e) => updateTrackTitle(track.id, e.target.value)}
-                    onBlur={() => setEditingTrackId(null)}
-                    onKeyDown={(e) => e.key === 'Enter' && setEditingTrackId(null)}
-                    autoFocus
-                    className="flex-1"
-                  />
-                ) : (
-                  <>
-                    <div className="flex-1">
-                      <p className="font-medium">{track.title}</p>
-                      <p className="text-sm text-muted-foreground">{formatDuration(track.duration)}</p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setEditingTrackId(track.id)}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                  </>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeTrack(track.id)}
+          <div className="flex items-center justify-between">
+            <Label>Tracks ({tracks.length})</Label>
+            {tracks.length > 1 && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <GripVertical className="h-3 w-3" />
+                Drag to reorder
+              </p>
+            )}
+          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={tracks.map(t => t.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {tracks.map((track, index) => (
+                <SortableTrackItem
+                  key={track.id}
+                  track={track}
+                  index={index}
+                  editingTrackId={editingTrackId}
+                  onEdit={setEditingTrackId}
+                  onTitleChange={updateTrackTitle}
+                  onRemove={removeTrack}
+                  onBlur={() => setEditingTrackId(null)}
                   disabled={uploading}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </Card>
-          ))}
+                  formatDuration={formatDuration}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         </div>
       )}
 
