@@ -264,7 +264,14 @@ export default function AlbumDetail() {
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                // If user is the owner, go to studio; otherwise go back
+                if (isOwner) {
+                  navigate("/studio");
+                } else {
+                  navigate("/discover");
+                }
+              }}
               className="h-9 px-2 sm:px-4"
             >
               <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
@@ -451,7 +458,14 @@ export default function AlbumDetail() {
               <div
                 key={track.id}
                 className="group flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
-                onClick={() => handlePlayTrack(track)}
+                onClick={() => {
+                  // Navigate to track detail page if published
+                  if (track.is_published || isOwner) {
+                    navigate(`/track/${track.id}`);
+                  } else {
+                    handlePlayTrack(track);
+                  }
+                }}
               >
                 <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                   <span className="text-muted-foreground w-6 text-sm sm:text-base">{index + 1}</span>
@@ -459,6 +473,10 @@ export default function AlbumDetail() {
                     size="icon" 
                     variant="ghost"
                     className="h-10 w-10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePlayTrack(track);
+                    }}
                   >
                     <Play className="w-4 h-4" fill="currentColor" />
                   </Button>
