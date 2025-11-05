@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Play, Heart, MoreVertical, Edit2, Trash2, CheckSquare, Square, Calendar, Album } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -59,6 +60,7 @@ interface MusicLibraryProps {
 }
 
 export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
+  const navigate = useNavigate();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [unpublishedTracks, setUnpublishedTracks] = useState<Track[]>([]);
   const [albums, setAlbums] = useState<Album[]>([]);
@@ -429,16 +431,23 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
         <TabsContent value="albums">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {albums.map((album) => (
-              <Card key={album.id} className="group relative p-3 md:p-4 hover:bg-accent/50 transition-colors">
+              <Card 
+                key={album.id} 
+                className="group relative p-3 md:p-4 hover:bg-accent/50 transition-colors cursor-pointer"
+                onClick={() => navigate(`/album/${album.id}`)}
+              >
                 <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                       <Button variant="ghost" size="icon" className="h-8 w-8 bg-background/80 backdrop-blur-sm">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setEditingAlbum(album)}>
+                      <DropdownMenuItem onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingAlbum(album);
+                      }}>
                         <Edit2 className="h-4 w-4 mr-2" />
                         Edit Album
                       </DropdownMenuItem>

@@ -12,6 +12,7 @@ import Discover from "./pages/Discover";
 import ArtistProfile from "./pages/ArtistProfile";
 import ListenerProfile from "./pages/ListenerProfile";
 import TrackDetail from "./pages/TrackDetail";
+import AlbumDetail from "./pages/AlbumDetail";
 import Investors from "./pages/Investors";
 import NotFound from "./pages/NotFound";
 
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/artist/:artistId" element={<ArtistProfile />} />
           <Route path="/profile" element={<ListenerProfile />} />
           <Route path="/track/:trackId" element={<TrackDetail />} />
+          <Route path="/album/:albumId" element={<AlbumDetail />} />
           <Route path="/investors" element={<Investors />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

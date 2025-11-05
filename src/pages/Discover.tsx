@@ -20,6 +20,7 @@ export default function Discover() {
   const navigate = useNavigate();
   const [tracks, setTracks] = useState<any[]>([]);
   const [artists, setArtists] = useState<any[]>([]);
+  const [albums, setAlbums] = useState<any[]>([]);
   const [playlists, setPlaylists] = useState<any[]>([]);
   const [likedTracks, setLikedTracks] = useState<Set<string>>(new Set());
   const [followedArtists, setFollowedArtists] = useState<Set<string>>(new Set());
@@ -35,6 +36,7 @@ export default function Discover() {
     loadUser();
     loadTracks();
     loadArtists();
+    loadAlbums();
     loadPlaylists();
     loadLikedTracks();
     loadFollowedArtists();
@@ -101,6 +103,21 @@ export default function Discover() {
       console.error("Error loading artists:", error);
     } else {
       setArtists(data || []);
+    }
+  };
+
+  const loadAlbums = async () => {
+    const { data, error } = await supabase
+      .from("albums")
+      .select("*")
+      .eq("is_published", true)
+      .order("created_at", { ascending: false })
+      .limit(12);
+
+    if (error) {
+      console.error("Error loading albums:", error);
+    } else {
+      setAlbums(data || []);
     }
   };
 
@@ -445,6 +462,72 @@ export default function Discover() {
                 ))}
               </div>
             </div>
+
+            {/* Featured Albums */}
+            {albums.length > 0 && (
+              <div className="space-y-3 md:space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Featured Albums</h2>
+                  <Badge variant="outline" className="text-xs px-2 py-1">
+                    {albums.length}
+                  </Badge>
+                </div>
+                
+                {/* Mobile Carousel */}
+                <div className="md:hidden overflow-x-auto scrollbar-hide -mx-3 px-3">
+                  <div className="flex gap-3 pb-2">
+                    {albums.map((album) => (
+                      <div 
+                        key={album.id}
+                        className="flex-shrink-0 w-[calc(50%-6px)] cursor-pointer"
+                        onClick={() => navigate(`/album/${album.id}`)}
+                      >
+                        <div className="space-y-2">
+                          <div className="relative aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20">
+                            <img
+                              src={supabase.storage.from('album-covers').getPublicUrl(album.cover_art_path || '').data.publicUrl}
+                              alt={album.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="space-y-0.5">
+                            <p className="text-xs font-medium truncate">{album.title}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{album.artist_name}</p>
+                            <p className="text-[10px] text-muted-foreground">{album.total_tracks} tracks</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Desktop Grid */}
+                <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3 md:gap-4">
+                  {albums.map((album) => (
+                    <div 
+                      key={album.id}
+                      className="group cursor-pointer"
+                      onClick={() => navigate(`/album/${album.id}`)}
+                    >
+                      <div className="space-y-2">
+                        <div className="relative aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20">
+                          <img
+                            src={supabase.storage.from('album-covers').getPublicUrl(album.cover_art_path || '').data.publicUrl}
+                            alt={album.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          />
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="text-sm font-medium truncate">{album.title}</p>
+                          <p className="text-xs text-muted-foreground truncate">{album.artist_name}</p>
+                          <p className="text-xs text-muted-foreground">{album.total_tracks} tracks</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="artists" className="space-y-8 animate-fade-in">
