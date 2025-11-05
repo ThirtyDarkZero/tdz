@@ -59,7 +59,7 @@ serve(async (req) => {
     const contextData = {
       totalTracks: tracksData.data?.length || 0,
       publishedTracks: tracksData.data?.filter(t => t.is_published).length || 0,
-      recentGenres: [...new Set(tracksData.data?.slice(0, 5).map(t => t.genre).filter(Boolean))] || [],
+      recentGenres: [...new Set(tracksData.data?.slice(0, 5).map(t => t.genre).filter(Boolean))],
       momentum: momentumData.data,
       fanMetrics: fanData.data,
       profile: artistProfile.data
