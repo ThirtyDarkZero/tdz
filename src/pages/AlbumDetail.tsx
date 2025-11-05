@@ -6,11 +6,12 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { 
-  Play, Heart, Share2, ArrowLeft, Music, Clock, Home, Edit2, Calendar
+  Play, Heart, Share2, ArrowLeft, Music, Clock, Home, Edit2, Calendar, Check, Link as LinkIcon, Bell
 } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { EditAlbumDialog } from "@/components/EditAlbumDialog";
 import tdzLogo from "@/assets/tdz-logo.png";
+import { Helmet } from "react-helmet";
 
 export default function AlbumDetail() {
   const { albumId } = useParams();
@@ -22,6 +23,7 @@ export default function AlbumDetail() {
   const [queue, setQueue] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [editingAlbum, setEditingAlbum] = useState(false);
+  const [isPresaved, setIsPresaved] = useState(false);
 
   useEffect(() => {
     loadUser();
@@ -31,8 +33,9 @@ export default function AlbumDetail() {
     if (albumId) {
       loadAlbum();
       loadTracks();
+      checkPresaveStatus();
     }
-  }, [albumId]);
+  }, [albumId, user]);
 
   const loadUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -75,11 +78,88 @@ export default function AlbumDetail() {
     }
   };
 
+  const checkPresaveStatus = async () => {
+    if (!user || !albumId) return;
+
+    const { data } = await supabase
+      .from("track_presaves")
+      .select("id")
+      .eq("user_id", user.id)
+      .in("track_id", tracks.map(t => t.id))
+      .limit(1)
+      .maybeSingle();
+
+    setIsPresaved(!!data);
+  };
+
+  const isPreRelease = () => {
+    if (!album) return false;
+    const now = new Date();
+    const releaseDate = album.release_date ? new Date(album.release_date) : null;
+    const scheduledDate = album.scheduled_release_date ? new Date(album.scheduled_release_date) : null;
+    const targetDate = scheduledDate || releaseDate;
+    
+    return targetDate && targetDate > now;
+  };
+
+  const handlePresaveAlbum = async () => {
+    if (!user) {
+      toast.error("Please sign in to pre-save this album");
+      return;
+    }
+
+    try {
+      if (isPresaved) {
+        // Remove all presaves for this album's tracks
+        await supabase
+          .from("track_presaves")
+          .delete()
+          .eq("user_id", user.id)
+          .in("track_id", tracks.map(t => t.id));
+
+        setIsPresaved(false);
+        toast.success("Album pre-save removed");
+      } else {
+        // Pre-save all tracks in the album
+        const presaves = tracks.map(track => ({
+          user_id: user.id,
+          track_id: track.id,
+          artist_id: album.user_id
+        }));
+
+        await supabase
+          .from("track_presaves")
+          .insert(presaves);
+
+        setIsPresaved(true);
+        toast.success("Album pre-saved! You'll be notified on release");
+      }
+    } catch (error: any) {
+      console.error("Error toggling presave:", error);
+      toast.error("Failed to update pre-save status");
+    }
+  };
+
   const handlePlayTrack = (track: any) => {
+    // For non-owners on pre-release albums, limit to 15 seconds
+    if (!isOwner && isPreRelease()) {
+      toast("Preview mode: 15-second snippet", {
+        description: "Pre-save the album to listen to full tracks on release"
+      });
+    }
+    
     setCurrentTrack(track);
     setQueue(tracks);
     const index = tracks.findIndex(t => t.id === track.id);
     setCurrentIndex(index);
+  };
+
+  const handleShareAlbum = () => {
+    const albumUrl = `${window.location.origin}/album/${albumId}`;
+    navigator.clipboard.writeText(albumUrl);
+    toast.success("Album link copied to clipboard!", {
+      description: "Share this link on social media"
+    });
   };
 
   const handlePlayAll = () => {
@@ -107,7 +187,23 @@ export default function AlbumDetail() {
   };
 
   const handleTrackEnd = () => {
+    // For non-owners on pre-release, stop after 15 seconds
+    if (!isOwner && isPreRelease() && currentTrack) {
+      setCurrentTrack(null);
+      toast("Preview ended", {
+        description: "Pre-save to hear the full album on release"
+      });
+      return;
+    }
     handleNext();
+  };
+
+  const getMaxPlaybackDuration = () => {
+    // Limit to 15 seconds for non-owners on pre-release albums
+    if (!isOwner && isPreRelease()) {
+      return 15;
+    }
+    return undefined;
   };
 
   const formatDuration = (seconds: number) => {
@@ -140,6 +236,26 @@ export default function AlbumDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>{album ? `${album.title} - ${album.artist_name}` : 'Album'}</title>
+        <meta name="description" content={album?.description || `Listen to ${album?.title} by ${album?.artist_name}`} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="music.album" />
+        <meta property="og:title" content={`${album?.title} - ${album?.artist_name}`} />
+        <meta property="og:description" content={album?.description || `${tracks.length} tracks`} />
+        <meta property="og:image" content={getCoverUrl(album?.cover_art_path)} />
+        <meta property="og:url" content={`${window.location.origin}/album/${albumId}`} />
+        <meta property="music:musician" content={album?.artist_name} />
+        <meta property="music:release_date" content={album?.release_date || album?.scheduled_release_date} />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${album?.title} - ${album?.artist_name}`} />
+        <meta name="twitter:description" content={album?.description || `${tracks.length} tracks`} />
+        <meta name="twitter:image" content={getCoverUrl(album?.cover_art_path)} />
+      </Helmet>
+
       {/* Top Navigation */}
       <div className="sticky top-0 z-50 glass-card border-b border-border/50">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2">
@@ -265,10 +381,43 @@ export default function AlbumDetail() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Button size="lg" onClick={handlePlayAll} className="gap-2 shadow-glow">
-                <Play className="w-5 h-5" fill="currentColor" />
-                Play All
-              </Button>
+              {isPreRelease() ? (
+                <>
+                  {!isOwner && (
+                    <Button 
+                      size="lg" 
+                      onClick={handlePresaveAlbum}
+                      className={`gap-2 shadow-glow ${isPresaved ? 'bg-primary/80' : ''}`}
+                    >
+                      {isPresaved ? (
+                        <>
+                          <Check className="w-5 h-5" />
+                          Pre-saved
+                        </>
+                      ) : (
+                        <>
+                          <Bell className="w-5 h-5" />
+                          Pre-save Album
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  <Button 
+                    size="lg" 
+                    variant="outline"
+                    onClick={handlePlayAll} 
+                    className="gap-2"
+                  >
+                    <Play className="w-5 h-5" fill="currentColor" />
+                    Preview (15s)
+                  </Button>
+                </>
+              ) : (
+                <Button size="lg" onClick={handlePlayAll} className="gap-2 shadow-glow">
+                  <Play className="w-5 h-5" fill="currentColor" />
+                  Play All
+                </Button>
+              )}
               {isOwner && (
                 <Button 
                   variant="outline" 
@@ -280,8 +429,13 @@ export default function AlbumDetail() {
                   Edit Album
                 </Button>
               )}
-              <Button variant="outline" size="lg" className="gap-2">
-                <Share2 className="w-5 h-5" />
+              <Button 
+                variant="outline" 
+                size="lg" 
+                onClick={handleShareAlbum}
+                className="gap-2"
+              >
+                <LinkIcon className="w-5 h-5" />
                 Share
               </Button>
             </div>
@@ -327,6 +481,7 @@ export default function AlbumDetail() {
         onNext={handleNext}
         onPrevious={handlePrevious}
         onTrackEnd={handleTrackEnd}
+        maxDuration={getMaxPlaybackDuration()}
       />
 
       {isOwner && (

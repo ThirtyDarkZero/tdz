@@ -54,9 +54,10 @@ interface MusicPlayerProps {
   onNext: () => void;
   onPrevious: () => void;
   onTrackEnd: () => void;
+  maxDuration?: number; // Maximum playback duration in seconds (for previews)
 }
 
-export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEnd }: MusicPlayerProps) => {
+export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEnd, maxDuration }: MusicPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(1);
@@ -217,6 +218,14 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
   const handleTimeUpdate = () => {
     if (audioRef.current) {
       setCurrentTime(audioRef.current.currentTime);
+      
+      // Check if preview max duration is reached
+      if (maxDuration && audioRef.current.currentTime >= maxDuration) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+        onTrackEnd();
+        return;
+      }
       
       // Check for crossfade near end
       if (crossfadeDuration > 0) {
