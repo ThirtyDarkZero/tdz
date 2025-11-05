@@ -270,8 +270,10 @@ export default function TrackDetail() {
 
         {/* Track Analytics - Only visible to track owner */}
         {user && track && user.id === track.user_id && (
-          <div className="mt-12">
-            <TrackAnalytics trackId={trackId!} isOwner={true} />
+          <div className="mt-8 space-y-6">
+            <div className="border-t border-border/50 pt-8">
+              <TrackAnalytics trackId={trackId!} isOwner={true} />
+            </div>
           </div>
         )}
       </div>
