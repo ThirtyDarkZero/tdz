@@ -12,8 +12,12 @@ import { SortableTrackItem } from "./SortableTrackItem";
 import { Switch } from "@/components/ui/switch";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Plus } from "lucide-react";
 import { format } from "date-fns";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Album {
   id: string;
@@ -50,6 +54,9 @@ export const EditAlbumDialog = ({ album, open, onOpenChange, onSuccess }: EditAl
   const [isPublished, setIsPublished] = useState(false);
   const [releaseDate, setReleaseDate] = useState<Date | undefined>();
   const [tracks, setTracks] = useState<Track[]>([]);
+  const [availableTracks, setAvailableTracks] = useState<Track[]>([]);
+  const [selectedAvailableTracks, setSelectedAvailableTracks] = useState<string[]>([]);
+  const [showAddTracks, setShowAddTracks] = useState(false);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
@@ -75,6 +82,9 @@ export const EditAlbumDialog = ({ album, open, onOpenChange, onSuccess }: EditAl
         setReleaseDate(undefined);
       }
       loadAlbumTracks();
+      loadAvailableTracks();
+      setShowAddTracks(false);
+      setSelectedAvailableTracks([]);
     }
   }, [album]);
 
@@ -100,6 +110,33 @@ export const EditAlbumDialog = ({ album, open, onOpenChange, onSuccess }: EditAl
     }
   };
 
+  const loadAvailableTracks = async () => {
+    if (!album) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get tracks that don't belong to any album or belong to a different album
+      const { data, error } = await supabase
+        .from('tracks')
+        .select('id, title, track_number, duration, file_path')
+        .eq('user_id', user.id)
+        .or(`album_id.is.null,album_id.neq.${album.id}`)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAvailableTracks(data || []);
+    } catch (error: any) {
+      console.error('Error loading available tracks:', error);
+      toast({
+        title: "Failed to load available tracks",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -115,6 +152,50 @@ export const EditAlbumDialog = ({ album, open, onOpenChange, onSuccess }: EditAl
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const toggleAvailableTrack = (trackId: string) => {
+    setSelectedAvailableTracks(prev =>
+      prev.includes(trackId) ? prev.filter(id => id !== trackId) : [...prev, trackId]
+    );
+  };
+
+  const handleAddSelectedTracks = async () => {
+    if (selectedAvailableTracks.length === 0 || !album) return;
+
+    try {
+      // Add selected tracks to album with appropriate track numbers
+      const startingTrackNumber = tracks.length + 1;
+      
+      for (let i = 0; i < selectedAvailableTracks.length; i++) {
+        const { error } = await supabase
+          .from('tracks')
+          .update({
+            album_id: album.id,
+            track_number: startingTrackNumber + i
+          })
+          .eq('id', selectedAvailableTracks[i]);
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: "Tracks added",
+        description: `${selectedAvailableTracks.length} track(s) added to album`
+      });
+
+      setSelectedAvailableTracks([]);
+      setShowAddTracks(false);
+      await loadAlbumTracks();
+      await loadAvailableTracks();
+    } catch (error: any) {
+      console.error('Error adding tracks:', error);
+      toast({
+        title: "Failed to add tracks",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   const handleSave = async () => {
@@ -245,7 +326,56 @@ export const EditAlbumDialog = ({ album, open, onOpenChange, onSuccess }: EditAl
           </div>
 
           <div>
-            <Label className="mb-2 block">Tracks (Drag to reorder)</Label>
+            <div className="flex items-center justify-between mb-2">
+              <Label>Tracks (Drag to reorder)</Label>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddTracks(!showAddTracks)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Tracks
+              </Button>
+            </div>
+
+            {showAddTracks && availableTracks.length > 0 && (
+              <Card className="p-4 mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="text-sm font-medium">Available Tracks</Label>
+                  {selectedAvailableTracks.length > 0 && (
+                    <Button size="sm" onClick={handleAddSelectedTracks}>
+                      Add {selectedAvailableTracks.length} Track(s)
+                    </Button>
+                  )}
+                </div>
+                <ScrollArea className="h-[200px]">
+                  <div className="space-y-2">
+                    {availableTracks.map((track) => (
+                      <div
+                        key={track.id}
+                        className="flex items-center space-x-3 p-2 rounded hover:bg-accent/50 transition-colors"
+                      >
+                        <Checkbox
+                          checked={selectedAvailableTracks.includes(track.id)}
+                          onCheckedChange={() => toggleAvailableTrack(track.id)}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate text-sm">{track.title}</p>
+                          <p className="text-xs text-muted-foreground">{formatDuration(track.duration)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </Card>
+            )}
+
+            {showAddTracks && availableTracks.length === 0 && (
+              <Card className="p-4 mb-4 text-center">
+                <p className="text-sm text-muted-foreground">No available tracks to add</p>
+              </Card>
+            )}
+
             <div className="space-y-2">
               <DndContext
                 sensors={sensors}
