@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { TrackAnalytics } from "@/components/TrackAnalytics";
+import { TrackAnalysisPanel } from "@/components/TrackAnalysisPanel";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { MotionCover } from "@/components/MotionCover";
 
@@ -439,8 +440,9 @@ export default function TrackDetail() {
 
         {/* Detailed Analytics - Only visible to track owner */}
         {isOwner && (
-          <div className="border-t border-border/50 pt-8">
+          <div className="space-y-8 border-t border-border/50 pt-8">
             <TrackAnalytics trackId={trackId!} isOwner={true} />
+            <TrackAnalysisPanel trackId={trackId!} trackTitle={track.title} />
           </div>
         )}
       </div>
