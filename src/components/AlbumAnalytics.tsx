@@ -31,19 +31,29 @@ export function AlbumAnalytics({ albumId }: AlbumAnalyticsProps) {
   const [albumInfo, setAlbumInfo] = useState<any>(null);
 
   useEffect(() => {
-    loadAnalytics();
+    if (albumId) {
+      loadAnalytics();
+    }
   }, [albumId]);
 
   const loadAnalytics = async () => {
+    if (!albumId) return;
+    
+    setLoading(true);
     try {
       // Load album info
       const { data: album, error: albumError } = await supabase
         .from("albums")
         .select("*")
         .eq("id", albumId)
-        .single();
+        .maybeSingle();
 
       if (albumError) throw albumError;
+      if (!album) {
+        console.error("Album not found for analytics");
+        setLoading(false);
+        return;
+      }
       setAlbumInfo(album);
 
       const { data: tracks, error: tracksError } = await supabase

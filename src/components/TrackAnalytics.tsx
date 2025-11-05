@@ -20,19 +20,29 @@ export function TrackAnalytics({ trackId, isOwner }: TrackAnalyticsProps) {
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
-    loadAnalytics();
+    if (trackId) {
+      loadAnalytics();
+    }
   }, [trackId]);
 
   const loadAnalytics = async () => {
+    if (!trackId) return;
+    
+    setLoading(true);
     try {
       // Get track data
       const { data: track, error: trackError } = await supabase
         .from("tracks")
         .select("*")
         .eq("id", trackId)
-        .single();
+        .maybeSingle();
 
       if (trackError) throw trackError;
+      if (!track) {
+        console.error("Track not found for analytics");
+        setLoading(false);
+        return;
+      }
 
       // Get likes count
       const { count: likesCount } = await supabase

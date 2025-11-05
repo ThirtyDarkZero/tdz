@@ -139,7 +139,19 @@ export default function TrackDetail() {
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                // Smart back navigation
+                if (track.album_id && track.albums) {
+                  // If track is part of an album, go back to album page
+                  navigate(`/album/${track.album_id}`);
+                } else if (isOwner) {
+                  // If owner viewing single track, go to studio
+                  navigate("/studio");
+                } else {
+                  // Otherwise go to discover
+                  navigate("/discover");
+                }
+              }}
               className="h-8 sm:h-9"
             >
               <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
