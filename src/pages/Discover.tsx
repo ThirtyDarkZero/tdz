@@ -30,6 +30,7 @@ export default function Discover() {
   const [currentTrack, setCurrentTrack] = useState<any>(null);
   const [queue, setQueue] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [trendingByGenre, setTrendingByGenre] = useState<Record<string, any[]>>({});
   const { role } = useUserRole(user);
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export default function Discover() {
     loadPlaylists();
     loadLikedTracks();
     loadFollowedArtists();
+    loadTrendingCharts();
   }, []);
 
   const loadUser = async () => {
@@ -159,6 +161,69 @@ export default function Discover() {
     if (!error && data) {
       setFollowedArtists(new Set(data.map(item => item.artist_id)));
     }
+  };
+
+  const loadTrendingCharts = async () => {
+    // Load trending tracks from the last 30 days, ranked by engagement
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data: tracksData, error: tracksError } = await supabase
+      .from("tracks")
+      .select("*, albums(*)")
+      .eq("is_published", true)
+      .gte("created_at", thirtyDaysAgo.toISOString())
+      .order("play_count", { ascending: false });
+
+    if (tracksError) {
+      console.error("Error loading trending tracks:", tracksError);
+      return;
+    }
+
+    // Load all artist profiles for mapping
+    const { data: artistsData } = await supabase
+      .from("artist_profiles")
+      .select("artist_name, user_id");
+
+    const artistMap = new Map(
+      (artistsData || []).map(artist => [artist.artist_name, artist.user_id])
+    );
+
+    // Enhance tracks with artist user IDs and calculate trending score
+    const enhancedTracks = (tracksData || [])
+      .filter(track => !track.albums || track.albums.is_published !== false)
+      .map(track => ({
+        ...track,
+        artist_user_id: artistMap.get(track.artist_name),
+        album_cover_path: track.album_cover_path || track.albums?.cover_art_path,
+        motion_cover_path: track.motion_cover_path || track.albums?.motion_cover_path,
+        motion_cover_bucket: track.motion_cover_bucket || track.albums?.motion_cover_bucket,
+        trending_score: (track.play_count || 0) * 1.5 + (track.like_count || 0) * 2
+      }))
+      .sort((a, b) => b.trending_score - a.trending_score);
+
+    // Group by genre and take top tracks per genre
+    const genreMap: Record<string, any[]> = {};
+    const genres = ['Hip Hop', 'R&B', 'Pop', 'Rock', 'Electronic', 'Jazz', 'Country', 'Reggae'];
+    
+    enhancedTracks.forEach(track => {
+      const genre = track.genre || 'Other';
+      if (!genreMap[genre]) {
+        genreMap[genre] = [];
+      }
+      if (genreMap[genre].length < 20) {
+        genreMap[genre].push(track);
+      }
+    });
+
+    // Ensure we have the main genres even if empty
+    genres.forEach(genre => {
+      if (!genreMap[genre]) {
+        genreMap[genre] = [];
+      }
+    });
+
+    setTrendingByGenre(genreMap);
   };
 
   const toggleLike = async (trackId: string) => {
@@ -527,6 +592,172 @@ export default function Discover() {
                   ))}
                 </div>
               </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="trending" className="space-y-8 animate-fade-in">
+            <div className="space-y-2 mb-8">
+              <h1 className="text-5xl md:text-6xl font-black tracking-tight">
+                <span className="glow-text-lg bg-gradient-to-r from-primary via-primary-glow to-secondary bg-clip-text text-transparent">
+                  THE CHARTS
+                </span>
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                Top trending tracks by genre, ranked by plays and engagement
+              </p>
+            </div>
+
+            {Object.entries(trendingByGenre)
+              .filter(([_, tracks]) => tracks.length > 0)
+              .sort(([a], [b]) => {
+                const mainGenres = ['Hip Hop', 'R&B', 'Pop', 'Rock', 'Electronic', 'Jazz', 'Country', 'Reggae'];
+                const aIndex = mainGenres.indexOf(a);
+                const bIndex = mainGenres.indexOf(b);
+                if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
+                if (aIndex === -1) return 1;
+                if (bIndex === -1) return -1;
+                return aIndex - bIndex;
+              })
+              .map(([genre, genreTracks], genreIndex) => (
+                <div key={genre} className="space-y-4 animate-fade-in" style={{ animationDelay: `${genreIndex * 0.1}s` }}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <h2 className="text-3xl font-black tracking-tight">{genre}</h2>
+                      <Badge className="bg-primary/20 text-primary border-primary/30">
+                        Top {genreTracks.length}
+                      </Badge>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setQueue(genreTracks);
+                        setCurrentTrack(genreTracks[0]);
+                        setCurrentIndex(0);
+                      }}
+                      className="gap-2"
+                    >
+                      <Play className="w-4 h-4" fill="currentColor" />
+                      Play All
+                    </Button>
+                  </div>
+
+                  <Card className="glass-card-premium overflow-hidden">
+                    <div className="divide-y divide-border/50">
+                      {genreTracks.map((track, index) => (
+                        <div
+                          key={track.id}
+                          className="flex items-center gap-4 p-4 hover:bg-primary/5 transition-colors group cursor-pointer"
+                          onClick={() => {
+                            setQueue(genreTracks);
+                            setCurrentTrack(track);
+                            setCurrentIndex(index);
+                          }}
+                        >
+                          {/* Chart Position */}
+                          <div className="flex-shrink-0 w-8 text-center">
+                            {index < 3 ? (
+                              <div className={`text-2xl font-black ${
+                                index === 0 ? 'text-yellow-500' :
+                                index === 1 ? 'text-gray-400' :
+                                'text-amber-700'
+                              }`}>
+                                {index + 1}
+                              </div>
+                            ) : (
+                              <div className="text-lg font-bold text-muted-foreground">
+                                {index + 1}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Cover Art */}
+                          <div className="relative flex-shrink-0">
+                            <div className="w-14 h-14 rounded overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20">
+                              <MotionCover
+                                motionCoverPath={track.motion_cover_path}
+                                motionCoverBucket={track.motion_cover_bucket}
+                                staticCoverPath={track.album_cover_path}
+                                staticCoverBucket={track.album_cover_bucket || "album-covers"}
+                                alt={track.title}
+                                className="w-full h-full"
+                              />
+                            </div>
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Play className="w-5 h-5 text-white" fill="currentColor" />
+                            </div>
+                          </div>
+
+                          {/* Track Info */}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold truncate">{track.title}</p>
+                            <p className="text-sm text-muted-foreground truncate">{track.artist_name}</p>
+                          </div>
+
+                          {/* Stats */}
+                          <div className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1.5">
+                              <Play className="w-4 h-4" />
+                              <span>{(track.play_count || 0).toLocaleString()}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Heart className="w-4 h-4" />
+                              <span>{(track.like_count || 0).toLocaleString()}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <TrendingUp className="w-4 h-4" />
+                              <Badge variant="outline" className="text-xs">
+                                {Math.round(track.trending_score)}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          {/* Duration */}
+                          <div className="hidden sm:block text-sm text-muted-foreground flex-shrink-0">
+                            {formatDuration(track.duration || 0)}
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleLike(track.id);
+                              }}
+                              className={likedTracks.has(track.id) ? "text-primary" : ""}
+                            >
+                              <Heart
+                                className="w-5 h-5"
+                                fill={likedTracks.has(track.id) ? "currentColor" : "none"}
+                              />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/track/${track.id}`);
+                              }}
+                            >
+                              <Share2 className="w-5 h-5" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                </div>
+              ))}
+
+            {Object.keys(trendingByGenre).length === 0 && (
+              <Card className="glass-card-premium p-16 text-center">
+                <TrendingUp className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-2xl font-bold mb-2">No Trending Tracks Yet</h3>
+                <p className="text-muted-foreground">
+                  Charts are updated based on recent plays and engagement
+                </p>
+              </Card>
             )}
           </TabsContent>
 
