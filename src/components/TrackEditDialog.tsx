@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,11 +22,20 @@ interface TrackEditDialogProps {
 }
 
 export const TrackEditDialog = ({ track, open, onOpenChange, onSuccess }: TrackEditDialogProps) => {
-  const [title, setTitle] = useState(track?.title || "");
-  const [artistName, setArtistName] = useState(track?.artist_name || "");
-  const [genre, setGenre] = useState(track?.genre || "");
+  const [title, setTitle] = useState("");
+  const [artistName, setArtistName] = useState("");
+  const [genre, setGenre] = useState("");
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+
+  // Update form fields when track changes
+  useEffect(() => {
+    if (track) {
+      setTitle(track.title);
+      setArtistName(track.artist_name);
+      setGenre(track.genre || "");
+    }
+  }, [track]);
 
   const handleSave = async () => {
     if (!track) return;
