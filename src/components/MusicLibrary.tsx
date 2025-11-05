@@ -1,11 +1,18 @@
 import { useState, useEffect } from "react";
-import { Play, Plus, Heart, MoreVertical } from "lucide-react";
+import { Play, Heart, MoreVertical, Edit2, Trash2, CheckSquare, Square, Calendar, Album } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { QuickPublishButton } from "./QuickPublishButton";
+import { TrackEditDialog } from "./TrackEditDialog";
+import { CreateAlbumDialog } from "./CreateAlbumDialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
 
 interface Track {
   id: string;
@@ -51,6 +58,12 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
   const [albums, setAlbums] = useState<Album[]>([]);
   const [likedTracks, setLikedTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingTrack, setEditingTrack] = useState<Track | null>(null);
+  const [deletingTrack, setDeletingTrack] = useState<Track | null>(null);
+  const [selectedTracks, setSelectedTracks] = useState<string[]>([]);
+  const [showCreateAlbum, setShowCreateAlbum] = useState(false);
+  const [schedulingTrack, setSchedulingTrack] = useState<Track | null>(null);
+  const [releaseDate, setReleaseDate] = useState<Date>();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -130,6 +143,82 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
     return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
   };
 
+  const handleDeleteTrack = async () => {
+    if (!deletingTrack) return;
+
+    try {
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('track-files')
+        .remove([deletingTrack.file_path]);
+
+      if (storageError) console.error('Storage deletion error:', storageError);
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('tracks')
+        .delete()
+        .eq('id', deletingTrack.id);
+
+      if (dbError) throw dbError;
+
+      toast({ title: "Track deleted successfully" });
+      loadLibrary();
+      setDeletingTrack(null);
+    } catch (error: any) {
+      console.error('Error deleting track:', error);
+      toast({
+        title: "Failed to delete track",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const toggleTrackSelection = (trackId: string) => {
+    setSelectedTracks(prev =>
+      prev.includes(trackId) ? prev.filter(id => id !== trackId) : [...prev, trackId]
+    );
+  };
+
+  const handleScheduleRelease = async () => {
+    if (!schedulingTrack || !releaseDate) return;
+
+    try {
+      const releaseDateStr = format(releaseDate, "yyyy-MM-dd");
+      const today = format(new Date(), "yyyy-MM-dd");
+      const shouldPublishNow = releaseDateStr <= today;
+
+      const { error } = await supabase
+        .from('tracks')
+        .update({
+          is_published: shouldPublishNow,
+          release_date: releaseDateStr
+        })
+        .eq('id', schedulingTrack.id);
+
+      if (error) throw error;
+
+      toast({ 
+        title: shouldPublishNow ? "Released!" : "Release scheduled!",
+        description: shouldPublishNow 
+          ? `${schedulingTrack.title} is now live`
+          : `${schedulingTrack.title} will go live on ${format(releaseDate, "PPP")}`
+      });
+      
+      loadLibrary();
+      setSchedulingTrack(null);
+      setReleaseDate(undefined);
+    } catch (error: any) {
+      console.error('Error scheduling release:', error);
+      toast({
+        title: "Failed to schedule release",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   const CoverArt = ({ track, className }: { track: Track, className?: string }) => {
     const isMotion = track.ai_tags?.metadata?.isMotionCover;
     const coverPath = track.album_cover_path || track.album?.cover_art_path || track.ai_tags?.metadata?.artworkUrl;
@@ -158,13 +247,28 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
     );
   };
 
-  const TrackList = ({ tracks: trackList, showPublish }: { tracks: Track[], showPublish?: boolean }) => (
+  const TrackList = ({ tracks: trackList, showPublish, showSelection }: { tracks: Track[], showPublish?: boolean, showSelection?: boolean }) => (
     <div className="space-y-2">
       {trackList.map((track, index) => (
         <div
           key={track.id}
           className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg hover:bg-accent/50 transition-colors group"
         >
+          {showSelection && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => toggleTrackSelection(track.id)}
+              className="flex-shrink-0"
+            >
+              {selectedTracks.includes(track.id) ? (
+                <CheckSquare className="h-4 w-4 text-primary" />
+              ) : (
+                <Square className="h-4 w-4" />
+              )}
+            </Button>
+          )}
+          
           <Button
             variant="ghost"
             size="icon"
@@ -194,9 +298,32 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
             />
           )}
           
-          <Button variant="ghost" size="icon" className="flex-shrink-0">
-            <MoreVertical className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="flex-shrink-0">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setEditingTrack(track)}>
+                <Edit2 className="h-4 w-4 mr-2" />
+                Edit Track
+              </DropdownMenuItem>
+              {showPublish && (
+                <DropdownMenuItem onClick={() => setSchedulingTrack(track)}>
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Schedule Release
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem 
+                onClick={() => setDeletingTrack(track)}
+                className="text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Track
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       ))}
     </div>
@@ -232,10 +359,18 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
             </Card>
           ) : (
             <>
-              <p className="text-sm text-muted-foreground mb-4">
-                Publish your tracks to make them visible in Discovery and on your Artist Profile
-              </p>
-              <TrackList tracks={unpublishedTracks} showPublish />
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-muted-foreground">
+                  Publish your tracks to make them visible in Discovery and on your Artist Profile
+                </p>
+                {selectedTracks.length > 0 && (
+                  <Button onClick={() => setShowCreateAlbum(true)}>
+                    <Album className="h-4 w-4 mr-2" />
+                    Create Album ({selectedTracks.length})
+                  </Button>
+                )}
+              </div>
+              <TrackList tracks={unpublishedTracks} showPublish showSelection />
             </>
           )}
         </TabsContent>
@@ -281,6 +416,76 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
           )}
         </TabsContent>
       </Tabs>
+
+      <TrackEditDialog
+        track={editingTrack}
+        open={!!editingTrack}
+        onOpenChange={(open) => !open && setEditingTrack(null)}
+        onSuccess={loadLibrary}
+      />
+
+      <CreateAlbumDialog
+        selectedTracks={selectedTracks}
+        open={showCreateAlbum}
+        onOpenChange={setShowCreateAlbum}
+        onSuccess={() => {
+          loadLibrary();
+          setSelectedTracks([]);
+        }}
+      />
+
+      <AlertDialog open={!!deletingTrack} onOpenChange={(open) => !open && setDeletingTrack(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Track</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deletingTrack?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteTrack} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!schedulingTrack} onOpenChange={(open) => !open && setSchedulingTrack(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Schedule Release</AlertDialogTitle>
+            <AlertDialogDescription>
+              Choose a release date for "{schedulingTrack?.title}"
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {releaseDate ? format(releaseDate, "PPP") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <CalendarComponent
+                  mode="single"
+                  selected={releaseDate}
+                  onSelect={setReleaseDate}
+                  disabled={(date) => date < new Date()}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleScheduleRelease} disabled={!releaseDate}>
+              Schedule Release
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -11,7 +11,7 @@ import { ManagerDashboard } from "@/components/ManagerDashboard";
 import { LabelStaff } from "@/components/LabelStaff";
 import { ReleaseManager } from "@/components/ReleaseManager";
 import { DistributionAnalytics } from "@/components/DistributionAnalytics";
-import { MusicUploadPro } from "@/components/MusicUploadPro";
+import { MultiTrackUploader } from "@/components/MultiTrackUploader";
 import { ArtistGalleryManager } from "@/components/ArtistGalleryManager";
 import { FanEngagementHub } from "@/components/FanEngagementHub";
 import { StorytellingStudio } from "@/components/StorytellingStudio";
@@ -375,7 +375,7 @@ const Studio = () => {
               Upload Your Music
             </DialogTitle>
           </DialogHeader>
-          <MusicUploadPro onSuccess={() => setUploadDialogOpen(false)} />
+          <MultiTrackUploader onSuccess={() => setUploadDialogOpen(false)} />
         </DialogContent>
       </Dialog>
     </div>
