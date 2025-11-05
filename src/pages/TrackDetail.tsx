@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { 
-  Play, Heart, Share2, ArrowLeft, Music, Calendar, Clock, Home
+  Play, Heart, Share2, ArrowLeft, Music, Calendar, Clock, Home, Info, Radio, Activity, TrendingUp
 } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { TrackAnalytics } from "@/components/TrackAnalytics";
@@ -43,11 +43,12 @@ export default function TrackDetail() {
           id,
           title,
           cover_art_path,
-          is_published
+          is_published,
+          release_date
         )
       `)
       .eq("id", trackId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Error loading track:", error);
@@ -55,8 +56,14 @@ export default function TrackDetail() {
       return;
     }
 
+    if (!data) {
+      toast.error("Track not found");
+      navigate("/discover");
+      return;
+    }
+
     // Check if track belongs to an unpublished album
-    if (data.albums && data.albums.is_published === false) {
+    if (data.albums && data.albums.is_published === false && (!user || data.user_id !== user?.id)) {
       toast.error("This track is not available");
       navigate("/discover");
       return;
@@ -111,6 +118,17 @@ export default function TrackDetail() {
   if (!track) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
+
+  const isOwner = user && track && user.id === track.user_id;
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -170,7 +188,20 @@ export default function TrackDetail() {
           {/* Track Info */}
           <div className="flex flex-col justify-center space-y-4 sm:space-y-6 md:space-y-8">
             <div className="space-y-2 sm:space-y-3 md:space-y-4">
-              <Badge className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5">SINGLE</Badge>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5">
+                  {track.albums ? 'ALBUM TRACK' : 'SINGLE'}
+                </Badge>
+                {track.is_published ? (
+                  <Badge className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 bg-primary/20 text-primary">
+                    Published
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5">
+                    Unpublished
+                  </Badge>
+                )}
+              </div>
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-tight">{track.title}</h1>
               <button 
                 onClick={() => navigate(`/artist/${track.user_id}`)}
@@ -194,6 +225,11 @@ export default function TrackDetail() {
               {track.bpm && (
                 <Badge variant="outline" className="text-xs sm:text-sm px-2 sm:px-3 py-1">
                   {track.bpm} BPM
+                </Badge>
+              )}
+              {track.key && (
+                <Badge variant="outline" className="text-xs sm:text-sm px-2 sm:px-3 py-1">
+                  Key: {track.key}
                 </Badge>
               )}
             </div>
@@ -244,11 +280,158 @@ export default function TrackDetail() {
           </div>
         </div>
 
-        {/* Additional Info */}
+        {/* Track Metadata and Publishing Information */}
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          {/* Track Metadata */}
+          <Card className="glass-card-premium p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Info className="w-5 h-5 text-primary" />
+              <h2 className="text-xl font-bold">Track Information</h2>
+            </div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-start py-2 border-b border-border/50">
+                <span className="text-sm text-muted-foreground">Title</span>
+                <span className="text-sm font-medium text-right">{track.title}</span>
+              </div>
+              <div className="flex justify-between items-start py-2 border-b border-border/50">
+                <span className="text-sm text-muted-foreground">Artist</span>
+                <span className="text-sm font-medium text-right">{track.artist_name}</span>
+              </div>
+              <div className="flex justify-between items-start py-2 border-b border-border/50">
+                <span className="text-sm text-muted-foreground">Duration</span>
+                <span className="text-sm font-medium">{formatDuration(track.duration)}</span>
+              </div>
+              {track.genre && (
+                <div className="flex justify-between items-start py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">Genre</span>
+                  <span className="text-sm font-medium">{track.genre}</span>
+                </div>
+              )}
+              {track.mood && (
+                <div className="flex justify-between items-start py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">Mood</span>
+                  <span className="text-sm font-medium">{track.mood}</span>
+                </div>
+              )}
+              {track.bpm && (
+                <div className="flex justify-between items-start py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">BPM</span>
+                  <span className="text-sm font-medium">{track.bpm}</span>
+                </div>
+              )}
+              {track.key && (
+                <div className="flex justify-between items-start py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">Key</span>
+                  <span className="text-sm font-medium">{track.key}</span>
+                </div>
+              )}
+              {track.track_number && (
+                <div className="flex justify-between items-start py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">Track Number</span>
+                  <span className="text-sm font-medium">#{track.track_number}</span>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Publishing Data */}
+          <Card className="glass-card-premium p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Radio className="w-5 h-5 text-primary" />
+              <h2 className="text-xl font-bold">Publishing Information</h2>
+            </div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-start py-2 border-b border-border/50">
+                <span className="text-sm text-muted-foreground">Status</span>
+                <Badge variant={track.is_published ? "default" : "secondary"} className="text-xs">
+                  {track.is_published ? "Published" : "Unpublished"}
+                </Badge>
+              </div>
+              {track.release_date && (
+                <div className="flex justify-between items-start py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">Release Date</span>
+                  <span className="text-sm font-medium">{formatDate(track.release_date)}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-start py-2 border-b border-border/50">
+                <span className="text-sm text-muted-foreground">Upload Date</span>
+                <span className="text-sm font-medium">{formatDate(track.created_at)}</span>
+              </div>
+              <div className="flex justify-between items-start py-2 border-b border-border/50">
+                <span className="text-sm text-muted-foreground">Last Updated</span>
+                <span className="text-sm font-medium">{formatDate(track.updated_at)}</span>
+              </div>
+              {track.albums && (
+                <>
+                  <div className="flex justify-between items-start py-2 border-b border-border/50">
+                    <span className="text-sm text-muted-foreground">Album</span>
+                    <button 
+                      onClick={() => navigate(`/album/${track.albums.id}`)}
+                      className="text-sm font-medium text-primary hover:underline text-right"
+                    >
+                      {track.albums.title}
+                    </button>
+                  </div>
+                  {track.albums.release_date && (
+                    <div className="flex justify-between items-start py-2 border-b border-border/50">
+                      <span className="text-sm text-muted-foreground">Album Release</span>
+                      <span className="text-sm font-medium">{formatDate(track.albums.release_date)}</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </Card>
+        </div>
+
+        {/* Streaming Performance - Visible to everyone */}
+        <Card className="glass-card-premium p-6 mb-8">
+          <div className="flex items-center gap-2 mb-6">
+            <Activity className="w-5 h-5 text-primary" />
+            <h2 className="text-xl font-bold">Streaming Performance</h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Play className="w-4 h-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Total Plays</p>
+              </div>
+              <p className="text-2xl md:text-3xl font-bold glow-text">{track.play_count?.toLocaleString() || 0}</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Heart className="w-4 h-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Likes</p>
+              </div>
+              <p className="text-2xl md:text-3xl font-bold glow-text">{track.like_count?.toLocaleString() || 0}</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Est. Revenue</p>
+              </div>
+              <p className="text-2xl md:text-3xl font-bold glow-text">
+                ${((track.play_count || 0) * 0.003).toFixed(2)}
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Music className="w-4 h-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Listeners</p>
+              </div>
+              <p className="text-2xl md:text-3xl font-bold glow-text">
+                {Math.floor((track.play_count || 0) * 0.6).toLocaleString()}
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Album Card if part of album */}
         {track.albums && (
-          <Card className="glass-card-premium p-4 sm:p-6 md:p-8">
+          <Card className="glass-card-premium p-4 sm:p-6 md:p-8 mb-8">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4">From the Album</h2>
-            <div className="flex items-center gap-3 sm:gap-4 md:gap-6">
+            <div className="flex items-center gap-3 sm:gap-4 md:gap-6 cursor-pointer hover:opacity-80 transition-opacity"
+                 onClick={() => navigate(`/album/${track.albums.id}`)}>
               <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-lg overflow-hidden flex-shrink-0">
                 {track.albums.cover_art_path ? (
                   <img 
@@ -268,12 +451,10 @@ export default function TrackDetail() {
           </Card>
         )}
 
-        {/* Track Analytics - Only visible to track owner */}
-        {user && track && user.id === track.user_id && (
-          <div className="mt-8 space-y-6">
-            <div className="border-t border-border/50 pt-8">
-              <TrackAnalytics trackId={trackId!} isOwner={true} />
-            </div>
+        {/* Detailed Analytics - Only visible to track owner */}
+        {isOwner && (
+          <div className="border-t border-border/50 pt-8">
+            <TrackAnalytics trackId={trackId!} isOwner={true} />
           </div>
         )}
       </div>
