@@ -6,9 +6,10 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { 
-  Play, Heart, Share2, ArrowLeft, Music, Clock, Home
+  Play, Heart, Share2, ArrowLeft, Music, Clock, Home, Edit2, Calendar
 } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
+import { EditAlbumDialog } from "@/components/EditAlbumDialog";
 import tdzLogo from "@/assets/tdz-logo.png";
 
 export default function AlbumDetail() {
@@ -20,11 +21,17 @@ export default function AlbumDetail() {
   const [currentTrack, setCurrentTrack] = useState<any>(null);
   const [queue, setQueue] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [editingAlbum, setEditingAlbum] = useState(false);
 
   useEffect(() => {
     loadUser();
-    loadAlbum();
-    loadTracks();
+  }, []);
+
+  useEffect(() => {
+    if (albumId) {
+      loadAlbum();
+      loadTracks();
+    }
   }, [albumId]);
 
   const loadUser = async () => {
@@ -47,7 +54,7 @@ export default function AlbumDetail() {
     }
 
     // Check if album is published (unless viewing own album)
-    if (data.is_published === false && (!user || data.user_id !== user.id)) {
+    if (data.is_published === false && user && data.user_id !== user.id) {
       toast.error("This album is not available");
       navigate("/discover");
       return;
@@ -119,6 +126,14 @@ export default function AlbumDetail() {
     return supabase.storage.from('album-covers').getPublicUrl(path).data.publicUrl;
   };
 
+  const handleEditSuccess = () => {
+    loadAlbum();
+    loadTracks();
+    setEditingAlbum(false);
+  };
+
+  const isOwner = user && album && user.id === album.user_id;
+
   if (!album) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
@@ -146,15 +161,26 @@ export default function AlbumDetail() {
             </button>
           </div>
           <div className="flex items-center gap-2">
-            {user && album.user_id === user.id && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => navigate("/studio")}
-                className="h-9"
-              >
-                Studio
-              </Button>
+            {isOwner && (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setEditingAlbum(true)}
+                  className="h-9 gap-2"
+                >
+                  <Edit2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="hidden sm:inline">Edit Album</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate("/studio")}
+                  className="h-9"
+                >
+                  Studio
+                </Button>
+              </>
             )}
             <Button 
               variant="outline" 
@@ -189,7 +215,14 @@ export default function AlbumDetail() {
           {/* Album Info */}
           <div className="space-y-4 md:space-y-6">
             <div className="space-y-2 md:space-y-4">
-              <Badge variant="outline" className="text-xs sm:text-sm">Album</Badge>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="outline" className="text-xs sm:text-sm">Album</Badge>
+                {album.is_published ? (
+                  <Badge className="text-xs sm:text-sm bg-primary/20 text-primary">Published</Badge>
+                ) : (
+                  <Badge variant="secondary" className="text-xs sm:text-sm">Unpublished</Badge>
+                )}
+              </div>
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-black glow-text">{album.title}</h1>
               <p className="text-xl sm:text-2xl md:text-3xl text-muted-foreground">{album.artist_name}</p>
             </div>
@@ -201,9 +234,11 @@ export default function AlbumDetail() {
             )}
 
             {album.description && (
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                {album.description}
-              </p>
+              <Card className="p-4 bg-accent/50">
+                <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                  {album.description}
+                </p>
+              </Card>
             )}
 
             <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
@@ -216,7 +251,16 @@ export default function AlbumDetail() {
                 <span>{getTotalDuration()}</span>
               </div>
               {album.release_date && (
-                <span>{new Date(album.release_date).getFullYear()}</span>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  <span>{new Date(album.release_date).toLocaleDateString()}</span>
+                </div>
+              )}
+              {album.scheduled_release_date && !album.is_published && (
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  <span>Scheduled: {new Date(album.scheduled_release_date).toLocaleDateString()}</span>
+                </div>
               )}
             </div>
 
@@ -225,6 +269,17 @@ export default function AlbumDetail() {
                 <Play className="w-5 h-5" fill="currentColor" />
                 Play All
               </Button>
+              {isOwner && (
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  onClick={() => setEditingAlbum(true)}
+                  className="gap-2"
+                >
+                  <Edit2 className="w-5 h-5" />
+                  Edit Album
+                </Button>
+              )}
               <Button variant="outline" size="lg" className="gap-2">
                 <Share2 className="w-5 h-5" />
                 Share
@@ -273,6 +328,15 @@ export default function AlbumDetail() {
         onPrevious={handlePrevious}
         onTrackEnd={handleTrackEnd}
       />
+
+      {isOwner && (
+        <EditAlbumDialog
+          album={album}
+          open={editingAlbum}
+          onOpenChange={setEditingAlbum}
+          onSuccess={handleEditSuccess}
+        />
+      )}
     </div>
   );
 }
