@@ -90,7 +90,14 @@ export function CommandPalette() {
       id: "studio",
       label: "Go to Studio",
       icon: Music,
-      action: () => navigate("/studio"),
+      action: () => {
+        // Check if user has artist/manager role before navigating
+        if (user) {
+          navigate("/studio");
+        } else {
+          toast.error("Please sign in first");
+        }
+      },
       category: "Navigation",
       keywords: ["studio", "create", "upload", "my music"],
     },
@@ -111,7 +118,13 @@ export function CommandPalette() {
       id: "upload",
       label: "Upload Track",
       icon: Upload,
-      action: () => navigate("/studio"),
+      action: () => {
+        if (user) {
+          navigate("/studio");
+        } else {
+          toast.error("Please sign in to upload tracks");
+        }
+      },
       category: "Quick Actions",
       keywords: ["upload", "add", "new track", "create"],
     },
@@ -120,8 +133,12 @@ export function CommandPalette() {
       label: "Create Album",
       icon: Album,
       action: () => {
-        navigate("/studio");
-        toast.info("Click 'New Album' button in Studio");
+        if (user) {
+          navigate("/studio");
+          toast.info("Click 'New Album' button in Studio");
+        } else {
+          toast.error("Please sign in to create albums");
+        }
       },
       category: "Quick Actions",
       keywords: ["album", "create", "new"],

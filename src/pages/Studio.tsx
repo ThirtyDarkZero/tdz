@@ -52,14 +52,17 @@ const Studio = () => {
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
+      return;
     }
   }, [user, loading, navigate]);
 
-  // Protect studio from listeners/fans
+  // Protect studio from listeners/fans - redirect immediately
   useEffect(() => {
-    if (!roleLoading && role && role === 'listener') {
-      toast.error("Studio access is only available for artists and managers");
-      navigate("/discover");
+    if (!roleLoading && role) {
+      if (role === 'listener') {
+        toast.error("Studio access is only available for artists and managers");
+        navigate("/discover");
+      }
     }
   }, [role, roleLoading, navigate]);
 
@@ -109,7 +112,8 @@ const Studio = () => {
     );
   }
 
-  if (!user) {
+  // Block rendering if user is a listener/fan
+  if (!user || role === 'listener') {
     return null;
   }
 
