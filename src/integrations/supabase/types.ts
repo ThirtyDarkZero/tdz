@@ -1418,6 +1418,7 @@ export type Database = {
           album_cover_path: string | null
           album_id: string | null
           artist_name: string
+          audio_quality: string | null
           bpm: number | null
           created_at: string
           duration: number
@@ -1444,6 +1445,7 @@ export type Database = {
           album_cover_path?: string | null
           album_id?: string | null
           artist_name: string
+          audio_quality?: string | null
           bpm?: number | null
           created_at?: string
           duration: number
@@ -1470,6 +1472,7 @@ export type Database = {
           album_cover_path?: string | null
           album_id?: string | null
           artist_name?: string
+          audio_quality?: string | null
           bpm?: number | null
           created_at?: string
           duration?: number

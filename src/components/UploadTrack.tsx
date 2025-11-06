@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Upload, Music } from "lucide-react";
+import { Upload, Music, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
+
+// Helper function to detect audio quality from file
+const detectAudioQuality = (file: File): 'standard' | 'hd' | 'dolby_atmos' | 'hi_res' => {
+  const extension = file.name.split('.').pop()?.toLowerCase();
+  
+  // Dolby Atmos formats
+  if (['ec3', 'eac3', 'ac4'].includes(extension || '')) {
+    return 'dolby_atmos';
+  }
+  
+  // High-resolution formats (typically 24-bit or higher)
+  if (['dsd', 'dsf', 'dff', 'aiff', 'aif'].includes(extension || '')) {
+    return 'hi_res';
+  }
+  
+  // HD lossless formats (FLAC, WAV, ALAC)
+  if (['flac', 'wav', 'alac'].includes(extension || '')) {
+    return 'hd';
+  }
+  
+  // Standard compressed formats
+  return 'standard';
+};
 
 export const UploadTrack = ({ onSuccess }: { onSuccess?: () => void }) => {
   const [uploading, setUploading] = useState(false);
@@ -24,16 +47,20 @@ export const UploadTrack = ({ onSuccess }: { onSuccess?: () => void }) => {
       return;
     }
 
-    // Client-side file size check (200MB)
-    const maxSize = 200 * 1024 * 1024;
+    // Client-side file size check (500MB for Dolby Atmos & HD Audio)
+    const maxSize = 500 * 1024 * 1024;
     if (file.size > maxSize) {
       toast({ 
         title: "File too large", 
-        description: "Maximum file size is 200MB",
+        description: "Maximum file size is 500MB for Dolby Atmos & HD Audio",
         variant: "destructive" 
       });
       return;
     }
+    
+    // Detect audio quality based on file type and size
+    const audioQuality = detectAudioQuality(file);
+    console.log('Detected audio quality:', audioQuality);
 
     setUploading(true);
     setProgress(10);
@@ -101,6 +128,7 @@ export const UploadTrack = ({ onSuccess }: { onSuccess?: () => void }) => {
         file_path: filePath,
         genre: formData.get('genre') as string,
         is_published: false,
+        audio_quality: audioQuality,
         ai_tags: aiData?.tags || null,
         bpm: aiData?.bpm || null,
         key: aiData?.key || null,
@@ -131,25 +159,35 @@ export const UploadTrack = ({ onSuccess }: { onSuccess?: () => void }) => {
 
   return (
     <form onSubmit={handleUpload} className="space-y-6">
-      <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
-        <Music className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+      <div className="border-2 border-dashed border-primary/40 rounded-lg p-8 text-center bg-gradient-to-br from-primary/5 via-transparent to-accent/5">
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <Music className="h-12 w-12 text-primary" />
+          <Sparkles className="h-6 w-6 text-accent animate-pulse" />
+        </div>
         <Label htmlFor="file" className="cursor-pointer">
-          <div className="text-lg font-medium mb-2">Upload Track</div>
-          <div className="text-sm text-muted-foreground mb-4">
-            MP3, WAV, FLAC, M4A, AAC, OGG · Max 200MB
+          <div className="text-lg font-medium mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            Upload High-Fidelity Audio
+          </div>
+          <div className="text-sm text-muted-foreground mb-2">
+            <div className="font-semibold text-primary">✨ Dolby Atmos Supported</div>
+            <div className="mt-1">EC-3, AC-4 • Immersive 3D Audio</div>
+          </div>
+          <div className="text-xs text-muted-foreground mb-4 space-y-1">
+            <div>HD Audio: WAV, FLAC, ALAC • Up to 24-bit/192kHz</div>
+            <div>Standard: MP3, AAC, OGG • Max 500MB</div>
           </div>
           <Input
             id="file"
             name="file"
             type="file"
-            accept="audio/mpeg,audio/mp3,audio/wav,audio/flac,audio/m4a,audio/aac,audio/ogg"
+            accept="audio/*,.ec3,.eac3,.ac4,.dsd,.dsf,.dff"
             className="hidden"
             disabled={uploading}
             required
           />
-          <Button type="button" variant="outline" disabled={uploading}>
+          <Button type="button" variant="default" disabled={uploading} className="bg-gradient-to-r from-primary to-accent shadow-glow">
             <Upload className="h-4 w-4 mr-2" />
-            Choose File
+            Choose Audio File
           </Button>
         </Label>
       </div>

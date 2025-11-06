@@ -6,23 +6,39 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Maximum file size: 200MB
-const MAX_FILE_SIZE = 200 * 1024 * 1024;
+// Maximum file size: 500MB (increased for Dolby Atmos & HD Audio)
+const MAX_FILE_SIZE = 500 * 1024 * 1024;
 
-// Allowed MIME types
+// Allowed MIME types - includes Dolby Atmos and HD Audio formats
 const ALLOWED_MIME_TYPES = [
+  // Standard formats
   'audio/mpeg',      // MP3
   'audio/mp3',
-  'audio/wav',       // WAV
-  'audio/wave',
-  'audio/x-wav',
-  'audio/flac',      // FLAC
-  'audio/x-flac',
-  'audio/m4a',       // M4A
-  'audio/mp4',
   'audio/aac',       // AAC
   'audio/ogg',       // OGG
   'audio/opus',      // OPUS
+  
+  // HD Audio formats
+  'audio/wav',       // WAV (up to 24-bit/192kHz)
+  'audio/wave',
+  'audio/x-wav',
+  'audio/flac',      // FLAC (lossless, up to 24-bit/192kHz)
+  'audio/x-flac',
+  'audio/m4a',       // M4A/ALAC (Apple Lossless)
+  'audio/mp4',
+  'audio/x-m4a',
+  
+  // Dolby Atmos formats
+  'audio/eac3',      // E-AC-3 (Enhanced AC-3 / Dolby Digital Plus with Atmos)
+  'audio/ec3',       // EC-3
+  'audio/ac4',       // AC-4 (Next-gen Dolby audio)
+  'audio/vnd.dolby.dd-raw', // Dolby Digital raw
+  'audio/vnd.dolby.pulse.1', // Dolby Pulse
+  
+  // High-resolution formats
+  'audio/dsd',       // DSD (Direct Stream Digital)
+  'audio/aiff',      // AIFF
+  'audio/x-aiff',
 ];
 
 serve(async (req) => {
@@ -58,7 +74,7 @@ serve(async (req) => {
     if (!fileSize || fileSize <= 0) {
       validationErrors.push('File size is required');
     } else if (fileSize > MAX_FILE_SIZE) {
-      validationErrors.push(`File size must be less than ${MAX_FILE_SIZE / (1024 * 1024)}MB`);
+      validationErrors.push(`File size must be less than ${MAX_FILE_SIZE / (1024 * 1024)}MB (increased for Dolby Atmos & HD Audio)`);
     }
 
     // Validate MIME type
@@ -77,7 +93,16 @@ serve(async (req) => {
 
     // Check for malicious extensions
     const extension = fileName.split('.').pop()?.toLowerCase();
-    const allowedExtensions = ['mp3', 'wav', 'flac', 'm4a', 'aac', 'ogg', 'opus'];
+    const allowedExtensions = [
+      // Standard
+      'mp3', 'aac', 'ogg', 'opus',
+      // HD Audio
+      'wav', 'flac', 'm4a', 'alac',
+      // Dolby Atmos
+      'ec3', 'eac3', 'ac4',
+      // High-res
+      'dsd', 'dsf', 'dff', 'aiff', 'aif'
+    ];
     if (!extension || !allowedExtensions.includes(extension)) {
       validationErrors.push(`Invalid file extension. Allowed: ${allowedExtensions.join(', ')}`);
     }

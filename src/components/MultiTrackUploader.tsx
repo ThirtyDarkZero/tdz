@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Upload, Music, Disc, Album as AlbumIcon, GripVertical, Edit } from "lucide-react";
+import { Upload, Music, Disc, Album as AlbumIcon, GripVertical, Edit, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +26,29 @@ import {
 import { SortableTrackItem } from './SortableTrackItem';
 import { BulkEditDialog, BulkMetadata } from './BulkEditDialog';
 
+// Helper function to detect audio quality from file
+const detectAudioQuality = (file: File): 'standard' | 'hd' | 'dolby_atmos' | 'hi_res' => {
+  const extension = file.name.split('.').pop()?.toLowerCase();
+  
+  // Dolby Atmos formats
+  if (['ec3', 'eac3', 'ac4'].includes(extension || '')) {
+    return 'dolby_atmos';
+  }
+  
+  // High-resolution formats (typically 24-bit or higher)
+  if (['dsd', 'dsf', 'dff', 'aiff', 'aif'].includes(extension || '')) {
+    return 'hi_res';
+  }
+  
+  // HD lossless formats (FLAC, WAV, ALAC)
+  if (['flac', 'wav', 'alac'].includes(extension || '')) {
+    return 'hd';
+  }
+  
+  // Standard compressed formats
+  return 'standard';
+};
+
 interface TrackFile {
   id: string;
   file: File;
@@ -49,7 +72,7 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
   const { toast } = useToast();
 
   const handleFileSelect = async (files: FileList) => {
-    const maxSize = 200 * 1024 * 1024;
+    const maxSize = 500 * 1024 * 1024; // Increased for Dolby Atmos & HD Audio
     const newTracks: TrackFile[] = [];
 
     for (let i = 0; i < files.length; i++) {
@@ -58,7 +81,7 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
       if (file.size > maxSize) {
         toast({ 
           title: "File too large", 
-          description: `${file.name} exceeds 200MB`,
+          description: `${file.name} exceeds 500MB (Dolby Atmos & HD Audio supported)`,
           variant: "destructive" 
         });
         continue;
@@ -197,6 +220,9 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
 
         setProgress(baseProgress + 60);
 
+        // Detect audio quality
+        const audioQuality = detectAudioQuality(track.file);
+
         // Create track record
         const { error: dbError } = await supabase.from('tracks').insert({
           user_id: user.id,
@@ -206,6 +232,7 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
           file_path: filePath,
           genre: genre || null,
           is_published: false,
+          audio_quality: audioQuality,
           album_id: albumId,
           track_number: releaseType !== 'single' ? i + 1 : null,
           ai_tags: aiData?.tags || null,
@@ -284,27 +311,34 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
       </div>
 
       {/* File Upload Area */}
-      <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
-        <Music className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+      <div className="border-2 border-dashed border-primary/40 rounded-lg p-8 text-center bg-gradient-to-br from-primary/5 via-transparent to-accent/5">
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <Music className="h-12 w-12 text-primary" />
+          <Sparkles className="h-6 w-6 text-accent animate-pulse" />
+        </div>
         <Label htmlFor="files" className="cursor-pointer">
-          <div className="text-lg font-medium mb-2">
-            {releaseType === 'single' ? 'Upload Track' : `Upload ${releaseType.toUpperCase()} Tracks`}
+          <div className="text-lg font-medium mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            {releaseType === 'single' ? 'Upload High-Fidelity Track' : `Upload ${releaseType.toUpperCase()} Tracks`}
           </div>
-          <div className="text-sm text-muted-foreground mb-4">
-            MP3, WAV, FLAC, M4A, AAC, OGG · Max 200MB per file
+          <div className="text-sm text-muted-foreground mb-2">
+            <div className="font-semibold text-primary">✨ Dolby Atmos & HD Audio Ready</div>
+            <div className="mt-1">Immersive 3D sound • Up to 24-bit/192kHz</div>
+          </div>
+          <div className="text-xs text-muted-foreground mb-4">
+            All formats: MP3, WAV, FLAC, ALAC, EC-3, AC-4 • Max 500MB per file
           </div>
           <Input
             id="files"
             type="file"
-            accept="audio/mpeg,audio/mp3,audio/wav,audio/flac,audio/m4a,audio/aac,audio/ogg"
+            accept="audio/*,.ec3,.eac3,.ac4,.dsd,.dsf,.dff"
             className="hidden"
             multiple={releaseType !== 'single'}
             onChange={(e) => e.target.files && handleFileSelect(e.target.files)}
             disabled={uploading}
           />
-          <Button type="button" variant="outline" disabled={uploading}>
+          <Button type="button" variant="default" disabled={uploading} className="bg-gradient-to-r from-primary to-accent shadow-glow">
             <Upload className="h-4 w-4 mr-2" />
-            Choose Files
+            Choose Audio Files
           </Button>
         </Label>
       </div>

@@ -13,6 +13,29 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 
+// Helper function to detect audio quality from file
+const detectAudioQuality = (file: File): 'standard' | 'hd' | 'dolby_atmos' | 'hi_res' => {
+  const extension = file.name.split('.').pop()?.toLowerCase();
+  
+  // Dolby Atmos formats
+  if (['ec3', 'eac3', 'ac4'].includes(extension || '')) {
+    return 'dolby_atmos';
+  }
+  
+  // High-resolution formats (typically 24-bit or higher)
+  if (['dsd', 'dsf', 'dff', 'aiff', 'aif'].includes(extension || '')) {
+    return 'hi_res';
+  }
+  
+  // HD lossless formats (FLAC, WAV, ALAC)
+  if (['flac', 'wav', 'alac'].includes(extension || '')) {
+    return 'hd';
+  }
+  
+  // Standard compressed formats
+  return 'standard';
+};
+
 type Contributor = {
   id: string;
   name: string;
@@ -239,6 +262,9 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
         const trackTitle = title || audioFile.name.replace(/\.[^/.]+$/, "");
         const trackArtist = artistName || "Unknown Artist";
 
+        // Detect audio quality
+        const audioQuality = detectAudioQuality(audioFile);
+
         // Create track record
         const { data: trackData, error: dbError } = await supabase.from('tracks').insert({
           user_id: user.id,
@@ -248,6 +274,7 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
           file_path: filePath,
           genre,
           is_published: false,
+          audio_quality: audioQuality,
           album_cover_path: artworkUrl || null,
           album_cover_bucket: bucket,
           ai_tags: {
@@ -318,13 +345,16 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
             </Label>
             <div className="border-2 border-dashed border-primary/30 rounded-lg p-8 text-center hover:border-primary/60 transition-colors">
               <Music className="h-12 w-12 mx-auto mb-4 text-primary" />
-              <div className="text-sm font-medium mb-2">
+              <div className="text-sm font-medium mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 {audioFiles.length > 0 
                   ? `${audioFiles.length} file(s) selected` 
                   : "Choose Audio Files (up to 20)"}
               </div>
+              <div className="text-xs text-muted-foreground mb-2">
+                <div className="font-semibold text-primary">✨ Dolby Atmos & HD Audio Supported</div>
+              </div>
               <div className="text-xs text-muted-foreground mb-4">
-                MP3, WAV, FLAC, M4A · Max 200MB per file · Up to 20 files
+                All formats including EC-3, AC-4, FLAC, WAV · Max 500MB per file · Up to 20 files
               </div>
               {audioFiles.length > 0 && (
                 <div className="mb-4 max-h-32 overflow-y-auto text-left bg-muted/50 rounded p-3">
@@ -338,7 +368,7 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
               <input
                 id="audio-files"
                 type="file"
-                accept="audio/mpeg,audio/mp3,audio/wav,audio/flac,audio/m4a"
+                accept="audio/*,.ec3,.eac3,.ac4,.dsd,.dsf,.dff"
                 onChange={handleAudioChange}
                 className="hidden"
                 disabled={uploading}
