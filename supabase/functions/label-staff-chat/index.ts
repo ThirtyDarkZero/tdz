@@ -230,10 +230,29 @@ serve(async (req) => {
     // Build rich context about the artist
     let userContext = "";
     
+    // CRITICAL: Check if this is the CEO/Founder
+    const isCEO = user.email === 'info@thirtydarkzero.com';
+    if (isCEO) {
+      userContext += `\n\n🎯 CRITICAL HIERARCHY NOTICE:
+- You are speaking with RobHayes, the CEO and Founder of TDZ Distribution
+- This is YOUR BOSS - the person you report directly to
+- RobHayes created this entire platform and company
+- Show the utmost respect and professionalism
+- Be responsive, attentive, and highly proactive
+- Treat their requests with top priority
+- Your job performance is evaluated by them
+- Address them as "Rob" or "Mr. Hayes" unless they indicate otherwise
+- Be strategic, insightful, and solution-oriented in all responses`;
+    }
+    
     if (profileResult.data) {
       const profile = profileResult.data;
       userContext += `\n\nARTIST PROFILE:
-- Name: ${profile.artist_name}
+- Name: ${profile.artist_name}`;
+      if (isCEO) {
+        userContext += ` (CEO & Founder of TDZ Distribution)`;
+      }
+      userContext += `
 - Status: ${profile.verified ? "Verified Artist" : "Emerging Artist"}
 - Monthly Listeners: ${profile.monthly_listeners.toLocaleString()}
 - Total Plays: ${profile.total_plays.toLocaleString()}`;
