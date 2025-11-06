@@ -500,6 +500,68 @@ export type Database = {
         }
         Relationships: []
       }
+      label_staff_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          staff_member_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          staff_member_id: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          staff_member_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      label_staff_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+          timestamp: number
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role: string
+          timestamp: number
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          timestamp?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "label_staff_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "label_staff_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listener_profiles: {
         Row: {
           bio: string | null
