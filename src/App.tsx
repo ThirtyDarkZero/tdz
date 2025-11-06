@@ -16,6 +16,7 @@ import ListenerProfile from "./pages/ListenerProfile";
 import TrackDetail from "./pages/TrackDetail";
 import AlbumDetail from "./pages/AlbumDetail";
 import Investors from "./pages/Investors";
+import CEODashboard from "./pages/CEODashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/track/:trackId" element={<TrackDetail />} />
           <Route path="/album/:albumId" element={<AlbumDetail />} />
           <Route path="/investors" element={<Investors />} />
+          <Route path="/ceo" element={<CEODashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
