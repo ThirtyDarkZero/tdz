@@ -7,15 +7,30 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users, Send, Sparkles, TrendingUp, DollarSign,
-  Music, BarChart3, Loader2
+  Music, BarChart3, Loader2, History, Plus
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type Message = {
   role: "user" | "assistant";
   content: string;
   timestamp: number;
+};
+
+type Conversation = {
+  id: string;
+  title: string;
+  staff_member_id: string;
+  updated_at: string;
 };
 
 type StaffMember = {
@@ -81,16 +96,124 @@ export const LabelStaff = () => {
   const [conversations, setConversations] = useState<Record<string, Message[]>>({});
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [savedConversations, setSavedConversations] = useState<Conversation[]>([]);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const currentStaff = staffMembers.find((s) => s.id === selectedStaff)!;
   const currentMessages = conversations[selectedStaff] || [];
 
+  // Load saved conversations
+  useEffect(() => {
+    loadSavedConversations();
+  }, [selectedStaff]);
+
+  // Auto-scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [currentMessages]);
+
+  const loadSavedConversations = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('label_staff_conversations')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('staff_member_id', selectedStaff)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading conversations:', error);
+      return;
+    }
+
+    setSavedConversations(data || []);
+  };
+
+  const loadConversation = async (conversationId: string) => {
+    const { data, error } = await supabase
+      .from('label_staff_messages')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .order('timestamp', { ascending: true });
+
+    if (error) {
+      console.error('Error loading messages:', error);
+      toast.error("Failed to load conversation");
+      return;
+    }
+
+    const messages: Message[] = data.map(msg => ({
+      role: msg.role as "user" | "assistant",
+      content: msg.content,
+      timestamp: msg.timestamp,
+    }));
+
+    setConversations(prev => ({
+      ...prev,
+      [selectedStaff]: messages,
+    }));
+    setCurrentConversationId(conversationId);
+    toast.success("Conversation loaded");
+  };
+
+  const startNewConversation = () => {
+    setConversations(prev => ({
+      ...prev,
+      [selectedStaff]: [],
+    }));
+    setCurrentConversationId(null);
+    toast.success("Started new conversation");
+  };
+
+  const saveMessage = async (message: Message, conversationId: string) => {
+    const { error } = await supabase
+      .from('label_staff_messages')
+      .insert({
+        conversation_id: conversationId,
+        role: message.role,
+        content: message.content,
+        timestamp: message.timestamp,
+      });
+
+    if (error) {
+      console.error('Error saving message:', error);
+    }
+  };
+
+  const createOrUpdateConversation = async (firstUserMessage: string): Promise<string> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
+
+    if (currentConversationId) {
+      return currentConversationId;
+    }
+
+    // Create new conversation with title from first message
+    const title = firstUserMessage.slice(0, 50) + (firstUserMessage.length > 50 ? '...' : '');
+    const { data, error } = await supabase
+      .from('label_staff_conversations')
+      .insert({
+        user_id: user.id,
+        staff_member_id: selectedStaff,
+        title,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating conversation:', error);
+      throw error;
+    }
+
+    setCurrentConversationId(data.id);
+    await loadSavedConversations();
+    return data.id;
+  };
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
@@ -118,6 +241,12 @@ export const LabelStaff = () => {
         setIsLoading(false);
         return;
       }
+
+      // Create or get conversation ID
+      const conversationId = await createOrUpdateConversation(userMessage.content);
+
+      // Save user message to database
+      await saveMessage(userMessage, conversationId);
 
       const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/label-staff-chat`;
       
@@ -211,6 +340,16 @@ export const LabelStaff = () => {
             break;
           }
         }
+      }
+
+      // Save assistant message to database
+      if (assistantMessage) {
+        const assistantMsg: Message = {
+          role: "assistant",
+          content: assistantMessage,
+          timestamp: Date.now(),
+        };
+        await saveMessage(assistantMsg, conversationId);
       }
 
       setIsLoading(false);
@@ -315,6 +454,50 @@ export const LabelStaff = () => {
 
       {/* Input */}
       <div className="p-4 border-t border-border/50">
+        <div className="flex gap-2 mb-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <History className="w-4 h-4" />
+                Saved Chats ({savedConversations.length})
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-80">
+              <DropdownMenuLabel>Conversation History</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={startNewConversation}>
+                <Plus className="w-4 h-4 mr-2" />
+                New Conversation
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <ScrollArea className="max-h-60">
+                {savedConversations.length === 0 ? (
+                  <div className="p-3 text-sm text-muted-foreground text-center">
+                    No saved conversations yet
+                  </div>
+                ) : (
+                  savedConversations.map((conv) => (
+                    <DropdownMenuItem
+                      key={conv.id}
+                      onClick={() => loadConversation(conv.id)}
+                      className="flex flex-col items-start gap-1 py-2"
+                    >
+                      <span className="font-medium line-clamp-1">{conv.title}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(conv.updated_at).toLocaleDateString()}
+                      </span>
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </ScrollArea>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {currentConversationId && (
+            <Badge variant="secondary" className="px-2 py-1">
+              Active Chat
+            </Badge>
+          )}
+        </div>
         <div className="flex gap-2">
           <Input
             value={inputMessage}
