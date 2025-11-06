@@ -620,6 +620,48 @@ export default function Landing() {
                   </li>
                 </ul>
               </div>
+              <div>
+                <h4 className="font-semibold mb-2 text-sm">Legal</h4>
+                <ul className="space-y-1 text-xs text-muted-foreground">
+                  <li>
+                    <button 
+                      onClick={() => navigate("/terms")}
+                      className="hover:text-primary transition-colors"
+                    >
+                      Terms & Conditions
+                    </button>
+                  </li>
+                  <li>
+                    <button 
+                      onClick={() => navigate("/privacy")}
+                      className="hover:text-primary transition-colors"
+                    >
+                      Privacy Policy
+                    </button>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2 text-sm">Support</h4>
+                <ul className="space-y-1 text-xs text-muted-foreground">
+                  <li>
+                    <button 
+                      onClick={() => navigate("/faq")}
+                      className="hover:text-primary transition-colors"
+                    >
+                      FAQ
+                    </button>
+                  </li>
+                  <li>
+                    <button 
+                      onClick={() => navigate("/support")}
+                      className="hover:text-primary transition-colors"
+                    >
+                      Contact Support
+                    </button>
+                  </li>
+                </ul>
+              </div>
             </div>
 
             {/* Copyright */}

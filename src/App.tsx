@@ -17,6 +17,10 @@ import TrackDetail from "./pages/TrackDetail";
 import AlbumDetail from "./pages/AlbumDetail";
 import Investors from "./pages/Investors";
 import CEODashboard from "./pages/CEODashboard";
+import FAQ from "./pages/FAQ";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Support from "./pages/Support";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +45,10 @@ const App = () => (
           <Route path="/album/:albumId" element={<AlbumDetail />} />
           <Route path="/investors" element={<Investors />} />
           <Route path="/ceo" element={<CEODashboard />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/support" element={<Support />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
