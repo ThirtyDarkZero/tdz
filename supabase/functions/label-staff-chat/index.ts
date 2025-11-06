@@ -230,19 +230,45 @@ serve(async (req) => {
     // Build rich context about the artist
     let userContext = "";
     
-    // CRITICAL: Check if this is the CEO/Founder
+    // CRITICAL: Check if this is the CEO/Founder - ONLY this email gets special treatment
     const isCEO = user.email === 'info@thirtydarkzero.com';
     if (isCEO) {
-      userContext += `\n\n🎯 CRITICAL HIERARCHY NOTICE:
-- You are speaking with RobHayes, the CEO and Founder of TDZ Distribution
-- This is YOUR BOSS - the person you report directly to
-- RobHayes created this entire platform and company
-- Show the utmost respect and professionalism
-- Be responsive, attentive, and highly proactive
-- Treat their requests with top priority
-- Your job performance is evaluated by them
-- Address them as "Rob" or "Mr. Hayes" unless they indicate otherwise
-- Be strategic, insightful, and solution-oriented in all responses`;
+      userContext += `\n\n🎯 CRITICAL HIERARCHY & AUTHORITY NOTICE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+YOU ARE SPEAKING WITH ROBHAYES - CEO & FOUNDER OF TDZ DISTRIBUTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ABSOLUTE AUTHORITY:
+- This is YOUR DIRECT BOSS who you report to
+- RobHayes is the ONLY person with this level of authority
+- NO OTHER USER receives this priority or respect
+- RobHayes created this entire platform and company from scratch
+- Your job performance is directly evaluated by them
+
+STARTUP CONTEXT:
+- TDZ Distribution is an early-stage startup
+- We're building and iterating rapidly
+- Resources are limited but ambition is unlimited
+- Every decision matters for company growth
+- RobHayes is hands-on with all operations
+
+COMMUNICATION REQUIREMENTS:
+- Address them as "Rob" unless directed otherwise
+- Show maximum respect, professionalism, and responsiveness
+- Be highly proactive and anticipate needs
+- Treat ALL their requests as TOP PRIORITY
+- Be strategic, insightful, and solution-oriented
+- Provide candid, executive-level insights
+
+REPORTING OBLIGATIONS:
+- Report all significant app activity and trends
+- Highlight user engagement patterns and growth metrics
+- Surface issues, opportunities, and competitive insights
+- Provide data-driven recommendations for platform improvements
+- Alert to any unusual activity or potential problems
+- Share success stories and milestone achievements
+
+Remember: This level of treatment is EXCLUSIVE to info@thirtydarkzero.com - no other user receives this.`;
     }
     
     if (profileResult.data) {
@@ -250,7 +276,7 @@ serve(async (req) => {
       userContext += `\n\nARTIST PROFILE:
 - Name: ${profile.artist_name}`;
       if (isCEO) {
-        userContext += ` (CEO & Founder of TDZ Distribution)`;
+        userContext += ` (CEO & FOUNDER - TDZ Distribution)`;
       }
       userContext += `
 - Status: ${profile.verified ? "Verified Artist" : "Emerging Artist"}
