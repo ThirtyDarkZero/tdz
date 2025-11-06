@@ -15,9 +15,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
 type Message = {
@@ -28,8 +27,8 @@ type Message = {
 
 type Conversation = {
   id: string;
-  title: string;
   staff_member_id: string;
+  title: string;
   updated_at: string;
 };
 
@@ -103,12 +102,12 @@ export const LabelStaff = () => {
   const currentStaff = staffMembers.find((s) => s.id === selectedStaff)!;
   const currentMessages = conversations[selectedStaff] || [];
 
-  // Load saved conversations
+  // Load saved conversations for current staff
   useEffect(() => {
     loadSavedConversations();
   }, [selectedStaff]);
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -116,103 +115,108 @@ export const LabelStaff = () => {
   }, [currentMessages]);
 
   const loadSavedConversations = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const { data, error } = await supabase
-      .from('label_staff_conversations')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('staff_member_id', selectedStaff)
-      .order('updated_at', { ascending: false });
+      const { data, error } = await supabase
+        .from("label_staff_conversations")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("staff_member_id", selectedStaff)
+        .order("updated_at", { ascending: false });
 
-    if (error) {
-      console.error('Error loading conversations:', error);
-      return;
+      if (error) throw error;
+      setSavedConversations(data || []);
+    } catch (error) {
+      console.error("Error loading conversations:", error);
     }
-
-    setSavedConversations(data || []);
   };
 
   const loadConversation = async (conversationId: string) => {
-    const { data, error } = await supabase
-      .from('label_staff_messages')
-      .select('*')
-      .eq('conversation_id', conversationId)
-      .order('timestamp', { ascending: true });
+    try {
+      const { data, error } = await supabase
+        .from("label_staff_messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .order("timestamp", { ascending: true });
 
-    if (error) {
-      console.error('Error loading messages:', error);
+      if (error) throw error;
+
+      const messages = data.map((msg) => ({
+        role: msg.role as "user" | "assistant",
+        content: msg.content,
+        timestamp: msg.timestamp,
+      }));
+
+      setConversations((prev) => ({
+        ...prev,
+        [selectedStaff]: messages,
+      }));
+      setCurrentConversationId(conversationId);
+      toast.success("Conversation loaded");
+    } catch (error) {
+      console.error("Error loading conversation:", error);
       toast.error("Failed to load conversation");
-      return;
     }
-
-    const messages: Message[] = data.map(msg => ({
-      role: msg.role as "user" | "assistant",
-      content: msg.content,
-      timestamp: msg.timestamp,
-    }));
-
-    setConversations(prev => ({
-      ...prev,
-      [selectedStaff]: messages,
-    }));
-    setCurrentConversationId(conversationId);
-    toast.success("Conversation loaded");
   };
 
   const startNewConversation = () => {
-    setConversations(prev => ({
+    setConversations((prev) => ({
       ...prev,
       [selectedStaff]: [],
     }));
     setCurrentConversationId(null);
-    toast.success("Started new conversation");
+    toast.success("New conversation started");
   };
 
-  const saveMessage = async (message: Message, conversationId: string) => {
-    const { error } = await supabase
-      .from('label_staff_messages')
-      .insert({
-        conversation_id: conversationId,
-        role: message.role,
-        content: message.content,
-        timestamp: message.timestamp,
-      });
+  const saveMessage = async (conversationId: string, message: Message) => {
+    try {
+      const { error } = await supabase
+        .from("label_staff_messages")
+        .insert({
+          conversation_id: conversationId,
+          role: message.role,
+          content: message.content,
+          timestamp: message.timestamp,
+        });
 
-    if (error) {
-      console.error('Error saving message:', error);
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error saving message:", error);
     }
   };
 
-  const createOrUpdateConversation = async (firstUserMessage: string): Promise<string> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Not authenticated");
+  const createOrGetConversation = async (firstUserMessage: string): Promise<string> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
 
-    if (currentConversationId) {
-      return currentConversationId;
-    }
+      // If we have a current conversation, use it
+      if (currentConversationId) return currentConversationId;
 
-    // Create new conversation with title from first message
-    const title = firstUserMessage.slice(0, 50) + (firstUserMessage.length > 50 ? '...' : '');
-    const { data, error } = await supabase
-      .from('label_staff_conversations')
-      .insert({
-        user_id: user.id,
-        staff_member_id: selectedStaff,
-        title,
-      })
-      .select()
-      .single();
+      // Create new conversation
+      const title = firstUserMessage.slice(0, 50) + (firstUserMessage.length > 50 ? "..." : "");
 
-    if (error) {
-      console.error('Error creating conversation:', error);
+      const { data, error } = await supabase
+        .from("label_staff_conversations")
+        .insert({
+          user_id: user.id,
+          staff_member_id: selectedStaff,
+          title,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setCurrentConversationId(data.id);
+      await loadSavedConversations();
+      return data.id;
+    } catch (error) {
+      console.error("Error creating conversation:", error);
       throw error;
     }
-
-    setCurrentConversationId(data.id);
-    await loadSavedConversations();
-    return data.id;
   };
 
   const sendMessage = async () => {
@@ -233,6 +237,12 @@ export const LabelStaff = () => {
     setIsLoading(true);
 
     try {
+      // Get or create conversation
+      const conversationId = await createOrGetConversation(userMessage.content);
+      
+      // Save user message
+      await saveMessage(conversationId, userMessage);
+
       // Get the user's session token
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -241,12 +251,6 @@ export const LabelStaff = () => {
         setIsLoading(false);
         return;
       }
-
-      // Create or get conversation ID
-      const conversationId = await createOrUpdateConversation(userMessage.content);
-
-      // Save user message to database
-      await saveMessage(userMessage, conversationId);
 
       const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/label-staff-chat`;
       
@@ -296,6 +300,8 @@ export const LabelStaff = () => {
       }));
 
       let streamDone = false;
+      let assistantMessageObj: Message | null = null;
+      
       while (!streamDone) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -330,6 +336,7 @@ export const LabelStaff = () => {
                     ...messages[messages.length - 1],
                     content: assistantMessage,
                   };
+                  assistantMessageObj = messages[messages.length - 1];
                 }
                 return { ...prev, [selectedStaff]: messages };
               });
@@ -343,13 +350,8 @@ export const LabelStaff = () => {
       }
 
       // Save assistant message to database
-      if (assistantMessage) {
-        const assistantMsg: Message = {
-          role: "assistant",
-          content: assistantMessage,
-          timestamp: Date.now(),
-        };
-        await saveMessage(assistantMsg, conversationId);
+      if (assistantMessageObj && conversationId) {
+        await saveMessage(conversationId, assistantMessageObj);
       }
 
       setIsLoading(false);
@@ -463,40 +465,25 @@ export const LabelStaff = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-80">
-              <DropdownMenuLabel>Conversation History</DropdownMenuLabel>
-              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={startNewConversation}>
                 <Plus className="w-4 h-4 mr-2" />
                 New Conversation
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <ScrollArea className="max-h-60">
-                {savedConversations.length === 0 ? (
-                  <div className="p-3 text-sm text-muted-foreground text-center">
-                    No saved conversations yet
-                  </div>
-                ) : (
-                  savedConversations.map((conv) => (
-                    <DropdownMenuItem
-                      key={conv.id}
-                      onClick={() => loadConversation(conv.id)}
-                      className="flex flex-col items-start gap-1 py-2"
-                    >
-                      <span className="font-medium line-clamp-1">{conv.title}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(conv.updated_at).toLocaleDateString()}
-                      </span>
-                    </DropdownMenuItem>
-                  ))
-                )}
-              </ScrollArea>
+              {savedConversations.length > 0 && <DropdownMenuSeparator />}
+              {savedConversations.map((conv) => (
+                <DropdownMenuItem
+                  key={conv.id}
+                  onClick={() => loadConversation(conv.id)}
+                  className="flex flex-col items-start"
+                >
+                  <span className="font-medium truncate w-full">{conv.title}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(conv.updated_at).toLocaleDateString()} {new Date(conv.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          {currentConversationId && (
-            <Badge variant="secondary" className="px-2 py-1">
-              Active Chat
-            </Badge>
-          )}
         </div>
         <div className="flex gap-2">
           <Input
