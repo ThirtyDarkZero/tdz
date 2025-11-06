@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users, Music, TrendingUp, Activity, Database, HardDrive,
-  Play, Heart, Download, AlertCircle, CheckCircle, Clock
+  Play, Heart, Download, AlertCircle, CheckCircle, Clock, Sparkles
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,6 +29,9 @@ type DashboardMetrics = {
   topArtists: Array<{ name: string; plays: number; followers: number }>;
   dailyActivity: Array<{ date: string; plays: number; uploads: number }>;
   genreDistribution: Array<{ name: string; value: number }>;
+  audioQualityDistribution: Array<{ name: string; value: number; percentage: number }>;
+  dolbyAtmosCount: number;
+  hdAudioCount: number;
   storageUsed: number;
   recentActivity: Array<{ type: string; user: string; action: string; timestamp: string }>;
 };
@@ -63,7 +66,7 @@ export default function CEODashboard() {
       ] = await Promise.all([
         supabase.from("artist_profiles").select("artist_name, total_plays", { count: "exact" }),
         supabase.from("listener_profiles").select("id", { count: "exact", head: true }),
-        supabase.from("tracks").select("id, title, artist_name, play_count, like_count, genre, created_at, user_id"),
+        supabase.from("tracks").select("id, title, artist_name, play_count, like_count, genre, created_at, user_id, audio_quality"),
         supabase.from("tracks").select("title, artist_name, play_count, created_at").order("created_at", { ascending: false }).limit(100),
       ]);
 
@@ -107,6 +110,40 @@ export default function CEODashboard() {
         .map(([name, value]) => ({ name, value }))
         .sort((a, b) => b.value - a.value)
         .slice(0, 5);
+
+      // Audio quality distribution
+      const audioQualityCount: Record<string, number> = {
+        standard: 0,
+        hd: 0,
+        dolby_atmos: 0,
+        hi_res: 0
+      };
+      tracks.forEach(t => {
+        const quality = t.audio_quality || 'standard';
+        audioQualityCount[quality] = (audioQualityCount[quality] || 0) + 1;
+      });
+      
+      const dolbyAtmosCount = audioQualityCount.dolby_atmos;
+      const hdAudioCount = audioQualityCount.hd + audioQualityCount.hi_res;
+      const totalTracksCount = tracks.length || 1;
+
+      const audioQualityDistribution = [
+        { 
+          name: 'Standard', 
+          value: audioQualityCount.standard,
+          percentage: (audioQualityCount.standard / totalTracksCount) * 100
+        },
+        { 
+          name: 'HD Audio', 
+          value: audioQualityCount.hd + audioQualityCount.hi_res,
+          percentage: ((audioQualityCount.hd + audioQualityCount.hi_res) / totalTracksCount) * 100
+        },
+        { 
+          name: 'Dolby Atmos', 
+          value: audioQualityCount.dolby_atmos,
+          percentage: (audioQualityCount.dolby_atmos / totalTracksCount) * 100
+        }
+      ].filter(item => item.value > 0);
 
       // Daily activity for last 7 days
       const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -158,6 +195,9 @@ export default function CEODashboard() {
         topArtists: artistPlayCounts,
         dailyActivity,
         genreDistribution,
+        audioQualityDistribution,
+        dolbyAtmosCount,
+        hdAudioCount,
         storageUsed: tracks.length * 5, // Rough estimate: 5MB per track
         recentActivity
       });
@@ -266,6 +306,50 @@ export default function CEODashboard() {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
+            {/* Audio Quality Adoption */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="glass-card p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Sparkles className="w-8 h-8 text-purple-400" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Dolby Atmos Tracks</p>
+                    <p className="text-3xl font-bold">{metrics.dolbyAtmosCount}</p>
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {((metrics.dolbyAtmosCount / Math.max(metrics.totalTracks, 1)) * 100).toFixed(1)}% adoption rate
+                </div>
+              </Card>
+
+              <Card className="glass-card p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Music className="w-8 h-8 text-cyan-400" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">HD Audio Tracks</p>
+                    <p className="text-3xl font-bold">{metrics.hdAudioCount}</p>
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {((metrics.hdAudioCount / Math.max(metrics.totalTracks, 1)) * 100).toFixed(1)}% adoption rate
+                </div>
+              </Card>
+
+              <Card className="glass-card p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <TrendingUp className="w-8 h-8 text-green-400" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Premium Quality</p>
+                    <p className="text-3xl font-bold">
+                      {metrics.dolbyAtmosCount + metrics.hdAudioCount}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {(((metrics.dolbyAtmosCount + metrics.hdAudioCount) / Math.max(metrics.totalTracks, 1)) * 100).toFixed(1)}% total
+                </div>
+              </Card>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Daily Activity Chart */}
               <Card className="glass-card p-6">
@@ -282,6 +366,36 @@ export default function CEODashboard() {
                     <Line type="monotone" dataKey="plays" stroke="#8B5CF6" strokeWidth={2} />
                     <Line type="monotone" dataKey="uploads" stroke="#EC4899" strokeWidth={2} />
                   </LineChart>
+                </ResponsiveContainer>
+              </Card>
+
+              {/* Audio Quality Distribution */}
+              <Card className="glass-card p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-purple-400" />
+                  Audio Quality Distribution
+                </h3>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={metrics.audioQualityDistribution}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                    <XAxis dataKey="name" stroke="#888" />
+                    <YAxis stroke="#888" />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
+                      formatter={(value: number, name: string, props: any) => [
+                        `${value} tracks (${props.payload.percentage.toFixed(1)}%)`,
+                        'Count'
+                      ]}
+                    />
+                    <Bar dataKey="value" fill="#8B5CF6" radius={[8, 8, 0, 0]}>
+                      {metrics.audioQualityDistribution.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={entry.name === 'Dolby Atmos' ? '#8B5CF6' : entry.name === 'HD Audio' ? '#06B6D4' : '#6B7280'} 
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
                 </ResponsiveContainer>
               </Card>
 
