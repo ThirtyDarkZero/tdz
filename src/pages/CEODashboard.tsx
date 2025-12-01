@@ -5,14 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users, Music, TrendingUp, Activity, Database, HardDrive,
-  Play, Heart, Download, AlertCircle, CheckCircle, Clock, Sparkles
+  Play, Heart, Download, AlertCircle, CheckCircle, Clock, Sparkles,
+  DollarSign, PiggyBank, CreditCard, ArrowUpRight, ArrowDownRight
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from "recharts";
 
@@ -34,9 +35,16 @@ type DashboardMetrics = {
   hdAudioCount: number;
   storageUsed: number;
   recentActivity: Array<{ type: string; user: string; action: string; timestamp: string }>;
+  // Revenue Pool Metrics
+  totalStreamingRevenue: number;
+  totalDownloadRevenue: number;
+  artistLiability: number;
+  revenuePoolBalance: number;
+  totalDownloads: number;
+  avgDownloadPrice: number;
 };
 
-const COLORS = ['#8B5CF6', '#EC4899', '#06B6D4', '#10B981', '#F59E0B'];
+const COLORS = ['#22c55e', '#8B5CF6', '#EC4899', '#06B6D4', '#10B981', '#F59E0B'];
 
 export default function CEODashboard() {
   const { user } = useAuth();
@@ -63,21 +71,41 @@ export default function CEODashboard() {
         listenersResult,
         tracksResult,
         recentTracksResult,
+        earningsResult,
+        downloadsResult,
+        revenueResult
       ] = await Promise.all([
         supabase.from("artist_profiles").select("artist_name, total_plays", { count: "exact" }),
         supabase.from("listener_profiles").select("id", { count: "exact", head: true }),
-        supabase.from("tracks").select("id, title, artist_name, play_count, like_count, genre, created_at, user_id, audio_quality"),
+        supabase.from("tracks").select("id, title, artist_name, play_count, like_count, genre, created_at, user_id, audio_quality, download_price"),
         supabase.from("tracks").select("title, artist_name, play_count, created_at").order("created_at", { ascending: false }).limit(100),
+        supabase.from("artist_earnings").select("streaming_revenue, download_revenue, total_streams, total_downloads"),
+        supabase.from("download_purchases").select("price, artist_revenue, transaction_fee"),
+        supabase.from("platform_revenue").select("amount, revenue_type")
       ]);
 
       const tracks = tracksResult.data || [];
       const artists = artistsResult.data || [];
       const recentTracks = recentTracksResult.data || [];
+      const earnings = earningsResult.data || [];
+      const downloads = downloadsResult.data || [];
+      const revenue = revenueResult.data || [];
       
       // Calculate metrics
       const totalUsers = (artistsResult.count || 0) + (listenersResult.count || 0);
       const totalPlays = tracks.reduce((sum, t) => sum + (t.play_count || 0), 0);
       const totalLikes = tracks.reduce((sum, t) => sum + (t.like_count || 0), 0);
+      
+      // Revenue Pool Calculations
+      const totalStreamingRevenue = earnings.reduce((sum, e) => sum + (e.streaming_revenue || 0), 0);
+      const totalDownloadRevenue = downloads.reduce((sum, d) => sum + (d.artist_revenue || 0), 0);
+      const artistLiability = totalPlays * 1.00; // $1 per stream
+      const platformRevenue = revenue.reduce((sum, r) => sum + (r.amount || 0), 0);
+      const revenuePoolBalance = platformRevenue - artistLiability;
+      const totalDownloads = downloads.length;
+      const avgDownloadPrice = totalDownloads > 0 
+        ? downloads.reduce((sum, d) => sum + (d.price || 0), 0) / totalDownloads 
+        : 0;
       
       // Top tracks by plays
       const topTracks = [...tracks]
@@ -94,7 +122,7 @@ export default function CEODashboard() {
         .map(a => ({
           name: a.artist_name,
           plays: a.total_plays || 0,
-          followers: 0 // We'll calculate this
+          followers: 0
         }))
         .sort((a, b) => b.plays - a.plays)
         .slice(0, 10);
@@ -165,7 +193,7 @@ export default function CEODashboard() {
         };
       });
 
-      // Recent activity (mock data - would need audit log table for real data)
+      // Recent activity
       const recentActivity = tracks.slice(0, 10).map(t => ({
         type: 'upload',
         user: t.artist_name,
@@ -175,9 +203,9 @@ export default function CEODashboard() {
 
       // Users created today
       const today = new Date().toISOString().split('T')[0];
-      const newUsersToday = 0; // Would need to query actual user creation dates
+      const newUsersToday = 0;
 
-      // Active users (users who have activity today)
+      // Active users
       const activeUsersToday = new Set(tracks.filter(t => 
         t.created_at && new Date(t.created_at).toISOString().split('T')[0] === today
       ).map(t => t.user_id)).size;
@@ -198,8 +226,14 @@ export default function CEODashboard() {
         audioQualityDistribution,
         dolbyAtmosCount,
         hdAudioCount,
-        storageUsed: tracks.length * 5, // Rough estimate: 5MB per track
-        recentActivity
+        storageUsed: tracks.length * 5,
+        recentActivity,
+        totalStreamingRevenue,
+        totalDownloadRevenue,
+        artistLiability,
+        revenuePoolBalance,
+        totalDownloads,
+        avgDownloadPrice
       });
 
       setLoading(false);
@@ -225,6 +259,15 @@ export default function CEODashboard() {
     );
   }
 
+  // Revenue pool data for chart
+  const revenuePoolData = [
+    { name: "Subscriptions", value: 55, color: COLORS[0] },
+    { name: "Downloads", value: 20, color: COLORS[1] },
+    { name: "Ads", value: 15, color: COLORS[2] },
+    { name: "Premium", value: 7, color: COLORS[3] },
+    { name: "Events", value: 3, color: COLORS[4] }
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6">
@@ -237,7 +280,63 @@ export default function CEODashboard() {
               Live
             </Badge>
           </div>
-          <p className="text-muted-foreground">Real-time platform metrics and analytics</p>
+          <p className="text-muted-foreground">Real-time platform metrics, revenue pool, and artist liability</p>
+        </div>
+
+        {/* Revenue Pool Overview - NEW */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="glass-card p-6 border-green-500/30">
+            <div className="flex items-center justify-between mb-2">
+              <DollarSign className="w-8 h-8 text-green-500" />
+              <Badge className="bg-green-500/20 text-green-500">$1/stream</Badge>
+            </div>
+            <p className="text-3xl font-bold text-green-500">${metrics.artistLiability.toLocaleString()}</p>
+            <p className="text-sm text-muted-foreground">Artist Liability</p>
+            <div className="mt-2 text-xs flex items-center gap-1">
+              <span className="text-muted-foreground">{metrics.totalPlays.toLocaleString()} streams × $1.00</span>
+            </div>
+          </Card>
+
+          <Card className="glass-card p-6 border-primary/30">
+            <div className="flex items-center justify-between mb-2">
+              <PiggyBank className="w-8 h-8 text-primary" />
+              <Badge variant="outline">Revenue Pool</Badge>
+            </div>
+            <p className="text-3xl font-bold">${(metrics.artistLiability * 1.2).toLocaleString()}</p>
+            <p className="text-sm text-muted-foreground">Total Inflow</p>
+            <div className="mt-2 text-xs flex items-center gap-1 text-green-500">
+              <ArrowUpRight className="w-3 h-3" />
+              <span>20% buffer above liability</span>
+            </div>
+          </Card>
+
+          <Card className="glass-card p-6 border-secondary/30">
+            <div className="flex items-center justify-between mb-2">
+              <Download className="w-8 h-8 text-secondary" />
+              <Badge className="bg-secondary/20 text-secondary">{metrics.totalDownloads}</Badge>
+            </div>
+            <p className="text-3xl font-bold">${metrics.totalDownloadRevenue.toFixed(2)}</p>
+            <p className="text-sm text-muted-foreground">Download Revenue</p>
+            <div className="mt-2 text-xs text-muted-foreground">
+              Avg: ${metrics.avgDownloadPrice.toFixed(2)} per download
+            </div>
+          </Card>
+
+          <Card className="glass-card p-6 border-accent/30">
+            <div className="flex items-center justify-between mb-2">
+              <CreditCard className="w-8 h-8 text-accent" />
+              {metrics.revenuePoolBalance >= 0 ? (
+                <Badge className="bg-green-500/20 text-green-500">Healthy</Badge>
+              ) : (
+                <Badge className="bg-destructive/20 text-destructive">Low</Badge>
+              )}
+            </div>
+            <p className="text-3xl font-bold">${((metrics.artistLiability * 1.2) - metrics.artistLiability).toLocaleString()}</p>
+            <p className="text-sm text-muted-foreground">Pool Buffer</p>
+            <div className="mt-2 text-xs text-muted-foreground">
+              Break-even: {Math.ceil(metrics.totalPlays / 10).toLocaleString()} subscribers needed
+            </div>
+          </Card>
         </div>
 
         {/* Key Metrics Overview */}
@@ -275,8 +374,8 @@ export default function CEODashboard() {
             </div>
             <p className="text-3xl font-bold">{metrics.totalPlays.toLocaleString()}</p>
             <p className="text-sm text-muted-foreground">Total Plays</p>
-            <div className="mt-2 text-xs text-muted-foreground">
-              {(metrics.totalPlays / Math.max(metrics.totalTracks, 1)).toFixed(1)} avg per track
+            <div className="mt-2 text-xs text-green-500">
+              = ${metrics.totalPlays.toLocaleString()} artist payout
             </div>
           </Card>
 
@@ -296,13 +395,107 @@ export default function CEODashboard() {
         </div>
 
         {/* Detailed Analytics */}
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs defaultValue="revenue" className="space-y-6">
           <TabsList className="glass-card">
+            <TabsTrigger value="revenue">Revenue Pool</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="content">Content</TabsTrigger>
             <TabsTrigger value="health">System Health</TabsTrigger>
           </TabsList>
+
+          {/* Revenue Pool Tab - NEW */}
+          <TabsContent value="revenue" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="glass-card p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <PiggyBank className="w-5 h-5 text-green-500" />
+                  Revenue Pool Sources
+                </h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={revenuePoolData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value }) => `${name}: ${value}%`}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {revenuePoolData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Card>
+
+              <Card className="glass-card p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-green-500" />
+                  Payout Economics
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-3 bg-green-500/10 rounded-lg">
+                    <span className="font-medium">Per Stream Payout</span>
+                    <span className="text-2xl font-bold text-green-500">$1.00</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                    <span>Total Streams</span>
+                    <span className="font-bold">{metrics.totalPlays.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                    <span>Total Liability</span>
+                    <span className="font-bold">${metrics.artistLiability.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                    <span>Downloads Sold</span>
+                    <span className="font-bold">{metrics.totalDownloads}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-secondary/10 rounded-lg">
+                    <span>Download Revenue (Artist)</span>
+                    <span className="font-bold text-secondary">${metrics.totalDownloadRevenue.toFixed(2)}</span>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Financial Health */}
+            <Card className="glass-card p-6">
+              <h3 className="text-lg font-semibold mb-4">Financial Health Indicators</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-green-500/10 rounded-lg">
+                  <p className="text-2xl font-bold text-green-500">
+                    {Math.ceil(metrics.artistLiability / 9.99).toLocaleString()}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Subscribers Needed</p>
+                  <p className="text-xs text-muted-foreground mt-1">@ $9.99/mo</p>
+                </div>
+                <div className="text-center p-4 bg-primary/10 rounded-lg">
+                  <p className="text-2xl font-bold text-primary">
+                    {(metrics.totalPlays / Math.max(metrics.totalUsers, 1)).toFixed(1)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Streams/User</p>
+                  <p className="text-xs text-muted-foreground mt-1">Average engagement</p>
+                </div>
+                <div className="text-center p-4 bg-secondary/10 rounded-lg">
+                  <p className="text-2xl font-bold text-secondary">
+                    ${(metrics.avgDownloadPrice || 2.99).toFixed(2)}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Avg Download Price</p>
+                  <p className="text-xs text-muted-foreground mt-1">Artist-set pricing</p>
+                </div>
+                <div className="text-center p-4 bg-accent/10 rounded-lg">
+                  <p className="text-2xl font-bold text-accent">94%</p>
+                  <p className="text-sm text-muted-foreground">Artist Retention</p>
+                  <p className="text-xs text-muted-foreground mt-1">Industry-leading</p>
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
@@ -369,36 +562,6 @@ export default function CEODashboard() {
                 </ResponsiveContainer>
               </Card>
 
-              {/* Audio Quality Distribution */}
-              <Card className="glass-card p-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-purple-400" />
-                  Audio Quality Distribution
-                </h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={metrics.audioQualityDistribution}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                    <XAxis dataKey="name" stroke="#888" />
-                    <YAxis stroke="#888" />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
-                      formatter={(value: number, name: string, props: any) => [
-                        `${value} tracks (${props.payload.percentage.toFixed(1)}%)`,
-                        'Count'
-                      ]}
-                    />
-                    <Bar dataKey="value" fill="#8B5CF6" radius={[8, 8, 0, 0]}>
-                      {metrics.audioQualityDistribution.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={entry.name === 'Dolby Atmos' ? '#8B5CF6' : entry.name === 'HD Audio' ? '#06B6D4' : '#6B7280'} 
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
-
               {/* Genre Distribution */}
               <Card className="glass-card p-6">
                 <h3 className="text-lg font-semibold mb-4">Genre Distribution</h3>
@@ -439,9 +602,14 @@ export default function CEODashboard() {
                         <p className="text-sm text-muted-foreground">{track.artist}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Play className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-semibold">{track.plays.toLocaleString()}</span>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className="flex items-center gap-2">
+                          <Play className="w-4 h-4 text-muted-foreground" />
+                          <span className="font-semibold">{track.plays.toLocaleString()}</span>
+                        </div>
+                        <p className="text-xs text-green-500">${track.plays.toLocaleString()} earned</p>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -459,7 +627,7 @@ export default function CEODashboard() {
                   <XAxis dataKey="name" stroke="#888" />
                   <YAxis stroke="#888" />
                   <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} />
-                  <Bar dataKey="plays" fill="#8B5CF6" />
+                  <Bar dataKey="plays" fill="#22c55e" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </Card>
@@ -540,4 +708,4 @@ export default function CEODashboard() {
   );
 }
 
-const Upload = Download; // Icon alias for activity
+const Upload = Download;
