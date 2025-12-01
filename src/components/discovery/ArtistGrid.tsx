@@ -25,8 +25,8 @@ export function ArtistGrid({ artists, followedArtists, onToggleFollow }: ArtistG
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl md:text-4xl font-black tracking-tight glow-text">Featured Artists</h2>
-        <Badge variant="outline" className="text-sm px-4 py-2">
+        <h2 className="text-3xl md:text-4xl font-black tracking-tight glow-text">Top 50 Artists</h2>
+        <Badge variant="outline" className="text-sm px-4 py-2 border-primary/50">
           {artists.length} Artists
         </Badge>
       </div>
