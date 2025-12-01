@@ -466,45 +466,58 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Revenue Pool Explanation */}
+      {/* Revenue Pool Explanation - Sales-focused */}
       <section className="py-16 md:py-24 px-4 md:px-6 relative">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <Badge className="bg-green-500/20 text-green-500 border-green-500/30 mb-6 px-4 py-2">
               <DollarSign className="w-4 h-4 mr-2" />
-              HOW IT WORKS
+              HOW WE PAY ARTISTS
             </Badge>
             <h2 className="text-3xl md:text-5xl font-display font-black mb-6">
-              The TDZ Revenue Pool
+              <span className="text-green-500">$1</span> For Every Stream
             </h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Your $1 per stream comes from a diverse revenue pool that grows with our community.
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-8">
+              We pay artists $1 for every stream on TDZ, funded by a diverse revenue pool that includes:
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card className="glass-card p-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
-                <CreditCard className="w-6 h-6 text-green-500" />
-              </div>
-              <h3 className="font-bold mb-2">Subscriptions</h3>
-              <p className="text-sm text-muted-foreground">Fan subscriptions fund artist payouts</p>
-            </Card>
-            <Card className="glass-card p-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
-                <Download className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="font-bold mb-2">Downloads</h3>
-              <p className="text-sm text-muted-foreground">Artist-set prices, 100% to artist</p>
-            </Card>
-            <Card className="glass-card p-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center mx-auto mb-4">
-                <Globe className="w-6 h-6 text-secondary" />
-              </div>
-              <h3 className="font-bold mb-2">Ads & Sponsorships</h3>
-              <p className="text-sm text-muted-foreground">Premium features & partnerships</p>
-            </Card>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {[
+              { icon: CreditCard, label: "Subscriptions", desc: "Fan & artist plans" },
+              { icon: Radio, label: "Advertisements", desc: "Platform ad revenue" },
+              { icon: Download, label: "Downloads", desc: "Artist keeps 100%" },
+              { icon: Zap, label: "Premium Tools", desc: "AI studio & features" }
+            ].map((item, idx) => (
+              <Card key={idx} className="glass-card p-4 text-center hover:scale-105 transition-transform">
+                <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-3">
+                  <item.icon className="w-5 h-5 text-green-500" />
+                </div>
+                <h3 className="font-bold text-sm mb-1">{item.label}</h3>
+                <p className="text-xs text-muted-foreground">{item.desc}</p>
+              </Card>
+            ))}
           </div>
+
+          <Card className="glass-card p-6 md:p-8 bg-gradient-to-br from-green-500/10 to-transparent border-green-500/30">
+            <p className="text-center text-lg md:text-xl leading-relaxed">
+              This model ensures artists make <span className="text-green-500 font-bold">more money with fewer plays</span>—and fans <span className="text-primary font-bold">directly support the creators they love</span>.
+            </p>
+            <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-green-500/20">
+              <div className="text-center">
+                <p className="text-2xl md:text-3xl font-black text-green-500">1,000</p>
+                <p className="text-xs text-muted-foreground">Streams = $1,000</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl md:text-3xl font-black text-primary">10,000</p>
+                <p className="text-xs text-muted-foreground">Streams = $10,000</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl md:text-3xl font-black text-secondary">100,000</p>
+                <p className="text-xs text-muted-foreground">Streams = $100,000</p>
+              </div>
+            </div>
+          </Card>
         </div>
       </section>
 
