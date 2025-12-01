@@ -2,176 +2,246 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   Instagram, Youtube, Music2, Twitter, 
-  TrendingUp, Users, BarChart3, ExternalLink 
+  Globe, Link2, Save, ExternalLink, Trash2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+interface SocialLink {
+  platform: string;
+  url: string;
+}
+
 const platformsConfig = [
   { 
-    id: "spotify", 
-    name: "Spotify for Artists", 
-    icon: Music2, 
-    color: "from-green-500 to-emerald-500"
-  },
-  { 
-    id: "apple", 
-    name: "Apple Music for Artists", 
-    icon: Music2, 
-    color: "from-pink-500 to-red-500"
-  },
-  { 
-    id: "youtube", 
-    name: "YouTube Studio", 
-    icon: Youtube, 
-    color: "from-red-500 to-orange-500"
+    id: "website", 
+    name: "Website", 
+    icon: Globe, 
+    color: "from-gray-500 to-slate-500",
+    placeholder: "https://yourwebsite.com"
   },
   { 
     id: "instagram", 
     name: "Instagram", 
     icon: Instagram, 
-    color: "from-purple-500 to-pink-500"
+    color: "from-purple-500 to-pink-500",
+    placeholder: "https://instagram.com/yourhandle"
+  },
+  { 
+    id: "youtube", 
+    name: "YouTube", 
+    icon: Youtube, 
+    color: "from-red-500 to-orange-500",
+    placeholder: "https://youtube.com/@yourchannel"
   },
   { 
     id: "twitter", 
     name: "Twitter/X", 
     icon: Twitter, 
-    color: "from-blue-400 to-cyan-400"
+    color: "from-blue-400 to-cyan-400",
+    placeholder: "https://twitter.com/yourhandle"
+  },
+  { 
+    id: "soundcloud", 
+    name: "SoundCloud", 
+    icon: Music2, 
+    color: "from-orange-500 to-yellow-500",
+    placeholder: "https://soundcloud.com/yourprofile"
+  },
+  { 
+    id: "tiktok", 
+    name: "TikTok", 
+    icon: Music2, 
+    color: "from-pink-500 to-red-500",
+    placeholder: "https://tiktok.com/@yourhandle"
   },
 ];
 
 export const SocialMediaHub = () => {
-  const [connections, setConnections] = useState<any[]>([]);
+  const [socialLinks, setSocialLinks] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    loadConnections();
+    loadSocialLinks();
   }, []);
 
-  const loadConnections = async () => {
+  const loadSocialLinks = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data, error } = await supabase
-        .from("social_connections")
-        .select("*")
-        .eq("user_id", user.id);
+        .from("artist_profiles")
+        .select("social_links")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-      if (error) throw error;
-      setConnections(data || []);
+      if (error && error.code !== 'PGRST116') throw error;
+      
+      if (data?.social_links) {
+        setSocialLinks(data.social_links as Record<string, string>);
+      }
     } catch (error) {
-      console.error("Error loading connections:", error);
-      toast.error("Failed to load social connections");
+      console.error("Error loading social links:", error);
+      toast.error("Failed to load social links");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleConnect = (platform: string) => {
-    toast.info(`Connect to ${platform}`, {
-      description: "Social media OAuth integration coming soon! This will sync your analytics across all platforms."
-    });
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Filter out empty links
+      const filteredLinks = Object.fromEntries(
+        Object.entries(socialLinks).filter(([_, url]) => url.trim() !== "")
+      );
+
+      const { error } = await supabase
+        .from("artist_profiles")
+        .update({ social_links: filteredLinks })
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      toast.success("Social links saved!", {
+        description: "Your links are now visible on your artist profile"
+      });
+    } catch (error: any) {
+      console.error("Error saving social links:", error);
+      toast.error("Failed to save", { description: error.message });
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const platforms = platformsConfig.map(p => ({
-    ...p,
-    connected: connections.some(c => c.platform === p.id && c.connected)
-  }));
+  const updateLink = (platform: string, url: string) => {
+    setSocialLinks(prev => ({ ...prev, [platform]: url }));
+  };
+
+  const removeLink = (platform: string) => {
+    setSocialLinks(prev => {
+      const updated = { ...prev };
+      delete updated[platform];
+      return updated;
+    });
+  };
 
   if (loading) {
     return (
       <Card className="glass-card p-12 text-center">
         <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-muted-foreground">Loading connections...</p>
+        <p className="text-muted-foreground">Loading social links...</p>
       </Card>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <BarChart3 className="w-6 h-6 text-primary" />
-        <div>
-          <h2 className="text-2xl font-display font-bold">Social Media Analytics</h2>
-          <p className="text-sm text-muted-foreground">
-            Connect your accounts for unified analytics dashboard
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link2 className="w-6 h-6 text-primary" />
+          <div>
+            <h2 className="text-2xl font-display font-bold">Social Links</h2>
+            <p className="text-sm text-muted-foreground">
+              Connect your social profiles to your artist page
+            </p>
+          </div>
         </div>
+        <Button onClick={handleSave} disabled={saving} className="gap-2">
+          <Save className="w-4 h-4" />
+          {saving ? "Saving..." : "Save Links"}
+        </Button>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {platforms.map((platform, idx) => (
+      <div className="grid md:grid-cols-2 gap-4">
+        {platformsConfig.map((platform, idx) => (
           <Card 
             key={platform.id} 
-            className="glass-card p-6 hover:border-primary/60 hover:scale-105 transition-all group cursor-pointer animate-fade-in"
-            style={{ animationDelay: `${idx * 100}ms` }}
+            className="glass-card p-4 hover:border-primary/40 transition-all animate-fade-in"
+            style={{ animationDelay: `${idx * 50}ms` }}
           >
-            <div className="space-y-4">
-              <div className="flex items-start justify-between">
-                <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${platform.color} flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all`}>
-                  <platform.icon className="w-7 h-7 text-white" />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${platform.color} flex items-center justify-center`}>
+                    <platform.icon className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{platform.name}</p>
+                    {socialLinks[platform.id] && (
+                      <Badge variant="secondary" className="text-[10px]">Connected</Badge>
+                    )}
+                  </div>
                 </div>
-                {platform.connected ? (
-                  <Badge className="bg-green-500/20 text-green-500 border-green-500/30 animate-pulse">
-                    Connected
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary">Not Connected</Badge>
+                {socialLinks[platform.id] && (
+                  <div className="flex gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8"
+                      onClick={() => window.open(socialLinks[platform.id], '_blank')}
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      onClick={() => removeLink(platform.id)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
                 )}
               </div>
               
-              <div>
-                <h3 className="font-semibold mb-1 group-hover:text-primary transition-colors">{platform.name}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {platform.connected 
-                    ? "Syncing analytics data"
-                    : "Connect to view insights"}
-                </p>
-              </div>
-
-              <Button
-                onClick={() => handleConnect(platform.name)}
-                variant={platform.connected ? "outline" : "default"}
-                className="w-full group-hover:scale-105 transition-transform"
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                {platform.connected ? "Manage" : "Connect"}
-              </Button>
+              <Input
+                value={socialLinks[platform.id] || ""}
+                onChange={(e) => updateLink(platform.id, e.target.value)}
+                placeholder={platform.placeholder}
+                className="text-sm"
+              />
             </div>
           </Card>
         ))}
       </div>
 
+      {/* Preview Card */}
       <Card className="glass-card p-6">
-        <h3 className="font-semibold mb-4 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-primary" />
-          Unified Analytics (Coming Soon)
-        </h3>
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="group text-center p-6 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 hover:scale-105 hover:border-purple-500/40 transition-all cursor-pointer">
-            <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Users className="w-8 h-8 text-white" />
-            </div>
-            <p className="text-3xl font-bold mb-1 bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">--</p>
-            <p className="text-sm text-muted-foreground">Total Followers</p>
-          </div>
-          <div className="group text-center p-6 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 hover:scale-105 hover:border-blue-500/40 transition-all cursor-pointer">
-            <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <TrendingUp className="w-8 h-8 text-white" />
-            </div>
-            <p className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">--</p>
-            <p className="text-sm text-muted-foreground">Engagement Rate</p>
-          </div>
-          <div className="group text-center p-6 rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 hover:scale-105 hover:border-green-500/40 transition-all cursor-pointer">
-            <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <BarChart3 className="w-8 h-8 text-white" />
-            </div>
-            <p className="text-3xl font-bold mb-1 bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">--</p>
-            <p className="text-sm text-muted-foreground">Total Reach</p>
-          </div>
+        <h3 className="font-semibold mb-4">How it appears on your profile</h3>
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(socialLinks)
+            .filter(([_, url]) => url.trim() !== "")
+            .map(([platformId, url]) => {
+              const platform = platformsConfig.find(p => p.id === platformId);
+              if (!platform) return null;
+              return (
+                <Button
+                  key={platformId}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => window.open(url, '_blank')}
+                >
+                  <platform.icon className="w-4 h-4" />
+                  {platform.name}
+                </Button>
+              );
+            })}
+          {Object.keys(socialLinks).filter(k => socialLinks[k]?.trim()).length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              No links added yet. Add your social profiles above.
+            </p>
+          )}
         </div>
       </Card>
     </div>

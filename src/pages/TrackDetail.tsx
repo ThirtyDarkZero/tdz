@@ -357,10 +357,13 @@ export default function TrackDetail() {
                 <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>{formatDuration(track.duration)}</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <Play className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>{track.play_count?.toLocaleString()}</span>
-              </div>
+              {/* Only show play count to track owner */}
+              {isOwner && (
+                <div className="flex items-center gap-1.5">
+                  <Play className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span>{track.play_count?.toLocaleString()} plays</span>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
@@ -562,47 +565,49 @@ export default function TrackDetail() {
           </Card>
         </div>
 
-        {/* Streaming Performance - Visible to everyone */}
-        <Card className="glass-card-premium p-6 mb-8">
-          <div className="flex items-center gap-2 mb-6">
-            <Activity className="w-5 h-5 text-primary" />
-            <h2 className="text-xl font-bold">Streaming Performance</h2>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Play className="w-4 h-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Total Plays</p>
-              </div>
-              <p className="text-2xl md:text-3xl font-bold glow-text">{track.play_count?.toLocaleString() || 0}</p>
+        {/* Streaming Performance - Only visible to track owner */}
+        {isOwner && (
+          <Card className="glass-card-premium p-6 mb-8">
+            <div className="flex items-center gap-2 mb-6">
+              <Activity className="w-5 h-5 text-primary" />
+              <h2 className="text-xl font-bold">Streaming Performance</h2>
             </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Heart className="w-4 h-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Likes</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Play className="w-4 h-4 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Total Plays</p>
+                </div>
+                <p className="text-2xl md:text-3xl font-bold glow-text">{track.play_count?.toLocaleString() || 0}</p>
               </div>
-              <p className="text-2xl md:text-3xl font-bold glow-text">{track.like_count?.toLocaleString() || 0}</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Est. Revenue</p>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Heart className="w-4 h-4 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Likes</p>
+                </div>
+                <p className="text-2xl md:text-3xl font-bold glow-text">{track.like_count?.toLocaleString() || 0}</p>
               </div>
-              <p className="text-2xl md:text-3xl font-bold glow-text">
-                ${((track.play_count || 0) * 0.003).toFixed(2)}
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Music className="w-4 h-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Listeners</p>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Est. Revenue</p>
+                </div>
+                <p className="text-2xl md:text-3xl font-bold glow-text">
+                  ${((track.play_count || 0) * 0.003).toFixed(2)}
+                </p>
               </div>
-              <p className="text-2xl md:text-3xl font-bold glow-text">
-                {Math.floor((track.play_count || 0) * 0.6).toLocaleString()}
-              </p>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Music className="w-4 h-4 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Listeners</p>
+                </div>
+                <p className="text-2xl md:text-3xl font-bold glow-text">
+                  {Math.floor((track.play_count || 0) * 0.6).toLocaleString()}
+                </p>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        )}
 
         {/* Album Card if part of album */}
         {track.albums && (
