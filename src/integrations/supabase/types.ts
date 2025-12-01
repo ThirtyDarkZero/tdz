@@ -112,6 +112,54 @@ export type Database = {
           },
         ]
       }
+      artist_earnings: {
+        Row: {
+          artist_id: string
+          created_at: string
+          download_revenue: number
+          id: string
+          payout_date: string | null
+          payout_status: string
+          period_end: string
+          period_start: string
+          streaming_revenue: number
+          total_downloads: number
+          total_earnings: number | null
+          total_streams: number
+          updated_at: string
+        }
+        Insert: {
+          artist_id: string
+          created_at?: string
+          download_revenue?: number
+          id?: string
+          payout_date?: string | null
+          payout_status?: string
+          period_end: string
+          period_start: string
+          streaming_revenue?: number
+          total_downloads?: number
+          total_earnings?: number | null
+          total_streams?: number
+          updated_at?: string
+        }
+        Update: {
+          artist_id?: string
+          created_at?: string
+          download_revenue?: number
+          id?: string
+          payout_date?: string | null
+          payout_status?: string
+          period_end?: string
+          period_start?: string
+          streaming_revenue?: number
+          total_downloads?: number
+          total_earnings?: number | null
+          total_streams?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       artist_follows: {
         Row: {
           artist_id: string
@@ -404,6 +452,57 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      download_purchases: {
+        Row: {
+          artist_id: string
+          artist_revenue: number
+          buyer_id: string
+          created_at: string
+          id: string
+          payment_status: string
+          price: number
+          track_id: string
+          transaction_fee: number
+        }
+        Insert: {
+          artist_id: string
+          artist_revenue: number
+          buyer_id: string
+          created_at?: string
+          id?: string
+          payment_status?: string
+          price: number
+          track_id: string
+          transaction_fee?: number
+        }
+        Update: {
+          artist_id?: string
+          artist_revenue?: number
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          payment_status?: string
+          price?: number
+          track_id?: string
+          transaction_fee?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "download_purchases_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "published_tracks_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "download_purchases_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       exports: {
         Row: {
@@ -882,6 +981,33 @@ export type Database = {
           title?: string
           type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      platform_revenue: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          period_date: string
+          revenue_type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          period_date?: string
+          revenue_type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          period_date?: string
+          revenue_type?: string
         }
         Relationships: []
       }
@@ -1421,6 +1547,7 @@ export type Database = {
           audio_quality: string | null
           bpm: number | null
           created_at: string
+          download_price: number | null
           duration: number
           file_path: string
           genre: string | null
@@ -1448,6 +1575,7 @@ export type Database = {
           audio_quality?: string | null
           bpm?: number | null
           created_at?: string
+          download_price?: number | null
           duration: number
           file_path: string
           genre?: string | null
@@ -1475,6 +1603,7 @@ export type Database = {
           audio_quality?: string | null
           bpm?: number | null
           created_at?: string
+          download_price?: number | null
           duration?: number
           file_path?: string
           genre?: string | null

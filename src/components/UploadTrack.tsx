@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Upload, Music, Sparkles, X, FileAudio } from "lucide-react";
+import { Upload, Music, Sparkles, X, FileAudio, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
 
 // Helper function to detect audio quality from file
 const detectAudioQuality = (file: File): 'standard' | 'hd' | 'dolby_atmos' | 'hi_res' => {
@@ -34,6 +35,7 @@ export const UploadTrack = ({ onSuccess }: { onSuccess?: () => void }) => {
   const [progressMessage, setProgressMessage] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [downloadPrice, setDownloadPrice] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -98,6 +100,13 @@ export const UploadTrack = ({ onSuccess }: { onSuccess?: () => void }) => {
 
     if (!title?.trim() || !artist?.trim()) {
       toast.error("Please fill in all required fields");
+      return;
+    }
+
+    // Validate download price if provided
+    const priceValue = downloadPrice ? parseFloat(downloadPrice) : null;
+    if (downloadPrice && (isNaN(priceValue!) || priceValue! < 0.99)) {
+      toast.error("Minimum download price is $0.99");
       return;
     }
 
@@ -187,7 +196,7 @@ export const UploadTrack = ({ onSuccess }: { onSuccess?: () => void }) => {
         });
       }
 
-      // Create track record
+      // Create track record with download price
       const { error: dbError } = await supabase.from('tracks').insert({
         user_id: user.id,
         title: title.trim().slice(0, 200),
@@ -200,7 +209,8 @@ export const UploadTrack = ({ onSuccess }: { onSuccess?: () => void }) => {
         ai_tags: aiData?.tags || null,
         bpm: aiData?.bpm || null,
         key: aiData?.key || null,
-        mood: aiData?.mood || null
+        mood: aiData?.mood || null,
+        download_price: priceValue
       });
 
       if (dbError) {
@@ -212,10 +222,13 @@ export const UploadTrack = ({ onSuccess }: { onSuccess?: () => void }) => {
       setProgressMessage("Complete!");
       
       toast.success("Track uploaded successfully!", {
-        description: "Your track is now in your library ready to publish"
+        description: priceValue 
+          ? `Ready to publish! Download price: $${priceValue.toFixed(2)}`
+          : "Your track is now in your library ready to publish"
       });
       
       setSelectedFile(null);
+      setDownloadPrice("");
       (e.target as HTMLFormElement).reset();
       onSuccess?.();
     } catch (error: any) {
@@ -232,6 +245,17 @@ export const UploadTrack = ({ onSuccess }: { onSuccess?: () => void }) => {
 
   return (
     <form onSubmit={handleUpload} className="space-y-6">
+      {/* Earnings Info Banner */}
+      <Card className="p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/30">
+        <div className="flex items-center gap-3 text-sm">
+          <DollarSign className="w-5 h-5 text-green-500" />
+          <span>
+            <span className="font-semibold text-green-500">$1.00 per stream</span> + 
+            <span className="font-semibold text-blue-500"> 100% download revenue</span> when published
+          </span>
+        </div>
+      </Card>
+
       {/* Drag & Drop Zone */}
       <div 
         className={cn(
@@ -359,12 +383,38 @@ export const UploadTrack = ({ onSuccess }: { onSuccess?: () => void }) => {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Download Price Field */}
+        <div className="p-4 rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
+          <Label htmlFor="downloadPrice" className="flex items-center gap-2 mb-2">
+            <DollarSign className="w-4 h-4 text-blue-500" />
+            Download Price (Optional)
+          </Label>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">$</span>
+            <Input 
+              id="downloadPrice"
+              type="number"
+              step="0.01"
+              min="0.99"
+              placeholder="0.00"
+              value={downloadPrice}
+              onChange={(e) => setDownloadPrice(e.target.value)}
+              disabled={uploading}
+              className="max-w-32"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Set a price for fans to download your track (minimum $0.99). You keep 100% of download revenue.
+            Leave blank for streaming-only.
+          </p>
+        </div>
       </div>
 
       <Button 
         type="submit" 
         disabled={uploading || !selectedFile} 
-        className="w-full bg-gradient-to-r from-primary to-secondary shadow-glow"
+        className="w-full bg-gradient-to-r from-green-500 via-emerald-500 to-primary shadow-glow"
       >
         {uploading ? "Uploading..." : "Upload Track"}
       </Button>
