@@ -23,6 +23,9 @@ import { TrackGrid } from "@/components/discovery/TrackGrid";
 import { AlbumGrid } from "@/components/discovery/AlbumGrid";
 import { ArtistGrid } from "@/components/discovery/ArtistGrid";
 import { useDiscoveryData } from "@/hooks/useDiscoveryData";
+import { SubscriptionModal } from "@/components/SubscriptionModal";
+
+const PREVIEW_DURATION_SECONDS = 30;
 
 export default function Discover() {
   const navigate = useNavigate();
@@ -33,6 +36,7 @@ export default function Discover() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentArtistInfo, setCurrentArtistInfo] = useState<any>(null);
   const [relatedTracks, setRelatedTracks] = useState<any[]>([]);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   
   const {
     tracks,
@@ -51,6 +55,7 @@ export default function Discover() {
 
   const { role } = useUserRole(user);
   const isArtist = role === 'artist' || role === 'verified_artist' || role === 'manager';
+  const isAuthenticated = !!user;
 
   // Load artist info when current track changes
   useEffect(() => {
@@ -238,6 +243,11 @@ export default function Discover() {
     />
   );
 
+  const handlePreviewEnd = () => {
+    setShowSubscriptionModal(true);
+    toast.info("Preview ended - Subscribe for unlimited streaming!");
+  };
+
   const player = (
     <MusicPlayer
       currentTrack={currentTrack}
@@ -245,6 +255,8 @@ export default function Discover() {
       onNext={handleNext}
       onPrevious={handlePrevious}
       onTrackEnd={handleTrackEnd}
+      maxDuration={!isAuthenticated ? PREVIEW_DURATION_SECONDS : undefined}
+      onPreviewEnd={!isAuthenticated ? handlePreviewEnd : undefined}
     />
   );
 
@@ -256,6 +268,7 @@ export default function Discover() {
         rightColumn={rightColumn}
         header={header}
         player={player}
+        isAuthenticated={isAuthenticated}
       />
       
       <MobileSidebar
@@ -270,6 +283,11 @@ export default function Discover() {
         onPlaylistSelect={(playlistId) => {
           navigate(`/playlist/${playlistId}`);
         }}
+      />
+
+      <SubscriptionModal
+        open={showSubscriptionModal}
+        onOpenChange={setShowSubscriptionModal}
       />
     </>
   );

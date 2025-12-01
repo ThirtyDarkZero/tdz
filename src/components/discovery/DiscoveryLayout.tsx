@@ -6,6 +6,7 @@ interface DiscoveryLayoutProps {
   rightColumn: ReactNode;
   header: ReactNode;
   player: ReactNode;
+  isAuthenticated?: boolean;
 }
 
 export function DiscoveryLayout({ 
@@ -13,7 +14,8 @@ export function DiscoveryLayout({
   centerColumn, 
   rightColumn, 
   header, 
-  player 
+  player,
+  isAuthenticated = true
 }: DiscoveryLayoutProps) {
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
@@ -34,7 +36,11 @@ export function DiscoveryLayout({
       <div className="flex-1 pt-16 pb-24 relative z-10">
         <div className="h-full flex">
           {/* Left Column - Album Art & Artist Info */}
-          <aside className="hidden lg:block w-80 xl:w-96 flex-shrink-0 border-r border-border/30 overflow-y-auto scrollbar-hide">
+          <aside className={`hidden lg:block w-80 xl:w-96 flex-shrink-0 overflow-y-auto scrollbar-hide ${
+            !isAuthenticated 
+              ? 'border-r-2 border-primary/40 shadow-[2px_0_8px_-2px_rgba(var(--primary)/0.3)]' 
+              : 'border-r border-border/30'
+          }`}>
             <div className="p-4 space-y-4">
               {leftColumn}
             </div>
@@ -48,7 +54,11 @@ export function DiscoveryLayout({
           </main>
 
           {/* Right Column - Library */}
-          <aside className="hidden xl:block w-80 flex-shrink-0 border-l border-border/30 overflow-y-auto scrollbar-hide">
+          <aside className={`hidden xl:block w-80 flex-shrink-0 overflow-y-auto scrollbar-hide ${
+            !isAuthenticated 
+              ? 'border-l-2 border-primary/40 shadow-[-2px_0_8px_-2px_rgba(var(--primary)/0.3)]' 
+              : 'border-l border-border/30'
+          }`}>
             <div className="p-4 space-y-4">
               {rightColumn}
             </div>
