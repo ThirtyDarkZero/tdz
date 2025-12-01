@@ -21,7 +21,12 @@ import {
   Shield,
   AlertTriangle,
   Swords,
-  TrendingDown
+  TrendingDown,
+  CreditCard,
+  Download,
+  Radio,
+  Layers,
+  PiggyBank
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -43,18 +48,19 @@ export default function Investors() {
   ];
 
   const marketShareData = [
-    { year: "2024", tdz: 0.5, distrokid: 22, tunecore: 18, cdbaby: 15, others: 44.5 },
-    { year: "2025", tdz: 2.8, distrokid: 21, tunecore: 17, cdbaby: 14, others: 45.2 },
-    { year: "2026", tdz: 6.2, distrokid: 20, tunecore: 16, cdbaby: 13, others: 44.8 },
-    { year: "2027", tdz: 11.5, distrokid: 19, tunecore: 15, cdbaby: 12, others: 42.5 },
-    { year: "2028", tdz: 18.3, distrokid: 18, tunecore: 14, cdbaby: 11, others: 38.7 }
+    { year: "2024", tdz: 0.5, spotify: 31, apple: 15, amazon: 13, others: 40.5 },
+    { year: "2025", tdz: 2.8, spotify: 30, apple: 14.5, amazon: 12.5, others: 40.2 },
+    { year: "2026", tdz: 6.2, spotify: 29, apple: 14, amazon: 12, others: 38.8 },
+    { year: "2027", tdz: 11.5, spotify: 28, apple: 13.5, amazon: 11.5, others: 35.5 },
+    { year: "2028", tdz: 18.3, spotify: 27, apple: 13, amazon: 11, others: 30.7 }
   ];
 
-  const revenueStreamsData = [
-    { name: "Subscriptions", value: 68, color: "hsl(var(--primary))" },
-    { name: "Distribution Fees", value: 15, color: "hsl(var(--secondary))" },
-    { name: "Management Services", value: 9, color: "hsl(var(--accent))" },
-    { name: "TDZ Discovery Show", value: 8, color: "hsl(var(--chart-1))" }
+  const revenuePoolData = [
+    { name: "Subscriptions", value: 55, color: "hsl(var(--primary))" },
+    { name: "Downloads", value: 20, color: "hsl(var(--secondary))" },
+    { name: "Ads & Sponsors", value: 15, color: "hsl(var(--accent))" },
+    { name: "Premium Features", value: 7, color: "hsl(var(--chart-1))" },
+    { name: "Live Events", value: 3, color: "hsl(var(--chart-2))" }
   ];
 
   const userGrowthData = [
@@ -68,6 +74,20 @@ export default function Investors() {
   ];
 
   const unicornFeatures = [
+    {
+      icon: DollarSign,
+      title: "$1 Per Stream Payout",
+      description: "Revolutionary artist payout model. Artists earn $1.00 for every stream—not $0.003 like Spotify. This attracts top talent and creates unprecedented artist loyalty.",
+      impact: "333x higher payout than traditional DSPs",
+      category: "Revenue Model"
+    },
+    {
+      icon: Download,
+      title: "Artist-Set Download Pricing",
+      description: "Artists set their own download prices. Fans buy tracks directly. 100% of download revenue goes to the artist (minus transaction fees).",
+      impact: "New revenue stream with 100% artist retention",
+      category: "Revenue Model"
+    },
     {
       icon: Brain,
       title: "Quantum-Powered AI Advisor",
@@ -85,16 +105,16 @@ export default function Investors() {
     {
       icon: Music,
       title: "Standalone Streaming Platform",
-      description: "TDZ is building an independent streaming ecosystem—a direct competitor to Spotify and Apple Music. Artists publish directly to our platform, keeping 100% of their rights while reaching millions of listeners.",
-      impact: "Instant publishing with no middlemen, no gatekeepers, no revenue splits",
+      description: "TDZ is an independent streaming ecosystem—a direct competitor to Spotify and Apple Music. Artists publish directly to our platform, keeping 100% of their rights.",
+      impact: "No middlemen, no gatekeepers, artists own everything",
       category: "Streaming"
     },
     {
-      icon: LineChart,
-      title: "Production Pipeline",
-      description: "End-to-end project management from concept to release, with AI-assisted workflow optimization, collaboration tools, and automated quality checks.",
-      impact: "50% faster time-to-market for new releases",
-      category: "Workflow"
+      icon: Layers,
+      title: "AI Music Welcome",
+      description: "First major platform to fully embrace AI-generated music. AI artists earn the same $1 per stream as human artists. Zero stigma, full monetization.",
+      impact: "First-mover in $1B+ AI music market",
+      category: "Market Position"
     },
     {
       icon: Users,
@@ -116,20 +136,6 @@ export default function Investors() {
       description: "AI-powered tour recommendations based on fan density, venue analytics, market trends, and revenue optimization. Integrated booking and logistics management.",
       impact: "35% increase in tour profitability through data-driven routing",
       category: "Live Performance"
-    },
-    {
-      icon: Sparkles,
-      title: "Social Media Hub",
-      description: "Unified social media management with AI content suggestions, optimal posting times, trend analysis, and cross-platform performance tracking.",
-      impact: "200% growth in social media reach with AI optimization",
-      category: "Marketing"
-    },
-    {
-      icon: Star,
-      title: "Master Classes & Education",
-      description: "Curated learning paths from industry experts with AI-personalized recommendations based on artist skill level and career goals.",
-      impact: "Accelerates artist development by 60%",
-      category: "Education"
     }
   ];
 
@@ -137,7 +143,7 @@ export default function Investors() {
     { label: "Target Market", value: "$76.9B", sublabel: "Global music streaming by 2027" },
     { label: "Year 1 Revenue", value: "$23.1M", sublabel: "Projected with 50K artists" },
     { label: "Artist Retention", value: "94%", sublabel: "Industry-leading loyalty" },
-    { label: "AI-Ready", value: "100%", sublabel: "Human & AI artists welcome" }
+    { label: "Per-Stream Payout", value: "$1.00", sublabel: "333x more than Spotify" }
   ];
 
   const investmentUse = [
@@ -149,10 +155,10 @@ export default function Investors() {
   ];
 
   const competitiveAdvantages = [
-    "Standalone streaming platform competing directly with Spotify & Apple Music",
-    "First-mover advantage in AI-generated music streaming",
-    "AI-first approach to every feature with AI artists welcome",
-    "100% rights retention for artists—human and AI alike",
+    "$1 per stream vs $0.003 industry average—333x higher payouts",
+    "First platform to fully embrace and monetize AI music",
+    "Artists set their own download prices, keep 100% revenue",
+    "Standalone streaming platform competing directly with Spotify",
     "Revolutionary AI video creation capabilities",
     "Quantum AI advisor - market exclusive",
     "Direct artist-to-listener relationship with no middlemen"
@@ -179,13 +185,13 @@ export default function Investors() {
               THE MUSIC INDUSTRY IS BROKEN
             </Badge>
             <h1 className="text-5xl md:text-7xl font-display font-black leading-tight">
-              ARTISTS ARE BEING
+              ARTISTS EARN
               <span className="block bg-gradient-to-r from-destructive via-orange-500 to-red-600 bg-clip-text text-transparent mt-2">
-                EXPLOITED & IGNORED
+                $0.003 PER STREAM
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
-              For decades, major labels have controlled the industry, taking 80-90% of artist revenue while independent artists struggle with fragmented tools, zero support, and impossible barriers to success.
+              Artists need 250,000 streams just to earn $750. Meanwhile, platforms like Spotify profit billions. TDZ changes everything with <span className="text-green-500 font-bold">$1 per stream</span>.
             </p>
           </div>
 
@@ -195,82 +201,189 @@ export default function Investors() {
               <CardContent className="p-6 text-center">
                 <TrendingDown className="w-8 h-8 text-destructive mx-auto mb-3" />
                 <div className="text-3xl md:text-4xl font-black text-destructive mb-2">
-                  88%
-                </div>
-                <div className="font-semibold text-sm mb-1">Artist Revenue Lost</div>
-                <div className="text-xs text-muted-foreground">to labels and middlemen</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-destructive/5 backdrop-blur border-destructive/20 hover:border-destructive/40 transition-all">
-              <CardContent className="p-6 text-center">
-                <Swords className="w-8 h-8 text-destructive mx-auto mb-3" />
-                <div className="text-3xl md:text-4xl font-black text-destructive mb-2">
                   $0.003
                 </div>
-                <div className="font-semibold text-sm mb-1">Per Stream</div>
-                <div className="text-xs text-muted-foreground">Artists barely survive</div>
+                <div className="font-semibold text-sm mb-1">Spotify Payout</div>
+                <div className="text-xs text-muted-foreground">Per stream average</div>
               </CardContent>
             </Card>
-            <Card className="bg-destructive/5 backdrop-blur border-destructive/20 hover:border-destructive/40 transition-all">
+            <Card className="bg-green-500/10 backdrop-blur border-green-500/30 hover:border-green-500/50 transition-all">
               <CardContent className="p-6 text-center">
-                <AlertTriangle className="w-8 h-8 text-destructive mx-auto mb-3" />
-                <div className="text-3xl md:text-4xl font-black text-destructive mb-2">
-                  90%
+                <DollarSign className="w-8 h-8 text-green-500 mx-auto mb-3" />
+                <div className="text-3xl md:text-4xl font-black text-green-500 mb-2">
+                  $1.00
                 </div>
-                <div className="font-semibold text-sm mb-1">Quit Within 2 Years</div>
-                <div className="text-xs text-muted-foreground">Due to lack of support</div>
+                <div className="font-semibold text-sm mb-1">TDZ Payout</div>
+                <div className="text-xs text-muted-foreground">Per stream guaranteed</div>
               </CardContent>
             </Card>
-            <Card className="bg-destructive/5 backdrop-blur border-destructive/20 hover:border-destructive/40 transition-all">
+            <Card className="bg-primary/10 backdrop-blur border-primary/30 hover:border-primary/50 transition-all">
               <CardContent className="p-6 text-center">
-                <TrendingDown className="w-8 h-8 text-destructive mx-auto mb-3" />
-                <div className="text-3xl md:text-4xl font-black text-destructive mb-2">
-                  Zero
+                <TrendingUp className="w-8 h-8 text-primary mx-auto mb-3" />
+                <div className="text-3xl md:text-4xl font-black text-primary mb-2">
+                  333x
                 </div>
-                <div className="font-semibold text-sm mb-1">Creator Tools</div>
-                <div className="text-xs text-muted-foreground">All platforms are fragmented</div>
+                <div className="font-semibold text-sm mb-1">Higher Payout</div>
+                <div className="text-xs text-muted-foreground">vs industry average</div>
+              </CardContent>
+            </Card>
+            <Card className="bg-secondary/10 backdrop-blur border-secondary/30 hover:border-secondary/50 transition-all">
+              <CardContent className="p-6 text-center">
+                <Download className="w-8 h-8 text-secondary mx-auto mb-3" />
+                <div className="text-3xl md:text-4xl font-black text-secondary mb-2">
+                  100%
+                </div>
+                <div className="font-semibold text-sm mb-1">Download Revenue</div>
+                <div className="text-xs text-muted-foreground">Goes to artist</div>
               </CardContent>
             </Card>
           </div>
 
           {/* The Solution - TDZ as Hero */}
           <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20 blur-3xl" />
-            <Card className="relative bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 border-primary/40 backdrop-blur">
+            <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 via-primary/20 to-secondary/20 blur-3xl" />
+            <Card className="relative bg-gradient-to-br from-green-500/10 via-primary/10 to-secondary/10 border-green-500/40 backdrop-blur">
               <CardContent className="p-12 text-center">
-                <Badge className="bg-primary text-primary-foreground px-6 py-3 text-lg mb-6">
+                <Badge className="bg-green-500 text-background px-6 py-3 text-lg mb-6">
                   <Crown className="w-6 h-6 mr-3 inline" />
-                  THE HERO HAS ARRIVED
+                  THE $1 PER STREAM REVOLUTION
                 </Badge>
                 <h2 className="text-4xl md:text-6xl font-display font-black mb-6">
-                  <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-green-500 via-emerald-500 to-primary bg-clip-text text-transparent">
                     THIRTY DARK ZERO RECORDS
                   </span>
                 </h2>
                 <p className="text-xl md:text-2xl text-foreground max-w-4xl mx-auto leading-relaxed mb-8">
-                  We are the <span className="font-black text-primary">cavalry</span> for independent artists. Armed with military-grade AI precision, comprehensive creator tools, and a revolutionary distribution model, we're <span className="font-black text-secondary">obliterating</span> the old system and building a new music industry where <span className="font-black text-accent">artists keep their power and profits</span>.
+                  We pay artists <span className="font-black text-green-500">$1.00 per stream</span>. Artists set their own download prices and keep <span className="font-black text-secondary">100% of download revenue</span>. AI music is welcome. The future of music is here.
                 </p>
                 <div className="grid md:grid-cols-4 gap-6 mt-12">
                   <div>
+                    <div className="text-4xl font-black text-green-500 mb-2">$1.00</div>
+                    <div className="text-sm font-semibold">Per Stream</div>
+                  </div>
+                  <div>
+                    <div className="text-4xl font-black text-secondary mb-2">100%</div>
+                    <div className="text-sm font-semibold">Download Revenue</div>
+                  </div>
+                  <div>
+                    <div className="text-4xl font-black text-accent mb-2">AI+Human</div>
+                    <div className="text-sm font-semibold">Both Welcome</div>
+                  </div>
+                  <div>
                     <div className="text-4xl font-black text-primary mb-2">100%</div>
-                    <div className="text-sm font-semibold">Rights Retention</div>
-                  </div>
-                  <div>
-                    <div className="text-4xl font-black text-secondary mb-2">95%</div>
-                    <div className="text-sm font-semibold">Cost Reduction</div>
-                  </div>
-                  <div>
-                    <div className="text-4xl font-black text-accent mb-2">24hrs</div>
-                    <div className="text-sm font-semibold">To Global Release</div>
-                  </div>
-                  <div>
-                    <div className="text-4xl font-black text-primary mb-2">All-in-One</div>
-                    <div className="text-sm font-semibold">Complete Platform</div>
+                    <div className="text-sm font-semibold">Rights Retained</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
+        </div>
+      </section>
+
+      {/* Revenue Pool Model - NEW SECTION */}
+      <section className="py-16 px-4 md:px-6 bg-gradient-to-b from-green-500/5 to-transparent">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <Badge className="bg-green-500/10 text-green-500 border-green-500/20 px-4 py-2 mb-4">
+              <PiggyBank className="w-4 h-4 mr-2 inline" />
+              REVENUE POOL MODEL
+            </Badge>
+            <h2 className="text-4xl md:text-6xl font-display font-black mb-4">
+              How We Pay $1 Per Stream
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              A diversified revenue pool that funds sustainable artist payouts
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-8 mb-12">
+            <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20">
+              <CardContent className="p-8">
+                <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                  <DollarSign className="w-8 h-8 text-green-500" />
+                  The TDZ Revenue Pool
+                </h3>
+                <div className="space-y-4">
+                  {[
+                    { source: "Fan Subscriptions", pct: 55, desc: "Monthly streaming subscriptions" },
+                    { source: "Download Purchases", pct: 20, desc: "Direct track purchases" },
+                    { source: "Ads & Sponsorships", pct: 15, desc: "Platform advertising revenue" },
+                    { source: "Premium Features", pct: 7, desc: "Pro tools and upgrades" },
+                    { source: "Live Events", pct: 3, desc: "Concert/event revenue share" }
+                  ].map((item, idx) => (
+                    <div key={idx} className="space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">{item.source}</span>
+                        <span className="font-bold text-green-500">{item.pct}%</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"
+                          style={{ width: `${item.pct}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-primary/10 to-transparent border-primary/20">
+              <CardContent className="p-8">
+                <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                  <TrendingUp className="w-8 h-8 text-primary" />
+                  Why $1/Stream Works
+                </h3>
+                <div className="space-y-4">
+                  {[
+                    { title: "Higher Artist Retention", desc: "94% retention vs 60% industry average" },
+                    { title: "Premium Fan Engagement", desc: "Fans who pay more, engage more" },
+                    { title: "Viral Artist Acquisition", desc: "Artists recruit other artists" },
+                    { title: "Lower Marketing Costs", desc: "Word-of-mouth drives growth" },
+                    { title: "Multiple Revenue Streams", desc: "Diversified income reduces risk" }
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold">{item.title}</p>
+                        <p className="text-sm text-muted-foreground">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Financial Breakdown */}
+          <Card className="bg-gradient-to-br from-card/80 to-card/60 border-green-500/20">
+            <CardContent className="p-8">
+              <h3 className="text-2xl font-bold mb-6 text-center">Financial Model Breakdown</h3>
+              <div className="grid md:grid-cols-4 gap-6">
+                <div className="text-center p-4 bg-green-500/10 rounded-lg">
+                  <p className="text-3xl font-black text-green-500">$9.99</p>
+                  <p className="text-sm font-medium">Avg Subscription</p>
+                  <p className="text-xs text-muted-foreground mt-1">Fan monthly fee</p>
+                </div>
+                <div className="text-center p-4 bg-primary/10 rounded-lg">
+                  <p className="text-3xl font-black text-primary">10</p>
+                  <p className="text-sm font-medium">Streams/Sub</p>
+                  <p className="text-xs text-muted-foreground mt-1">Break-even per month</p>
+                </div>
+                <div className="text-center p-4 bg-secondary/10 rounded-lg">
+                  <p className="text-3xl font-black text-secondary">$1.00</p>
+                  <p className="text-sm font-medium">Per Stream</p>
+                  <p className="text-xs text-muted-foreground mt-1">Artist payout</p>
+                </div>
+                <div className="text-center p-4 bg-accent/10 rounded-lg">
+                  <p className="text-3xl font-black text-accent">100%</p>
+                  <p className="text-sm font-medium">Downloads</p>
+                  <p className="text-xs text-muted-foreground mt-1">To artist</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
@@ -286,19 +399,19 @@ export default function Investors() {
               How We Win The War
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              A three-front assault on the broken music industry status quo
+              A three-front assault on the broken music industry
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="bg-gradient-to-br from-primary/10 to-transparent border-primary/20 hover:shadow-lg hover:shadow-primary/20 transition-all">
+            <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20 hover:shadow-lg hover:shadow-green-500/20 transition-all">
               <CardContent className="p-8">
-                <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-6">
-                  <span className="text-3xl font-black text-primary">1</span>
+                <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-6">
+                  <span className="text-3xl font-black text-green-500">1</span>
                 </div>
-                <h3 className="text-2xl font-bold mb-4">Arm Artists With AI</h3>
+                <h3 className="text-2xl font-bold mb-4">Pay Artists Fairly</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Deploy quantum-powered AI tools that give independent artists the same capabilities as billion-dollar labels—video production, distribution, marketing, analytics, and revenue optimization—all in one platform.
+                  $1 per stream changes everything. Artists no longer need millions of streams to survive. 1,000 streams = $1,000. Real money for real artists.
                 </p>
               </CardContent>
             </Card>
@@ -308,9 +421,9 @@ export default function Investors() {
                 <div className="w-16 h-16 rounded-full bg-secondary/20 flex items-center justify-center mb-6">
                   <span className="text-3xl font-black text-secondary">2</span>
                 </div>
-                <h3 className="text-2xl font-bold mb-4">Destroy The Middlemen</h3>
+                <h3 className="text-2xl font-bold mb-4">Embrace AI Music</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Cut out exploitative intermediaries with direct-to-platform distribution to 150+ streaming services. Artists keep 100% of their rights and the lion's share of revenue—no more 80/20 label splits.
+                  First-mover advantage in the AI music revolution. AI artists earn the same as human artists. No stigma, full monetization, massive market opportunity.
                 </p>
               </CardContent>
             </Card>
@@ -320,9 +433,9 @@ export default function Investors() {
                 <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center mb-6">
                   <span className="text-3xl font-black text-accent">3</span>
                 </div>
-                <h3 className="text-2xl font-bold mb-4">Build A New System</h3>
+                <h3 className="text-2xl font-bold mb-4">Build The Platform</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Launch TDZ Discovery—a reality show that becomes a viral acquisition engine, recruiting millions of artists while showcasing our platform's power. Entertainment meets user growth at unprecedented scale.
+                  AI-powered tools, video generation, analytics, fan engagement—everything artists need in one place. No middlemen, no gatekeepers.
                 </p>
               </CardContent>
             </Card>
@@ -366,10 +479,10 @@ export default function Investors() {
                     <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                       {feature.description}
                     </p>
-                    <div className="bg-accent/10 border border-accent/20 rounded-lg p-3">
+                    <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
                       <div className="flex items-start gap-2">
-                        <TrendingUp className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                        <p className="text-xs font-semibold text-accent">
+                        <TrendingUp className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <p className="text-xs font-semibold text-green-500">
                           {feature.impact}
                         </p>
                       </div>
@@ -394,144 +507,18 @@ export default function Investors() {
           <h2 className="text-4xl font-display font-black text-center mb-12">
             Why We Win
           </h2>
-          <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
+          <Card className="bg-gradient-to-br from-green-500/5 to-primary/5 border-green-500/20">
             <CardContent className="p-8">
               <div className="grid md:grid-cols-2 gap-4">
                 {competitiveAdvantages.map((advantage, idx) => (
                   <div key={idx} className="flex items-start gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-1" />
+                    <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-1" />
                     <p className="text-muted-foreground">{advantage}</p>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
-        </div>
-      </section>
-
-      {/* Go-To-Market Strategy: TDZ Discovery */}
-      <section className="py-16 px-4 md:px-6 bg-gradient-to-b from-accent/5 via-primary/5 to-transparent relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,hsl(var(--accent)/0.1),transparent_70%)]" />
-        
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-12">
-            <Badge className="bg-accent/10 text-accent border-accent/20 px-4 py-2 mb-4">
-              <Star className="w-4 h-4 mr-2 inline" />
-              Revolutionary Go-To-Market Strategy
-            </Badge>
-            <h2 className="text-4xl md:text-6xl font-display font-black mb-4">
-              TDZ DISCOVERY
-            </h2>
-            <p className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent mb-6">
-              The World's First App-Powered Reality Music Competition
-            </p>
-            <p className="text-xl text-muted-foreground max-w-4xl mx-auto">
-              Where artists compete, fans decide, and the platform becomes the star
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 mb-12">
-            <Card className="bg-gradient-to-br from-primary/10 to-transparent border-primary/20 group hover:shadow-lg hover:shadow-primary/20 transition-all">
-              <CardContent className="p-8">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 rounded-full bg-primary/20">
-                    <Video className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-2xl font-bold">The Show Concept</h3>
-                </div>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  TDZ Discovery transforms music competition TV into an interactive phenomenon. Artists use our platform to create, produce, and release their competition entries—showcasing every feature from AI video generation to distribution. Fans don't just watch, they participate through real-time voting, engagement metrics, and social sharing.
-                </p>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-accent" />
-                    <span>Weekly challenges highlighting different platform features</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-accent" />
-                    <span>Celebrity judges + real-time fan voting integration</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-accent" />
-                    <span>Behind-the-scenes platform tutorials woven into content</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-accent/10 to-transparent border-accent/20 group hover:shadow-lg hover:shadow-accent/20 transition-all">
-              <CardContent className="p-8">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 rounded-full bg-accent/20">
-                    <TrendingUp className="w-8 h-8 text-accent" />
-                  </div>
-                  <h3 className="text-2xl font-bold">Viral User Acquisition</h3>
-                </div>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  Every episode becomes a 60-minute platform demonstration to millions of viewers. Aspiring artists watching at home can immediately download the app and use the exact same tools as the contestants. This creates unprecedented conversion rates from viewers to users.
-                </p>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-accent" />
-                    <span>Projected 15-25% viewer-to-user conversion rate</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-accent" />
-                    <span>Multi-platform distribution (streaming + broadcast)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-accent" />
-                    <span>Social media amplification through fan voting</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card className="bg-gradient-to-br from-secondary/10 via-primary/5 to-accent/5 border-primary/20 mb-8">
-            <CardContent className="p-8">
-              <h3 className="text-2xl font-bold mb-6 text-center">Why This Is a Game-Changer</h3>
-              <div className="grid md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20 mb-4">
-                    <Users className="w-8 h-8 text-primary" />
-                  </div>
-                  <h4 className="font-bold mb-2">Massive Reach</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Target: 5M+ viewers per season across streaming platforms and broadcast TV
-                  </p>
-                </div>
-                <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/20 mb-4">
-                    <DollarSign className="w-8 h-8 text-accent" />
-                  </div>
-                  <h4 className="font-bold mb-2">Multiple Revenue Streams</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Sponsorships, advertising, user subscriptions, and artist licensing deals
-                  </p>
-                </div>
-                <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-secondary/20 mb-4">
-                    <Sparkles className="w-8 h-8 text-secondary" />
-                  </div>
-                  <h4 className="font-bold mb-2">Platform as Product</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Every episode is a live product demo, reducing customer acquisition cost to near-zero
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 rounded-2xl p-8 text-center border border-primary/30">
-            <Rocket className="w-12 h-12 text-primary mx-auto mb-4" />
-            <h3 className="text-2xl font-bold mb-3">The Ultimate Competitive Moat</h3>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              While competitors spend millions on traditional marketing, TDZ Discovery turns entertainment into acquisition. 
-              This isn't just a show—it's a self-sustaining growth engine that pays for itself through media rights while 
-              building the world's largest community of independent artists.
-            </p>
-          </div>
         </div>
       </section>
 
@@ -547,44 +534,21 @@ export default function Investors() {
               Financial Projections
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Explosive growth backed by multiple revenue streams and unstoppable market momentum
+              Explosive growth backed by the $1/stream revolution
             </p>
           </div>
 
           {/* Quick Stats */}
-          <div className="grid md:grid-cols-3 gap-6 mb-12">
-            <Card className="bg-gradient-to-br from-primary/10 to-transparent border-primary/20 hover:shadow-lg hover:shadow-primary/20 transition-all">
-              <CardContent className="p-8 text-center">
-                <DollarSign className="w-12 h-12 text-primary mx-auto mb-4" />
-                <div className="text-5xl font-black text-primary mb-3">$23.1M</div>
-                <div className="font-bold text-lg mb-2">Year 1 Revenue</div>
-                <div className="text-sm text-muted-foreground">
-                  50,000 artists • 3 subscription tiers • Distribution fees
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-secondary/10 to-transparent border-secondary/20 hover:shadow-lg hover:shadow-secondary/20 transition-all">
-              <CardContent className="p-8 text-center">
-                <Users className="w-12 h-12 text-secondary mx-auto mb-4" />
-                <div className="text-5xl font-black text-secondary mb-3">500K+</div>
-                <div className="font-bold text-lg mb-2">Year 5 Artists</div>
-                <div className="text-sm text-muted-foreground">
-                  94% retention rate • Viral TDZ Discovery growth
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-accent/10 to-transparent border-accent/20 hover:shadow-lg hover:shadow-accent/20 transition-all">
-              <CardContent className="p-8 text-center">
-                <Rocket className="w-12 h-12 text-accent mx-auto mb-4" />
-                <div className="text-5xl font-black text-accent mb-3">$194M</div>
-                <div className="font-bold text-lg mb-2">Year 5 Revenue</div>
-                <div className="text-sm text-muted-foreground">
-                  10x scale • Premium features • Enterprise deals
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid md:grid-cols-4 gap-6 mb-12">
+            {metrics.map((metric, idx) => (
+              <Card key={idx} className="bg-gradient-to-br from-primary/10 to-transparent border-primary/20 hover:shadow-lg transition-all">
+                <CardContent className="p-6 text-center">
+                  <div className="text-4xl font-black text-primary mb-2">{metric.value}</div>
+                  <div className="font-bold text-sm mb-1">{metric.label}</div>
+                  <div className="text-xs text-muted-foreground">{metric.sublabel}</div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
           {/* Graph Navigation */}
@@ -614,12 +578,12 @@ export default function Investors() {
               Market Share
             </Button>
             <Button 
-              variant={activeGraph === "streams" ? "default" : "outline"}
-              onClick={() => setActiveGraph("streams")}
+              variant={activeGraph === "pool" ? "default" : "outline"}
+              onClick={() => setActiveGraph("pool")}
               className="font-semibold"
             >
-              <DollarSign className="w-4 h-4 mr-2" />
-              Revenue Breakdown
+              <PiggyBank className="w-4 h-4 mr-2" />
+              Revenue Pool
             </Button>
           </div>
 
@@ -661,7 +625,7 @@ export default function Investors() {
 
               {activeGraph === "users" && (
                 <div>
-                  <h3 className="text-2xl font-bold mb-6 text-center">First Year User Acquisition & Engagement</h3>
+                  <h3 className="text-2xl font-bold mb-6 text-center">First Year User Acquisition</h3>
                   <ResponsiveContainer width="100%" height={400}>
                     <BarChart data={userGrowthData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
@@ -676,9 +640,8 @@ export default function Investors() {
                         }} 
                       />
                       <Legend />
-                      <Bar yAxisId="left" dataKey="artists" fill="hsl(var(--primary))" name="Artists" radius={[8, 8, 0, 0]} />
-                      <Bar yAxisId="left" dataKey="listeners" fill="hsl(var(--secondary))" name="Listeners (K)" radius={[8, 8, 0, 0]} />
-                      <Line yAxisId="right" type="monotone" dataKey="engagement" stroke="hsl(var(--accent))" strokeWidth={3} name="Engagement %" />
+                      <Bar yAxisId="left" dataKey="artists" fill="hsl(var(--primary))" name="Artists" radius={[4, 4, 0, 0]} />
+                      <Bar yAxisId="left" dataKey="listeners" fill="hsl(var(--secondary))" name="Listeners" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -686,7 +649,7 @@ export default function Investors() {
 
               {activeGraph === "market" && (
                 <div>
-                  <h3 className="text-2xl font-bold mb-6 text-center">Market Share Domination (2024-2028)</h3>
+                  <h3 className="text-2xl font-bold mb-6 text-center">Projected Market Share Growth</h3>
                   <ResponsiveContainer width="100%" height={400}>
                     <AreaChart data={marketShareData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
@@ -700,148 +663,58 @@ export default function Investors() {
                         }} 
                       />
                       <Legend />
-                      <Area type="monotone" dataKey="tdz" stackId="1" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.8} name="TDZ Records" strokeWidth={2} />
-                      <Area type="monotone" dataKey="distrokid" stackId="1" stroke="hsl(var(--secondary))" fill="hsl(var(--secondary))" fillOpacity={0.6} name="DistroKid" />
-                      <Area type="monotone" dataKey="tunecore" stackId="1" stroke="hsl(var(--accent))" fill="hsl(var(--accent))" fillOpacity={0.6} name="TuneCore" />
-                      <Area type="monotone" dataKey="cdbaby" stackId="1" stroke="hsl(var(--chart-1))" fill="hsl(var(--chart-1))" fillOpacity={0.6} name="CD Baby" />
-                      <Area type="monotone" dataKey="others" stackId="1" stroke="hsl(var(--muted))" fill="hsl(var(--muted))" fillOpacity={0.4} name="Others" />
+                      <Area type="monotone" dataKey="tdz" stroke="hsl(var(--primary))" fill="hsl(var(--primary)/0.3)" strokeWidth={3} name="TDZ" />
+                      <Area type="monotone" dataKey="spotify" stroke="#1DB954" fill="#1DB954" fillOpacity={0.2} strokeWidth={2} name="Spotify" />
+                      <Area type="monotone" dataKey="apple" stroke="#FC3C44" fill="#FC3C44" fillOpacity={0.2} strokeWidth={2} name="Apple Music" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
               )}
 
-              {activeGraph === "streams" && (
+              {activeGraph === "pool" && (
                 <div>
-                  <h3 className="text-2xl font-bold mb-6 text-center">Revenue Stream Distribution (Year 1)</h3>
-                  <div className="flex flex-col md:flex-row items-center justify-center gap-8">
-                    <ResponsiveContainer width="100%" height={400}>
-                      <PieChart>
-                        <Pie
-                          data={revenueStreamsData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, value }) => `${name}: ${value}%`}
-                          outerRadius={140}
-                          fill="#8884d8"
-                          dataKey="value"
-                          animationBegin={0}
-                          animationDuration={800}
-                        >
-                          {revenueStreamsData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: 'hsl(var(--card))', 
-                            border: '1px solid hsl(var(--primary)/0.2)',
-                            borderRadius: '8px'
-                          }} 
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="space-y-4">
-                      {revenueStreamsData.map((stream, idx) => (
-                        <div key={idx} className="flex items-center gap-3">
-                          <div className="w-4 h-4 rounded" style={{ backgroundColor: stream.color }} />
-                          <div>
-                            <div className="font-bold">{stream.name}</div>
-                            <div className="text-sm text-muted-foreground">{stream.value}% of total revenue</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  <h3 className="text-2xl font-bold mb-6 text-center">Revenue Pool Distribution</h3>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <PieChart>
+                      <Pie
+                        data={revenuePoolData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, value }) => `${name}: ${value}%`}
+                        outerRadius={150}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {revenuePoolData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--primary)/0.2)',
+                          borderRadius: '8px'
+                        }} 
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Revenue Model Details */}
-          <Card className="bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 border-primary/20">
-            <CardContent className="p-8">
-              <h3 className="text-2xl font-bold mb-6 text-center">Revenue Model Breakdown</h3>
-              <div className="grid md:grid-cols-2 gap-8">
-                <div>
-                  <h4 className="font-bold text-lg mb-4 text-primary flex items-center gap-2">
-                    <DollarSign className="w-5 h-5" />
-                    Subscription Tiers
-                  </h4>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-card/50">
-                      <span className="font-semibold">Basic ($10/mo)</span>
-                      <span className="text-sm text-muted-foreground">Distribution + Tools</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-card/50">
-                      <span className="font-semibold">Premium ($25/mo)</span>
-                      <span className="text-sm text-muted-foreground">Advanced + AI</span>
-                    </div>
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-card/50">
-                      <span className="font-semibold">Pro ($50/mo)</span>
-                      <span className="text-sm text-muted-foreground">Full Suite + Priority</span>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-bold text-lg mb-4 text-secondary flex items-center gap-2">
-                    <Sparkles className="w-5 h-5" />
-                    Additional Revenue Streams
-                  </h4>
-                  <ul className="space-y-3 text-muted-foreground">
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
-                      <span>Distribution fees (per release)</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
-                      <span>Artist management services (15% commission)</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
-                      <span>Tour management commissions</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
-                      <span>Master class partnerships & licensing</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
-                      <span>TDZ Discovery media rights & sponsorships</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Investment Requirements */}
-      <section className="py-16 px-4 md:px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <Badge className="bg-primary/10 text-primary border-primary/20 px-4 py-2 mb-4">
-              <Target className="w-4 h-4 mr-2 inline" />
-              Seeking $10M Series A
-            </Badge>
-            <h2 className="text-4xl md:text-5xl font-display font-black mb-4">
-              Investment Allocation
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Strategic deployment of capital to accelerate growth and market dominance
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Investment Use */}
+          <h3 className="text-3xl font-display font-bold text-center mb-8">
+            Investment Allocation
+          </h3>
+          <div className="grid md:grid-cols-5 gap-4">
             {investmentUse.map((item, idx) => (
-              <Card key={idx} className="group hover:border-primary/40 transition-all">
-                <CardContent className="p-6">
-                  <div className="text-3xl font-black text-primary mb-2">
-                    {item.amount}
-                  </div>
-                  <h3 className="font-bold text-lg mb-3">{item.area}</h3>
-                  <p className="text-sm text-muted-foreground">{item.purpose}</p>
+              <Card key={idx} className="bg-gradient-to-b from-primary/5 to-transparent border-primary/20 hover:shadow-lg hover:shadow-primary/10 transition-all">
+                <CardContent className="p-6 text-center">
+                  <div className="text-3xl font-black text-primary mb-2">{item.amount}</div>
+                  <div className="font-bold text-sm mb-2">{item.area}</div>
+                  <div className="text-xs text-muted-foreground">{item.purpose}</div>
                 </CardContent>
               </Card>
             ))}
@@ -849,40 +722,35 @@ export default function Investors() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-20 px-4 md:px-6 bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10">
-        <div className="max-w-4xl mx-auto text-center space-y-8">
-          <h2 className="text-4xl md:text-6xl font-display font-black">
-            Join Us in Building the Future
+      {/* CTA Section */}
+      <section className="py-20 px-4 md:px-6 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-500/5 to-primary/10" />
+        <div className="max-w-5xl mx-auto relative z-10 text-center">
+          <Badge className="bg-green-500/20 text-green-500 border-green-500/30 px-6 py-3 text-lg mb-8">
+            <Rocket className="w-6 h-6 mr-3 inline" />
+            JOIN THE REVOLUTION
+          </Badge>
+          <h2 className="text-4xl md:text-6xl font-display font-black mb-6">
+            Be Part of the
+            <span className="block bg-gradient-to-r from-green-500 via-emerald-500 to-primary bg-clip-text text-transparent">
+              $1 Per Stream Revolution
+            </span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Be part of the platform that's democratizing the music industry and empowering the next generation of independent artists.
+          <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+            We're raising $10M to scale the platform that will change how artists get paid forever.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-gradient-to-r from-primary to-secondary text-background font-bold px-8">
-              Request Investment Deck
-              <ArrowRight className="ml-2 w-5 h-5" />
+            <Button size="lg" className="bg-gradient-to-r from-green-500 via-emerald-500 to-primary text-lg px-12 h-16 hover:scale-105 transition-transform">
+              Request Investor Deck
+              <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            <Button size="lg" variant="outline" onClick={() => navigate("/auth")}>
-              Experience the Platform
+            <Button size="lg" variant="outline" onClick={() => navigate("/")} className="text-lg px-12 h-16">
+              Explore Platform
             </Button>
           </div>
-          <div className="pt-8 space-y-3">
-            <div className="text-sm text-muted-foreground">
-              For investment inquiries: <a href="mailto:info@thirtydarkzero.com" className="text-primary hover:underline font-semibold">info@thirtydarkzero.com</a>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
-              <Badge variant="outline" className="bg-primary/5 border-primary/20">
-                <Shield className="w-3 h-3 mr-1.5" />
-                SBA SDVOSB Certified
-              </Badge>
-              <Badge variant="outline" className="bg-secondary/5 border-secondary/20">
-                SAM.GOV Registered
-              </Badge>
-              <span className="hidden sm:inline">•</span>
-              <span className="text-center sm:text-left">Government Contract Procurement • Live Entertainment Specialist</span>
-            </div>
-          </div>
+          <p className="text-sm text-muted-foreground mt-8">
+            Contact: invest@thirtydarkzero.com
+          </p>
         </div>
       </section>
     </div>

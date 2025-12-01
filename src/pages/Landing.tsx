@@ -508,23 +508,128 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Subscription Tiers Section */}
+      <section className="py-16 md:py-24 px-4 md:px-6 relative bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <Badge className="bg-primary/20 text-primary border-primary/30 mb-6 px-4 py-2">
+              <CreditCard className="w-4 h-4 mr-2" />
+              SUBSCRIPTION PLANS
+            </Badge>
+            <h2 className="text-3xl md:text-5xl font-display font-black mb-4">
+              Choose Your Plan
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Start earning $1 per stream today. All plans include full platform access.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Starter Plan */}
+            <Card className="glass-card p-6 relative hover:scale-105 transition-transform">
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-bold mb-2">Starter</h3>
+                <div className="text-4xl font-black text-primary mb-1">$9.99<span className="text-lg font-normal text-muted-foreground">/mo</span></div>
+                <p className="text-sm text-muted-foreground">Perfect for new artists</p>
+              </div>
+              <div className="space-y-3 mb-6">
+                {[
+                  "$1 per stream payout",
+                  "Unlimited uploads",
+                  "Basic analytics",
+                  "Fan engagement tools",
+                  "Download sales (100% revenue)"
+                ].map((feature, idx) => (
+                  <div key={idx} className="flex items-center gap-2 text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                    <span>{feature}</span>
+                  </div>
+                ))}
+              </div>
+              <Button className="w-full" variant="outline" onClick={() => navigate("/auth")}>
+                Get Started
+              </Button>
+            </Card>
+
+            {/* Pro Plan */}
+            <Card className="glass-card p-6 relative border-primary/50 hover:scale-105 transition-transform">
+              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">Most Popular</Badge>
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-bold mb-2">Pro</h3>
+                <div className="text-4xl font-black text-primary mb-1">$19.99<span className="text-lg font-normal text-muted-foreground">/mo</span></div>
+                <p className="text-sm text-muted-foreground">For serious artists</p>
+              </div>
+              <div className="space-y-3 mb-6">
+                {[
+                  "Everything in Starter",
+                  "AI video generation (10/mo)",
+                  "Advanced analytics",
+                  "Priority support",
+                  "Presave campaigns",
+                  "Collaboration tools"
+                ].map((feature, idx) => (
+                  <div key={idx} className="flex items-center gap-2 text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                    <span>{feature}</span>
+                  </div>
+                ))}
+              </div>
+              <Button className="w-full bg-gradient-to-r from-green-500 to-primary" onClick={() => navigate("/auth")}>
+                Start Pro Trial
+              </Button>
+            </Card>
+
+            {/* Enterprise Plan */}
+            <Card className="glass-card p-6 relative hover:scale-105 transition-transform">
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-bold mb-2">Enterprise</h3>
+                <div className="text-4xl font-black text-primary mb-1">$49.99<span className="text-lg font-normal text-muted-foreground">/mo</span></div>
+                <p className="text-sm text-muted-foreground">For labels & teams</p>
+              </div>
+              <div className="space-y-3 mb-6">
+                {[
+                  "Everything in Pro",
+                  "Unlimited AI videos",
+                  "Multi-artist management",
+                  "Custom branding",
+                  "API access",
+                  "Dedicated account manager"
+                ].map((feature, idx) => (
+                  <div key={idx} className="flex items-center gap-2 text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                    <span>{feature}</span>
+                  </div>
+                ))}
+              </div>
+              <Button className="w-full" variant="outline" onClick={() => navigate("/auth")}>
+                Contact Sales
+              </Button>
+            </Card>
+          </div>
+
+          <p className="text-center text-sm text-muted-foreground mt-8">
+            All plans require a credit card. Cancel anytime. AI music welcome on all tiers.
+          </p>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-16 md:py-32 px-4 md:px-6 relative">
         <div className="max-w-5xl mx-auto text-center">
           <h2 className="text-3xl md:text-5xl lg:text-6xl font-display font-black mb-6">
-            Ready to Earn
-            <span className="bg-gradient-to-r from-green-500 via-emerald-500 to-primary bg-clip-text text-transparent"> $1 Per Stream?</span>
+            Stop Earning Pennies.
+            <span className="bg-gradient-to-r from-green-500 via-emerald-500 to-primary bg-clip-text text-transparent"> Start Earning Dollars.</span>
           </h2>
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join thousands of artists who are finally getting paid what they deserve.
+            Every stream on TDZ pays you <span className="text-green-500 font-bold">$1.00</span>. Not $0.003. One. Full. Dollar.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
               onClick={() => navigate("/auth")}
-              className="bg-gradient-to-r from-green-500 via-emerald-500 to-primary text-lg px-12 h-16"
+              className="bg-gradient-to-r from-green-500 via-emerald-500 to-primary text-lg px-12 h-16 hover:scale-105 transition-transform"
             >
-              Start Earning Now
+              Start Earning $1/Stream Now
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button 
@@ -533,11 +638,11 @@ export default function Landing() {
               onClick={() => navigate("/faq")}
               className="text-lg px-12 h-16"
             >
-              Learn More
+              See How It Works
             </Button>
           </div>
           <p className="text-sm text-muted-foreground mt-6">
-            Subscription required. Credit card required at signup.
+            Subscription required. Credit card required at signup. AI artists welcome.
           </p>
         </div>
       </section>
