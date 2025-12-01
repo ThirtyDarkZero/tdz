@@ -6,13 +6,32 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { 
-  Play, Heart, Share2, ArrowLeft, Music, Calendar, Clock, Home, Info, Radio, Activity, TrendingUp
+  Play, Heart, Share2, ArrowLeft, Music, Calendar, Clock, Home, Info, Radio, Activity, TrendingUp,
+  MoreHorizontal, ListPlus, ListMusic, User, Plus
 } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { TrackAnalytics } from "@/components/TrackAnalytics";
 import { TrackAnalysisPanel } from "@/components/TrackAnalysisPanel";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { MotionCover } from "@/components/MotionCover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 export default function TrackDetail() {
   const { trackId } = useParams();
@@ -21,11 +40,21 @@ export default function TrackDetail() {
   const [isLiked, setIsLiked] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [currentTrack, setCurrentTrack] = useState<any>(null);
+  const [playlists, setPlaylists] = useState<any[]>([]);
+  const [showNewPlaylist, setShowNewPlaylist] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState("");
+  const [queue, setQueue] = useState<any[]>([]);
 
   useEffect(() => {
     loadUser();
     loadTrack();
   }, [trackId]);
+
+  useEffect(() => {
+    if (user) {
+      loadPlaylists();
+    }
+  }, [user]);
 
   const loadUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -82,6 +111,104 @@ export default function TrackDetail() {
       .maybeSingle();
 
     setIsLiked(!!data);
+  };
+
+  const loadPlaylists = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("playlists")
+      .select("id, name")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false });
+    if (data) setPlaylists(data);
+  };
+
+  const handleAddToPlaylist = async (playlistId: string) => {
+    try {
+      const { data: existing } = await supabase
+        .from("playlist_tracks")
+        .select("position")
+        .eq("playlist_id", playlistId)
+        .order("position", { ascending: false })
+        .limit(1);
+
+      const nextPosition = existing && existing.length > 0 ? existing[0].position + 1 : 0;
+
+      const { error } = await supabase
+        .from("playlist_tracks")
+        .insert({
+          playlist_id: playlistId,
+          track_id: trackId,
+          position: nextPosition
+        });
+
+      if (error) {
+        if (error.code === "23505") {
+          toast.error("Track already in playlist");
+        } else throw error;
+      } else {
+        toast.success(`Added to playlist`);
+      }
+    } catch (error) {
+      toast.error("Failed to add to playlist");
+    }
+  };
+
+  const handleCreatePlaylist = async () => {
+    if (!newPlaylistName.trim() || !user) return;
+    try {
+      const { data: playlist, error } = await supabase
+        .from("playlists")
+        .insert({
+          user_id: user.id,
+          name: newPlaylistName.trim(),
+          is_public: true
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await supabase
+        .from("playlist_tracks")
+        .insert({
+          playlist_id: playlist.id,
+          track_id: trackId,
+          position: 0
+        });
+
+      toast.success(`Created playlist with this track`);
+      setShowNewPlaylist(false);
+      setNewPlaylistName("");
+      loadPlaylists();
+    } catch (error) {
+      toast.error("Failed to create playlist");
+    }
+  };
+
+  const handleAddToQueue = () => {
+    if (track) {
+      setQueue(prev => [...prev, track]);
+      toast.success("Added to queue");
+    }
+  };
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/track/${trackId}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: track?.title,
+          text: `Listen to "${track?.title}" by ${track?.artist_name} on TDZ`,
+          url
+        });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied to clipboard");
+      }
+    } catch (error) {
+      console.error("Share error:", error);
+    }
   };
 
   const toggleLike = async () => {
@@ -256,14 +383,78 @@ export default function TrackDetail() {
                   fill={isLiked ? "currentColor" : "none"}
                 />
               </Button>
-              <Button 
-                size="default"
-                variant="outline" 
-                className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16"
-              >
-                <Share2 className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
-              </Button>
+              
+              {/* 3-dot menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    size="default"
+                    variant="outline" 
+                    className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16"
+                  >
+                    <MoreHorizontal className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <ListPlus className="w-4 h-4 mr-2" />
+                      Add to Playlist
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem onClick={() => setShowNewPlaylist(true)}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create New Playlist
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      {playlists.length === 0 ? (
+                        <DropdownMenuItem disabled>No playlists</DropdownMenuItem>
+                      ) : (
+                        playlists.map((p) => (
+                          <DropdownMenuItem key={p.id} onClick={() => handleAddToPlaylist(p.id)}>
+                            <ListMusic className="w-4 h-4 mr-2" />
+                            {p.name}
+                          </DropdownMenuItem>
+                        ))
+                      )}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                  <DropdownMenuItem onClick={handleAddToQueue}>
+                    <ListMusic className="w-4 h-4 mr-2" />
+                    Add to Queue
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate(`/artist/${track.user_id}`)}>
+                    <User className="w-4 h-4 mr-2" />
+                    Go to Artist
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleShare}>
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Share
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
+
+            {/* New Playlist Dialog */}
+            <Dialog open={showNewPlaylist} onOpenChange={setShowNewPlaylist}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Playlist</DialogTitle>
+                </DialogHeader>
+                <Input
+                  placeholder="Playlist name"
+                  value={newPlaylistName}
+                  onChange={(e) => setNewPlaylistName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleCreatePlaylist()}
+                />
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setShowNewPlaylist(false)}>Cancel</Button>
+                  <Button onClick={handleCreatePlaylist} disabled={!newPlaylistName.trim()}>Create</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 

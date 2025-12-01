@@ -84,10 +84,10 @@ export default function Investors() {
     },
     {
       icon: Music,
-      title: "AI-Powered Distribution Network",
-      description: "Intelligent distribution to 150+ streaming platforms with automated metadata optimization, release timing suggestions, and platform-specific formatting.",
-      impact: "24-hour go-live across all platforms with AI-optimized discoverability",
-      category: "Distribution"
+      title: "Standalone Streaming Platform",
+      description: "TDZ is building an independent streaming ecosystem—a direct competitor to Spotify and Apple Music. Artists publish directly to our platform, keeping 100% of their rights while reaching millions of listeners.",
+      impact: "Instant publishing with no middlemen, no gatekeepers, no revenue splits",
+      category: "Streaming"
     },
     {
       icon: LineChart,
@@ -137,7 +137,7 @@ export default function Investors() {
     { label: "Target Market", value: "$76.9B", sublabel: "Global music streaming by 2027" },
     { label: "Year 1 Revenue", value: "$23.1M", sublabel: "Projected with 50K artists" },
     { label: "Artist Retention", value: "94%", sublabel: "Industry-leading loyalty" },
-    { label: "Time to Market", value: "24hrs", sublabel: "Fastest distribution" }
+    { label: "AI-Ready", value: "100%", sublabel: "Human & AI artists welcome" }
   ];
 
   const investmentUse = [
@@ -149,12 +149,13 @@ export default function Investors() {
   ];
 
   const competitiveAdvantages = [
-    "Comprehensive all-in-one platform (vs. fragmented competitors)",
-    "AI-first approach to every feature",
-    "Focus on independent artists (largest growing segment)",
-    "100% rights retention for artists",
-    "Revolutionary video creation capabilities",
-    "Quantum AI advisor - market exclusive"
+    "Standalone streaming platform competing directly with Spotify & Apple Music",
+    "First-mover advantage in AI-generated music streaming",
+    "AI-first approach to every feature with AI artists welcome",
+    "100% rights retention for artists—human and AI alike",
+    "Revolutionary AI video creation capabilities",
+    "Quantum AI advisor - market exclusive",
+    "Direct artist-to-listener relationship with no middlemen"
   ];
 
   return (

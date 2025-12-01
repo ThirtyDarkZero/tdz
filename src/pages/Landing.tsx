@@ -16,8 +16,8 @@ import { StudioPhoneMockups, MusicPlayerPhoneMockups } from "@/components/Studio
 const artistFeatures = [
   {
     icon: Upload,
-    title: "Instant Distribution",
-    description: "Upload once, reach 150+ platforms in 24 hours",
+    title: "Direct Publishing",
+    description: "Upload and go live on TDZ Streaming instantly",
     color: "from-primary to-secondary"
   },
   {
@@ -34,8 +34,8 @@ const artistFeatures = [
   },
   {
     icon: Layers,
-    title: "Professional Tools",
-    description: "Studio-grade features for your music",
+    title: "AI-Friendly Platform",
+    description: "Human & AI artists welcome equally",
     color: "from-primary to-accent"
   }
 ];
@@ -188,11 +188,11 @@ export default function Landing() {
 
           {/* Floating Badge */}
           <div className="animate-fade-in" style={{ animationDelay: '0.05s' }}>
-            <Badge className="bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20 text-foreground border-primary/40 backdrop-blur-xl px-4 md:px-6 py-2 text-sm md:text-base neon-border">
-              <Globe className="w-3 h-3 md:w-4 md:h-4 mr-2 animate-pulse" />
-              <span className="hidden sm:inline">Global Distribution · Premium Streaming · 100% Royalties</span>
-              <span className="sm:hidden">For Artists & Fans</span>
-            </Badge>
+          <Badge className="bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20 text-foreground border-primary/40 backdrop-blur-xl px-4 md:px-6 py-2 text-sm md:text-base neon-border">
+            <Globe className="w-3 h-3 md:w-4 md:h-4 mr-2 animate-pulse" />
+            <span className="hidden sm:inline">Premium Streaming · AI-Friendly · 100% Royalties</span>
+            <span className="sm:hidden">Human & AI Artists</span>
+          </Badge>
           </div>
 
           {/* 3D Layered Title */}
@@ -258,11 +258,11 @@ export default function Landing() {
                 <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6 text-xs md:text-sm">
                   <div className="flex items-center gap-2 text-primary">
                     <Zap className="w-3 h-3 md:w-4 md:h-4" />
-                    <span>Instant Setup</span>
+                    <span>Instant Publishing</span>
                   </div>
                   <div className="flex items-center gap-2 text-secondary">
                     <Globe className="w-3 h-3 md:w-4 md:h-4" />
-                    <span>150+ Platforms</span>
+                    <span>AI Artists Welcome</span>
                   </div>
                   <div className="flex items-center gap-2 text-accent">
                     <DollarSign className="w-3 h-3 md:w-4 md:h-4" />
@@ -305,11 +305,11 @@ export default function Landing() {
             value: '50K+',
             label: 'Artists'
           }, {
-            value: '24hrs',
+            value: 'Instant',
             label: 'Go Live'
           }, {
-            value: '150+',
-            label: 'Platforms'
+            value: 'AI+Human',
+            label: 'Welcome'
           }, {
             value: '100%',
             label: 'Your Rights'
@@ -549,7 +549,7 @@ export default function Landing() {
           <div className="flex flex-wrap justify-center gap-2 md:gap-4 pt-4 md:pt-8 animate-fade-in px-4" style={{
           animationDelay: '0.5s'
         }}>
-            {["🌍 150+ Platforms", "⚡ 24hr Go-Live", "💰 100% Royalties", "🚀 Zero Setup Fees"].map((pill, idx) => <Badge key={idx} className="bg-card/50 backdrop-blur-xl border-primary/30 text-foreground px-3 md:px-6 py-2 md:py-3 text-xs md:text-base">
+            {["🤖 AI Artists Welcome", "⚡ Instant Publishing", "💰 100% Royalties", "🚀 Zero Setup Fees"].map((pill, idx) => <Badge key={idx} className="bg-card/50 backdrop-blur-xl border-primary/30 text-foreground px-3 md:px-6 py-2 md:py-3 text-xs md:text-base">
                 {pill}
               </Badge>)}
           </div>
