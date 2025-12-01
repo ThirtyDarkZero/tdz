@@ -66,10 +66,10 @@ export function StudioPhoneMockup({ title, color }: PhoneMockupProps) {
     }
   }, [isPlaying, title]);
 
-  // Animate stats on mount
+  // Animate stats on mount - $1/stream revenue model
   useEffect(() => {
     if (title === "Analytics Dashboard") {
-      const targets = { streams: 127500, revenue: 510, tracks: 24, listeners: 89200 };
+      const targets = { streams: 12750, revenue: 12750, tracks: 24, listeners: 89200 };
       const duration = 2000;
       const steps = 60;
       const interval = duration / steps;
@@ -116,13 +116,13 @@ export function StudioPhoneMockup({ title, color }: PhoneMockupProps) {
             {/* Dynamic Content Based on Active View */}
             {activeView === 0 && (
               <div className="space-y-2 animate-fade-in">
-                {/* Key Metrics Grid */}
+                {/* Key Metrics Grid - $1/stream model */}
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { label: "Total Streams", value: animatedStats.streams.toLocaleString(), icon: Play, color: "from-primary/30 to-secondary/30" },
-                    { label: "Revenue", value: `$${animatedStats.revenue}`, icon: DollarSign, color: "from-green-500/30 to-emerald-500/30" },
+                    { label: "Revenue ($1/stream)", value: `$${animatedStats.revenue.toLocaleString()}`, icon: DollarSign, color: "from-green-500/30 to-emerald-500/30" },
                     { label: "Tracks", value: animatedStats.tracks, icon: Music, color: "from-blue-500/30 to-cyan-500/30" },
-                    { label: "Listeners", value: animatedStats.listeners.toLocaleString(), icon: Users, color: "from-purple-500/30 to-pink-500/30" }
+                    { label: "TDZ Listeners", value: animatedStats.listeners.toLocaleString(), icon: Users, color: "from-purple-500/30 to-pink-500/30" }
                   ].map((metric, idx) => (
                     <button
                       key={idx}
@@ -145,15 +145,15 @@ export function StudioPhoneMockup({ title, color }: PhoneMockupProps) {
                   ))}
                 </div>
 
-                {/* Quick Stats */}
+                {/* Quick Stats - $1/stream */}
                 <div className="glass-card p-2 rounded-lg">
                   <div className="flex items-center justify-between text-[9px] mb-1">
-                    <span className="text-muted-foreground">Today's Performance</span>
-                    <Badge className="text-[7px] px-1 py-0 bg-green-500/20 text-green-500">+18%</Badge>
+                    <span className="text-muted-foreground">Today's Earnings</span>
+                    <Badge className="text-[7px] px-1 py-0 bg-green-500/20 text-green-500">$1/stream</Badge>
                   </div>
                   <div className="flex gap-2">
                     <div className="flex-1 text-center">
-                      <p className="text-xs font-bold">+2.4K</p>
+                      <p className="text-xs font-bold">+240</p>
                       <p className="text-[7px] text-muted-foreground">Streams</p>
                     </div>
                     <div className="h-8 w-px bg-border" />
@@ -163,8 +163,8 @@ export function StudioPhoneMockup({ title, color }: PhoneMockupProps) {
                     </div>
                     <div className="h-8 w-px bg-border" />
                     <div className="flex-1 text-center">
-                      <p className="text-xs font-bold text-green-500">+$9.60</p>
-                      <p className="text-[7px] text-muted-foreground">Revenue</p>
+                      <p className="text-xs font-bold text-green-500">+$240</p>
+                      <p className="text-[7px] text-muted-foreground">Earned</p>
                     </div>
                   </div>
                 </div>
@@ -176,32 +176,32 @@ export function StudioPhoneMockup({ title, color }: PhoneMockupProps) {
                 <div className="glass-card p-3 rounded-lg">
                   <h4 className="text-[10px] font-semibold mb-2 flex items-center gap-1">
                     <Globe className="w-3 h-3" />
-                    <span>Platform Distribution</span>
+                    <span>Fan Regions (TDZ)</span>
                   </h4>
                   <div className="space-y-2">
                     {[
-                      { name: "Spotify", pct: 45, color: "from-green-500 to-emerald-500", streams: "57.4K" },
-                      { name: "Apple Music", pct: 25, color: "from-pink-500 to-red-500", streams: "31.9K" },
-                      { name: "YouTube", pct: 15, color: "from-red-500 to-orange-500", streams: "19.1K" },
-                      { name: "Amazon", pct: 10, color: "from-blue-500 to-cyan-500", streams: "12.8K" },
-                      { name: "Others", pct: 5, color: "from-purple-500 to-pink-500", streams: "6.4K" }
-                    ].map((platform, idx) => (
+                      { name: "United States", pct: 45, color: "from-green-500 to-emerald-500", earnings: "$5,738" },
+                      { name: "United Kingdom", pct: 22, color: "from-pink-500 to-red-500", earnings: "$2,805" },
+                      { name: "Germany", pct: 15, color: "from-blue-500 to-cyan-500", earnings: "$1,913" },
+                      { name: "Canada", pct: 10, color: "from-purple-500 to-pink-500", earnings: "$1,275" },
+                      { name: "Others", pct: 8, color: "from-orange-500 to-amber-500", earnings: "$1,019" }
+                    ].map((region, idx) => (
                       <button
                         key={idx}
                         className="w-full text-left hover:scale-105 transition-transform"
                         onClick={() => setSelectedMetric(idx)}
                       >
                         <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-[9px] font-medium">{platform.name}</span>
+                          <span className="text-[9px] font-medium">{region.name}</span>
                           <div className="flex items-center gap-1">
-                            <span className="text-[8px] text-muted-foreground">{platform.streams}</span>
-                            <span className="text-[9px] font-bold">{platform.pct}%</span>
+                            <span className="text-[8px] text-green-500 font-semibold">{region.earnings}</span>
+                            <span className="text-[9px] font-bold">{region.pct}%</span>
                           </div>
                         </div>
                         <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                           <div 
-                            className={`h-full bg-gradient-to-r ${platform.color} rounded-full transition-all duration-500`}
-                            style={{ width: selectedMetric === idx ? `${platform.pct}%` : '0%' }}
+                            className={`h-full bg-gradient-to-r ${region.color} rounded-full transition-all duration-500`}
+                            style={{ width: selectedMetric === idx ? `${region.pct}%` : '0%' }}
                           />
                         </div>
                       </button>
@@ -348,28 +348,28 @@ export function StudioPhoneMockup({ title, color }: PhoneMockupProps) {
               ))}
             </div>
 
-            {/* Interactive Stats Footer */}
+            {/* Interactive Stats Footer - $1/stream */}
             <div className="glass-card p-2 rounded-lg mt-2">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <p className="text-[8px] text-muted-foreground mb-1">
-                    {activeView === 1 ? "Unpublished Tracks" : "Total Performance"}
+                    {activeView === 1 ? "Unpublished Tracks" : "TDZ Earnings ($1/stream)"}
                   </p>
                   <div className="flex items-center gap-3">
                     <div>
                       <p className="text-xs font-black">
-                        {activeView === 1 ? "3" : "127.5K"}
+                        {activeView === 1 ? "3" : "12.8K"}
                       </p>
                       <p className="text-[7px] text-muted-foreground">
-                        {activeView === 1 ? "Tracks" : "Plays"}
+                        {activeView === 1 ? "Tracks" : "Streams"}
                       </p>
                     </div>
                     {activeView !== 1 && (
                       <>
                         <div className="h-6 w-px bg-border" />
                         <div>
-                          <p className="text-xs font-black text-green-500">$510</p>
-                          <p className="text-[7px] text-muted-foreground">Revenue</p>
+                          <p className="text-xs font-black text-green-500">$12,800</p>
+                          <p className="text-[7px] text-muted-foreground">Earned</p>
                         </div>
                       </>
                     )}
