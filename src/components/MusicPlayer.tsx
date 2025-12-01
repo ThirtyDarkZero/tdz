@@ -37,6 +37,10 @@ interface Track {
   duration: number;
   file_path: string;
   play_count: number;
+  album_cover_path?: string;
+  album_cover_bucket?: string;
+  motion_cover_path?: string;
+  motion_cover_bucket?: string;
   album?: {
     title: string;
     cover_art_path?: string;
@@ -44,6 +48,7 @@ interface Track {
   ai_tags?: {
     metadata?: {
       isMotionCover?: boolean;
+      artworkUrl?: string;
     };
   };
 }
@@ -55,9 +60,10 @@ interface MusicPlayerProps {
   onPrevious: () => void;
   onTrackEnd: () => void;
   maxDuration?: number; // Maximum playback duration in seconds (for previews)
+  onPreviewEnd?: () => void; // Callback when preview limit is reached
 }
 
-export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEnd, maxDuration }: MusicPlayerProps) => {
+export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEnd, maxDuration, onPreviewEnd }: MusicPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(1);
@@ -102,18 +108,23 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
   }, [currentTrack]);
 
   const loadMotionCover = async () => {
+    // Check for motion cover path first
+    if (currentTrack?.motion_cover_path) {
+      const bucket = currentTrack.motion_cover_bucket || 'motion-covers';
+      const { data } = supabase.storage.from(bucket).getPublicUrl(currentTrack.motion_cover_path);
+      setMotionCoverUrl(data.publicUrl);
+      return;
+    }
+    
     if (!currentTrack?.ai_tags?.metadata?.isMotionCover) {
       setMotionCoverUrl(null);
       return;
     }
 
-    // Use artworkUrl if available, otherwise try album cover path
-    const metadata = currentTrack.ai_tags.metadata as any;
-    if (metadata.artworkUrl) {
+    // Use artworkUrl if available from ai_tags
+    const metadata = currentTrack.ai_tags.metadata;
+    if (metadata?.artworkUrl) {
       setMotionCoverUrl(metadata.artworkUrl);
-    } else if (currentTrack.album?.cover_art_path) {
-      const { data } = supabase.storage.from('motion-covers').getPublicUrl(currentTrack.album.cover_art_path);
-      setMotionCoverUrl(data.publicUrl);
     } else {
       setMotionCoverUrl(null);
     }
@@ -223,7 +234,7 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
       if (maxDuration && audioRef.current.currentTime >= maxDuration) {
         audioRef.current.pause();
         setIsPlaying(false);
-        onTrackEnd();
+        onPreviewEnd?.();
         return;
       }
       
@@ -334,9 +345,19 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
     }
   };
 
-  const coverUrl = currentTrack?.album?.cover_art_path
-    ? supabase.storage.from('album-covers').getPublicUrl(currentTrack.album.cover_art_path).data.publicUrl
-    : '/placeholder.svg';
+  // Get cover URL - prioritize direct album_cover_path, then nested album.cover_art_path
+  const getCoverUrl = () => {
+    if (currentTrack?.album_cover_path) {
+      const bucket = currentTrack.album_cover_bucket || 'album-covers';
+      return supabase.storage.from(bucket).getPublicUrl(currentTrack.album_cover_path).data.publicUrl;
+    }
+    if (currentTrack?.album?.cover_art_path) {
+      return supabase.storage.from('album-covers').getPublicUrl(currentTrack.album.cover_art_path).data.publicUrl;
+    }
+    return '/placeholder.svg';
+  };
+  
+  const coverUrl = getCoverUrl();
 
   if (!currentTrack) return null;
 
