@@ -15,6 +15,7 @@ import ArtistProfile from "./pages/ArtistProfile";
 import ListenerProfile from "./pages/ListenerProfile";
 import TrackDetail from "./pages/TrackDetail";
 import AlbumDetail from "./pages/AlbumDetail";
+import PlaylistDetail from "./pages/PlaylistDetail";
 import Investors from "./pages/Investors";
 import CEODashboard from "./pages/CEODashboard";
 import FAQ from "./pages/FAQ";
@@ -43,6 +44,7 @@ const App = () => (
           <Route path="/profile" element={<ListenerProfile />} />
           <Route path="/track/:trackId" element={<TrackDetail />} />
           <Route path="/album/:albumId" element={<AlbumDetail />} />
+          <Route path="/playlist/:playlistId" element={<PlaylistDetail />} />
           <Route path="/investors" element={<Investors />} />
           <Route path="/ceo" element={<CEODashboard />} />
           <Route path="/faq" element={<FAQ />} />
