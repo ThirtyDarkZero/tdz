@@ -15,11 +15,66 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    console.log('Starting auto-publish job...');
+    // Parse request body for admin overrides
+    let adminOverride = false;
+    let specificTrackId: string | null = null;
+    
+    if (req.method === 'POST') {
+      try {
+        const body = await req.json();
+        adminOverride = body.adminOverride === true;
+        specificTrackId = body.trackId || null;
+      } catch {
+        // No body provided, continue with default behavior
+      }
+    }
 
-    // Get today's date in YYYY-MM-DD format
-    const today = new Date().toISOString().split('T')[0];
-    console.log('Checking for tracks to publish on or before:', today);
+    console.log('Starting auto-publish job...');
+    console.log('Admin override:', adminOverride);
+    console.log('Specific track ID:', specificTrackId);
+
+    // Get current date/time in UTC
+    const now = new Date();
+    const todayUTC = now.toISOString().split('T')[0];
+    console.log('Current UTC date:', todayUTC);
+    console.log('Current UTC time:', now.toISOString());
+
+    // If admin override with specific track, publish that track immediately
+    if (adminOverride && specificTrackId) {
+      console.log(`Admin override: Force publishing track ${specificTrackId}`);
+      
+      const { data: track, error: fetchError } = await supabase
+        .from('tracks')
+        .select('id, title, artist_name')
+        .eq('id', specificTrackId)
+        .single();
+
+      if (fetchError || !track) {
+        throw new Error(`Track not found: ${specificTrackId}`);
+      }
+
+      const { error: updateError } = await supabase
+        .from('tracks')
+        .update({ 
+          is_published: true,
+          release_date: todayUTC
+        })
+        .eq('id', specificTrackId);
+
+      if (updateError) throw updateError;
+
+      console.log(`Admin override: Published "${track.title}" by ${track.artist_name}`);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `Force published track: ${track.title}`,
+          publishedCount: 1,
+          tracks: [track]
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Find tracks that should be published (release_date <= today and not yet published)
     const { data: tracksToPublish, error: fetchError } = await supabase
@@ -27,7 +82,7 @@ Deno.serve(async (req) => {
       .select('id, title, artist_name, release_date')
       .is('is_published', false)
       .not('release_date', 'is', null)
-      .lte('release_date', today);
+      .lte('release_date', todayUTC);
 
     if (fetchError) {
       console.error('Error fetching tracks:', fetchError);
@@ -59,6 +114,27 @@ Deno.serve(async (req) => {
       throw updateError;
     }
 
+    // Also check for albums to publish
+    const { data: albumsToPublish, error: albumFetchError } = await supabase
+      .from('albums')
+      .select('id, title, artist_name, scheduled_release_date')
+      .is('is_published', false)
+      .not('scheduled_release_date', 'is', null)
+      .lte('scheduled_release_date', todayUTC);
+
+    if (!albumFetchError && albumsToPublish && albumsToPublish.length > 0) {
+      const albumIds = albumsToPublish.map(a => a.id);
+      await supabase
+        .from('albums')
+        .update({ 
+          is_published: true,
+          release_date: todayUTC
+        })
+        .in('id', albumIds);
+      
+      console.log(`Also published ${albumsToPublish.length} albums`);
+    }
+
     console.log(`Successfully published ${tracksToPublish.length} tracks:`, 
       tracksToPublish.map(t => `${t.title} by ${t.artist_name}`));
 
@@ -67,7 +143,8 @@ Deno.serve(async (req) => {
         success: true, 
         message: `Published ${tracksToPublish.length} tracks`,
         publishedCount: tracksToPublish.length,
-        tracks: tracksToPublish
+        tracks: tracksToPublish,
+        albumsPublished: albumsToPublish?.length || 0
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

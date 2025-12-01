@@ -62,14 +62,23 @@ export default function ArtistProfile() {
       .from("artist_profiles")
       .select("*")
       .eq("user_id", artistId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Error loading artist:", error);
       toast.error("Failed to load artist profile");
-    } else {
-      setArtist(data);
+      navigate("/discover");
+      return;
     }
+    
+    if (!data) {
+      // No profile found for this artist
+      toast.error("Artist profile not found");
+      navigate("/discover");
+      return;
+    }
+    
+    setArtist(data);
   };
 
   const loadTracks = async () => {
@@ -111,7 +120,7 @@ export default function ArtistProfile() {
       .select("id")
       .eq("follower_id", userId)
       .eq("artist_id", artistId)
-      .single();
+      .maybeSingle();
 
     setIsFollowing(!!data);
   };
@@ -289,9 +298,13 @@ export default function ArtistProfile() {
             <div className="flex-1 min-w-0">
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-2 glow-text truncate">{artist.artist_name}</h1>
               <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 flex-wrap">
-                <span>{artist.monthly_listeners?.toLocaleString()} listeners</span>
-                <span className="hidden sm:inline">•</span>
-                <span>{artist.total_plays?.toLocaleString()} plays</span>
+                <span>{tracks.length} releases</span>
+                {artist.verified && (
+                  <>
+                    <span className="hidden sm:inline">•</span>
+                    <span className="text-primary">Verified Artist</span>
+                  </>
+                )}
               </div>
               
               <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -391,7 +404,9 @@ export default function ArtistProfile() {
                           )}
                         </Button>
                       ) : (
-                        <Badge variant="outline">{track.play_count?.toLocaleString()} plays</Badge>
+                        <Badge variant="outline">
+                          {track.genre || "Single"}
+                        </Badge>
                       )}
                     </div>
                   </div>
