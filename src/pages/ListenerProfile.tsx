@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { PlaylistManager } from "@/components/PlaylistManager";
 import { MotionCover } from "@/components/MotionCover";
+import { ShareProfileModal } from "@/components/ShareProfileModal";
 import tdzLogo from "@/assets/tdz-logo.png";
 
 export default function ListenerProfile() {
@@ -24,6 +25,7 @@ export default function ListenerProfile() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [likedTracks, setLikedTracks] = useState<any[]>([]);
@@ -372,9 +374,14 @@ export default function ListenerProfile() {
 
             {/* Actions */}
             <div className="flex gap-2 pb-2">
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2"
+                onClick={() => setShareModalOpen(true)}
+              >
                 <Share2 className="w-4 h-4" />
-                <span className="hidden sm:inline">Share</span>
+                <span className="hidden sm:inline">Share Stats</span>
               </Button>
               <Button variant="outline" size="icon" className="h-9 w-9">
                 <Settings className="w-4 h-4" />
@@ -634,6 +641,31 @@ export default function ListenerProfile() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Share Modal */}
+      <ShareProfileModal
+        open={shareModalOpen}
+        onOpenChange={setShareModalOpen}
+        profileData={{
+          displayName: formData.display_name || "Music Lover",
+          totalPlays: recentlyPlayed.length * 3,
+          hoursListened: Math.round(recentlyPlayed.length * 3 * 3.5 / 60),
+          artistsFollowed: followingCount,
+          likedSongs: likedTracks.length,
+          playlists: playlists.length,
+          tasteScore: likedTracks.length > 0 ? Math.min(100, likedTracks.length * 5) : 0,
+          achievements: [
+            "Early Adopter",
+            ...(likedTracks.length >= 5 ? ["Music Lover"] : []),
+            ...(playlists.length >= 1 ? ["Curator"] : []),
+            ...(followingCount >= 3 ? ["Fan Club"] : []),
+            ...(recentlyPlayed.length >= 10 ? ["On Fire"] : []),
+          ],
+          topGenres: Array.isArray(formData.favorite_genres) && formData.favorite_genres.length > 0 
+            ? formData.favorite_genres 
+            : ["Electronic", "Hip-Hop", "Pop"],
+        }}
+      />
     </div>
   );
 }
