@@ -94,7 +94,7 @@ export function useDiscoveryData() {
       .select("*")
       .order("monthly_listeners", { ascending: false })
       .order("total_plays", { ascending: false })
-      .limit(50);
+      .limit(100);
 
     if (!error && data) {
       setArtists(data);
