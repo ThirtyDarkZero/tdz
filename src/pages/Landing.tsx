@@ -12,6 +12,7 @@ import { MotionCover } from "@/components/MotionCover";
 import { Hero3D } from "@/components/Hero3D";
 import { EnhancedCard } from "@/components/EnhancedCard";
 import { StudioPhoneMockups, MusicPlayerPhoneMockups } from "@/components/StudioPhoneMockup";
+import { MerchStore } from "@/components/MerchStore";
 
 const artistFeatures = [
   {
@@ -625,6 +626,9 @@ export default function Landing() {
           </p>
         </div>
       </section>
+
+      {/* Merch Store Section */}
+      <MerchStore variant="hero" />
 
       {/* CTA Section */}
       <section className="py-16 md:py-32 px-4 md:px-6 relative">

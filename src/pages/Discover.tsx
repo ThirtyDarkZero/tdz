@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Play, Heart, Share2, TrendingUp, Flame, 
-  ListMusic, Plus, UserPlus, Music
+  ListMusic, Plus, UserPlus, Music, ShoppingBag
 } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ import { AlbumGrid } from "@/components/discovery/AlbumGrid";
 import { ArtistGrid } from "@/components/discovery/ArtistGrid";
 import { useDiscoveryData } from "@/hooks/useDiscoveryData";
 import { SubscriptionModal } from "@/components/SubscriptionModal";
+import { MerchStore } from "@/components/MerchStore";
 
 const PREVIEW_DURATION_SECONDS = 30;
 
@@ -183,6 +184,10 @@ export default function Discover() {
               <ListMusic className="w-4 h-4 md:w-5 md:h-5" />
               <span>Playlists</span>
             </TabsTrigger>
+            <TabsTrigger value="merch" className="gap-1.5 md:gap-2 px-3 sm:px-4 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap">
+              <ShoppingBag className="w-4 h-4 md:w-5 md:h-5" />
+              <span>Merch</span>
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -229,6 +234,10 @@ export default function Discover() {
             playlists={playlists}
             onCreatePlaylist={handleCreatePlaylist}
           />
+        </TabsContent>
+
+        <TabsContent value="merch" className="space-y-8 animate-fade-in">
+          <MerchStore variant="full" />
         </TabsContent>
       </Tabs>
     </div>

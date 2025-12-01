@@ -21,7 +21,7 @@ import { StorytellingStudio } from "@/components/StorytellingStudio";
 import { MomentumTracker } from "@/components/MomentumTracker";
 import { CanvasManager } from "@/components/CanvasManager";
 import { ArtistProfileEditor } from "@/components/ArtistProfileEditor";
-import { MerchAndTickets } from "@/components/MerchAndTickets";
+import { MerchStore } from "@/components/MerchStore";
 import { QuantumAdvisor } from "@/components/QuantumAdvisor";
 import { TopBar } from "@/components/TopBar";
 import { useAuth } from "@/hooks/useAuth";
@@ -368,7 +368,7 @@ const Studio = () => {
             </TabsContent>
 
             <TabsContent value="merch" className="mt-0">
-              <MerchAndTickets />
+              <MerchStore variant="full" />
             </TabsContent>
 
             <TabsContent value="quantum" className="mt-0">
