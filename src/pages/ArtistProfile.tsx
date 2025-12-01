@@ -254,7 +254,7 @@ export default function ArtistProfile() {
       <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden">
         {artist.banner_image_path ? (
           <img
-            src={artist.banner_image_path}
+            src={supabase.storage.from("artist-images").getPublicUrl(artist.banner_image_path).data.publicUrl}
             alt="Banner"
             className="w-full h-full object-cover"
           />
@@ -269,7 +269,7 @@ export default function ArtistProfile() {
               <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-2 sm:border-4 border-background shadow-glow">
                 {artist.profile_image_path ? (
                   <img
-                    src={artist.profile_image_path}
+                    src={supabase.storage.from("artist-images").getPublicUrl(artist.profile_image_path).data.publicUrl}
                     alt={artist.artist_name}
                     className="w-full h-full object-cover"
                   />
@@ -344,14 +344,11 @@ export default function ArtistProfile() {
                     <div className="flex items-center gap-4">
                       {/* Album Cover */}
                       <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                        {track.ai_tags?.metadata?.isMotionCover && track.ai_tags?.metadata?.artworkUrl ? (
-                          <video 
-                            src={track.ai_tags.metadata.artworkUrl}
+                        {track.album_cover_path ? (
+                          <img 
+                            src={supabase.storage.from(track.album_cover_bucket || 'album-covers').getPublicUrl(track.album_cover_path).data.publicUrl}
+                            alt={track.title}
                             className="w-full h-full object-cover"
-                            autoPlay
-                            loop
-                            muted
-                            playsInline
                           />
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
