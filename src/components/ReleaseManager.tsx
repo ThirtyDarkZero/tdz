@@ -8,30 +8,20 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
-import { CalendarIcon, Upload, Globe, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { CalendarIcon, Upload, Globe, CheckCircle2, AlertCircle, Loader2, Disc3, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-const platforms = [
-  { id: "spotify", name: "Spotify", icon: "🎵" },
-  { id: "apple", name: "Apple Music", icon: "🍎" },
-  { id: "youtube", name: "YouTube Music", icon: "▶️" },
-  { id: "amazon", name: "Amazon Music", icon: "📦" },
-  { id: "tidal", name: "Tidal", icon: "🌊" },
-  { id: "deezer", name: "Deezer", icon: "🎧" },
-];
 
 export const ReleaseManager = () => {
   const [selectedTrack, setSelectedTrack] = useState<any>(null);
   const [tracks, setTracks] = useState<any[]>([]);
   const [releaseDate, setReleaseDate] = useState<Date>();
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(platforms.map(p => p.id));
   const [releaseTitle, setReleaseTitle] = useState("");
   const [releaseDescription, setReleaseDescription] = useState("");
   const [genre, setGenre] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
 
   useEffect(() => {
     loadTracks();
@@ -62,8 +52,8 @@ export const ReleaseManager = () => {
   };
 
   const handlePublish = async () => {
-    if (!selectedTrack || !releaseDate || selectedPlatforms.length === 0) {
-      toast.error("Please complete all required fields");
+    if (!selectedTrack || !releaseDate) {
+      toast.error("Please select a track and release date");
       return;
     }
 
@@ -104,9 +94,9 @@ export const ReleaseManager = () => {
         if (albumError) console.error("Album creation error:", albumError);
       }
 
-      toast.success(shouldPublishNow ? "Released!" : "Release scheduled!", {
+      toast.success(shouldPublishNow ? "Released on TDZ!" : "Release scheduled!", {
         description: shouldPublishNow 
-          ? `${selectedTrack.title} is now live on ${selectedPlatforms.length} platforms`
+          ? `${selectedTrack.title} is now live on TDZ Streaming`
           : `${selectedTrack.title} will go live on ${format(releaseDate, "PPP")}`,
       });
 
@@ -127,26 +117,48 @@ export const ReleaseManager = () => {
     }
   };
 
-  const togglePlatform = (platformId: string) => {
-    setSelectedPlatforms(prev =>
-      prev.includes(platformId)
-        ? prev.filter(id => id !== platformId)
-        : [...prev, platformId]
-    );
-  };
+  const timezones = [
+    "America/New_York",
+    "America/Chicago",
+    "America/Denver",
+    "America/Los_Angeles",
+    "Europe/London",
+    "Europe/Paris",
+    "Asia/Tokyo",
+    "Asia/Shanghai",
+    "Australia/Sydney",
+  ];
 
   return (
     <div className="space-y-6">
       <Card className="glass-card p-6">
         <div className="flex items-center gap-3 mb-6">
-          <Globe className="w-6 h-6 text-primary" />
+          <Disc3 className="w-6 h-6 text-primary" />
           <div>
             <h2 className="text-2xl font-display font-bold">Release Manager</h2>
             <p className="text-sm text-muted-foreground">
-              Distribute your music to 150+ platforms worldwide
+              Publish your music directly to TDZ Streaming
             </p>
           </div>
         </div>
+
+        {/* TDZ Platform Badge */}
+        <Card className="p-4 mb-6 bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 border-primary/30">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+              <Zap className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold">TDZ Streaming Platform</h3>
+              <p className="text-sm text-muted-foreground">
+                Your music goes live instantly to all TDZ listeners worldwide
+              </p>
+            </div>
+            <Badge className="bg-primary/20 text-primary border-primary/30">
+              100% Royalties
+            </Badge>
+          </div>
+        </Card>
 
         <div className="grid md:grid-cols-2 gap-6">
           {/* Left Column - Track Selection */}
@@ -214,6 +226,8 @@ export const ReleaseManager = () => {
                       <SelectItem value="country">Country</SelectItem>
                       <SelectItem value="jazz">Jazz</SelectItem>
                       <SelectItem value="classical">Classical</SelectItem>
+                      <SelectItem value="ai-generated">AI-Generated</SelectItem>
+                      <SelectItem value="ai-assisted">AI-Assisted</SelectItem>
                     </SelectContent>
                   </Select>
                   <Textarea
@@ -227,10 +241,10 @@ export const ReleaseManager = () => {
             )}
           </div>
 
-          {/* Right Column - Distribution Settings */}
+          {/* Right Column - Release Settings */}
           <div className="space-y-4">
             <div>
-              <Label>Release Date</Label>
+              <Label>Release Date & Time</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -251,47 +265,38 @@ export const ReleaseManager = () => {
                   />
                 </PopoverContent>
               </Popover>
-              <p className="text-xs text-muted-foreground mt-1">
-                Releases typically go live within 24-48 hours
-              </p>
             </div>
 
             <div>
-              <Label>Distribution Platforms</Label>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                {platforms.map((platform) => (
-                  <Card
-                    key={platform.id}
-                    className={`p-3 cursor-pointer transition-all ${
-                      selectedPlatforms.includes(platform.id)
-                        ? "border-primary bg-primary/10"
-                        : "hover:border-primary/50"
-                    }`}
-                    onClick={() => togglePlatform(platform.id)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={selectedPlatforms.includes(platform.id)}
-                        onCheckedChange={() => togglePlatform(platform.id)}
-                      />
-                      <span className="text-lg">{platform.icon}</span>
-                      <span className="text-sm font-medium">{platform.name}</span>
-                    </div>
-                  </Card>
-                ))}
-              </div>
+              <Label>Timezone</Label>
+              <Select value={timezone} onValueChange={setTimezone}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Select timezone" />
+                </SelectTrigger>
+                <SelectContent>
+                  {timezones.map((tz) => (
+                    <SelectItem key={tz} value={tz}>
+                      {tz.replace("_", " ")}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Release will go live at midnight in selected timezone
+              </p>
             </div>
 
             <Card className="p-4 bg-accent/10 border-accent/20">
               <div className="flex gap-3">
                 <AlertCircle className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <p className="text-sm font-medium">Distribution Terms</p>
+                  <p className="text-sm font-medium">TDZ Distribution</p>
                   <ul className="text-xs text-muted-foreground space-y-1">
                     <li>• You keep 100% of your royalties</li>
-                    <li>• No hidden fees or recurring charges</li>
-                    <li>• Instant access to analytics</li>
-                    <li>• Withdraw earnings anytime</li>
+                    <li>• Instant publishing to TDZ platform</li>
+                    <li>• Real-time streaming analytics</li>
+                    <li>• Direct fan engagement</li>
+                    <li>• AI & human artists welcome</li>
                   </ul>
                 </div>
               </div>
@@ -299,18 +304,18 @@ export const ReleaseManager = () => {
 
             <Button
               onClick={handlePublish}
-              disabled={!selectedTrack || !releaseDate || isSubmitting || selectedPlatforms.length === 0}
+              disabled={!selectedTrack || !releaseDate || isSubmitting}
               className="w-full bg-gradient-to-r from-primary via-secondary to-accent h-12"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Scheduling Release...
+                  Publishing...
                 </>
               ) : (
                 <>
                   <Globe className="w-4 h-4 mr-2" />
-                  Schedule Global Release
+                  Publish to TDZ
                 </>
               )}
             </Button>
@@ -319,4 +324,4 @@ export const ReleaseManager = () => {
       </Card>
     </div>
   );
-}
+};
