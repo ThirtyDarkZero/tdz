@@ -298,6 +298,223 @@ export default function Investors() {
         </div>
       </section>
 
+      {/* TAM / SAM / SOM Market Opportunity */}
+      <section className="py-16 px-4 md:px-6 bg-gradient-to-b from-primary/5 to-transparent">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20 px-4 py-2 mb-4">
+              <Globe className="w-4 h-4 mr-2 inline" />
+              MARKET OPPORTUNITY
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-display font-black mb-4">
+              $100B+ Market Opportunity
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              The global music streaming market is exploding—and independent + AI music is the fastest-growing segment.
+            </p>
+          </div>
+
+          {/* TAM / SAM / SOM Cards */}
+          <div className="grid md:grid-cols-3 gap-6 mb-12">
+            <Card className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-500/40">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-500/20 flex items-center justify-center">
+                  <Globe className="w-8 h-8 text-blue-500" />
+                </div>
+                <p className="text-sm text-blue-400 font-semibold mb-2">TAM</p>
+                <p className="text-xs text-muted-foreground mb-3">Total Addressable Market</p>
+                <div className="text-4xl md:text-5xl font-black text-blue-500 mb-2">$106B</div>
+                <p className="text-sm text-muted-foreground">Global Music Streaming (2029)</p>
+                <div className="mt-4 pt-4 border-t border-blue-500/20 text-left space-y-2">
+                  <p className="text-xs"><span className="text-blue-400">2024:</span> $43.7B</p>
+                  <p className="text-xs"><span className="text-blue-400">2029:</span> $106.6B</p>
+                  <p className="text-xs"><span className="text-blue-400">CAGR:</span> 19.5%</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-purple-500/20 to-purple-600/10 border-purple-500/40">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-500/20 flex items-center justify-center">
+                  <Target className="w-8 h-8 text-purple-500" />
+                </div>
+                <p className="text-sm text-purple-400 font-semibold mb-2">SAM</p>
+                <p className="text-xs text-muted-foreground mb-3">Serviceable Addressable Market</p>
+                <div className="text-4xl md:text-5xl font-black text-purple-500 mb-2">$38B</div>
+                <p className="text-sm text-muted-foreground">Independent + AI Music (2029)</p>
+                <div className="mt-4 pt-4 border-t border-purple-500/20 text-left space-y-2">
+                  <p className="text-xs"><span className="text-purple-400">Independent:</span> $26B (2029)</p>
+                  <p className="text-xs"><span className="text-purple-400">AI Music:</span> $12B (2029)</p>
+                  <p className="text-xs"><span className="text-purple-400">Combined CAGR:</span> 28%</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-green-500/20 to-green-600/10 border-green-500/40">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
+                  <Rocket className="w-8 h-8 text-green-500" />
+                </div>
+                <p className="text-sm text-green-400 font-semibold mb-2">SOM</p>
+                <p className="text-xs text-muted-foreground mb-3">Serviceable Obtainable Market</p>
+                <div className="text-4xl md:text-5xl font-black text-green-500 mb-2">$2.5B</div>
+                <p className="text-sm text-muted-foreground">TDZ Target (Year 5)</p>
+                <div className="mt-4 pt-4 border-t border-green-500/20 text-left space-y-2">
+                  <p className="text-xs"><span className="text-green-400">Market Share:</span> 6.5% of SAM</p>
+                  <p className="text-xs"><span className="text-green-400">Artists:</span> 400K+ creators</p>
+                  <p className="text-xs"><span className="text-green-400">Fans:</span> 5M+ subscribers</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Market Growth Timeline */}
+          <Card className="bg-card/50 backdrop-blur border-border/50 mb-12">
+            <CardContent className="p-8">
+              <h3 className="text-2xl font-bold text-center mb-8">Global Music Market 5-Year Projection</h3>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={[
+                    { year: "2024", total: 43.7, independent: 12.5, ai: 1.2 },
+                    { year: "2025", total: 52.2, independent: 15.8, ai: 2.8 },
+                    { year: "2026", total: 62.4, independent: 19.2, ai: 5.1 },
+                    { year: "2027", total: 74.5, independent: 22.8, ai: 7.8 },
+                    { year: "2028", total: 89.0, independent: 26.5, ai: 10.2 },
+                    { year: "2029", total: 106.6, independent: 30.8, ai: 12.4 }
+                  ]}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="year" stroke="hsl(var(--muted-foreground))" />
+                    <YAxis stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `$${v}B`} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
+                      formatter={(value: number) => [`$${value}B`, '']}
+                    />
+                    <Legend />
+                    <Area type="monotone" dataKey="total" stackId="1" stroke="hsl(var(--primary))" fill="hsl(var(--primary)/0.3)" name="Total Market" />
+                    <Area type="monotone" dataKey="independent" stackId="2" stroke="hsl(var(--chart-1))" fill="hsl(var(--chart-1)/0.5)" name="Independent Music" />
+                    <Area type="monotone" dataKey="ai" stackId="3" stroke="hsl(var(--chart-2))" fill="hsl(var(--chart-2)/0.5)" name="AI Music" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Independent + AI Music Details */}
+          <div className="grid lg:grid-cols-2 gap-8 mb-12">
+            <Card className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border-orange-500/30">
+              <CardContent className="p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center">
+                    <Music className="w-6 h-6 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold">Independent Music</h3>
+                    <p className="text-sm text-muted-foreground">The fastest-growing segment</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center py-3 border-b border-orange-500/20">
+                    <span className="text-muted-foreground">2024 Market Size</span>
+                    <span className="font-bold text-orange-500">$12.5B</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-b border-orange-500/20">
+                    <span className="text-muted-foreground">2029 Projected</span>
+                    <span className="font-bold text-orange-500">$30.8B</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-b border-orange-500/20">
+                    <span className="text-muted-foreground">CAGR</span>
+                    <span className="font-bold text-orange-500">19.8%</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-b border-orange-500/20">
+                    <span className="text-muted-foreground">Share of Total Streams</span>
+                    <span className="font-bold text-orange-500">35%+ by 2029</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3">
+                    <span className="text-muted-foreground">Active Independent Artists</span>
+                    <span className="font-bold text-orange-500">120M+ globally</span>
+                  </div>
+                </div>
+                <div className="mt-6 p-4 bg-orange-500/10 rounded-lg">
+                  <p className="text-sm text-orange-200">
+                    <strong>Key Insight:</strong> Independent artists are leaving major labels at record rates. They want higher payouts, ownership, and direct fan relationships—exactly what TDZ offers.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border-cyan-500/30">
+              <CardContent className="p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                    <Brain className="w-6 h-6 text-cyan-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold">AI-Generated Music</h3>
+                    <p className="text-sm text-muted-foreground">The next frontier</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center py-3 border-b border-cyan-500/20">
+                    <span className="text-muted-foreground">2024 Market Size</span>
+                    <span className="font-bold text-cyan-500">$1.2B</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-b border-cyan-500/20">
+                    <span className="text-muted-foreground">2029 Projected</span>
+                    <span className="font-bold text-cyan-500">$12.4B</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-b border-cyan-500/20">
+                    <span className="text-muted-foreground">CAGR</span>
+                    <span className="font-bold text-cyan-500">59.4%</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-b border-cyan-500/20">
+                    <span className="text-muted-foreground">AI Tracks on DSPs (2024)</span>
+                    <span className="font-bold text-cyan-500">100M+ tracks</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3">
+                    <span className="text-muted-foreground">Daily AI Track Uploads</span>
+                    <span className="font-bold text-cyan-500">150K+ per day</span>
+                  </div>
+                </div>
+                <div className="mt-6 p-4 bg-cyan-500/10 rounded-lg">
+                  <p className="text-sm text-cyan-200">
+                    <strong>First-Mover Advantage:</strong> TDZ is the ONLY platform paying AI artists $1/stream. While competitors ban or throttle AI music, we embrace it—capturing a $12B+ market.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Why TDZ Wins */}
+          <Card className="bg-gradient-to-br from-green-500/10 via-primary/5 to-secondary/10 border-green-500/30">
+            <CardContent className="p-8">
+              <h3 className="text-2xl font-bold text-center mb-6">Why TDZ Captures This Market</h3>
+              <div className="grid md:grid-cols-4 gap-6">
+                <div className="text-center">
+                  <div className="text-3xl font-black text-green-500 mb-2">$1.00</div>
+                  <p className="text-sm font-semibold mb-1">Per Stream</p>
+                  <p className="text-xs text-muted-foreground">333x more than Spotify attracts top indie talent</p>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-black text-purple-500 mb-2">100%</div>
+                  <p className="text-sm font-semibold mb-1">Rights Retention</p>
+                  <p className="text-xs text-muted-foreground">Artists keep full ownership of their music</p>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-black text-cyan-500 mb-2">AI = Human</div>
+                  <p className="text-sm font-semibold mb-1">Equal Treatment</p>
+                  <p className="text-xs text-muted-foreground">AI artists earn the same $1/stream payout</p>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-black text-orange-500 mb-2">Direct</div>
+                  <p className="text-sm font-semibold mb-1">No Middlemen</p>
+                  <p className="text-xs text-muted-foreground">Artist-to-fan, no label gatekeeping</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
       {/* THE GOLDEN RULE Section */}
       <section className="py-16 px-4 md:px-6 bg-gradient-to-b from-green-500/5 to-transparent">
         <div className="max-w-7xl mx-auto">
