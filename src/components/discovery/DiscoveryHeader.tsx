@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { NotificationsPanel } from "@/components/NotificationsPanel";
+import { useAuth } from "@/hooks/useAuth";
 
 interface DiscoveryHeaderProps {
   searchQuery: string;
@@ -25,6 +26,7 @@ export function DiscoveryHeader({
   onMenuClick 
 }: DiscoveryHeaderProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 py-3">
@@ -65,6 +67,8 @@ export function DiscoveryHeader({
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
+          {user && <NotificationsPanel />}
+          
           {isArtist && (
             <Button 
               variant="outline"
