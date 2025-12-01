@@ -16,14 +16,22 @@ export function DiscoveryLayout({
   player 
 }: DiscoveryLayoutProps) {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-0 left-0 w-[1200px] h-[1200px] bg-primary/15 rounded-full blur-[200px] animate-pulse animated-gradient" />
+        <div className="absolute top-1/4 right-0 w-[900px] h-[900px] bg-secondary/10 rounded-full blur-[180px] animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-0 left-1/3 w-[800px] h-[800px] bg-accent/10 rounded-full blur-[160px] animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary-glow/5 rounded-full blur-[140px]" />
+      </div>
+
       {/* Fixed Header */}
       <header className="fixed top-0 left-0 right-0 z-50 glass-card-premium border-b neon-border-strong shadow-glow-lg">
         {header}
       </header>
 
       {/* Main Content Area - Below header, above player */}
-      <div className="flex-1 pt-16 pb-24">
+      <div className="flex-1 pt-16 pb-24 relative z-10">
         <div className="h-full flex">
           {/* Left Column - Album Art & Artist Info */}
           <aside className="hidden lg:block w-80 xl:w-96 flex-shrink-0 border-r border-border/30 overflow-y-auto scrollbar-hide">
