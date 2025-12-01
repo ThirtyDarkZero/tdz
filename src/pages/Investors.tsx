@@ -38,13 +38,31 @@ export default function Investors() {
   const navigate = useNavigate();
   const [activeGraph, setActiveGraph] = useState("revenue");
 
-  // Financial projection data
+  // Financial projection data - $200M by Year 5
   const revenueData = [
-    { year: "Year 1", revenue: 23.1, artists: 50, profit: 8.2 },
-    { year: "Year 2", revenue: 52.4, artists: 120, profit: 21.5 },
-    { year: "Year 3", revenue: 89.7, artists: 220, profit: 42.8 },
-    { year: "Year 4", revenue: 136.2, artists: 360, profit: 71.3 },
-    { year: "Year 5", revenue: 194.5, artists: 500, profit: 108.6 }
+    { year: "Year 1", revenue: 8, streams: 6, profit: 2, arps: 1.33 },
+    { year: "Year 2", revenue: 20, streams: 15, profit: 5, arps: 1.33 },
+    { year: "Year 3", revenue: 45, streams: 38, profit: 7, arps: 1.18 },
+    { year: "Year 4", revenue: 70, streams: 55, profit: 15, arps: 1.27 },
+    { year: "Year 5", revenue: 200, streams: 150, profit: 50, arps: 1.33 }
+  ];
+
+  const yearlyBreakdown = [
+    { year: "Year 1", target: "$8M", maxStreams: "6M", cumulative: "$8M", arps: "$1.33" },
+    { year: "Year 2", target: "$20M", maxStreams: "15M", cumulative: "$28M", arps: "$1.33" },
+    { year: "Year 3", target: "$45M", maxStreams: "38M", cumulative: "$73M", arps: "$1.18" },
+    { year: "Year 4", target: "$70M", maxStreams: "55M", cumulative: "$143M", arps: "$1.27" },
+    { year: "Year 5", target: "$200M", maxStreams: "150M", cumulative: "$200M+", arps: "$1.33" }
+  ];
+
+  const revenueStreamsYear5 = [
+    { source: "Artist Subscriptions", amount: "$120M", detail: "400K artists × $25/mo" },
+    { source: "Fan Subscriptions", amount: "$144M", detail: "1M fans × $12/mo" },
+    { source: "Ads Revenue", amount: "$20M", detail: "3-5M free users" },
+    { source: "Premium AI Tools", amount: "$18M", detail: "150K pro users × $10/mo" },
+    { source: "Marketplace Fees", amount: "$5M", detail: "Sync, collabs, gigs" },
+    { source: "Download Fees", amount: "$1.8M", detail: "1M downloads × $0.15 fee" },
+    { source: "Sponsorships", amount: "$6M", detail: "Brand partnerships" }
   ];
 
   const marketShareData = [
@@ -56,11 +74,11 @@ export default function Investors() {
   ];
 
   const revenuePoolData = [
-    { name: "Subscriptions", value: 55, color: "hsl(var(--primary))" },
-    { name: "Downloads", value: 20, color: "hsl(var(--secondary))" },
-    { name: "Ads & Sponsors", value: 15, color: "hsl(var(--accent))" },
-    { name: "Premium Features", value: 7, color: "hsl(var(--chart-1))" },
-    { name: "Live Events", value: 3, color: "hsl(var(--chart-2))" }
+    { name: "Fan Subscriptions", value: 46, color: "hsl(var(--primary))" },
+    { name: "Artist Subscriptions", value: 38, color: "hsl(var(--secondary))" },
+    { name: "Ads & Sponsors", value: 8, color: "hsl(var(--accent))" },
+    { name: "Premium AI Tools", value: 6, color: "hsl(var(--chart-1))" },
+    { name: "Downloads & Other", value: 2, color: "hsl(var(--chart-2))" }
   ];
 
   const userGrowthData = [
@@ -140,8 +158,8 @@ export default function Investors() {
   ];
 
   const metrics = [
-    { label: "Target Market", value: "$76.9B", sublabel: "Global music streaming by 2027" },
-    { label: "Year 1 Revenue", value: "$23.1M", sublabel: "Projected with 50K artists" },
+    { label: "Year 5 Revenue", value: "$200M+", sublabel: "With $314M total pool capacity" },
+    { label: "Target ARPS", value: "$1.35", sublabel: "Average Revenue Per Stream" },
     { label: "Artist Retention", value: "94%", sublabel: "Industry-leading loyalty" },
     { label: "Per-Stream Payout", value: "$1.00", sublabel: "333x more than Spotify" }
   ];
@@ -280,51 +298,82 @@ export default function Investors() {
         </div>
       </section>
 
-      {/* Revenue Pool Model - NEW SECTION */}
+      {/* THE GOLDEN RULE Section */}
       <section className="py-16 px-4 md:px-6 bg-gradient-to-b from-green-500/5 to-transparent">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <Badge className="bg-green-500/10 text-green-500 border-green-500/20 px-4 py-2 mb-4">
-              <PiggyBank className="w-4 h-4 mr-2 inline" />
-              REVENUE POOL MODEL
+            <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20 px-4 py-2 mb-4">
+              <Star className="w-4 h-4 mr-2 inline" />
+              THE GOLDEN RULE
             </Badge>
             <h2 className="text-4xl md:text-6xl font-display font-black mb-4">
-              How We Pay $1 Per Stream
+              ARPS &gt; $1.00
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              A diversified revenue pool that funds sustainable artist payouts
+              Average Revenue Per Stream must always exceed $1.00 to stay profitable. TDZ achieves this through diversified revenue streams.
             </p>
           </div>
 
+          <Card className="bg-gradient-to-br from-green-500/10 via-primary/5 to-secondary/10 border-green-500/30 mb-12">
+            <CardContent className="p-8 text-center">
+              <h3 className="text-2xl font-bold mb-4">The Profit Formula</h3>
+              <div className="text-3xl md:text-4xl font-mono font-black text-green-500 mb-4">
+                Profit = (Total Revenue) – (Total Streams × $1)
+              </div>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                You win when: <span className="text-green-500 font-bold">ARPS &gt; $1.00</span>
+              </p>
+              <div className="mt-6 p-4 bg-background/50 rounded-lg inline-block">
+                <p className="text-sm">Most streaming platforms generate <span className="font-bold">$1.40–$3.00</span> revenue per user per month.</p>
+                <p className="text-sm text-green-500 font-semibold mt-2">TDZ generates much more through downloads, AI tools, and subscriptions.</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Year-by-Year Revenue Goals */}
+          <div className="text-center mb-8">
+            <h3 className="text-3xl font-bold mb-2">$200 Million Revenue by Year 5</h3>
+            <p className="text-muted-foreground">40-50% annual growth curve – exactly what investors want</p>
+          </div>
+
+          <div className="grid lg:grid-cols-5 gap-4 mb-12">
+            {yearlyBreakdown.map((year, idx) => (
+              <Card key={idx} className={`${idx === 4 ? 'bg-gradient-to-br from-green-500/20 to-primary/20 border-green-500/40' : 'bg-card/50 border-border/50'}`}>
+                <CardContent className="p-6 text-center">
+                  <p className="text-sm text-muted-foreground mb-2">{year.year}</p>
+                  <p className="text-3xl font-black text-green-500 mb-1">{year.target}</p>
+                  <p className="text-xs text-muted-foreground">Revenue Target</p>
+                  <div className="mt-4 pt-4 border-t border-border/50">
+                    <p className="text-sm font-medium">{year.maxStreams} streams</p>
+                    <p className="text-xs text-primary">ARPS: {year.arps}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Revenue Streams Breakdown */}
           <div className="grid lg:grid-cols-2 gap-8 mb-12">
             <Card className="bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20">
               <CardContent className="p-8">
                 <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
                   <DollarSign className="w-8 h-8 text-green-500" />
-                  The TDZ Revenue Pool
+                  Year 5 Revenue Streams
                 </h3>
                 <div className="space-y-4">
-                  {[
-                    { source: "Fan Subscriptions", pct: 55, desc: "Monthly streaming subscriptions" },
-                    { source: "Download Purchases", pct: 20, desc: "Direct track purchases" },
-                    { source: "Ads & Sponsorships", pct: 15, desc: "Platform advertising revenue" },
-                    { source: "Premium Features", pct: 7, desc: "Pro tools and upgrades" },
-                    { source: "Live Events", pct: 3, desc: "Concert/event revenue share" }
-                  ].map((item, idx) => (
-                    <div key={idx} className="space-y-1">
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">{item.source}</span>
-                        <span className="font-bold text-green-500">{item.pct}%</span>
+                  {revenueStreamsYear5.map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 bg-background/50 rounded-lg">
+                      <div>
+                        <p className="font-medium">{item.source}</p>
+                        <p className="text-xs text-muted-foreground">{item.detail}</p>
                       </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"
-                          style={{ width: `${item.pct}%` }}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                      <p className="text-xl font-black text-green-500">{item.amount}</p>
                     </div>
                   ))}
+                  <div className="flex items-center justify-between p-4 bg-green-500/20 rounded-lg border border-green-500/40">
+                    <p className="text-lg font-bold">Total Revenue Capacity</p>
+                    <p className="text-2xl font-black text-green-500">$314M</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -341,7 +390,8 @@ export default function Investors() {
                     { title: "Premium Fan Engagement", desc: "Fans who pay more, engage more" },
                     { title: "Viral Artist Acquisition", desc: "Artists recruit other artists" },
                     { title: "Lower Marketing Costs", desc: "Word-of-mouth drives growth" },
-                    { title: "Multiple Revenue Streams", desc: "Diversified income reduces risk" }
+                    { title: "Multiple Revenue Streams", desc: "Diversified income reduces risk" },
+                    { title: "Controlled Stream Volume", desc: "TDZ streams ramp slower than Spotify, giving room to scale" }
                   ].map((item, idx) => (
                     <div key={idx} className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
@@ -356,31 +406,30 @@ export default function Investors() {
             </Card>
           </div>
 
-          {/* Financial Breakdown */}
+          {/* Streaming Cost vs Revenue */}
           <Card className="bg-gradient-to-br from-card/80 to-card/60 border-green-500/20">
             <CardContent className="p-8">
-              <h3 className="text-2xl font-bold mb-6 text-center">Financial Model Breakdown</h3>
-              <div className="grid md:grid-cols-4 gap-6">
-                <div className="text-center p-4 bg-green-500/10 rounded-lg">
-                  <p className="text-3xl font-black text-green-500">$9.99</p>
-                  <p className="text-sm font-medium">Avg Subscription</p>
-                  <p className="text-xs text-muted-foreground mt-1">Fan monthly fee</p>
-                </div>
-                <div className="text-center p-4 bg-primary/10 rounded-lg">
-                  <p className="text-3xl font-black text-primary">10</p>
-                  <p className="text-sm font-medium">Streams/Sub</p>
-                  <p className="text-xs text-muted-foreground mt-1">Break-even per month</p>
-                </div>
-                <div className="text-center p-4 bg-secondary/10 rounded-lg">
-                  <p className="text-3xl font-black text-secondary">$1.00</p>
-                  <p className="text-sm font-medium">Per Stream</p>
-                  <p className="text-xs text-muted-foreground mt-1">Artist payout</p>
-                </div>
-                <div className="text-center p-4 bg-accent/10 rounded-lg">
-                  <p className="text-3xl font-black text-accent">100%</p>
-                  <p className="text-sm font-medium">Downloads</p>
-                  <p className="text-xs text-muted-foreground mt-1">To artist</p>
-                </div>
+              <h3 className="text-2xl font-bold mb-6 text-center">Streaming Cost Model</h3>
+              <div className="grid md:grid-cols-4 gap-6 mb-8">
+                {[
+                  { streams: "10M", payout: "$10M", revenue: "$13.5M", profit: "$3.5M" },
+                  { streams: "50M", payout: "$50M", revenue: "$67.5M", profit: "$17.5M" },
+                  { streams: "100M", payout: "$100M", revenue: "$135M", profit: "$35M" },
+                  { streams: "200M", payout: "$200M", revenue: "$270M", profit: "$70M" }
+                ].map((item, idx) => (
+                  <div key={idx} className="text-center p-4 bg-background/50 rounded-lg">
+                    <p className="text-2xl font-black text-primary mb-1">{item.streams}</p>
+                    <p className="text-xs text-muted-foreground mb-3">Streams</p>
+                    <div className="space-y-1 text-sm">
+                      <p><span className="text-destructive">Payout:</span> {item.payout}</p>
+                      <p><span className="text-green-500">Revenue:</span> {item.revenue}</p>
+                      <p className="font-bold text-green-500">Profit: {item.profit}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/30">
+                <p className="text-lg font-semibold">At ARPS = $1.35, TDZ can support <span className="text-green-500 font-black">200M+ streams annually</span> while generating <span className="text-green-500 font-black">$300M+ revenue</span></p>
               </div>
             </CardContent>
           </Card>
@@ -719,6 +768,41 @@ export default function Investors() {
               </Card>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Investor Summary */}
+      <section className="py-16 px-4 md:px-6">
+        <div className="max-w-5xl mx-auto">
+          <Card className="bg-gradient-to-br from-green-500/10 via-primary/5 to-secondary/10 border-green-500/40">
+            <CardContent className="p-8 md:p-12">
+              <div className="text-center mb-6">
+                <Badge className="bg-green-500 text-background px-4 py-2 mb-4">
+                  INVESTOR SUMMARY
+                </Badge>
+              </div>
+              <blockquote className="text-lg md:text-xl leading-relaxed text-center italic mb-8">
+                "TDZ generates an average of <span className="text-green-500 font-bold not-italic">$1.35–$1.80</span> per stream in revenue from subscriptions, ads, premium tools, and marketplace activity. We pay artists <span className="text-green-500 font-bold not-italic">$1.00</span> per stream. The margin between ARPS and artist payout ensures profitability even at high streaming volume."
+              </blockquote>
+              <p className="text-center text-lg text-muted-foreground">
+                "At scale, TDZ can support <span className="text-green-500 font-semibold">200M+ streams annually</span> while generating <span className="text-green-500 font-semibold">$300M+ revenue</span> and paying artists fairly."
+              </p>
+              <div className="grid md:grid-cols-3 gap-6 mt-8 pt-8 border-t border-green-500/20">
+                <div className="text-center">
+                  <p className="text-3xl font-black text-green-500">$314M</p>
+                  <p className="text-sm text-muted-foreground">Year 5 Revenue Pool</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-3xl font-black text-primary">40-50%</p>
+                  <p className="text-sm text-muted-foreground">Annual Growth Rate</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-3xl font-black text-secondary">$200M+</p>
+                  <p className="text-sm text-muted-foreground">Year 5 Target</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
