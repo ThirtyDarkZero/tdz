@@ -3,6 +3,7 @@ import { LogOut, Upload } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
+import { NotificationsPanel } from "./NotificationsPanel";
 
 export const TopBar = ({ onUploadClick }: { onUploadClick?: () => void }) => {
   const { signOut } = useAuth();
@@ -35,6 +36,8 @@ export const TopBar = ({ onUploadClick }: { onUploadClick?: () => void }) => {
       </div>
       
       <div className="flex items-center gap-2 md:gap-4">
+        <NotificationsPanel />
+        
         <Button
           onClick={handleUploadMusic}
           variant="outline"
