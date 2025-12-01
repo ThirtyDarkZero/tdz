@@ -81,8 +81,9 @@ export function useDiscoveryData() {
         ...track,
         artist_user_id: artistMap.get(track.artist_name),
         album_cover_path: track.album_cover_path || track.albums?.cover_art_path,
+        album_cover_bucket: track.album_cover_bucket || 'album-covers',
         motion_cover_path: track.motion_cover_path || track.albums?.motion_cover_path,
-        motion_cover_bucket: track.motion_cover_bucket || track.albums?.motion_cover_bucket,
+        motion_cover_bucket: track.motion_cover_bucket || track.albums?.motion_cover_bucket || 'motion-covers',
       }));
 
     setTracks(enhancedTracks);

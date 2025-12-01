@@ -10,7 +10,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   ArrowLeft, Edit, Save, X, Music, Heart, Clock, 
-  Camera, Users, ListMusic, Share2, Settings, Play
+  Camera, Users, ListMusic, Share2, Settings, Play,
+  Trophy, Flame, Star, Zap, Headphones, TrendingUp
 } from "lucide-react";
 import { toast } from "sonner";
 import { PlaylistManager } from "@/components/PlaylistManager";
@@ -218,14 +219,18 @@ export default function ListenerProfile() {
 
   const handleSave = async () => {
     try {
-      if (!user) return;
+      if (!user || !profile) return;
 
       const { error } = await supabase
         .from("listener_profiles")
-        .upsert({
-          user_id: user.id,
-          ...formData,
-        });
+        .update({
+          display_name: formData.display_name,
+          bio: formData.bio,
+          location: formData.location,
+          favorite_genres: formData.favorite_genres,
+          updated_at: new Date().toISOString()
+        })
+        .eq("user_id", user.id);
 
       if (error) throw error;
 
@@ -398,6 +403,109 @@ export default function ListenerProfile() {
         ) : formData.bio ? (
           <p className="text-muted-foreground">{formData.bio}</p>
         ) : null}
+      </div>
+
+      {/* Stats & Achievements Section */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-6">
+        {/* Listening Stats Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+          <Card className="glass-card-premium p-4 text-center hover:border-primary/50 transition-all">
+            <Headphones className="w-6 h-6 mx-auto mb-2 text-primary" />
+            <div className="text-2xl font-bold">{recentlyPlayed.length * 3}</div>
+            <div className="text-xs text-muted-foreground">Total Plays</div>
+          </Card>
+          <Card className="glass-card-premium p-4 text-center hover:border-primary/50 transition-all">
+            <Clock className="w-6 h-6 mx-auto mb-2 text-green-500" />
+            <div className="text-2xl font-bold">{Math.round(recentlyPlayed.length * 3 * 3.5 / 60)}h</div>
+            <div className="text-xs text-muted-foreground">Hours Listened</div>
+          </Card>
+          <Card className="glass-card-premium p-4 text-center hover:border-primary/50 transition-all">
+            <Users className="w-6 h-6 mx-auto mb-2 text-blue-500" />
+            <div className="text-2xl font-bold">{followingCount}</div>
+            <div className="text-xs text-muted-foreground">Artists Followed</div>
+          </Card>
+          <Card className="glass-card-premium p-4 text-center hover:border-primary/50 transition-all">
+            <TrendingUp className="w-6 h-6 mx-auto mb-2 text-orange-500" />
+            <div className="text-2xl font-bold">{likedTracks.length > 0 ? Math.min(100, likedTracks.length * 5) : 0}%</div>
+            <div className="text-xs text-muted-foreground">Taste Score</div>
+          </Card>
+        </div>
+
+        {/* Achievements Section */}
+        <Card className="glass-card-premium p-4 sm:p-6 mb-6">
+          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-yellow-500" />
+            Achievements
+          </h3>
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            <Badge className="gap-1 py-2 px-3 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-yellow-500/30 hover:border-yellow-500/50">
+              <Star className="w-3 h-3 text-yellow-500" />
+              Early Adopter
+            </Badge>
+            {likedTracks.length >= 5 && (
+              <Badge className="gap-1 py-2 px-3 bg-gradient-to-r from-pink-500/20 to-red-500/20 border-pink-500/30 hover:border-pink-500/50">
+                <Heart className="w-3 h-3 text-pink-500" />
+                Music Lover
+              </Badge>
+            )}
+            {playlists.length >= 1 && (
+              <Badge className="gap-1 py-2 px-3 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 border-purple-500/30 hover:border-purple-500/50">
+                <ListMusic className="w-3 h-3 text-purple-500" />
+                Curator
+              </Badge>
+            )}
+            {followingCount >= 3 && (
+              <Badge className="gap-1 py-2 px-3 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border-blue-500/30 hover:border-blue-500/50">
+                <Users className="w-3 h-3 text-blue-500" />
+                Fan Club
+              </Badge>
+            )}
+            {recentlyPlayed.length >= 10 && (
+              <Badge className="gap-1 py-2 px-3 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-green-500/30 hover:border-green-500/50">
+                <Flame className="w-3 h-3 text-green-500" />
+                On Fire
+              </Badge>
+            )}
+            <Badge className="gap-1 py-2 px-3 bg-gradient-to-r from-primary/20 to-secondary/20 border-primary/30 hover:border-primary/50">
+              <Zap className="w-3 h-3 text-primary" />
+              TDZ Pioneer
+            </Badge>
+          </div>
+        </Card>
+
+        {/* Music Taste Section */}
+        <Card className="glass-card-premium p-4 sm:p-6">
+          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <Music className="w-5 h-5 text-primary" />
+            Music Taste
+          </h3>
+          <div className="space-y-3">
+            {[
+              { genre: "Hip-Hop", percent: 45, color: "bg-purple-500" },
+              { genre: "R&B", percent: 30, color: "bg-blue-500" },
+              { genre: "Pop", percent: 15, color: "bg-pink-500" },
+              { genre: "Electronic", percent: 10, color: "bg-cyan-500" },
+            ].map((item) => (
+              <div key={item.genre} className="space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span>{item.genre}</span>
+                  <span className="text-muted-foreground">{item.percent}%</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full ${item.color} rounded-full transition-all duration-1000`}
+                    style={{ width: `${item.percent}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          {likedTracks.length === 0 && recentlyPlayed.length === 0 && (
+            <p className="text-center text-muted-foreground text-sm mt-4">
+              Listen to more music to personalize your taste profile!
+            </p>
+          )}
+        </Card>
       </div>
 
       {/* Main Content Tabs */}
