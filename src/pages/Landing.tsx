@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Music, Upload, TrendingUp, Zap, Globe, Radio, Shield, Users, ArrowRight, CheckCircle2, DollarSign, BarChart3, Headphones, Heart, Play, Mic2, Layers, Library, Image, BookOpen, Film, User, ShoppingBag, LayoutDashboard } from "lucide-react";
+import { Music, Upload, TrendingUp, Zap, Globe, Radio, Shield, Users, ArrowRight, CheckCircle2, DollarSign, BarChart3, Headphones, Heart, Play, Mic2, Layers, Library, Image, BookOpen, Film, User, ShoppingBag, LayoutDashboard, Download, CreditCard } from "lucide-react";
 import studioBackground from "@/assets/studio-background.jpg";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,21 +15,21 @@ import { StudioPhoneMockups, MusicPlayerPhoneMockups } from "@/components/Studio
 
 const artistFeatures = [
   {
-    icon: Upload,
-    title: "Direct Publishing",
-    description: "Upload and go live on TDZ Streaming instantly",
-    color: "from-primary to-secondary"
+    icon: DollarSign,
+    title: "$1 Per Stream",
+    description: "Earn $1.00 for every stream on TDZ—not fractions of a cent",
+    color: "from-green-500 to-emerald-500"
+  },
+  {
+    icon: Download,
+    title: "Paid Downloads",
+    description: "Set your price, keep 100% of download revenue",
+    color: "from-secondary to-accent"
   },
   {
     icon: BarChart3,
     title: "Real-Time Analytics",
-    description: "Track your growth with live streaming data",
-    color: "from-secondary to-accent"
-  },
-  {
-    icon: DollarSign,
-    title: "100% Royalties",
-    description: "Keep everything you earn, forever",
+    description: "Track streams, downloads, and earnings live",
     color: "from-accent to-primary"
   },
   {
@@ -49,14 +49,14 @@ const fanFeatures = [
   },
   {
     icon: Heart,
-    title: "Support Artists",
-    description: "Your streams directly support independent creators",
+    title: "Support Artists Directly",
+    description: "Your streams pay artists $1 each—real money, real impact",
     color: "from-accent to-secondary"
   },
   {
-    icon: TrendingUp,
-    title: "Discover New Music",
-    description: "Find rising artists before they hit mainstream",
+    icon: Download,
+    title: "Buy Downloads",
+    description: "Purchase tracks at artist-set prices, keep forever",
     color: "from-primary to-secondary"
   },
   {
@@ -87,6 +87,7 @@ const studioTabs = [
   { icon: Heart, label: "Fans" },
   { icon: BookOpen, label: "Story" },
 ];
+
 export default function Landing() {
   const [prompt, setPrompt] = useState("");
   const [mousePosition, setMousePosition] = useState({
@@ -113,6 +114,7 @@ export default function Landing() {
     
     fetchTracks();
   }, []);
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({
@@ -123,41 +125,42 @@ export default function Landing() {
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
+
   const handleQuickGenerate = () => {
     if (prompt.trim()) {
-      // Validate and sanitize prompt before storing
-      const sanitized = prompt.trim().slice(0, 500); // Limit length
+      const sanitized = prompt.trim().slice(0, 500);
       if (sanitized.length > 0) {
         localStorage.setItem("quickPrompt", sanitized);
         navigate("/auth");
       }
     }
   };
-  return <div className="min-h-screen relative overflow-hidden">
 
+  return (
+    <div className="min-h-screen relative overflow-hidden">
       {/* Animated Grid Background */}
       <div className="fixed inset-0 opacity-20 pointer-events-none">
         <div className="absolute inset-0" style={{
-        backgroundImage: `linear-gradient(hsl(var(--primary) / 0.3) 1px, transparent 1px),
+          backgroundImage: `linear-gradient(hsl(var(--primary) / 0.3) 1px, transparent 1px),
                            linear-gradient(90deg, hsl(var(--primary) / 0.3) 1px, transparent 1px)`,
-        backgroundSize: '50px 50px',
-        animation: 'grid-flow 20s linear infinite'
-      }} />
+          backgroundSize: '50px 50px',
+          animation: 'grid-flow 20s linear infinite'
+        }} />
       </div>
 
       {/* Floating Orbs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[100px] animate-pulse" style={{
-        animationDuration: '4s'
-      }} />
+          animationDuration: '4s'
+        }} />
         <div className="absolute bottom-1/4 right-1/4 w-[32rem] h-[32rem] bg-secondary/20 rounded-full blur-[120px] animate-pulse" style={{
-        animationDuration: '6s',
-        animationDelay: '1s'
-      }} />
+          animationDuration: '6s',
+          animationDelay: '1s'
+        }} />
         <div className="absolute top-1/2 right-1/3 w-80 h-80 bg-accent/20 rounded-full blur-[100px] animate-pulse" style={{
-        animationDuration: '5s',
-        animationDelay: '2s'
-      }} />
+          animationDuration: '5s',
+          animationDelay: '2s'
+        }} />
       </div>
 
       {/* Hero Section */}
@@ -167,10 +170,10 @@ export default function Landing() {
         
         {/* Studio Background */}
         <div className="absolute inset-0 bg-cover bg-center transition-transform duration-100" style={{
-        backgroundImage: `url(${studioBackground})`,
-        transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px) scale(1.1)`,
-        filter: 'brightness(0.3)'
-      }}>
+          backgroundImage: `url(${studioBackground})`,
+          transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px) scale(1.1)`,
+          filter: 'brightness(0.3)'
+        }}>
           <div className="absolute inset-0 bg-gradient-to-b from-background via-background/40 to-background" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,hsl(var(--background))_100%)]" />
         </div>
@@ -188,55 +191,44 @@ export default function Landing() {
 
           {/* Floating Badge */}
           <div className="animate-fade-in" style={{ animationDelay: '0.05s' }}>
-          <Badge className="bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20 text-foreground border-primary/40 backdrop-blur-xl px-4 md:px-6 py-2 text-sm md:text-base neon-border">
-            <Globe className="w-3 h-3 md:w-4 md:h-4 mr-2 animate-pulse" />
-            <span className="hidden sm:inline">Premium Streaming · AI-Friendly · 100% Royalties</span>
-            <span className="sm:hidden">Human & AI Artists</span>
-          </Badge>
+            <Badge className="bg-gradient-to-r from-green-500/20 via-emerald-500/20 to-primary/20 text-foreground border-green-500/40 backdrop-blur-xl px-4 md:px-6 py-2 text-sm md:text-base neon-border">
+              <DollarSign className="w-3 h-3 md:w-4 md:h-4 mr-2 animate-pulse text-green-500" />
+              <span className="hidden sm:inline">$1 Per Stream · AI-Friendly · 100% Download Revenue</span>
+              <span className="sm:hidden">$1 Per Stream</span>
+            </Badge>
           </div>
 
           {/* 3D Layered Title */}
           <div className="relative px-4 perspective-2000">
-            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-9xl font-display font-black leading-none tracking-tighter">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-display font-black leading-none tracking-tighter">
               <div className="relative inline-block animate-fade-in float-slow" style={{
-              animationDelay: '0.1s'
-            }}>
+                animationDelay: '0.1s'
+              }}>
                 <span className="relative z-10 bg-gradient-to-b from-foreground via-foreground/80 to-foreground/60 bg-clip-text text-transparent drop-shadow-2xl">
-                  DISTRIBUTE
-                </span>
-                <span className="absolute inset-0 blur-3xl bg-gradient-to-r from-primary via-secondary to-accent opacity-60 animate-pulse-glow">
-                  DISTRIBUTE
+                  THE FIRST PLATFORM
                 </span>
               </div>
               <br />
               <div className="relative inline-block animate-scale-in" style={{
-              animationDelay: '0.2s'
-            }}>
-                <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent glow-text-rainbow animated-gradient-fast">
-                  YOUR MUSIC
-                </span>
-              </div>
-              <br />
-              <div className="relative inline-block animate-fade-in float" style={{
-              animationDelay: '0.3s'
-            }}>
-                <span className="relative z-10 bg-gradient-to-b from-foreground via-foreground/80 to-foreground/60 bg-clip-text text-transparent drop-shadow-2xl">
-                  WORLDWIDE
+                animationDelay: '0.2s'
+              }}>
+                <span className="bg-gradient-to-r from-green-500 via-emerald-500 to-primary bg-clip-text text-transparent glow-text-rainbow animated-gradient-fast">
+                  THAT PAYS $1 PER STREAM
                 </span>
               </div>
             </h1>
           </div>
 
-          <p className="text-base sm:text-lg md:text-2xl lg:text-3xl text-foreground/80 max-w-4xl mx-auto animate-fade-in font-light px-4" style={{
-          animationDelay: '0.4s'
-        }}>
-            From <span className="text-primary font-semibold">local artist</span> to <span className="text-secondary font-semibold">global sensation</span> in <span className="text-accent font-semibold">24 hours</span>
+          <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-foreground/80 max-w-4xl mx-auto animate-fade-in font-light px-4" style={{
+            animationDelay: '0.4s'
+          }}>
+            <span className="text-green-500 font-semibold">AI-friendly</span>. <span className="text-primary font-semibold">Artist-first</span>. Your music, your profits—<span className="text-emerald-500 font-semibold">100% of download revenue</span>, <span className="text-green-500 font-semibold">$1 for every stream</span>, and real-time earnings.
           </p>
 
           {/* Quick Start Input */}
           <div className="animate-scale-in max-w-4xl mx-auto px-4" style={{
-          animationDelay: '0.5s'
-        }}>
+            animationDelay: '0.5s'
+          }}>
             <EnhancedCard glowColor="primary">
               <div className="p-4 md:p-8 space-y-4">
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -250,23 +242,23 @@ export default function Landing() {
                   <Button 
                     size="lg" 
                     onClick={handleQuickGenerate} 
-                    className="bg-gradient-to-r from-primary via-secondary to-accent animated-gradient h-12 md:h-14 px-6 md:px-8 group animate-pulse-glow"
+                    className="bg-gradient-to-r from-green-500 via-emerald-500 to-primary animated-gradient h-12 md:h-14 px-6 md:px-8 group animate-pulse-glow"
                   >
                     <Upload className="w-5 h-5 md:w-6 md:h-6 group-hover:-translate-y-1 group-hover:rotate-12 transition-all" />
                   </Button>
                 </div>
                 <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6 text-xs md:text-sm">
-                  <div className="flex items-center gap-2 text-primary">
-                    <Zap className="w-3 h-3 md:w-4 md:h-4" />
-                    <span>Instant Publishing</span>
+                  <div className="flex items-center gap-2 text-green-500">
+                    <DollarSign className="w-3 h-3 md:w-4 md:h-4" />
+                    <span>$1 Per Stream</span>
                   </div>
                   <div className="flex items-center gap-2 text-secondary">
                     <Globe className="w-3 h-3 md:w-4 md:h-4" />
                     <span>AI Artists Welcome</span>
                   </div>
                   <div className="flex items-center gap-2 text-accent">
-                    <DollarSign className="w-3 h-3 md:w-4 md:h-4" />
-                    <span>100% Royalties</span>
+                    <Download className="w-3 h-3 md:w-4 md:h-4" />
+                    <span>100% Download Revenue</span>
                   </div>
                 </div>
               </div>
@@ -275,14 +267,14 @@ export default function Landing() {
 
           {/* Floating CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center animate-fade-in px-4" style={{
-          animationDelay: '0.6s'
-        }}>
+            animationDelay: '0.6s'
+          }}>
             <Button 
               size="lg" 
               onClick={() => navigate("/auth")} 
-              className="relative group bg-gradient-to-r from-primary via-secondary to-accent text-background font-bold text-base md:text-xl px-8 md:px-12 h-14 md:h-16 hover:scale-110 transition-all duration-300 w-full sm:w-auto animated-gradient neon-border-strong float-slow"
+              className="relative group bg-gradient-to-r from-green-500 via-emerald-500 to-primary text-background font-bold text-base md:text-xl px-8 md:px-12 h-14 md:h-16 hover:scale-110 transition-all duration-300 w-full sm:w-auto animated-gradient neon-border-strong float-slow"
             >
-              <span className="relative z-10">START DISTRIBUTING</span>
+              <span className="relative z-10">START EARNING $1/STREAM</span>
               <ArrowRight className="w-5 h-5 md:w-6 md:h-6 ml-2 md:ml-3 group-hover:translate-x-3 group-hover:scale-125 transition-all relative z-10" />
               <div className="absolute inset-0 bg-gradient-to-r from-accent via-primary to-secondary opacity-0 group-hover:opacity-100 blur-2xl transition-opacity duration-500" />
             </Button>
@@ -299,26 +291,36 @@ export default function Landing() {
 
           {/* Stats Bar */}
           <div className="flex flex-wrap justify-center gap-6 md:gap-12 animate-fade-in px-4" style={{
-          animationDelay: '0.7s'
-        }}>
+            animationDelay: '0.7s'
+          }}>
             {[{
-            value: '50K+',
-            label: 'Artists'
-          }, {
-            value: 'Instant',
-            label: 'Go Live'
-          }, {
-            value: 'AI+Human',
-            label: 'Welcome'
-          }, {
-            value: '100%',
-            label: 'Your Rights'
-          }].map((stat, idx) => <div key={idx} className="text-center">
-                <div className="text-2xl md:text-4xl font-display font-black bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+              value: '$1.00',
+              label: 'Per Stream'
+            }, {
+              value: '100%',
+              label: 'Download Revenue'
+            }, {
+              value: 'AI+Human',
+              label: 'Welcome'
+            }, {
+              value: '100%',
+              label: 'Your Rights'
+            }].map((stat, idx) => (
+              <div key={idx} className="text-center">
+                <div className="text-2xl md:text-4xl font-display font-black bg-gradient-to-r from-green-500 via-emerald-500 to-primary bg-clip-text text-transparent">
                   {stat.value}
                 </div>
                 <div className="text-xs md:text-sm text-muted-foreground mt-1">{stat.label}</div>
-              </div>)}
+              </div>
+            ))}
+          </div>
+
+          {/* Subscription Notice */}
+          <div className="animate-fade-in px-4" style={{ animationDelay: '0.8s' }}>
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <CreditCard className="w-4 h-4" />
+              <span>Subscription required. Credit card required at signup.</span>
+            </div>
           </div>
         </div>
       </section>
@@ -327,19 +329,19 @@ export default function Landing() {
       <section className="py-16 md:py-32 px-4 md:px-6 relative">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12 md:mb-20">
-            <Badge className="bg-primary/20 text-primary border-primary/30 mb-4 md:mb-6 text-sm md:text-base px-4 py-2">
+            <Badge className="bg-green-500/20 text-green-500 border-green-500/30 mb-4 md:mb-6 text-sm md:text-base px-4 py-2">
               <Mic2 className="w-3 h-3 md:w-4 md:h-4 mr-2" />
               FOR ARTISTS
             </Badge>
             <h2 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-display font-black mb-4 md:mb-6">
-              <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-                YOUR MUSIC
+              <span className="bg-gradient-to-r from-green-500 via-emerald-500 to-primary bg-clip-text text-transparent">
+                EARN REAL MONEY
               </span>
               <br />
-              EVERYWHERE
+              FOR YOUR MUSIC
             </h2>
             <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Professional distribution tools designed for independent artists
+              $1 per stream. Set your own download prices. Keep 100% of download revenue.
             </p>
           </div>
 
@@ -370,6 +372,32 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* AI Music Section */}
+      <section className="py-16 md:py-24 px-4 md:px-6 relative bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
+        <div className="max-w-5xl mx-auto text-center">
+          <Badge className="bg-accent/20 text-accent border-accent/30 mb-6 px-4 py-2">
+            <Layers className="w-4 h-4 mr-2" />
+            AI MUSIC WELCOME
+          </Badge>
+          <h2 className="text-3xl md:text-5xl font-display font-black mb-6">
+            <span className="bg-gradient-to-r from-accent via-primary to-secondary bg-clip-text text-transparent">
+              AI ARTISTS EARN THE SAME
+            </span>
+          </h2>
+          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
+            TDZ welcomes AI-generated music, AI-assisted creation, and human-led production equally. 
+            If you can create it, you can distribute and monetize it on TDZ. 
+            <span className="text-primary font-semibold"> Same $1 per stream. Same 100% download revenue.</span>
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Badge variant="outline" className="px-4 py-2">AI-Generated Tracks</Badge>
+            <Badge variant="outline" className="px-4 py-2">AI-Assisted Production</Badge>
+            <Badge variant="outline" className="px-4 py-2">AI Vocals</Badge>
+            <Badge variant="outline" className="px-4 py-2">Hybrid Projects</Badge>
+          </div>
+        </div>
+      </section>
+
       {/* For Fans Section */}
       <section className="py-16 md:py-32 px-4 md:px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 to-transparent" />
@@ -381,13 +409,13 @@ export default function Landing() {
             </Badge>
             <h2 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-display font-black mb-4 md:mb-6">
               <span className="bg-gradient-to-r from-secondary via-accent to-primary bg-clip-text text-transparent">
-                DISCOVER
+                YOUR STREAMS
               </span>
               <br />
-              NEW MUSIC
+              MATTER HERE
             </h2>
             <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Support independent artists and discover your next favorite track
+              Every stream pays artists $1. Buy downloads at artist-set prices.
             </p>
           </div>
 
@@ -397,7 +425,7 @@ export default function Landing() {
               <Card key={idx} className="glass-card p-6 md:p-8 relative group overflow-hidden hover:border-secondary/60 transition-all duration-500 hover:scale-105">
                 <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="relative z-10 space-y-4">
-                  <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-500`}>
+                  <div className={`w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center group-hover:scale-125 group-hover:rotate-12 transition-all duration-500`}>
                     <feature.icon className="w-6 h-6 md:w-7 md:h-7 text-background" />
                   </div>
                   <div>
@@ -409,272 +437,132 @@ export default function Landing() {
             ))}
           </div>
 
-          {/* Music Player Demo Phones */}
-          <MusicPlayerPhoneMockups />
-        </div>
-      </section>
-
-      {/* Latest Releases Section */}
-      <section className="py-16 md:py-32 px-4 md:px-6 relative">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12 md:mb-20">
-            <h2 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-display font-black mb-4 md:mb-6">
-              <span className="bg-gradient-to-r from-accent via-primary to-secondary bg-clip-text text-transparent">
-                LATEST
-              </span>
-              <br />
-              RELEASES
-            </h2>
-            <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Fresh tracks from independent artists around the world
-            </p>
-          </div>
-
-          {/* Mobile: Swipeable, Desktop: Grid */}
-          {latestReleases.length > 0 ? (
-            <>
-              <div className="md:hidden overflow-x-auto scrollbar-hide -mx-4 px-4">
-                <div className="flex gap-4 pb-4" style={{ width: `${latestReleases.length * 180}px` }}>
-                  {latestReleases.map((release) => (
-                    <div key={release.id} className="flex-shrink-0 w-40 space-y-2 cursor-pointer" onClick={() => navigate(`/track/${release.id}`)}>
-                      <div className="aspect-square rounded-lg overflow-hidden relative group">
-                        <MotionCover
-                          motionCoverPath={release.motion_cover_path}
-                          motionCoverBucket={release.motion_cover_bucket}
-                          staticCoverPath={release.album_cover_path}
-                          staticCoverBucket={release.album_cover_bucket}
-                          alt={release.title}
-                          className="w-full h-full"
-                        />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-active:opacity-100 transition-opacity flex items-center justify-center">
-                          <Play className="w-10 h-10 text-white" />
-                        </div>
-                      </div>
-                      <div className="text-xs space-y-0.5">
-                        <p className="text-foreground truncate font-medium">{release.title}</p>
-                        <p className="text-muted-foreground truncate">{release.artist_name}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-6">
-                {latestReleases.map((release) => (
-                  <Card key={release.id} className="glass-card p-4 cursor-pointer hover:scale-105 transition-all duration-300 hover:border-primary/60" onClick={() => navigate(`/track/${release.id}`)}>
-                    <div className="aspect-square rounded-lg overflow-hidden mb-4 relative group">
-                      <MotionCover
-                        motionCoverPath={release.motion_cover_path}
-                        motionCoverBucket={release.motion_cover_bucket}
-                        staticCoverPath={release.album_cover_path}
-                        staticCoverBucket={release.album_cover_bucket}
-                        alt={release.title}
-                        className="w-full h-full"
-                      />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Play className="w-12 h-12 text-white" />
-                      </div>
-                    </div>
-                    <h3 className="font-bold truncate mb-1">{release.title}</h3>
-                    <p className="text-sm text-muted-foreground truncate">{release.artist_name}</p>
-                  </Card>
+          {/* Latest Releases */}
+          {latestReleases.length > 0 && (
+            <div className="space-y-8">
+              <h3 className="text-2xl md:text-3xl font-display font-bold text-center">
+                Latest on <span className="text-secondary">TDZ</span>
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                {latestReleases.map((track, idx) => (
+                  <div key={track.id} className="group cursor-pointer" onClick={() => navigate("/discover")}>
+                    <MotionCover
+                      staticCoverPath={track.album_cover_path}
+                      staticCoverBucket={track.album_cover_bucket}
+                      motionCoverPath={track.motion_cover_path}
+                      motionCoverBucket={track.motion_cover_bucket}
+                      alt={track.title}
+                      className="aspect-square rounded-xl mb-3 group-hover:scale-105 transition-transform"
+                    />
+                    <p className="font-medium truncate">{track.title}</p>
+                    <p className="text-sm text-muted-foreground truncate">{track.artist_name}</p>
+                  </div>
                 ))}
-              </div>
-            </>
-          ) : (
-            <div className="text-center py-12 space-y-4">
-              <Music className="w-16 h-16 mx-auto text-muted-foreground/40" />
-              <div className="space-y-2">
-                <h3 className="text-xl font-bold text-foreground">No Tracks Released Yet</h3>
-                <p className="text-muted-foreground">Be the first to share your music with the world</p>
               </div>
             </div>
           )}
 
-          <div className="text-center mt-12">
-            <Button size="lg" onClick={() => navigate("/discover")} className="bg-gradient-to-r from-accent via-primary to-secondary hover:scale-105 transition-all duration-300">
-              <Music className="w-5 h-5 mr-2" />
-              EXPLORE MORE
-            </Button>
-          </div>
+          <MusicPlayerPhoneMockups />
         </div>
       </section>
 
-      {/* Final CTA - Immersive */}
-      <section className="py-20 md:py-40 px-4 md:px-6 relative overflow-hidden">
-        {/* Radial Gradient Background */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.2)_0%,transparent_70%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,hsl(var(--secondary)/0.15)_0%,transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,hsl(var(--accent)/0.15)_0%,transparent_50%)]" />
-        
-        <div className="max-w-6xl mx-auto text-center space-y-8 md:space-y-12 relative z-10">
-          {/* Massive CTA */}
-          <div className="space-y-6 md:space-y-8">
-            <h2 className="text-4xl sm:text-5xl md:text-7xl lg:text-9xl font-display font-black leading-none px-4">
-              <span className="block animate-fade-in">READY TO</span>
-              <span className="block bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent animate-fade-in glow-text" style={{
-              animationDelay: '0.1s'
-            }}>
-                GO GLOBAL
-              </span>
-              <span className="block animate-fade-in" style={{
-              animationDelay: '0.2s'
-            }}>?</span>
+      {/* Revenue Pool Explanation */}
+      <section className="py-16 md:py-24 px-4 md:px-6 relative">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <Badge className="bg-green-500/20 text-green-500 border-green-500/30 mb-6 px-4 py-2">
+              <DollarSign className="w-4 h-4 mr-2" />
+              HOW IT WORKS
+            </Badge>
+            <h2 className="text-3xl md:text-5xl font-display font-black mb-6">
+              The TDZ Revenue Pool
             </h2>
-            <p className="text-base sm:text-lg md:text-2xl lg:text-3xl text-muted-foreground max-w-3xl mx-auto font-light animate-fade-in px-4" style={{
-            animationDelay: '0.3s'
-          }}>
-              Join 50,000+ independent artists distributing their music to <span className="text-primary font-semibold">millions of listeners</span> worldwide.
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              Your $1 per stream comes from a diverse revenue pool that grows with our community.
             </p>
           </div>
 
-          {/* Giant CTA Button */}
-          <div className="flex flex-col items-center gap-4 md:gap-6 animate-scale-in px-4" style={{
-          animationDelay: '0.4s'
-        }}>
-            <Button size="lg" onClick={() => navigate("/auth")} className="relative group bg-gradient-to-r from-primary via-secondary to-accent text-background font-black text-xl md:text-2xl lg:text-3xl px-12 md:px-16 h-16 md:h-20 lg:h-24 rounded-xl md:rounded-2xl hover:scale-110 transition-all duration-500 shadow-2xl w-full sm:w-auto">
-              <span className="relative z-10 flex items-center gap-3 md:gap-4">
-                <Upload className="w-6 h-6 md:w-8 md:h-8 group-hover:-translate-y-2 transition-transform duration-500" />
-                LAUNCH NOW
-                <ArrowRight className="w-6 h-6 md:w-8 md:h-8 group-hover:translate-x-4 transition-transform duration-500" />
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-accent via-primary to-secondary opacity-0 group-hover:opacity-100 blur-2xl transition-opacity duration-500 rounded-xl md:rounded-2xl" />
-            </Button>
-            <p className="text-muted-foreground text-sm md:text-lg">
-              No credit card required · Keep 100% rights · 24/7 support
-            </p>
-          </div>
-
-          {/* Social Proof Pills */}
-          <div className="flex flex-wrap justify-center gap-2 md:gap-4 pt-4 md:pt-8 animate-fade-in px-4" style={{
-          animationDelay: '0.5s'
-        }}>
-            {["🤖 AI Artists Welcome", "⚡ Instant Publishing", "💰 100% Royalties", "🚀 Zero Setup Fees"].map((pill, idx) => <Badge key={idx} className="bg-card/50 backdrop-blur-xl border-primary/30 text-foreground px-3 md:px-6 py-2 md:py-3 text-xs md:text-base">
-                {pill}
-              </Badge>)}
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card className="glass-card p-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
+                <CreditCard className="w-6 h-6 text-green-500" />
+              </div>
+              <h3 className="font-bold mb-2">Subscriptions</h3>
+              <p className="text-sm text-muted-foreground">Fan subscriptions fund artist payouts</p>
+            </Card>
+            <Card className="glass-card p-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
+                <Download className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="font-bold mb-2">Downloads</h3>
+              <p className="text-sm text-muted-foreground">Artist-set prices, 100% to artist</p>
+            </Card>
+            <Card className="glass-card p-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center mx-auto mb-4">
+                <Globe className="w-6 h-6 text-secondary" />
+              </div>
+              <h3 className="font-bold mb-2">Ads & Sponsorships</h3>
+              <p className="text-sm text-muted-foreground">Premium features & partnerships</p>
+            </Card>
           </div>
         </div>
       </section>
 
-      {/* Footer - Futuristic */}
-      <footer className="relative border-t border-primary/20 py-8 md:py-12 px-4 md:px-6">
-        <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent" />
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-6">
-            {/* Brand */}
-            <div className="flex flex-col items-center md:items-start gap-2">
-              <div className="flex items-center gap-2 md:gap-3">
-                <img 
-                  src={tdzLogo} 
-                  alt="TDZ Distribution Logo" 
-                  className="h-8 md:h-10 w-auto object-contain"
-                />
-                <span className="font-display font-bold text-base md:text-xl">TDZ DISTRIBUTION</span>
-              </div>
-              <p className="text-muted-foreground text-xs md:text-sm text-center md:text-left">
-                Next-Gen Music Distribution
-              </p>
-            </div>
+      {/* CTA Section */}
+      <section className="py-16 md:py-32 px-4 md:px-6 relative">
+        <div className="max-w-5xl mx-auto text-center">
+          <h2 className="text-3xl md:text-5xl lg:text-6xl font-display font-black mb-6">
+            Ready to Earn
+            <span className="bg-gradient-to-r from-green-500 via-emerald-500 to-primary bg-clip-text text-transparent"> $1 Per Stream?</span>
+          </h2>
+          <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Join thousands of artists who are finally getting paid what they deserve.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              size="lg" 
+              onClick={() => navigate("/auth")}
+              className="bg-gradient-to-r from-green-500 via-emerald-500 to-primary text-lg px-12 h-16"
+            >
+              Start Earning Now
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline"
+              onClick={() => navigate("/faq")}
+              className="text-lg px-12 h-16"
+            >
+              Learn More
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground mt-6">
+            Subscription required. Credit card required at signup.
+          </p>
+        </div>
+      </section>
 
-            {/* Links */}
-            <div className="flex justify-center gap-8">
-              <div>
-                <h4 className="font-semibold mb-2 text-sm">Company</h4>
-                <ul className="space-y-1 text-xs text-muted-foreground">
-                  <li>
-                    <button 
-                      onClick={() => navigate("/investors")}
-                      className="hover:text-primary transition-colors"
-                    >
-                      About Us
-                    </button>
-                  </li>
-                  <li>
-                    <button 
-                      onClick={() => navigate("/investors")}
-                      className="hover:text-primary transition-colors"
-                    >
-                      Investors
-                    </button>
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2 text-sm">Product</h4>
-                <ul className="space-y-1 text-xs text-muted-foreground">
-                  <li>
-                    <button 
-                      onClick={() => navigate("/discover")}
-                      className="hover:text-primary transition-colors"
-                    >
-                      Discover
-                    </button>
-                  </li>
-                  <li>
-                    <button 
-                      onClick={() => navigate("/studio")}
-                      className="hover:text-primary transition-colors"
-                    >
-                      Studio
-                    </button>
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2 text-sm">Legal</h4>
-                <ul className="space-y-1 text-xs text-muted-foreground">
-                  <li>
-                    <button 
-                      onClick={() => navigate("/terms")}
-                      className="hover:text-primary transition-colors"
-                    >
-                      Terms & Conditions
-                    </button>
-                  </li>
-                  <li>
-                    <button 
-                      onClick={() => navigate("/privacy")}
-                      className="hover:text-primary transition-colors"
-                    >
-                      Privacy Policy
-                    </button>
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2 text-sm">Support</h4>
-                <ul className="space-y-1 text-xs text-muted-foreground">
-                  <li>
-                    <button 
-                      onClick={() => navigate("/faq")}
-                      className="hover:text-primary transition-colors"
-                    >
-                      FAQ
-                    </button>
-                  </li>
-                  <li>
-                    <button 
-                      onClick={() => navigate("/support")}
-                      className="hover:text-primary transition-colors"
-                    >
-                      Contact Support
-                    </button>
-                  </li>
-                </ul>
-              </div>
+      {/* Footer */}
+      <footer className="py-12 px-4 md:px-6 border-t border-border/50">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center gap-3">
+              <img src={tdzLogo} alt="TDZ" className="h-8 w-auto" />
+              <span className="font-display font-bold">TDZ Distribution</span>
             </div>
-
-            {/* Copyright */}
-            <div className="flex flex-col items-center md:items-end gap-1">
-              <p className="text-xs md:text-sm text-muted-foreground/60 text-center md:text-right">
-                © 2025 TDZ Distribution
-              </p>
-              <p className="text-xs text-muted-foreground/60 text-center md:text-right">
-                Empowering artists worldwide
-              </p>
+            <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
+              <button onClick={() => navigate("/faq")} className="hover:text-primary transition-colors">FAQ</button>
+              <button onClick={() => navigate("/support")} className="hover:text-primary transition-colors">Support</button>
+              <button onClick={() => navigate("/terms")} className="hover:text-primary transition-colors">Terms</button>
+              <button onClick={() => navigate("/privacy")} className="hover:text-primary transition-colors">Privacy</button>
+              <button onClick={() => navigate("/investors")} className="hover:text-primary transition-colors">Investors</button>
             </div>
+          </div>
+          <div className="text-center mt-8 text-sm text-muted-foreground">
+            © {new Date().getFullYear()} Thirty Dark Zero Records. All rights reserved.
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 }

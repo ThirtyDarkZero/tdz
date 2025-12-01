@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { HelpCircle, ArrowLeft } from "lucide-react";
+import { HelpCircle, ArrowLeft, DollarSign, Download, CreditCard, Music, Zap, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -10,70 +10,114 @@ export default function FAQ() {
 
   const faqs = [
     {
-      category: "Distribution",
+      category: "Artist Payouts",
+      icon: DollarSign,
       questions: [
         {
-          q: "How long does it take to get my music on streaming platforms?",
-          a: "Your music typically goes live within 24 hours on most major platforms. Some platforms may take up to 48 hours depending on their review process."
+          q: "How do artists get paid on TDZ?",
+          a: "TDZ pays artists $1 per stream on the TDZ platform. Every time someone streams your song, you earn a full dollar. No fractional payouts like traditional DSPs that pay $0.003-$0.005 per stream."
         },
         {
-          q: "Which platforms do you distribute to?",
-          a: "We distribute to 150+ platforms including Spotify, Apple Music, Amazon Music, YouTube Music, Tidal, Deezer, and many more."
+          q: "Where does TDZ get the money to pay artists $1 per stream?",
+          a: "From the TDZ Revenue Pool — which consists of fan subscriptions, download purchases, ads, premium features, sponsorships, and live event revenue. This diversified revenue model allows us to pay artists fairly."
+        },
+        {
+          q: "How fast are payouts processed?",
+          a: "Payout cycles run monthly. Artists can withdraw once they reach the minimum threshold of $10. Payments are processed automatically to your connected payment method."
+        },
+        {
+          q: "Can I see my earnings in real-time?",
+          a: "Yes! Your Artist Dashboard shows real-time streaming counts, download sales, and total earnings. You can track every stream and every dollar as it comes in."
+        }
+      ]
+    },
+    {
+      category: "Downloads & Sales",
+      icon: Download,
+      questions: [
+        {
+          q: "Can fans download music on TDZ?",
+          a: "Yes! Artists set their own download price during upload. Fans can purchase and download tracks, and 100% of download revenue goes directly to the artist (minus standard payment processing fees of ~2.9%)."
+        },
+        {
+          q: "How do I set a download price for my track?",
+          a: "When uploading a track, you'll see an optional 'Download Price' field. Set any price you want (minimum $0.99). If left blank, the track will be streaming-only."
+        },
+        {
+          q: "What happens when someone buys my download?",
+          a: "The buyer gets a high-quality download of your track. You receive 100% of the sale price minus payment processing fees (~2.9%). Download revenue is tracked separately from streaming revenue in your dashboard."
+        }
+      ]
+    },
+    {
+      category: "Subscription & Account",
+      icon: CreditCard,
+      questions: [
+        {
+          q: "Is a credit card required to sign up?",
+          a: "Yes. TDZ requires an active subscription and a valid payment method for artists to distribute and monetize their music."
+        },
+        {
+          q: "What does the subscription include?",
+          a: "Your subscription gives you access to unlimited uploads, real-time analytics, the full Studio suite, AI-powered tools, and the ability to earn $1 per stream and 100% of download revenue."
+        },
+        {
+          q: "Are there any hidden fees?",
+          a: "No hidden fees. Your subscription covers all platform features. The only deduction from your earnings is standard payment processing fees (~2.9%) when you withdraw your earnings or when fans purchase downloads."
+        }
+      ]
+    },
+    {
+      category: "AI Music",
+      icon: Music,
+      questions: [
+        {
+          q: "Does TDZ accept AI-generated music?",
+          a: "Absolutely! TDZ welcomes AI-generated music, AI-assisted production, AI vocals, and hybrid human/AI projects. If you created it, you can distribute and monetize it on TDZ."
+        },
+        {
+          q: "Do AI artists earn the same as human artists?",
+          a: "Yes. AI artists earn the same $1 per stream and 100% of download revenue as human artists. We don't discriminate based on how music is created."
+        },
+        {
+          q: "What about copyright for AI music?",
+          a: "You must have the rights to distribute any music you upload. For AI-generated content, ensure you have the proper licenses and that your music doesn't infringe on existing copyrights."
+        }
+      ]
+    },
+    {
+      category: "Platform & Distribution",
+      icon: Zap,
+      questions: [
+        {
+          q: "How long does it take for my music to go live?",
+          a: "Your music goes live on TDZ within 24 hours of publishing. There's no waiting weeks for external platform distribution."
         },
         {
           q: "Can I update my music after it's published?",
-          a: "Yes, you can update metadata, artwork, and even upload new versions. Changes typically reflect within 24-48 hours across platforms."
+          a: "Yes, you can update metadata, artwork, and even upload new versions. Changes reflect within 24-48 hours."
+        },
+        {
+          q: "Is TDZ a DSP or a distributor?",
+          a: "TDZ is a standalone streaming platform—like Spotify or Apple Music—but artist-owned. Artists upload directly to TDZ and keep 100% of their rights. We don't distribute to external platforms."
         }
       ]
     },
     {
-      category: "Royalties & Payments",
+      category: "For Fans",
+      icon: Users,
       questions: [
         {
-          q: "How much do I keep from streaming royalties?",
-          a: "You keep 100% of your royalties. We don't take any commission from your earnings."
+          q: "How does my subscription help artists?",
+          a: "Your subscription goes directly into the TDZ Revenue Pool, which funds the $1 per stream payouts to artists. Every stream you make directly supports the artists you love."
         },
         {
-          q: "When do I get paid?",
-          a: "Royalties are calculated monthly and paid out according to each platform's payment schedule, typically 2-3 months after the streaming period."
+          q: "Can I buy music to keep forever?",
+          a: "Yes! Many artists offer their tracks for download at prices they set. When you purchase a download, you own that file forever—no subscription needed to keep listening."
         },
         {
-          q: "Is there a minimum payout threshold?",
-          a: "The minimum payout threshold is $10. Once you reach this amount, payments are processed automatically."
-        }
-      ]
-    },
-    {
-      category: "Audio Quality",
-      questions: [
-        {
-          q: "Do you support Dolby Atmos and HD Audio?",
-          a: "Yes! We fully support Dolby Atmos, Hi-Res Audio, and HD formats. Upload your high-quality masters and we'll deliver them to platforms that support these formats."
-        },
-        {
-          q: "What audio format should I upload?",
-          a: "We recommend WAV or FLAC files at 44.1kHz/16-bit or higher. For Dolby Atmos, upload ADM BWF files."
-        },
-        {
-          q: "What's the maximum file size?",
-          a: "You can upload files up to 500MB per track to accommodate HD and Dolby Atmos formats."
-        }
-      ]
-    },
-    {
-      category: "Account & Features",
-      questions: [
-        {
-          q: "Do I need a record label to use your service?",
-          a: "No! We're designed for independent artists. You maintain full control and ownership of your music."
-        },
-        {
-          q: "Can I distribute music for multiple artists?",
-          a: "Yes, managers and labels can manage multiple artist accounts from a single dashboard."
-        },
-        {
-          q: "Do you provide ISRC and UPC codes?",
-          a: "Yes, we automatically generate ISRC codes for tracks and UPC codes for releases at no extra cost."
+          q: "What audio quality is available?",
+          a: "TDZ supports standard streaming, HD Audio (24-bit/96kHz), Hi-Res Audio, and even Dolby Atmos. The quality depends on what the artist uploads."
         }
       ]
     }
@@ -97,8 +141,33 @@ export default function FAQ() {
             <h1 className="text-4xl font-display font-bold">Frequently Asked Questions</h1>
           </div>
           <p className="text-lg text-muted-foreground">
-            Find answers to common questions about distribution, royalties, and features.
+            Learn about our $1 per stream model, downloads, subscriptions, and more.
           </p>
+        </div>
+
+        {/* Key Highlights */}
+        <div className="grid md:grid-cols-3 gap-4 mb-12">
+          <Card className="glass-card border-green-500/30">
+            <CardContent className="p-6 text-center">
+              <DollarSign className="w-8 h-8 text-green-500 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-green-500">$1.00</div>
+              <div className="text-sm text-muted-foreground">Per Stream</div>
+            </CardContent>
+          </Card>
+          <Card className="glass-card border-primary/30">
+            <CardContent className="p-6 text-center">
+              <Download className="w-8 h-8 text-primary mx-auto mb-2" />
+              <div className="text-2xl font-bold text-primary">100%</div>
+              <div className="text-sm text-muted-foreground">Download Revenue</div>
+            </CardContent>
+          </Card>
+          <Card className="glass-card border-accent/30">
+            <CardContent className="p-6 text-center">
+              <Music className="w-8 h-8 text-accent mx-auto mb-2" />
+              <div className="text-2xl font-bold text-accent">AI Welcome</div>
+              <div className="text-sm text-muted-foreground">Same Earnings</div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* FAQ Sections */}
@@ -106,18 +175,21 @@ export default function FAQ() {
           {faqs.map((section, idx) => (
             <Card key={idx} className="glass-card">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Badge variant="secondary">{section.category}</Badge>
+                <CardTitle className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                    <section.icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <span>{section.category}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <Accordion type="single" collapsible className="w-full">
                   {section.questions.map((faq, qIdx) => (
                     <AccordionItem key={qIdx} value={`${idx}-${qIdx}`}>
-                      <AccordionTrigger className="text-left">
+                      <AccordionTrigger className="text-left font-medium">
                         {faq.q}
                       </AccordionTrigger>
-                      <AccordionContent className="text-muted-foreground">
+                      <AccordionContent className="text-muted-foreground leading-relaxed">
                         {faq.a}
                       </AccordionContent>
                     </AccordionItem>
@@ -129,7 +201,7 @@ export default function FAQ() {
         </div>
 
         {/* Contact Support */}
-        <Card className="glass-card mt-12">
+        <Card className="glass-card mt-12 border-primary/30">
           <CardContent className="p-8 text-center">
             <h3 className="text-xl font-semibold mb-3">Still have questions?</h3>
             <p className="text-muted-foreground mb-6">
