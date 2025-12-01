@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          activity_type: string
+          created_at: string
+          id: string
+          is_public: boolean | null
+          metadata: Json | null
+          target_id: string | null
+          target_type: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          id?: string
+          is_public?: boolean | null
+          metadata?: Json | null
+          target_id?: string | null
+          target_type?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          id?: string
+          is_public?: boolean | null
+          metadata?: Json | null
+          target_id?: string | null
+          target_type?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       albums: {
         Row: {
           artist_name: string
@@ -417,6 +450,103 @@ export type Database = {
         }
         Relationships: []
       }
+      comments: {
+        Row: {
+          album_id: string | null
+          content: string
+          created_at: string
+          id: string
+          is_hidden: boolean | null
+          is_pinned: boolean | null
+          like_count: number | null
+          parent_type: string
+          playlist_id: string | null
+          post_id: string | null
+          reply_count: number | null
+          reply_to_id: string | null
+          track_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          album_id?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          is_hidden?: boolean | null
+          is_pinned?: boolean | null
+          like_count?: number | null
+          parent_type: string
+          playlist_id?: string | null
+          post_id?: string | null
+          reply_count?: number | null
+          reply_to_id?: string | null
+          track_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          album_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_hidden?: boolean | null
+          is_pinned?: boolean | null
+          like_count?: number | null
+          parent_type?: string
+          playlist_id?: string | null
+          post_id?: string | null
+          reply_count?: number | null
+          reply_to_id?: string | null
+          track_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_album_id_fkey"
+            columns: ["album_id"]
+            isOneToOne: false
+            referencedRelation: "albums"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "published_tracks_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       credit_transactions: {
         Row: {
           amount: number
@@ -569,6 +699,90 @@ export type Database = {
           },
         ]
       }
+      fan_badges: {
+        Row: {
+          badge_type: string
+          earned_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_type: string
+          earned_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_type?: string
+          earned_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      fan_engagement: {
+        Row: {
+          comments_made: number | null
+          followers_count: number | null
+          following_count: number | null
+          id: string
+          level: number | null
+          likes_given: number | null
+          playlists_created: number | null
+          shares_made: number | null
+          updated_at: string
+          user_id: string
+          xp_total: number | null
+        }
+        Insert: {
+          comments_made?: number | null
+          followers_count?: number | null
+          following_count?: number | null
+          id?: string
+          level?: number | null
+          likes_given?: number | null
+          playlists_created?: number | null
+          shares_made?: number | null
+          updated_at?: string
+          user_id: string
+          xp_total?: number | null
+        }
+        Update: {
+          comments_made?: number | null
+          followers_count?: number | null
+          following_count?: number | null
+          id?: string
+          level?: number | null
+          likes_given?: number | null
+          playlists_created?: number | null
+          shares_made?: number | null
+          updated_at?: string
+          user_id?: string
+          xp_total?: number | null
+        }
+        Relationships: []
+      }
+      fan_follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       fan_metrics: {
         Row: {
           conversion_rate: number
@@ -663,35 +877,50 @@ export type Database = {
       }
       listener_profiles: {
         Row: {
+          banner_image_path: string | null
           bio: string | null
           created_at: string
           display_name: string
           favorite_genres: Json | null
+          follower_count: number | null
+          following_count: number | null
           id: string
+          is_public: boolean | null
           location: string | null
           profile_image_path: string | null
+          social_links: Json | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          banner_image_path?: string | null
           bio?: string | null
           created_at?: string
           display_name: string
           favorite_genres?: Json | null
+          follower_count?: number | null
+          following_count?: number | null
           id?: string
+          is_public?: boolean | null
           location?: string | null
           profile_image_path?: string | null
+          social_links?: Json | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          banner_image_path?: string | null
           bio?: string | null
           created_at?: string
           display_name?: string
           favorite_genres?: Json | null
+          follower_count?: number | null
+          following_count?: number | null
           id?: string
+          is_public?: boolean | null
           location?: string | null
           profile_image_path?: string | null
+          social_links?: Json | null
           updated_at?: string
           user_id?: string
         }
@@ -945,6 +1174,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string | null
+          notification_type: string
+          target_id: string | null
+          target_type: string | null
+          user_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          notification_type: string
+          target_id?: string | null
+          target_type?: string | null
+          user_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          notification_type?: string
+          target_id?: string | null
+          target_type?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       opportunities: {
         Row: {
           budget: string
@@ -1011,6 +1276,41 @@ export type Database = {
         }
         Relationships: []
       }
+      playlist_motion_covers: {
+        Row: {
+          created_at: string
+          id: string
+          is_ai_generated: boolean | null
+          media_path: string
+          media_type: string
+          playlist_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_ai_generated?: boolean | null
+          media_path: string
+          media_type: string
+          playlist_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_ai_generated?: boolean | null
+          media_path?: string
+          media_type?: string
+          playlist_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlist_motion_covers_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: true
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playlist_tracks: {
         Row: {
           added_at: string
@@ -1062,42 +1362,169 @@ export type Database = {
       }
       playlists: {
         Row: {
+          comment_count: number | null
           cover_image_path: string | null
           created_at: string
           description: string | null
           id: string
           is_collaborative: boolean | null
           is_public: boolean | null
+          like_count: number | null
           name: string
           play_count: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          comment_count?: number | null
           cover_image_path?: string | null
           created_at?: string
           description?: string | null
           id?: string
           is_collaborative?: boolean | null
           is_public?: boolean | null
+          like_count?: number | null
           name: string
           play_count?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          comment_count?: number | null
           cover_image_path?: string | null
           created_at?: string
           description?: string | null
           id?: string
           is_collaborative?: boolean | null
           is_public?: boolean | null
+          like_count?: number | null
           name?: string
           play_count?: number | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      post_media: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          id: string
+          media_bucket: string | null
+          media_path: string
+          media_type: string
+          post_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          media_bucket?: string | null
+          media_path: string
+          media_type: string
+          post_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          media_bucket?: string | null
+          media_path?: string
+          media_type?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_media_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          comment_count: number | null
+          content: string | null
+          created_at: string
+          id: string
+          is_pinned: boolean | null
+          like_count: number | null
+          post_type: string
+          share_count: number | null
+          shared_album_id: string | null
+          shared_artist_id: string | null
+          shared_playlist_id: string | null
+          shared_track_id: string | null
+          updated_at: string
+          user_id: string
+          visibility: string
+        }
+        Insert: {
+          comment_count?: number | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_pinned?: boolean | null
+          like_count?: number | null
+          post_type?: string
+          share_count?: number | null
+          shared_album_id?: string | null
+          shared_artist_id?: string | null
+          shared_playlist_id?: string | null
+          shared_track_id?: string | null
+          updated_at?: string
+          user_id: string
+          visibility?: string
+        }
+        Update: {
+          comment_count?: number | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_pinned?: boolean | null
+          like_count?: number | null
+          post_type?: string
+          share_count?: number | null
+          shared_album_id?: string | null
+          shared_artist_id?: string | null
+          shared_playlist_id?: string | null
+          shared_track_id?: string | null
+          updated_at?: string
+          user_id?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_shared_album_id_fkey"
+            columns: ["shared_album_id"]
+            isOneToOne: false
+            referencedRelation: "albums"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_shared_playlist_id_fkey"
+            columns: ["shared_playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_shared_track_id_fkey"
+            columns: ["shared_track_id"]
+            isOneToOne: false
+            referencedRelation: "published_tracks_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_shared_track_id_fkey"
+            columns: ["shared_track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       project_versions: {
         Row: {
@@ -1239,6 +1666,61 @@ export type Database = {
         }
         Relationships: []
       }
+      reactions: {
+        Row: {
+          comment_id: string | null
+          created_at: string
+          id: string
+          playlist_id: string | null
+          post_id: string | null
+          reaction_type: string
+          target_type: string
+          user_id: string
+        }
+        Insert: {
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          playlist_id?: string | null
+          post_id?: string | null
+          reaction_type?: string
+          target_type: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string | null
+          created_at?: string
+          id?: string
+          playlist_id?: string | null
+          post_id?: string | null
+          reaction_type?: string
+          target_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reactions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reactions_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       render_credits: {
         Row: {
           balance: number
@@ -1266,6 +1748,45 @@ export type Database = {
           total_spent?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          report_type: string
+          reported_user_id: string | null
+          reporter_id: string
+          resolved_at: string | null
+          status: string | null
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          report_type: string
+          reported_user_id?: string | null
+          reporter_id: string
+          resolved_at?: string | null
+          status?: string | null
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          report_type?: string
+          reported_user_id?: string | null
+          reporter_id?: string
+          resolved_at?: string | null
+          status?: string | null
+          target_id?: string
+          target_type?: string
         }
         Relationships: []
       }
@@ -1704,6 +2225,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       user_library: {
         Row: {
           album_id: string | null
@@ -1786,6 +2328,81 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_shares: {
+        Row: {
+          album_id: string | null
+          artist_id: string | null
+          created_at: string
+          id: string
+          playlist_id: string | null
+          post_id: string | null
+          share_method: string | null
+          share_type: string
+          track_id: string | null
+          user_id: string
+        }
+        Insert: {
+          album_id?: string | null
+          artist_id?: string | null
+          created_at?: string
+          id?: string
+          playlist_id?: string | null
+          post_id?: string | null
+          share_method?: string | null
+          share_type: string
+          track_id?: string | null
+          user_id: string
+        }
+        Update: {
+          album_id?: string | null
+          artist_id?: string | null
+          created_at?: string
+          id?: string
+          playlist_id?: string | null
+          post_id?: string | null
+          share_method?: string | null
+          share_type?: string
+          track_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_shares_album_id_fkey"
+            columns: ["album_id"]
+            isOneToOne: false
+            referencedRelation: "albums"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_shares_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_shares_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_shares_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "published_tracks_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_shares_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
