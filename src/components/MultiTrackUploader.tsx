@@ -1,14 +1,17 @@
 import { useState } from "react";
-import { Upload, Music, Disc, Album as AlbumIcon, GripVertical, Edit, Sparkles } from "lucide-react";
+import { Upload, Music, Disc, Album as AlbumIcon, GripVertical, Edit, Sparkles, AlertTriangle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { useUploadLimits } from "@/hooks/useUploadLimits";
+import { useNavigate } from "react-router-dom";
 import {
   DndContext,
   closestCenter,
@@ -59,6 +62,7 @@ interface TrackFile {
 type ReleaseType = 'single' | 'ep' | 'album';
 
 export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) => {
+  const navigate = useNavigate();
   const [releaseType, setReleaseType] = useState<ReleaseType>('single');
   const [tracks, setTracks] = useState<TrackFile[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -70,12 +74,47 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
   const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
   const [showBulkEdit, setShowBulkEdit] = useState(false);
   const { toast } = useToast();
+  
+  const {
+    loading: limitsLoading,
+    maxTracks,
+    maxAlbums,
+    currentTracks,
+    currentAlbums,
+    canUploadTrack,
+    canCreateAlbum,
+    tracksRemaining,
+    albumsRemaining,
+    plan,
+    refetch: refetchLimits
+  } = useUploadLimits();
+
+  const isUnlimited = maxTracks === -1;
 
   const handleFileSelect = async (files: FileList) => {
+    // Check upload limits first
+    if (!canUploadTrack) {
+      toast({ 
+        title: "Upload limit reached", 
+        description: `You've reached your ${maxTracks} track limit. Upgrade to upload more.`,
+        variant: "destructive" 
+      });
+      return;
+    }
+
     const maxSize = 500 * 1024 * 1024; // Increased for Dolby Atmos & HD Audio
     const newTracks: TrackFile[] = [];
+    const allowedCount = isUnlimited ? files.length : Math.min(files.length, tracksRemaining - tracks.length);
 
-    for (let i = 0; i < files.length; i++) {
+    if (!isUnlimited && files.length > allowedCount) {
+      toast({
+        title: "Some files skipped",
+        description: `Only ${allowedCount} of ${files.length} files added due to plan limits.`,
+        variant: "destructive"
+      });
+    }
+
+    for (let i = 0; i < Math.min(files.length, allowedCount); i++) {
       const file = files[i];
       
       if (file.size > maxSize) {
@@ -159,6 +198,26 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
 
     if (releaseType !== 'single' && !releaseTitle) {
       toast({ title: "Release title required for albums and EPs", variant: "destructive" });
+      return;
+    }
+
+    // Check album limits for non-singles
+    if (releaseType !== 'single' && !canCreateAlbum) {
+      toast({ 
+        title: "Album limit reached", 
+        description: `You've reached your ${maxAlbums} album limit. Upgrade to create more.`,
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    // Check track limits
+    if (!isUnlimited && currentTracks + tracks.length > maxTracks) {
+      toast({ 
+        title: "Track limit exceeded", 
+        description: `This upload would exceed your ${maxTracks} track limit. Remove some tracks or upgrade.`,
+        variant: "destructive" 
+      });
       return;
     }
 
@@ -279,6 +338,40 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
 
   return (
     <div className="space-y-6">
+      {/* Upload Limits Indicator */}
+      {!isUnlimited && (
+        <Card className={`p-4 ${!canUploadTrack ? 'bg-destructive/10 border-destructive/30' : 'bg-primary/5 border-primary/20'}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {!canUploadTrack ? (
+                <Lock className="h-5 w-5 text-destructive" />
+              ) : (
+                <AlertTriangle className="h-5 w-5 text-primary" />
+              )}
+              <div>
+                <p className="font-medium text-sm">
+                  {plan.charAt(0).toUpperCase() + plan.slice(1)} Plan Limits
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {currentTracks}/{maxTracks} tracks • {currentAlbums}/{maxAlbums} albums
+                </p>
+              </div>
+            </div>
+            {!canUploadTrack && (
+              <Button size="sm" onClick={() => navigate("/auth?upgrade=true")} className="bg-gradient-to-r from-primary to-secondary">
+                <Sparkles className="h-4 w-4 mr-1" />
+                Upgrade
+              </Button>
+            )}
+          </div>
+          {tracksRemaining <= 2 && tracksRemaining > 0 && (
+            <p className="text-xs text-amber-500 mt-2">
+              Only {tracksRemaining} track{tracksRemaining === 1 ? '' : 's'} remaining on your plan
+            </p>
+          )}
+        </Card>
+      )}
+
       {/* Release Type Selection */}
       <div>
         <Label>Release Type</Label>
