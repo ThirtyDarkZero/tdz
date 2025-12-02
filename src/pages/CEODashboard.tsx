@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users, Music, TrendingUp, Activity, Database, HardDrive,
   Play, Heart, Download, AlertCircle, CheckCircle, Clock, Sparkles,
-  DollarSign, PiggyBank, CreditCard, ArrowUpRight, ArrowDownRight
+  DollarSign, PiggyBank, CreditCard, ArrowUpRight, ArrowDownRight, Bot
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +16,7 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from "recharts";
+import { ExecAgentPanel } from "@/components/ExecAgentPanel";
 
 type DashboardMetrics = {
   totalUsers: number;
@@ -450,14 +451,73 @@ export default function CEODashboard() {
         </div>
 
         {/* Detailed Analytics */}
-        <Tabs defaultValue="revenue" className="space-y-6">
+        <Tabs defaultValue="executive" className="space-y-6">
           <TabsList className="glass-card">
+            <TabsTrigger value="executive" className="gap-2">
+              <Bot className="w-4 h-4" />
+              Executive Advisory
+            </TabsTrigger>
             <TabsTrigger value="revenue">Revenue Pool</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="content">Content</TabsTrigger>
             <TabsTrigger value="health">System Health</TabsTrigger>
           </TabsList>
+
+          {/* Executive Advisory Tab */}
+          <TabsContent value="executive" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <ExecAgentPanel />
+              </div>
+              <div className="space-y-4">
+                <Card className="glass-card p-6">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                    Quick Insights
+                  </h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <p className="text-muted-foreground">Artist Liability</p>
+                      <p className="text-xl font-bold text-green-500">${metrics.artistLiability.toLocaleString()}</p>
+                    </div>
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <p className="text-muted-foreground">Platform Revenue</p>
+                      <p className="text-xl font-bold">${metrics.totalPlatformRevenue.toLocaleString()}</p>
+                    </div>
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <p className="text-muted-foreground">Revenue Gap</p>
+                      <p className={`text-xl font-bold ${metrics.totalPlatformRevenue >= metrics.artistLiability ? 'text-green-500' : 'text-destructive'}`}>
+                        ${Math.abs(metrics.totalPlatformRevenue - metrics.artistLiability).toLocaleString()}
+                        {metrics.totalPlatformRevenue >= metrics.artistLiability ? ' surplus' : ' deficit'}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+                <Card className="glass-card p-6">
+                  <h3 className="font-semibold mb-3">Platform Status</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Total Artists</span>
+                      <span className="font-medium">{metrics.totalArtists}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Total Listeners</span>
+                      <span className="font-medium">{metrics.totalListeners}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Total Tracks</span>
+                      <span className="font-medium">{metrics.totalTracks}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Total Streams</span>
+                      <span className="font-medium">{metrics.totalPlays.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
 
           {/* Revenue Pool Tab - NEW */}
           <TabsContent value="revenue" className="space-y-6">
