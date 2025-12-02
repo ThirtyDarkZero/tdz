@@ -10,7 +10,9 @@ import {
   Clock, 
   Plus,
   ChevronRight,
-  Music
+  Music,
+  Lock,
+  Sparkles
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -22,6 +24,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface LibrarySidebarProps {
   userId: string | null;
@@ -35,11 +40,19 @@ export function LibrarySidebar({
   onPlaylistSelect 
 }: LibrarySidebarProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { role } = useUserRole(user);
+  const { hasFeature } = useSubscription(user);
+  
   const [playlists, setPlaylists] = useState<any[]>([]);
   const [recentlyPlayed, setRecentlyPlayed] = useState<any[]>([]);
   const [showNewPlaylist, setShowNewPlaylist] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [creating, setCreating] = useState(false);
+
+  // Artists always have playlist access, fans need subscription
+  const isArtist = role === 'artist' || role === 'verified_artist' || role === 'manager';
+  const canCreatePlaylists = isArtist || hasFeature('playlists');
 
   useEffect(() => {
     if (userId) {
@@ -96,6 +109,16 @@ export function LibrarySidebar({
   };
 
   const handleCreatePlaylist = async () => {
+    if (!canCreatePlaylists) {
+      toast.error("Subscribe to create playlists", {
+        action: {
+          label: "Upgrade",
+          onClick: () => navigate("/auth?upgrade=true"),
+        },
+      });
+      return;
+    }
+    
     if (!newPlaylistName.trim() || !userId) return;
     
     setCreating(true);
@@ -121,6 +144,19 @@ export function LibrarySidebar({
       setCreating(false);
     }
   };
+  
+  const handlePlusClick = () => {
+    if (!canCreatePlaylists) {
+      toast.error("Subscribe to create playlists ($12/mo)", {
+        action: {
+          label: "Upgrade",
+          onClick: () => navigate("/auth?upgrade=true"),
+        },
+      });
+      return;
+    }
+    setShowNewPlaylist(true);
+  };
 
   if (!userId) {
     return (
@@ -143,11 +179,25 @@ export function LibrarySidebar({
           variant="ghost" 
           size="icon" 
           className="h-8 w-8"
-          onClick={() => setShowNewPlaylist(true)}
+          onClick={handlePlusClick}
         >
-          <Plus className="w-4 h-4" />
+          {canCreatePlaylists ? (
+            <Plus className="w-4 h-4" />
+          ) : (
+            <Lock className="w-4 h-4 text-muted-foreground" />
+          )}
         </Button>
       </div>
+      
+      {/* Subscription notice for playlist creation */}
+      {!canCreatePlaylists && (
+        <Card className="p-3 bg-primary/5 border-primary/20">
+          <div className="flex items-center gap-2 text-sm">
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span className="text-muted-foreground">Subscribe for playlists</span>
+          </div>
+        </Card>
+      )}
 
       {/* Liked Songs */}
       <Card 

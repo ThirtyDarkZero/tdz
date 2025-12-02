@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Play, Heart, Share2, TrendingUp, Flame, 
-  ListMusic, Plus, UserPlus, Music, ShoppingBag
+  ListMusic, Plus, UserPlus, Music, ShoppingBag, Lock, Sparkles
 } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -63,6 +63,9 @@ export default function Discover() {
   
   // Fans need a subscription for unlimited streaming
   const hasUnlimitedStreaming = hasFeature('unlimitedStreaming') || isArtist;
+  
+  // Artists always have playlist access, fans need subscription
+  const canCreatePlaylists = isArtist || hasFeature('playlists');
 
   // Load artist info when current track changes
   useEffect(() => {
@@ -239,6 +242,7 @@ export default function Discover() {
           <PlaylistsSection
             playlists={playlists}
             onCreatePlaylist={handleCreatePlaylist}
+            canCreate={canCreatePlaylists}
           />
         </TabsContent>
 
@@ -436,23 +440,59 @@ function TrendingSection({
 // Playlists Section Component
 function PlaylistsSection({ 
   playlists, 
-  onCreatePlaylist 
+  onCreatePlaylist,
+  canCreate
 }: {
   playlists: any[];
   onCreatePlaylist: () => void;
+  canCreate: boolean;
 }) {
+  const navigate = useNavigate();
+  
+  const handleCreate = () => {
+    if (!canCreate) {
+      toast.error("Subscribe to create playlists ($12/mo)", {
+        action: {
+          label: "Upgrade",
+          onClick: () => navigate("/auth?upgrade=true"),
+        },
+      });
+      return;
+    }
+    onCreatePlaylist();
+  };
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl md:text-4xl font-black tracking-tight glow-text">My Playlists</h2>
         <Button 
-          onClick={onCreatePlaylist}
-          className="bg-gradient-to-r from-primary via-primary-glow to-secondary shadow-glow hover-lift px-6"
+          onClick={handleCreate}
+          className={`${canCreate ? 'bg-gradient-to-r from-primary via-primary-glow to-secondary shadow-glow' : 'bg-muted'} hover-lift px-6`}
         >
-          <Plus className="w-5 h-5 mr-2" />
+          {canCreate ? <Plus className="w-5 h-5 mr-2" /> : <Lock className="w-5 h-5 mr-2" />}
           Create Playlist
         </Button>
       </div>
+      
+      {/* Subscription notice */}
+      {!canCreate && (
+        <Card className="p-4 bg-primary/10 border-primary/30">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Sparkles className="w-6 h-6 text-primary" />
+              <div>
+                <p className="font-semibold">Unlock Playlists</p>
+                <p className="text-sm text-muted-foreground">Subscribe to create and manage playlists</p>
+              </div>
+            </div>
+            <Button onClick={() => navigate("/auth?upgrade=true")} className="bg-gradient-to-r from-primary to-secondary">
+              <Sparkles className="w-4 h-4 mr-2" />
+              $12/mo
+            </Button>
+          </div>
+        </Card>
+      )}
       
       {playlists.length === 0 ? (
         <Card className="glass-card-premium p-16 text-center shadow-glow-lg">
@@ -465,16 +505,16 @@ function PlaylistsSection({
             <div className="space-y-3">
               <h3 className="text-3xl font-black">No playlists yet</h3>
               <p className="text-lg text-muted-foreground">
-                Create your first playlist to organize your favorite tracks
+                {canCreate ? "Create your first playlist to organize your favorite tracks" : "Subscribe to start creating playlists"}
               </p>
             </div>
             
             <Button 
-              onClick={onCreatePlaylist}
-              className="bg-gradient-to-r from-primary to-secondary shadow-glow hover-lift px-8 py-6 text-base mt-6"
+              onClick={handleCreate}
+              className={`${canCreate ? 'bg-gradient-to-r from-primary to-secondary shadow-glow' : 'bg-muted'} hover-lift px-8 py-6 text-base mt-6`}
             >
-              <Plus className="w-5 h-5 mr-2" />
-              Create Your First Playlist
+              {canCreate ? <Plus className="w-5 h-5 mr-2" /> : <Lock className="w-5 h-5 mr-2" />}
+              {canCreate ? "Create Your First Playlist" : "Subscribe to Create"}
             </Button>
           </div>
         </Card>
