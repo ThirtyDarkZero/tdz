@@ -24,10 +24,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { 
   Plus, ListMusic, MoreVertical, Pencil, Trash2, 
-  Globe, Lock, Play, Music 
+  Globe, Lock, Play, Music, Sparkles
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface Playlist {
   id: string;
@@ -48,6 +51,10 @@ interface PlaylistManagerProps {
 
 export function PlaylistManager({ userId, onPlaylistSelect, onRefresh }: PlaylistManagerProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { role } = useUserRole(user);
+  const { hasFeature } = useSubscription(user);
+  
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -60,6 +67,10 @@ export function PlaylistManager({ userId, onPlaylistSelect, onRefresh }: Playlis
     is_public: true
   });
   const [saving, setSaving] = useState(false);
+  
+  // Artists always have playlist access, fans need subscription
+  const isArtist = role === 'artist' || role === 'verified_artist' || role === 'manager';
+  const canCreatePlaylists = isArtist || hasFeature('playlists');
 
   useEffect(() => {
     if (userId) {
@@ -94,6 +105,16 @@ export function PlaylistManager({ userId, onPlaylistSelect, onRefresh }: Playlis
   };
 
   const handleCreate = async () => {
+    if (!canCreatePlaylists) {
+      toast.error("Subscribe to create playlists ($12/mo)", {
+        action: {
+          label: "Upgrade",
+          onClick: () => navigate("/auth?upgrade=true"),
+        },
+      });
+      return;
+    }
+    
     if (!formData.name.trim() || !userId) return;
     
     setSaving(true);
@@ -118,6 +139,20 @@ export function PlaylistManager({ userId, onPlaylistSelect, onRefresh }: Playlis
       onRefresh?.();
     }
     setSaving(false);
+  };
+  
+  const handleCreateClick = () => {
+    if (!canCreatePlaylists) {
+      toast.error("Subscribe to create playlists ($12/mo)", {
+        action: {
+          label: "Upgrade",
+          onClick: () => navigate("/auth?upgrade=true"),
+        },
+      });
+      return;
+    }
+    setFormData({ name: "", description: "", is_public: true });
+    setShowCreateDialog(true);
   };
 
   const handleEdit = async () => {
@@ -205,16 +240,29 @@ export function PlaylistManager({ userId, onPlaylistSelect, onRefresh }: Playlis
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-bold">Your Playlists</h3>
         <Button 
-          onClick={() => {
-            setFormData({ name: "", description: "", is_public: true });
-            setShowCreateDialog(true);
-          }}
-          className="gap-2 bg-gradient-to-r from-primary to-secondary shadow-glow"
+          onClick={handleCreateClick}
+          className={`gap-2 ${canCreatePlaylists ? 'bg-gradient-to-r from-primary to-secondary shadow-glow' : 'bg-muted'}`}
         >
-          <Plus className="w-4 h-4" />
+          {canCreatePlaylists ? <Plus className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
           Create Playlist
         </Button>
       </div>
+      
+      {/* Subscription notice */}
+      {!canCreatePlaylists && (
+        <Card className="p-4 bg-primary/5 border-primary/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              <span className="text-sm">Subscribe to create unlimited playlists</span>
+            </div>
+            <Button size="sm" onClick={() => navigate("/auth?upgrade=true")} className="gap-1">
+              <Sparkles className="w-3 h-3" />
+              $12/mo
+            </Button>
+          </div>
+        </Card>
+      )}
 
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
