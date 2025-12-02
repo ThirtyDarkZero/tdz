@@ -239,6 +239,24 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
       if (result.recorded) {
         setStreamRecorded(true);
         console.log(`Stream recorded: Artist earned $${result.artistEarned}`);
+        
+        // Track listener demographics
+        try {
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/track-listener-demographics`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(session?.access_token && { Authorization: `Bearer ${session.access_token}` }),
+            },
+            body: JSON.stringify({
+              trackId: currentTrack.id,
+              artistId: result.artistId,
+              listenerId: session?.user?.id || null,
+            }),
+          });
+        } catch (demoError) {
+          console.log('Demographics tracking failed:', demoError);
+        }
       }
     } catch (error) {
       console.error('Error recording stream:', error);

@@ -244,6 +244,54 @@ export type Database = {
         }
         Relationships: []
       }
+      artist_narrative: {
+        Row: {
+          color_palette: Json | null
+          created_at: string
+          current_chapter: string | null
+          defining_moment: string | null
+          future_vision: string | null
+          id: string
+          narrative_arc: string | null
+          narrative_strength: number | null
+          origin_story: string | null
+          typography: Json | null
+          updated_at: string
+          user_id: string
+          visual_style: string | null
+        }
+        Insert: {
+          color_palette?: Json | null
+          created_at?: string
+          current_chapter?: string | null
+          defining_moment?: string | null
+          future_vision?: string | null
+          id?: string
+          narrative_arc?: string | null
+          narrative_strength?: number | null
+          origin_story?: string | null
+          typography?: Json | null
+          updated_at?: string
+          user_id: string
+          visual_style?: string | null
+        }
+        Update: {
+          color_palette?: Json | null
+          created_at?: string
+          current_chapter?: string | null
+          defining_moment?: string | null
+          future_vision?: string | null
+          id?: string
+          narrative_arc?: string | null
+          narrative_strength?: number | null
+          origin_story?: string | null
+          typography?: Json | null
+          updated_at?: string
+          user_id?: string
+          visual_style?: string | null
+        }
+        Relationships: []
+      }
       artist_payout_details: {
         Row: {
           account_holder_name: string | null
@@ -633,6 +681,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      content_calendar: {
+        Row: {
+          content_type: string
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          platform: string | null
+          scheduled_date: string
+          scheduled_time: string | null
+          status: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          content_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          platform?: string | null
+          scheduled_date: string
+          scheduled_time?: string | null
+          status?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          content_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          platform?: string | null
+          scheduled_date?: string
+          scheduled_time?: string | null
+          status?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      content_library: {
+        Row: {
+          content_type: string
+          created_at: string
+          description: string | null
+          file_path: string | null
+          id: string
+          tags: Json | null
+          thumbnail_path: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          content_type: string
+          created_at?: string
+          description?: string | null
+          file_path?: string | null
+          id?: string
+          tags?: Json | null
+          thumbnail_path?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          content_type?: string
+          created_at?: string
+          description?: string | null
+          file_path?: string | null
+          id?: string
+          tags?: Json | null
+          thumbnail_path?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       credit_transactions: {
         Row: {
@@ -1050,6 +1176,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      listener_demographics: {
+        Row: {
+          artist_id: string
+          browser: string | null
+          city: string | null
+          country: string | null
+          country_code: string | null
+          created_at: string
+          device_type: string | null
+          id: string
+          ip_address: unknown
+          latitude: number | null
+          listener_id: string | null
+          longitude: number | null
+          os: string | null
+          region: string | null
+          track_id: string | null
+        }
+        Insert: {
+          artist_id: string
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          ip_address?: unknown
+          latitude?: number | null
+          listener_id?: string | null
+          longitude?: number | null
+          os?: string | null
+          region?: string | null
+          track_id?: string | null
+        }
+        Update: {
+          artist_id?: string
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          ip_address?: unknown
+          latitude?: number | null
+          listener_id?: string | null
+          longitude?: number | null
+          os?: string | null
+          region?: string | null
+          track_id?: string | null
+        }
+        Relationships: []
       }
       listener_profiles: {
         Row: {
