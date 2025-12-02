@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -7,85 +8,219 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Check, Music, Headphones, Download, Star } from "lucide-react";
+import { Check, Crown, Music, Sparkles, Star, Zap, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useSubscription, SubscriptionPlan } from "@/hooks/useSubscription";
+import { cn } from "@/lib/utils";
 
 interface SubscriptionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  defaultAudience?: 'artist' | 'fan';
 }
 
-const features = [
-  { icon: Music, text: "Unlimited full-length streaming" },
-  { icon: Headphones, text: "HD & Dolby Atmos audio quality" },
-  { icon: Download, text: "Offline downloads" },
-  { icon: Star, text: "Ad-free experience" },
+interface PlanConfig {
+  name: string;
+  price: string;
+  priceAmount: number;
+  features: string[];
+  icon: typeof Crown;
+  popular?: boolean;
+  planType: SubscriptionPlan;
+}
+
+const ARTIST_PLANS: PlanConfig[] = [
+  {
+    name: "Free",
+    price: "$0",
+    priceAmount: 0,
+    features: ["3 tracks", "1 album", "Basic analytics"],
+    icon: Music,
+    planType: "free",
+  },
+  {
+    name: "Starter",
+    price: "$9.99",
+    priceAmount: 999,
+    features: ["50 tracks", "5 albums", "HD audio", "1 AI video/mo"],
+    icon: Star,
+    planType: "starter",
+  },
+  {
+    name: "Pro",
+    price: "$19.99",
+    priceAmount: 1999,
+    features: ["Unlimited tracks", "Dolby Atmos", "5 AI videos/mo"],
+    icon: Sparkles,
+    popular: true,
+    planType: "pro",
+  },
+  {
+    name: "Enterprise",
+    price: "$49.99",
+    priceAmount: 4999,
+    features: ["Everything in Pro", "Unlimited AI", "API access"],
+    icon: Crown,
+    planType: "enterprise",
+  },
 ];
 
-export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps) {
-  const navigate = useNavigate();
+const FAN_PLAN: PlanConfig = {
+  name: "Fan",
+  price: "$12",
+  priceAmount: 1200,
+  features: ["Unlimited streaming", "HD & Dolby Atmos", "Offline downloads", "Ad-free"],
+  icon: Zap,
+  planType: "fan",
+};
 
-  const handleSubscribe = () => {
+export function SubscriptionModal({ open, onOpenChange, defaultAudience = 'fan' }: SubscriptionModalProps) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { getPlan } = useSubscription(user);
+  const [selectedAudience, setSelectedAudience] = useState<'artist' | 'fan'>(defaultAudience);
+  const [processingPlan, setProcessingPlan] = useState<string | null>(null);
+
+  const currentPlan = user ? getPlan() : 'free';
+  const displayPlans = selectedAudience === 'artist' ? ARTIST_PLANS : [FAN_PLAN];
+
+  const handleSelectPlan = async (plan: PlanConfig) => {
+    if (!user) {
+      onOpenChange(false);
+      navigate(`/auth?plan=${plan.planType}`);
+      return;
+    }
+
+    if (plan.planType === 'free' || plan.planType === currentPlan) {
+      return;
+    }
+
+    setProcessingPlan(plan.planType);
     onOpenChange(false);
-    navigate("/pricing");
+    navigate(`/checkout?plan=${plan.planType}`);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md glass-card-premium border-primary/30">
-        <DialogHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-glow">
-            <Music className="w-8 h-8 text-primary-foreground" />
-          </div>
+      <DialogContent className="sm:max-w-2xl glass-card-premium border-primary/30 max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="text-center space-y-2">
           <DialogTitle className="text-2xl font-black">
-            Unlock Full Access
+            Upgrade Your Plan
           </DialogTitle>
-          <DialogDescription className="text-base">
-            Your 30-second preview has ended. Subscribe to enjoy unlimited streaming!
+          <DialogDescription>
+            Unlock premium features and support artists with $1 per stream
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Price */}
-          <div className="text-center">
-            <Badge className="bg-gradient-to-r from-primary to-secondary text-primary-foreground px-4 py-1 text-lg font-bold shadow-glow">
-              Only $12/month
-            </Badge>
+        <div className="space-y-4 py-4">
+          {/* Audience Toggle */}
+          <div className="flex justify-center">
+            <div className="glass-card p-1 rounded-lg flex gap-1">
+              <Button
+                variant={selectedAudience === 'artist' ? 'default' : 'ghost'}
+                onClick={() => setSelectedAudience('artist')}
+                size="sm"
+                className="px-4"
+              >
+                <Music className="w-4 h-4 mr-2" />
+                Artist
+              </Button>
+              <Button
+                variant={selectedAudience === 'fan' ? 'default' : 'ghost'}
+                onClick={() => setSelectedAudience('fan')}
+                size="sm"
+                className="px-4"
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                Fan
+              </Button>
+            </div>
           </div>
 
-          {/* Features */}
-          <div className="space-y-3">
-            {features.map((feature, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                  <feature.icon className="w-4 h-4 text-primary" />
+          {/* Plans Grid */}
+          <div className={cn(
+            "grid gap-3",
+            selectedAudience === 'artist' ? 'grid-cols-2 lg:grid-cols-4' : 'max-w-xs mx-auto'
+          )}>
+            {displayPlans.map((plan) => {
+              const Icon = plan.icon;
+              const isCurrentPlan = currentPlan === plan.planType;
+              const isProcessing = processingPlan === plan.planType;
+
+              return (
+                <div
+                  key={plan.planType}
+                  className={cn(
+                    "glass-card p-4 rounded-xl relative transition-all cursor-pointer hover:ring-2 hover:ring-primary/50",
+                    plan.popular && "ring-2 ring-primary",
+                    isCurrentPlan && "opacity-60 cursor-default"
+                  )}
+                  onClick={() => !isCurrentPlan && handleSelectPlan(plan)}
+                >
+                  {plan.popular && (
+                    <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-primary text-xs">
+                      Popular
+                    </Badge>
+                  )}
+                  
+                  <div className="text-center space-y-2">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto">
+                      <Icon className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold">{plan.name}</h3>
+                      <div className="text-xl font-black text-primary">{plan.price}</div>
+                      {plan.priceAmount > 0 && (
+                        <span className="text-xs text-muted-foreground">/month</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <ul className="mt-3 space-y-1.5">
+                    {plan.features.map((feature, i) => (
+                      <li key={i} className="flex items-start gap-1.5 text-xs">
+                        <Check className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
+                        <span className="text-muted-foreground">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <Button
+                    className={cn(
+                      "w-full mt-3",
+                      plan.popular && "shadow-glow"
+                    )}
+                    size="sm"
+                    variant={isCurrentPlan ? 'outline' : 'default'}
+                    disabled={isProcessing || isCurrentPlan}
+                  >
+                    {isProcessing ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : isCurrentPlan ? (
+                      "Current"
+                    ) : (
+                      "Select"
+                    )}
+                  </Button>
                 </div>
-                <span className="text-sm font-medium">{feature.text}</span>
-                <Check className="w-4 h-4 text-green-500 ml-auto" />
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          {/* CTA Buttons */}
-          <div className="space-y-3 pt-2">
+          {/* Continue with preview option */}
+          <div className="text-center pt-2">
             <Button
-              onClick={handleSubscribe}
-              className="w-full bg-gradient-to-r from-primary via-primary-glow to-secondary hover:opacity-90 shadow-glow py-6 text-lg font-bold"
-            >
-              Start Subscription
-            </Button>
-            <Button
-              variant="outline"
+              variant="ghost"
               onClick={() => onOpenChange(false)}
-              className="w-full"
+              className="text-muted-foreground"
             >
-              Continue with Previews
+              Continue with previews
             </Button>
+            <p className="text-xs text-muted-foreground mt-1">
+              Cancel anytime. No commitment required.
+            </p>
           </div>
-
-          <p className="text-xs text-center text-muted-foreground">
-            Cancel anytime. No commitment required.
-          </p>
         </div>
       </DialogContent>
     </Dialog>
