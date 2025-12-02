@@ -18,10 +18,14 @@ export interface Subscription {
 }
 
 // Feature definitions per plan
+// Artist Tiers: starter, pro, enterprise (for artists/managers)
+// Fan Tier: fan (for listeners)
+// Free: very limited - trial/signup state
 const PLAN_FEATURES = {
   free: {
-    uploads: false,
-    basicAnalytics: false,
+    // Artists on free get LIMITED trial access
+    uploads: true, // Can upload but limited
+    basicAnalytics: true, // Basic stats only
     advancedAnalytics: false,
     fanEngagement: false,
     downloadSales: false,
@@ -36,6 +40,9 @@ const PLAN_FEATURES = {
     unlimitedStreaming: false,
     playlists: false,
     socialFeatures: false,
+    // Limits for free artists
+    maxTracks: 3,
+    maxAlbums: 1,
   },
   starter: {
     uploads: true,
@@ -52,8 +59,10 @@ const PLAN_FEATURES = {
     prioritySupport: false,
     dedicatedManager: false,
     unlimitedStreaming: false,
-    playlists: false,
-    socialFeatures: false,
+    playlists: true, // Artists can make playlists
+    socialFeatures: true,
+    maxTracks: 50,
+    maxAlbums: 5,
   },
   pro: {
     uploads: true,
@@ -70,8 +79,10 @@ const PLAN_FEATURES = {
     prioritySupport: true,
     dedicatedManager: false,
     unlimitedStreaming: false,
-    playlists: false,
-    socialFeatures: false,
+    playlists: true,
+    socialFeatures: true,
+    maxTracks: -1, // unlimited
+    maxAlbums: -1,
   },
   enterprise: {
     uploads: true,
@@ -88,8 +99,10 @@ const PLAN_FEATURES = {
     prioritySupport: true,
     dedicatedManager: true,
     unlimitedStreaming: false,
-    playlists: false,
-    socialFeatures: false,
+    playlists: true,
+    socialFeatures: true,
+    maxTracks: -1,
+    maxAlbums: -1,
   },
   fan: {
     uploads: false,
@@ -108,6 +121,8 @@ const PLAN_FEATURES = {
     unlimitedStreaming: true,
     playlists: true,
     socialFeatures: true,
+    maxTracks: 0,
+    maxAlbums: 0,
   },
 };
 

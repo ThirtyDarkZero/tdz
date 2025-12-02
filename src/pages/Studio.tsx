@@ -339,9 +339,8 @@ const Studio = () => {
           <div className="animate-fade-in" style={{ animationDelay: '0.8s' }}>
             {role === 'manager' && (
               <TabsContent value="manager" className="mt-0">
-                <FeatureGate feature="multiArtistManagement">
-                  <ManagerDashboard />
-                </FeatureGate>
+                {/* Manager Dashboard available to all managers - they manage artists */}
+                <ManagerDashboard />
               </TabsContent>
             )}
 
@@ -358,8 +357,9 @@ const Studio = () => {
             </TabsContent>
 
             <TabsContent value="analytics" className="mt-0">
-              <FeatureGate feature="advancedAnalytics">
-                <DistributionAnalytics />
+              {/* Basic analytics for all artists, advanced features gated inside component */}
+              <FeatureGate feature="basicAnalytics">
+                <DistributionAnalytics showAdvanced={hasFeature('advancedAnalytics')} />
               </FeatureGate>
             </TabsContent>
 
