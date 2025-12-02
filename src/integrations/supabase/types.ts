@@ -253,7 +253,11 @@ export type Database = {
           id: string
           last_payout_date: string | null
           payout_enabled: boolean
+          square_access_token: string | null
           square_customer_id: string | null
+          square_merchant_id: string | null
+          square_refresh_token: string | null
+          square_token_expires_at: string | null
           updated_at: string
         }
         Insert: {
@@ -264,7 +268,11 @@ export type Database = {
           id?: string
           last_payout_date?: string | null
           payout_enabled?: boolean
+          square_access_token?: string | null
           square_customer_id?: string | null
+          square_merchant_id?: string | null
+          square_refresh_token?: string | null
+          square_token_expires_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -275,7 +283,11 @@ export type Database = {
           id?: string
           last_payout_date?: string | null
           payout_enabled?: boolean
+          square_access_token?: string | null
           square_customer_id?: string | null
+          square_merchant_id?: string | null
+          square_refresh_token?: string | null
+          square_token_expires_at?: string | null
           updated_at?: string
         }
         Relationships: []
