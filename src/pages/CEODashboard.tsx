@@ -6,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users, Music, TrendingUp, Activity, Database, HardDrive,
   Play, Heart, Download, AlertCircle, CheckCircle, Clock, Sparkles,
-  DollarSign, PiggyBank, CreditCard, ArrowUpRight, ArrowDownRight, Bot, Workflow
+  DollarSign, PiggyBank, CreditCard, ArrowUpRight, ArrowDownRight, Bot, Workflow,
+  MessageCircle, Zap, Crown
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +19,7 @@ import {
 } from "recharts";
 import { ExecAgentPanel } from "@/components/ExecAgentPanel";
 import { PaymentFlowDashboard } from "@/components/PaymentFlowDashboard";
+import { CEOArtistMessaging } from "@/components/CEOArtistMessaging";
 
 type DashboardMetrics = {
   totalUsers: number;
@@ -317,42 +319,73 @@ export default function CEODashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-6">
-        {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 relative overflow-hidden">
+      {/* Background effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-secondary/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-primary/5 via-transparent to-secondary/5 rounded-full blur-3xl" />
+      </div>
+
+      <div className="container mx-auto p-6 relative z-10">
+        {/* Header with crown */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-4xl font-display font-bold">CEO Dashboard</h1>
-            <Badge variant="secondary" className="gap-2">
-              <Activity className="w-4 h-4" />
-              Live
-            </Badge>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Crown className="w-10 h-10 text-yellow-500" />
+                <div className="absolute inset-0 w-10 h-10 bg-yellow-500 blur-xl opacity-30" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-display font-bold bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent">
+                  CEO Dashboard
+                </h1>
+                <p className="text-sm text-muted-foreground">Welcome back, Chief Executive</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className="gap-2 border-green-500/50 text-green-500 bg-green-500/10">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                Systems Online
+              </Badge>
+              <Badge variant="secondary" className="gap-2 bg-primary/20 border-primary/30">
+                <Activity className="w-4 h-4 animate-pulse" />
+                Live
+              </Badge>
+            </div>
           </div>
           <p className="text-muted-foreground">Real-time platform metrics, revenue pool, and artist liability</p>
         </div>
 
-        {/* Revenue Pool Overview - NEW */}
+        {/* Revenue Pool Overview - Enhanced */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="glass-card p-6 border-green-500/30">
-            <div className="flex items-center justify-between mb-2">
-              <DollarSign className="w-8 h-8 text-green-500" />
-              <Badge className="bg-green-500/20 text-green-500">$1/stream</Badge>
+          <Card className="glass-card p-6 border-green-500/30 bg-gradient-to-br from-green-500/10 to-transparent relative overflow-hidden group hover:shadow-xl hover:shadow-green-500/10 transition-all duration-300">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl group-hover:scale-150 transition-transform" />
+            <div className="flex items-center justify-between mb-2 relative z-10">
+              <div className="p-2 rounded-xl bg-green-500/20">
+                <DollarSign className="w-8 h-8 text-green-500" />
+              </div>
+              <Badge className="bg-green-500/20 text-green-500 border-green-500/30">$1/stream</Badge>
             </div>
-            <p className="text-3xl font-bold text-green-500">${metrics.artistLiability.toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground">Artist Liability</p>
-            <div className="mt-2 text-xs flex items-center gap-1">
+            <p className="text-4xl font-black text-green-500 relative z-10">${metrics.artistLiability.toLocaleString()}</p>
+            <p className="text-sm text-muted-foreground relative z-10">Artist Liability</p>
+            <div className="mt-2 text-xs flex items-center gap-1 relative z-10">
+              <Zap className="w-3 h-3 text-green-500" />
               <span className="text-muted-foreground">{metrics.totalPlays.toLocaleString()} streams × $1.00</span>
             </div>
           </Card>
 
-          <Card className="glass-card p-6 border-primary/30">
-            <div className="flex items-center justify-between mb-2">
-              <PiggyBank className="w-8 h-8 text-primary" />
-              <Badge variant="outline">Revenue Pool</Badge>
+          <Card className="glass-card p-6 border-primary/30 bg-gradient-to-br from-primary/10 to-transparent relative overflow-hidden group hover:shadow-xl hover:shadow-primary/10 transition-all duration-300">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl group-hover:scale-150 transition-transform" />
+            <div className="flex items-center justify-between mb-2 relative z-10">
+              <div className="p-2 rounded-xl bg-primary/20">
+                <PiggyBank className="w-8 h-8 text-primary" />
+              </div>
+              <Badge variant="outline" className="border-primary/30">Revenue Pool</Badge>
             </div>
-            <p className="text-3xl font-bold">${metrics.totalPlatformRevenue.toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground">Total Platform Revenue</p>
-            <div className="mt-2 text-xs flex items-center gap-1">
+            <p className="text-4xl font-black relative z-10">${metrics.totalPlatformRevenue.toLocaleString()}</p>
+            <p className="text-sm text-muted-foreground relative z-10">Total Platform Revenue</p>
+            <div className="mt-2 text-xs flex items-center gap-1 relative z-10">
               {metrics.totalPlatformRevenue >= metrics.artistLiability ? (
                 <span className="text-green-500 flex items-center gap-1">
                   <ArrowUpRight className="w-3 h-3" />
@@ -367,23 +400,29 @@ export default function CEODashboard() {
             </div>
           </Card>
 
-          <Card className="glass-card p-6 border-secondary/30">
-            <div className="flex items-center justify-between mb-2">
-              <Download className="w-8 h-8 text-secondary" />
-              <Badge className="bg-secondary/20 text-secondary">{metrics.totalDownloads}</Badge>
+          <Card className="glass-card p-6 border-secondary/30 bg-gradient-to-br from-secondary/10 to-transparent relative overflow-hidden group hover:shadow-xl hover:shadow-secondary/10 transition-all duration-300">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/10 rounded-full blur-3xl group-hover:scale-150 transition-transform" />
+            <div className="flex items-center justify-between mb-2 relative z-10">
+              <div className="p-2 rounded-xl bg-secondary/20">
+                <Download className="w-8 h-8 text-secondary" />
+              </div>
+              <Badge className="bg-secondary/20 text-secondary border-secondary/30">{metrics.totalDownloads}</Badge>
             </div>
-            <p className="text-3xl font-bold">${metrics.totalDownloadRevenue.toFixed(2)}</p>
-            <p className="text-sm text-muted-foreground">Download Revenue</p>
-            <div className="mt-2 text-xs text-muted-foreground">
+            <p className="text-4xl font-black relative z-10">${metrics.totalDownloadRevenue.toFixed(2)}</p>
+            <p className="text-sm text-muted-foreground relative z-10">Download Revenue</p>
+            <div className="mt-2 text-xs text-muted-foreground relative z-10">
               Avg: ${metrics.avgDownloadPrice.toFixed(2)} per download
             </div>
           </Card>
 
-          <Card className="glass-card p-6 border-accent/30">
-            <div className="flex items-center justify-between mb-2">
-              <CreditCard className="w-8 h-8 text-accent" />
+          <Card className="glass-card p-6 border-accent/30 bg-gradient-to-br from-accent/10 to-transparent relative overflow-hidden group hover:shadow-xl hover:shadow-accent/10 transition-all duration-300">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full blur-3xl group-hover:scale-150 transition-transform" />
+            <div className="flex items-center justify-between mb-2 relative z-10">
+              <div className="p-2 rounded-xl bg-accent/20">
+                <CreditCard className="w-8 h-8 text-accent" />
+              </div>
               {metrics.revenuePoolBalance >= 0 ? (
-                <Badge className="bg-green-500/20 text-green-500">Healthy</Badge>
+                <Badge className="bg-green-500/20 text-green-500 border-green-500/30">Healthy</Badge>
               ) : (
                 <Badge className="bg-destructive/20 text-destructive">Low</Badge>
               )}
@@ -453,16 +492,20 @@ export default function CEODashboard() {
 
         {/* Detailed Analytics */}
         <Tabs defaultValue="executive" className="space-y-6">
-          <TabsList className="glass-card">
-            <TabsTrigger value="executive" className="gap-2">
+          <TabsList className="glass-card flex-wrap h-auto p-2 gap-1">
+            <TabsTrigger value="executive" className="gap-2 data-[state=active]:bg-primary/20 data-[state=active]:shadow-lg">
               <Bot className="w-4 h-4" />
               Executive Advisory
             </TabsTrigger>
-            <TabsTrigger value="revenue">Revenue Pool</TabsTrigger>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="content">Content</TabsTrigger>
-            <TabsTrigger value="health">System Health</TabsTrigger>
+            <TabsTrigger value="messaging" className="gap-2 data-[state=active]:bg-primary/20 data-[state=active]:shadow-lg">
+              <MessageCircle className="w-4 h-4" />
+              Artist Messages
+            </TabsTrigger>
+            <TabsTrigger value="revenue" className="data-[state=active]:bg-primary/20 data-[state=active]:shadow-lg">Revenue Pool</TabsTrigger>
+            <TabsTrigger value="overview" className="data-[state=active]:bg-primary/20 data-[state=active]:shadow-lg">Overview</TabsTrigger>
+            <TabsTrigger value="users" className="data-[state=active]:bg-primary/20 data-[state=active]:shadow-lg">Users</TabsTrigger>
+            <TabsTrigger value="content" className="data-[state=active]:bg-primary/20 data-[state=active]:shadow-lg">Content</TabsTrigger>
+            <TabsTrigger value="health" className="data-[state=active]:bg-primary/20 data-[state=active]:shadow-lg">System Health</TabsTrigger>
           </TabsList>
 
           {/* Executive Advisory Tab */}
@@ -518,6 +561,11 @@ export default function CEODashboard() {
                 </Card>
               </div>
             </div>
+          </TabsContent>
+
+          {/* Artist Messaging Tab */}
+          <TabsContent value="messaging" className="space-y-6">
+            <CEOArtistMessaging />
           </TabsContent>
 
           {/* Revenue Pool Tab - NEW */}
