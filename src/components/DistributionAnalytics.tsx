@@ -27,7 +27,11 @@ type AnalyticsData = {
   upcomingPayout: string;
 };
 
-export const DistributionAnalytics = () => {
+interface DistributionAnalyticsProps {
+  showAdvanced?: boolean;
+}
+
+export const DistributionAnalytics = ({ showAdvanced = true }: DistributionAnalyticsProps) => {
   const [analytics, setAnalytics] = useState<AnalyticsData>({
     totalStreams: 0,
     streamingRevenue: 0,
@@ -212,81 +216,106 @@ export const DistributionAnalytics = () => {
         </div>
       </Card>
 
-      <Card className="glass-card p-6">
-        <h3 className="font-semibold mb-4 flex items-center gap-2">
-          <Activity className="w-5 h-5 text-primary" />
-          Earnings Over Time (Last 30 Days)
-        </h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={analytics.dailyStreams}>
-            <defs>
-              <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-            <XAxis dataKey="date" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} interval="preserveStartEnd" />
-            <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} tickFormatter={(value) => `$${value}`} />
-            <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
-            <Area type="monotone" dataKey="revenue" stroke="hsl(142, 76%, 36%)" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
-          </AreaChart>
-        </ResponsiveContainer>
-      </Card>
+      {/* Advanced Analytics - Only shown for Pro+ plans */}
+      {showAdvanced ? (
+        <>
+          <Card className="glass-card p-6">
+            <h3 className="font-semibold mb-4 flex items-center gap-2">
+              <Activity className="w-5 h-5 text-primary" />
+              Earnings Over Time (Last 30 Days)
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={analytics.dailyStreams}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                <XAxis dataKey="date" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} interval="preserveStartEnd" />
+                <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} tickFormatter={(value) => `$${value}`} />
+                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
+                <Area type="monotone" dataKey="revenue" stroke="hsl(142, 76%, 36%)" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </Card>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        <Card className="glass-card p-6">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-primary" />
-            Top Earning Tracks
-          </h3>
-          {analytics.topTracks.length > 0 ? (
-            <div className="space-y-3">
-              {analytics.topTracks.map((track, idx) => (
-                <div key={track.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent/50 transition-colors">
-                  <span className="text-2xl font-bold text-muted-foreground w-8">#{idx + 1}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{track.title}</p>
-                    <p className="text-sm text-muted-foreground">{track.artist_name}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-green-500">${(track.play_count || 0).toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">{(track.play_count || 0).toLocaleString()} streams</p>
-                  </div>
+          <div className="grid lg:grid-cols-2 gap-6">
+            <Card className="glass-card p-6">
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                Top Earning Tracks
+              </h3>
+              {analytics.topTracks.length > 0 ? (
+                <div className="space-y-3">
+                  {analytics.topTracks.map((track, idx) => (
+                    <div key={track.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent/50 transition-colors">
+                      <span className="text-2xl font-bold text-muted-foreground w-8">#{idx + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{track.title}</p>
+                        <p className="text-sm text-muted-foreground">{track.artist_name}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-green-500">${(track.play_count || 0).toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">{(track.play_count || 0).toLocaleString()} streams</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Music className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">No tracks yet. Upload and publish your first track!</p>
-            </div>
-          )}
-        </Card>
+              ) : (
+                <div className="text-center py-8">
+                  <Music className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">No tracks yet. Upload and publish your first track!</p>
+                </div>
+              )}
+            </Card>
 
-        <Card className="glass-card p-6">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <Heart className="w-5 h-5 text-red-500" />
-            Stats Summary
-          </h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-red-500/10 to-pink-500/10 border border-red-500/20">
-              <div className="flex items-center gap-3">
+            <Card className="glass-card p-6">
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
                 <Heart className="w-5 h-5 text-red-500" />
-                <span>Total Likes</span>
+                Stats Summary
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-red-500/10 to-pink-500/10 border border-red-500/20">
+                  <div className="flex items-center gap-3">
+                    <Heart className="w-5 h-5 text-red-500" />
+                    <span>Total Likes</span>
+                  </div>
+                  <p className="text-2xl font-bold text-red-500">{analytics.totalLikes.toLocaleString()}</p>
+                </div>
+                <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20">
+                  <div className="flex items-center gap-3">
+                    <Music className="w-5 h-5 text-primary" />
+                    <span>Published Tracks</span>
+                  </div>
+                  <p className="text-2xl font-bold text-primary">{analytics.totalPublishedTracks}</p>
+                </div>
               </div>
-              <p className="text-2xl font-bold text-red-500">{analytics.totalLikes.toLocaleString()}</p>
+            </Card>
+          </div>
+        </>
+      ) : (
+        <Card className="glass-card p-6 text-center">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <TrendingUp className="w-8 h-8 text-primary" />
+          </div>
+          <h3 className="text-xl font-bold mb-2">Upgrade for Advanced Analytics</h3>
+          <p className="text-muted-foreground mb-4">
+            Get detailed charts, top tracks breakdown, and earnings over time with the Pro plan.
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-primary">{analytics.totalLikes.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">Total Likes</p>
             </div>
-            <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20">
-              <div className="flex items-center gap-3">
-                <Music className="w-5 h-5 text-primary" />
-                <span>Published Tracks</span>
-              </div>
+            <div className="text-center">
               <p className="text-2xl font-bold text-primary">{analytics.totalPublishedTracks}</p>
+              <p className="text-xs text-muted-foreground">Published Tracks</p>
             </div>
           </div>
         </Card>
-      </div>
+      )}
     </div>
   );
 };
