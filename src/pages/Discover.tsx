@@ -10,6 +10,7 @@ import {
   ListMusic, Plus, UserPlus, Music, ShoppingBag
 } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { MotionCover } from "@/components/MotionCover";
@@ -25,6 +26,7 @@ import { ArtistGrid } from "@/components/discovery/ArtistGrid";
 import { useDiscoveryData } from "@/hooks/useDiscoveryData";
 import { SubscriptionModal } from "@/components/SubscriptionModal";
 import { MerchStore } from "@/components/MerchStore";
+import { SubscriptionBadge } from "@/components/SubscriptionBadge";
 
 const PREVIEW_DURATION_SECONDS = 30;
 
@@ -55,8 +57,12 @@ export default function Discover() {
   } = useDiscoveryData();
 
   const { role } = useUserRole(user);
+  const { hasFeature, isPaidPlan, getPlan } = useSubscription(user);
   const isArtist = role === 'artist' || role === 'verified_artist' || role === 'manager';
   const isAuthenticated = !!user;
+  
+  // Fans need a subscription for unlimited streaming
+  const hasUnlimitedStreaming = hasFeature('unlimitedStreaming') || isArtist;
 
   // Load artist info when current track changes
   useEffect(() => {
@@ -264,8 +270,8 @@ export default function Discover() {
       onNext={handleNext}
       onPrevious={handlePrevious}
       onTrackEnd={handleTrackEnd}
-      maxDuration={!isAuthenticated ? PREVIEW_DURATION_SECONDS : undefined}
-      onPreviewEnd={!isAuthenticated ? handlePreviewEnd : undefined}
+      maxDuration={!hasUnlimitedStreaming ? PREVIEW_DURATION_SECONDS : undefined}
+      onPreviewEnd={!hasUnlimitedStreaming ? handlePreviewEnd : undefined}
     />
   );
 

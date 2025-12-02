@@ -2404,6 +2404,48 @@ export type Database = {
           },
         ]
       }
+      user_subscriptions: {
+        Row: {
+          ai_videos_reset_at: string
+          ai_videos_used: number
+          canceled_at: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          started_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_videos_reset_at?: string
+          ai_videos_used?: number
+          canceled_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_videos_reset_at?: string
+          ai_videos_used?: number
+          canceled_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       published_tracks_view: {
@@ -2456,6 +2498,17 @@ export type Database = {
             }
             Returns: number
           }
+      get_user_plan: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["subscription_plan"]
+      }
+      has_plan_access: {
+        Args: {
+          _required_plan: Database["public"]["Enums"]["subscription_plan"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2488,6 +2541,7 @@ export type Database = {
         | "delete_tracks"
         | "view_analytics"
         | "manage_albums"
+      subscription_plan: "free" | "starter" | "pro" | "enterprise" | "fan"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2631,6 +2685,7 @@ export const Constants = {
         "view_analytics",
         "manage_albums",
       ],
+      subscription_plan: ["free", "starter", "pro", "enterprise", "fan"],
     },
   },
 } as const

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe, Image, Heart, BookOpen, Zap, Film, User, ShoppingBag, Sparkles, Compass } from "lucide-react";
+import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe, Image, Heart, BookOpen, Zap, Film, User, ShoppingBag, Sparkles, Compass, Lock } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { MusicLibrary } from "@/components/MusicLibrary";
 import { ArtistDashboard } from "@/components/ArtistDashboard";
@@ -26,6 +26,9 @@ import { QuantumAdvisor } from "@/components/QuantumAdvisor";
 import { TopBar } from "@/components/TopBar";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useSubscription } from "@/hooks/useSubscription";
+import { FeatureGate } from "@/components/FeatureGate";
+import { SubscriptionBadge } from "@/components/SubscriptionBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -45,6 +48,7 @@ interface Track {
 const Studio = () => {
   const { user, loading } = useAuth();
   const { role, loading: roleLoading } = useUserRole(user);
+  const { hasFeature, getPlan, isPaidPlan, loading: subLoading } = useSubscription(user);
   const navigate = useNavigate();
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [queue, setQueue] = useState<Track[]>([]);
@@ -53,6 +57,7 @@ const Studio = () => {
   const [artistName, setArtistName] = useState<string>("");
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [collaboratorsKey, setCollaboratorsKey] = useState(0);
+  const plan = getPlan();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -184,6 +189,21 @@ const Studio = () => {
               </h1>
               <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 blur-3xl -z-10 animate-pulse" />
             </div>
+          </div>
+          
+          <div className="flex items-center justify-center gap-3">
+            <SubscriptionBadge size="lg" />
+            {!isPaidPlan() && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate("/auth?upgrade=true")}
+                className="border-primary/50 hover:bg-primary/10"
+              >
+                <Sparkles className="w-4 h-4 mr-1" />
+                Upgrade
+              </Button>
+            )}
           </div>
           
           <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-muted-foreground font-light tracking-wide animate-fade-in px-4" style={{ animationDelay: '0.2s' }}>
@@ -319,72 +339,102 @@ const Studio = () => {
           <div className="animate-fade-in" style={{ animationDelay: '0.8s' }}>
             {role === 'manager' && (
               <TabsContent value="manager" className="mt-0">
-                <ManagerDashboard />
+                <FeatureGate feature="multiArtistManagement">
+                  <ManagerDashboard />
+                </FeatureGate>
               </TabsContent>
             )}
 
             <TabsContent value="label-staff" className="mt-0">
-              <LabelStaff />
+              <FeatureGate feature="uploads">
+                <LabelStaff />
+              </FeatureGate>
             </TabsContent>
 
             <TabsContent value="release" className="mt-0">
-              <ReleaseManager />
+              <FeatureGate feature="uploads">
+                <ReleaseManager />
+              </FeatureGate>
             </TabsContent>
 
             <TabsContent value="analytics" className="mt-0">
-              <DistributionAnalytics />
+              <FeatureGate feature="advancedAnalytics">
+                <DistributionAnalytics />
+              </FeatureGate>
             </TabsContent>
 
             <TabsContent value="library" className="mt-0">
-              <MusicLibrary onPlayTrack={handlePlayTrack} />
+              <FeatureGate feature="uploads">
+                <MusicLibrary onPlayTrack={handlePlayTrack} />
+              </FeatureGate>
             </TabsContent>
 
             <TabsContent value="gallery" className="mt-0">
-              <ArtistGalleryManager />
+              <FeatureGate feature="uploads">
+                <ArtistGalleryManager />
+              </FeatureGate>
             </TabsContent>
 
             <TabsContent value="dashboard" className="mt-0">
-              <ArtistDashboard />
+              <FeatureGate feature="basicAnalytics">
+                <ArtistDashboard />
+              </FeatureGate>
             </TabsContent>
 
             <TabsContent value="fans" className="mt-0">
-              <FanEngagementHub />
+              <FeatureGate feature="fanEngagement">
+                <FanEngagementHub />
+              </FeatureGate>
             </TabsContent>
 
             <TabsContent value="storytelling" className="mt-0">
-              <StorytellingStudio />
+              <FeatureGate feature="presaveCampaigns">
+                <StorytellingStudio />
+              </FeatureGate>
             </TabsContent>
 
             <TabsContent value="momentum" className="mt-0">
-              <MomentumTracker />
+              <FeatureGate feature="advancedAnalytics">
+                <MomentumTracker />
+              </FeatureGate>
             </TabsContent>
 
             <TabsContent value="canvas" className="mt-0">
-              <CanvasManager />
+              <FeatureGate feature="advancedAnalytics">
+                <CanvasManager />
+              </FeatureGate>
             </TabsContent>
 
             <TabsContent value="profile" className="mt-0">
-              <ArtistProfileEditor />
+              <FeatureGate feature="uploads">
+                <ArtistProfileEditor />
+              </FeatureGate>
             </TabsContent>
 
             <TabsContent value="merch" className="mt-0">
-              <MerchStore variant="full" />
+              <FeatureGate feature="uploads">
+                <MerchStore variant="full" />
+              </FeatureGate>
             </TabsContent>
 
             <TabsContent value="quantum" className="mt-0">
-              <QuantumAdvisor />
+              <FeatureGate feature="advancedAnalytics">
+                <QuantumAdvisor />
+              </FeatureGate>
             </TabsContent>
 
             <TabsContent value="collaborators" className="mt-0">
-              <div className="space-y-6">
-                <div className="flex justify-end">
-                  <Button onClick={() => setShowInviteDialog(true)} className="gap-2">
-                    <Users className="h-4 w-4" />
-                    Invite Collaborator
-                  </Button>
+              <FeatureGate feature="collaborationTools">
+                <div className="space-y-6">
+                  <div className="flex justify-end">
+                    <Button onClick={() => setShowInviteDialog(true)} className="gap-2">
+                      <Users className="h-4 w-4" />
+                      Invite Collaborator
+                    </Button>
+                  </div>
+                  <CollaboratorsList key={collaboratorsKey} />
                 </div>
-                <CollaboratorsList key={collaboratorsKey} />
-              </div>
+              </FeatureGate>
             </TabsContent>
           </div>
         </Tabs>
