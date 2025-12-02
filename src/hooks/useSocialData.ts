@@ -303,14 +303,25 @@ export function useComments(parentType: string, parentId: string) {
   const { toast } = useToast();
 
   const loadComments = useCallback(async () => {
-    const column = `${parentType}_id`;
-    const { data, error } = await supabase
+    let query = supabase
       .from('comments')
       .select('*')
       .eq('parent_type', parentType)
-      .eq(column, parentId)
       .is('reply_to_id', null)
-      .eq('is_hidden', false)
+      .eq('is_hidden', false);
+
+    // Add the appropriate parent ID filter based on parent type
+    if (parentType === 'post') {
+      query = query.eq('post_id', parentId);
+    } else if (parentType === 'track') {
+      query = query.eq('track_id', parentId);
+    } else if (parentType === 'playlist') {
+      query = query.eq('playlist_id', parentId);
+    } else if (parentType === 'album') {
+      query = query.eq('album_id', parentId);
+    }
+
+    const { data, error } = await query
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false });
 
@@ -362,21 +373,20 @@ export function useComments(parentType: string, parentId: string) {
       return null;
     }
 
-    const insertData: Record<string, any> = {
+    const baseData = {
       user_id: currentUser.id,
       content,
       parent_type: parentType,
-      reply_to_id: replyToId || null
+      reply_to_id: replyToId || null,
+      post_id: parentType === 'post' ? parentId : null,
+      track_id: parentType === 'track' ? parentId : null,
+      playlist_id: parentType === 'playlist' ? parentId : null,
+      album_id: parentType === 'album' ? parentId : null,
     };
-    
-    if (parentType === 'post') insertData.post_id = parentId;
-    else if (parentType === 'track') insertData.track_id = parentId;
-    else if (parentType === 'playlist') insertData.playlist_id = parentId;
-    else if (parentType === 'album') insertData.album_id = parentId;
 
     const { data, error } = await supabase
       .from('comments')
-      .insert(insertData)
+      .insert(baseData)
       .select()
       .single();
 
