@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users, Music, TrendingUp, Activity, Database, HardDrive,
   Play, Heart, Download, AlertCircle, CheckCircle, Clock, Sparkles,
-  DollarSign, PiggyBank, CreditCard, ArrowUpRight, ArrowDownRight, Bot
+  DollarSign, PiggyBank, CreditCard, ArrowUpRight, ArrowDownRight, Bot, Workflow
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,6 +17,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from "recharts";
 import { ExecAgentPanel } from "@/components/ExecAgentPanel";
+import { PaymentFlowDashboard } from "@/components/PaymentFlowDashboard";
 
 type DashboardMetrics = {
   totalUsers: number;
@@ -521,6 +522,9 @@ export default function CEODashboard() {
 
           {/* Revenue Pool Tab - NEW */}
           <TabsContent value="revenue" className="space-y-6">
+            {/* Payment Flow Visualization */}
+            <PaymentFlowDashboard />
+            
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="glass-card p-6">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
