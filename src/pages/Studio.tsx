@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe, Image, Heart, BookOpen, Zap, Film, User, ShoppingBag, Sparkles, Compass, Lock } from "lucide-react";
+import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe, Image, Heart, BookOpen, Zap, Film, User, ShoppingBag, Sparkles, Compass, Lock, Wallet } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { MusicLibrary } from "@/components/MusicLibrary";
 import { ArtistDashboard } from "@/components/ArtistDashboard";
@@ -23,6 +23,7 @@ import { CanvasManager } from "@/components/CanvasManager";
 import { ArtistProfileEditor } from "@/components/ArtistProfileEditor";
 import { MerchStore } from "@/components/MerchStore";
 import { QuantumAdvisor } from "@/components/QuantumAdvisor";
+import { ArtistPayoutSettings } from "@/components/ArtistPayoutSettings";
 import { TopBar } from "@/components/TopBar";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -339,6 +340,13 @@ const Studio = () => {
                 <span className="hidden sm:inline">Collaborators</span>
                 {!hasFeature('collaborationTools') && <Lock className="h-3 w-3 absolute -top-1 -right-1 text-muted-foreground" />}
               </TabsTrigger>
+              <TabsTrigger 
+                value="payouts" 
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
+              >
+                <Wallet className="h-4 w-4 md:h-5 md:w-5" />
+                <span className="hidden sm:inline">Payouts</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -425,6 +433,10 @@ const Studio = () => {
                   <CollaboratorsList key={collaboratorsKey} />
                 </div>
               </FeatureGate>
+            </TabsContent>
+
+            <TabsContent value="payouts" className="mt-0">
+              <ArtistPayoutSettings />
             </TabsContent>
           </div>
         </Tabs>

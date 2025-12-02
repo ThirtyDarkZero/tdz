@@ -244,6 +244,81 @@ export type Database = {
         }
         Relationships: []
       }
+      artist_payout_details: {
+        Row: {
+          account_holder_name: string | null
+          artist_id: string
+          bank_token_reference: string | null
+          created_at: string
+          id: string
+          last_payout_date: string | null
+          payout_enabled: boolean
+          square_customer_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_holder_name?: string | null
+          artist_id: string
+          bank_token_reference?: string | null
+          created_at?: string
+          id?: string
+          last_payout_date?: string | null
+          payout_enabled?: boolean
+          square_customer_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_holder_name?: string | null
+          artist_id?: string
+          bank_token_reference?: string | null
+          created_at?: string
+          id?: string
+          last_payout_date?: string | null
+          payout_enabled?: boolean
+          square_customer_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      artist_payouts: {
+        Row: {
+          amount: number
+          artist_id: string
+          completed_at: string | null
+          created_at: string
+          earnings_ids: string[] | null
+          error_message: string | null
+          id: string
+          processed_by: string | null
+          square_payout_id: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          artist_id: string
+          completed_at?: string | null
+          created_at?: string
+          earnings_ids?: string[] | null
+          error_message?: string | null
+          id?: string
+          processed_by?: string | null
+          square_payout_id?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          artist_id?: string
+          completed_at?: string | null
+          created_at?: string
+          earnings_ids?: string[] | null
+          error_message?: string | null
+          id?: string
+          processed_by?: string | null
+          square_payout_id?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       artist_profiles: {
         Row: {
           artist_name: string
