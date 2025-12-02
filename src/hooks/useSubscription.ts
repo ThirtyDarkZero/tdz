@@ -170,6 +170,9 @@ export const useSubscription = (user: User | null) => {
   };
 
   const getPlan = (): SubscriptionPlan => {
+    // CEO account always has enterprise access
+    if (user?.email === 'info@thirtydarkzero.com') return "enterprise";
+    
     if (!subscription) return "free";
     if (subscription.status !== "active" && subscription.status !== "trial") return "free";
     if (subscription.expires_at && new Date(subscription.expires_at) < new Date()) return "free";
