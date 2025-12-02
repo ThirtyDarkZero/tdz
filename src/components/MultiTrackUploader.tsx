@@ -338,6 +338,48 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
 
   return (
     <div className="space-y-6">
+      {/* Release Type Selection - FIRST */}
+      <div className="space-y-4">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+            What are you releasing?
+          </h2>
+          <p className="text-muted-foreground text-sm mt-1">Choose your release type to get started</p>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <Card 
+            className={`p-6 cursor-pointer transition-all duration-300 hover:scale-105 ${releaseType === 'single' ? 'border-primary bg-gradient-to-br from-primary/20 to-primary/5 shadow-glow' : 'hover:border-primary/50 hover:bg-primary/5'}`}
+            onClick={() => setReleaseType('single')}
+          >
+            <div className={`w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center ${releaseType === 'single' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+              <Music className="h-6 w-6" />
+            </div>
+            <p className="text-center font-bold text-lg">Single</p>
+            <p className="text-xs text-center text-muted-foreground mt-1">1-2 tracks</p>
+          </Card>
+          <Card 
+            className={`p-6 cursor-pointer transition-all duration-300 hover:scale-105 ${releaseType === 'ep' ? 'border-primary bg-gradient-to-br from-primary/20 to-primary/5 shadow-glow' : 'hover:border-primary/50 hover:bg-primary/5'}`}
+            onClick={() => setReleaseType('ep')}
+          >
+            <div className={`w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center ${releaseType === 'ep' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+              <Disc className="h-6 w-6" />
+            </div>
+            <p className="text-center font-bold text-lg">EP</p>
+            <p className="text-xs text-center text-muted-foreground mt-1">3-6 tracks</p>
+          </Card>
+          <Card 
+            className={`p-6 cursor-pointer transition-all duration-300 hover:scale-105 ${releaseType === 'album' ? 'border-primary bg-gradient-to-br from-primary/20 to-primary/5 shadow-glow' : 'hover:border-primary/50 hover:bg-primary/5'}`}
+            onClick={() => setReleaseType('album')}
+          >
+            <div className={`w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center ${releaseType === 'album' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+              <AlbumIcon className="h-6 w-6" />
+            </div>
+            <p className="text-center font-bold text-lg">Album</p>
+            <p className="text-xs text-center text-muted-foreground mt-1">7+ tracks</p>
+          </Card>
+        </div>
+      </div>
+
       {/* Upload Limits Indicator */}
       {!isUnlimited && (
         <Card className={`p-4 ${!canUploadTrack ? 'bg-destructive/10 border-destructive/30' : 'bg-primary/5 border-primary/20'}`}>
@@ -371,37 +413,6 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
           )}
         </Card>
       )}
-
-      {/* Release Type Selection */}
-      <div>
-        <Label>Release Type</Label>
-        <div className="grid grid-cols-3 gap-3 mt-2">
-          <Card 
-            className={`p-4 cursor-pointer transition-all ${releaseType === 'single' ? 'border-primary bg-primary/10' : 'hover:border-primary/50'}`}
-            onClick={() => setReleaseType('single')}
-          >
-            <Music className="h-6 w-6 mx-auto mb-2" />
-            <p className="text-center font-medium">Single</p>
-            <p className="text-xs text-center text-muted-foreground">1-2 tracks</p>
-          </Card>
-          <Card 
-            className={`p-4 cursor-pointer transition-all ${releaseType === 'ep' ? 'border-primary bg-primary/10' : 'hover:border-primary/50'}`}
-            onClick={() => setReleaseType('ep')}
-          >
-            <Disc className="h-6 w-6 mx-auto mb-2" />
-            <p className="text-center font-medium">EP</p>
-            <p className="text-xs text-center text-muted-foreground">3-6 tracks</p>
-          </Card>
-          <Card 
-            className={`p-4 cursor-pointer transition-all ${releaseType === 'album' ? 'border-primary bg-primary/10' : 'hover:border-primary/50'}`}
-            onClick={() => setReleaseType('album')}
-          >
-            <AlbumIcon className="h-6 w-6 mx-auto mb-2" />
-            <p className="text-center font-medium">Album</p>
-            <p className="text-xs text-center text-muted-foreground">7+ tracks</p>
-          </Card>
-        </div>
-      </div>
 
       {/* File Upload Area */}
       <div className="border-2 border-dashed border-primary/40 rounded-lg p-8 text-center bg-gradient-to-br from-primary/5 via-transparent to-accent/5">
@@ -535,6 +546,15 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
               <SelectItem value="country">Country</SelectItem>
               <SelectItem value="r&b">R&B</SelectItem>
               <SelectItem value="indie">Indie</SelectItem>
+              <SelectItem value="spoken-word">Spoken Word</SelectItem>
+              <SelectItem value="podcast">Podcast</SelectItem>
+              <SelectItem value="ambient">Ambient</SelectItem>
+              <SelectItem value="metal">Metal</SelectItem>
+              <SelectItem value="folk">Folk</SelectItem>
+              <SelectItem value="soul">Soul</SelectItem>
+              <SelectItem value="reggae">Reggae</SelectItem>
+              <SelectItem value="latin">Latin</SelectItem>
+              <SelectItem value="world">World</SelectItem>
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
