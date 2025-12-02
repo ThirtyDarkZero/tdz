@@ -779,6 +779,7 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
         onClose={() => setShowLyrics(false)}
         trackId={currentTrack.id}
         currentTime={currentTime}
+        audioPath={currentTrack.file_path}
       />
 
       <EqualizerPanel

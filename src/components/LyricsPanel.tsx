@@ -1,13 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Mic, Music } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Mic, Music, Loader2, RefreshCw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface LyricsPanelProps {
   open: boolean;
   onClose: () => void;
   trackId: string | null;
   currentTime: number;
+  audioPath?: string;
 }
 
 interface LyricLine {
@@ -15,30 +19,105 @@ interface LyricLine {
   text: string;
 }
 
-export const LyricsPanel = ({ open, onClose, trackId, currentTime }: LyricsPanelProps) => {
+export const LyricsPanel = ({ open, onClose, trackId, currentTime, audioPath }: LyricsPanelProps) => {
   const [lyrics, setLyrics] = useState<LyricLine[]>([]);
   const [loading, setLoading] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (trackId) {
+    if (trackId && open) {
       loadLyrics(trackId);
     }
-  }, [trackId]);
+  }, [trackId, open]);
+
+  // Auto-scroll to current lyric
+  useEffect(() => {
+    if (lyrics.length > 0 && scrollRef.current) {
+      const currentIndex = getCurrentLineIndex();
+      const lineElement = scrollRef.current.querySelector(`[data-line="${currentIndex}"]`);
+      if (lineElement) {
+        lineElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [currentTime, lyrics]);
 
   const loadLyrics = async (id: string) => {
     setLoading(true);
     try {
-      // TODO: Fetch actual lyrics from database or API
-      // For now, show placeholder
-      setLyrics([
-        { time: 0, text: "Lyrics will appear here" },
-        { time: 5, text: "As the track plays" },
-        { time: 10, text: "Synced with the music" },
-      ]);
+      // First check if we have stored lyrics in lyric_alignments
+      const { data: alignments, error } = await supabase
+        .from('lyric_alignments')
+        .select('*')
+        .eq('project_id', id)
+        .order('line_index', { ascending: true })
+        .order('word_index', { ascending: true });
+
+      if (!error && alignments && alignments.length > 0) {
+        // Group words by line
+        const lineMap = new Map<number, { time: number; words: string[] }>();
+        alignments.forEach(a => {
+          if (!lineMap.has(a.line_index)) {
+            lineMap.set(a.line_index, { time: a.start_time, words: [] });
+          }
+          lineMap.get(a.line_index)!.words.push(a.word);
+        });
+
+        const parsedLyrics = Array.from(lineMap.entries())
+          .sort(([a], [b]) => a - b)
+          .map(([_, data]) => ({
+            time: data.time,
+            text: data.words.join(' ')
+          }));
+
+        setLyrics(parsedLyrics);
+        return;
+      }
+
+      // No stored lyrics - show placeholder
+      setLyrics([]);
     } catch (error) {
       console.error('Error loading lyrics:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const extractLyrics = async () => {
+    if (!audioPath) {
+      toast.error("No audio file available");
+      return;
+    }
+
+    setExtracting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('extract-lyrics', {
+        body: { audioPath }
+      });
+
+      if (error) throw error;
+
+      if (data?.lyrics) {
+        // Parse extracted lyrics into timed lines (basic timing estimation)
+        const lines = data.lyrics.split('\n').filter((l: string) => l.trim());
+        const estimatedDuration = 180; // 3 minutes default
+        const timePerLine = estimatedDuration / lines.length;
+
+        const timedLyrics = lines.map((text: string, i: number) => ({
+          time: i * timePerLine,
+          text: text.trim()
+        }));
+
+        setLyrics(timedLyrics);
+        toast.success("Lyrics extracted successfully!");
+      } else {
+        toast.info("Could not extract lyrics from this track");
+      }
+    } catch (error: any) {
+      console.error('Error extracting lyrics:', error);
+      toast.error("Failed to extract lyrics");
+    } finally {
+      setExtracting(false);
     }
   };
 
@@ -55,46 +134,71 @@ export const LyricsPanel = ({ open, onClose, trackId, currentTime }: LyricsPanel
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent side="right" className="w-full sm:w-[400px]">
+      <SheetContent side="right" className="w-full sm:w-[400px] glass-card-premium border-primary/30">
         <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
+          <SheetTitle className="flex items-center gap-2 text-2xl font-black glow-text">
             <Mic className="h-5 w-5" />
             Lyrics
           </SheetTitle>
         </SheetHeader>
 
-        <ScrollArea className="h-[calc(100vh-120px)] mt-6">
+        <div className="mt-6 h-[calc(100vh-150px)]" ref={scrollRef}>
           {loading ? (
-            <div className="text-center py-12">
+            <div className="flex flex-col items-center justify-center h-full gap-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="text-muted-foreground">Loading lyrics...</p>
             </div>
           ) : lyrics.length > 0 ? (
-            <div className="space-y-4">
-              {lyrics.map((line, index) => (
-                <p
-                  key={index}
-                  className={`text-lg leading-relaxed transition-all duration-300 ${
-                    index === currentLineIndex
-                      ? 'text-foreground font-semibold scale-105'
-                      : index < currentLineIndex
-                      ? 'text-muted-foreground/50'
-                      : 'text-muted-foreground'
-                  }`}
-                >
-                  {line.text}
-                </p>
-              ))}
-            </div>
+            <ScrollArea className="h-full pr-4">
+              <div className="space-y-6 py-4">
+                {lyrics.map((line, index) => (
+                  <p
+                    key={index}
+                    data-line={index}
+                    className={`text-lg leading-relaxed transition-all duration-500 cursor-pointer hover:text-foreground ${
+                      index === currentLineIndex
+                        ? 'text-foreground font-bold text-xl scale-105 text-primary'
+                        : index < currentLineIndex
+                        ? 'text-muted-foreground/40'
+                        : 'text-muted-foreground/70'
+                    }`}
+                  >
+                    {line.text}
+                  </p>
+                ))}
+              </div>
+            </ScrollArea>
           ) : (
-            <div className="text-center py-12">
-              <Music className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">No lyrics available</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Lyrics will be displayed here when available
-              </p>
+            <div className="flex flex-col items-center justify-center h-full gap-6 text-center px-4">
+              <Music className="h-16 w-16 text-muted-foreground/50" />
+              <div>
+                <p className="text-lg font-semibold mb-2">No lyrics available</p>
+                <p className="text-sm text-muted-foreground">
+                  Lyrics will be displayed here when available
+                </p>
+              </div>
+              {audioPath && (
+                <Button 
+                  onClick={extractLyrics} 
+                  disabled={extracting}
+                  className="gap-2"
+                >
+                  {extracting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Extracting...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4" />
+                      Auto-detect Lyrics
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           )}
-        </ScrollArea>
+        </div>
       </SheetContent>
     </Sheet>
   );
