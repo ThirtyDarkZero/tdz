@@ -81,6 +81,7 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
   const [showCredits, setShowCredits] = useState(false);
   const [showVisualizer, setShowVisualizer] = useState(false);
   const [motionCoverUrl, setMotionCoverUrl] = useState<string | null>(null);
+  const [streamRecorded, setStreamRecorded] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const sleepTimerRef = useRef<NodeJS.Timeout>();
@@ -91,6 +92,8 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
       const audioUrl = supabase.storage.from('track-files').getPublicUrl(currentTrack.file_path).data.publicUrl;
       audioRef.current.src = audioUrl;
       audioRef.current.playbackRate = playbackRate;
+      // Reset stream recorded state for new track
+      setStreamRecorded(false);
       // Auto-play when new track is loaded
       audioRef.current.play().catch(err => {
         console.error('Playback failed:', err);
@@ -209,29 +212,54 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
 
   const recordPlay = async () => {
     if (!currentTrack) return;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    // Initial play - don't increment count yet, wait for stream recording
+  };
 
-    await supabase.from('listening_history').insert({
-      user_id: user.id,
-      track_id: currentTrack.id,
-      played_at: new Date().toISOString(),
-      play_duration: 0,
-      device_type: 'web'
-    });
+  // Record stream via edge function when conditions are met
+  const recordStream = async (duration: number, completionPercentage: number) => {
+    if (!currentTrack || streamRecorded) return;
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/record-stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token && { Authorization: `Bearer ${session.access_token}` }),
+        },
+        body: JSON.stringify({
+          trackId: currentTrack.id,
+          duration,
+          completionPercentage,
+        }),
+      });
 
-    await supabase
-      .from('tracks')
-      .update({ play_count: currentTrack.play_count + 1 })
-      .eq('id', currentTrack.id);
+      const result = await response.json();
+      if (result.recorded) {
+        setStreamRecorded(true);
+        console.log(`Stream recorded: Artist earned $${result.artistEarned}`);
+      }
+    } catch (error) {
+      console.error('Error recording stream:', error);
+    }
   };
 
   const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
+    if (audioRef.current && currentTrack) {
+      const currentSeconds = audioRef.current.currentTime;
+      setCurrentTime(currentSeconds);
+      
+      // Record stream when user has listened 30+ seconds OR 50%+ completion
+      if (!streamRecorded) {
+        const completionPercentage = (currentSeconds / currentTrack.duration) * 100;
+        if (currentSeconds >= 30 || completionPercentage >= 50) {
+          recordStream(currentSeconds, completionPercentage);
+        }
+      }
       
       // Check if preview max duration is reached
-      if (maxDuration && audioRef.current.currentTime >= maxDuration) {
+      if (maxDuration && currentSeconds >= maxDuration) {
         audioRef.current.pause();
         setIsPlaying(false);
         onPreviewEnd?.();
@@ -240,7 +268,7 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
       
       // Check for crossfade near end
       if (crossfadeDuration > 0) {
-        const timeRemaining = currentTrack!.duration - audioRef.current.currentTime;
+        const timeRemaining = currentTrack.duration - currentSeconds;
         if (timeRemaining <= crossfadeDuration && timeRemaining > 0) {
           const fadeVolume = timeRemaining / crossfadeDuration;
           audioRef.current.volume = fadeVolume * (isMuted ? 0 : volume);
