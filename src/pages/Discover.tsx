@@ -4,10 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Play, Heart, Share2, TrendingUp, Flame, 
-  ListMusic, Plus, UserPlus, Music, ShoppingBag, Lock, Sparkles
+  Play, Heart, Share2, TrendingUp, 
+  ListMusic, Plus, Lock, Sparkles
 } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -19,14 +18,15 @@ import { DiscoveryHeader } from "@/components/discovery/DiscoveryHeader";
 import { NowPlayingSidebar } from "@/components/discovery/NowPlayingSidebar";
 import { LibrarySidebar } from "@/components/discovery/LibrarySidebar";
 import { MobileSidebar } from "@/components/discovery/MobileSidebar";
-import { DiscoveryHero } from "@/components/discovery/DiscoveryHero";
-import { TrackGrid } from "@/components/discovery/TrackGrid";
-import { AlbumGrid } from "@/components/discovery/AlbumGrid";
-import { ArtistGrid } from "@/components/discovery/ArtistGrid";
+import { ImmersiveHero } from "@/components/discovery/ImmersiveHero";
+import { EnhancedTrackGrid } from "@/components/discovery/EnhancedTrackGrid";
+import { EnhancedAlbumGrid } from "@/components/discovery/EnhancedAlbumGrid";
+import { EnhancedArtistGrid } from "@/components/discovery/EnhancedArtistGrid";
+import { EnhancedTrendingSection } from "@/components/discovery/EnhancedTrendingSection";
+import { PremiumTabs } from "@/components/discovery/PremiumTabs";
 import { useDiscoveryData } from "@/hooks/useDiscoveryData";
 import { SubscriptionModal } from "@/components/SubscriptionModal";
 import { MerchStore } from "@/components/MerchStore";
-import { SubscriptionBadge } from "@/components/SubscriptionBadge";
 
 const PREVIEW_DURATION_SECONDS = 30;
 
@@ -173,84 +173,55 @@ export default function Discover() {
 
   // Center column content
   const centerColumn = (
-    <div className="space-y-8">
-      <Tabs defaultValue="discover" className="space-y-6">
-        <div className="flex justify-center overflow-x-auto pb-2 -mx-4 px-4">
-          <TabsList className="glass-card-premium p-1.5 md:p-2 gap-1 md:gap-2 h-auto shadow-glow inline-flex min-w-max">
-            <TabsTrigger value="discover" className="gap-1.5 md:gap-2 px-3 sm:px-4 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap">
-              <Flame className="w-4 h-4 md:w-5 md:h-5" />
-              <span>Discover</span>
-            </TabsTrigger>
-            <TabsTrigger value="trending" className="gap-1.5 md:gap-2 px-3 sm:px-4 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap">
-              <TrendingUp className="w-4 h-4 md:w-5 md:h-5" />
-              <span>Trending</span>
-            </TabsTrigger>
-            <TabsTrigger value="artists" className="gap-1.5 md:gap-2 px-3 sm:px-4 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap">
-              <Music className="w-4 h-4 md:w-5 md:h-5" />
-              <span>Artists</span>
-            </TabsTrigger>
-            <TabsTrigger value="playlists" className="gap-1.5 md:gap-2 px-3 sm:px-4 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap">
-              <ListMusic className="w-4 h-4 md:w-5 md:h-5" />
-              <span>Playlists</span>
-            </TabsTrigger>
-            <TabsTrigger value="merch" className="gap-1.5 md:gap-2 px-3 sm:px-4 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap">
-              <ShoppingBag className="w-4 h-4 md:w-5 md:h-5" />
-              <span>Merch</span>
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
-        <TabsContent value="discover" className="space-y-8 animate-fade-in">
-          <DiscoveryHero />
-          
-          <TrackGrid
+    <PremiumTabs
+      defaultValue="discover"
+      discoverContent={
+        <>
+          <ImmersiveHero />
+          <EnhancedTrackGrid
             tracks={filteredTracks}
             title="Latest Releases"
             playlists={playlists}
             likedTracks={likedTracks}
+            currentTrackId={currentTrack?.id}
             onPlayTrack={handlePlayTrack}
             onToggleLike={toggleLike}
             onAddToQueue={handleAddToQueue}
             onPlaylistUpdate={refreshPlaylists}
           />
-          
-          <AlbumGrid
+          <EnhancedAlbumGrid
             albums={albums}
             title="Featured Albums"
           />
-        </TabsContent>
-
-        <TabsContent value="trending" className="space-y-8 animate-fade-in">
-          <TrendingSection
-            tracks={filteredTracks}
-            likedTracks={likedTracks}
-            onPlayTrack={handlePlayTrack}
-            onToggleLike={toggleLike}
-            formatDuration={formatDuration}
-          />
-        </TabsContent>
-
-        <TabsContent value="artists" className="space-y-8 animate-fade-in">
-          <ArtistGrid
-            artists={artists}
-            followedArtists={followedArtists}
-            onToggleFollow={toggleFollow}
-          />
-        </TabsContent>
-
-        <TabsContent value="playlists" className="space-y-8 animate-fade-in">
-          <PlaylistsSection
-            playlists={playlists}
-            onCreatePlaylist={handleCreatePlaylist}
-            canCreate={canCreatePlaylists}
-          />
-        </TabsContent>
-
-        <TabsContent value="merch" className="space-y-8 animate-fade-in">
-          <MerchStore variant="full" />
-        </TabsContent>
-      </Tabs>
-    </div>
+        </>
+      }
+      trendingContent={
+        <EnhancedTrendingSection
+          tracks={filteredTracks}
+          likedTracks={likedTracks}
+          onPlayTrack={handlePlayTrack}
+          onToggleLike={toggleLike}
+          formatDuration={formatDuration}
+        />
+      }
+      artistsContent={
+        <EnhancedArtistGrid
+          artists={artists}
+          followedArtists={followedArtists}
+          onToggleFollow={toggleFollow}
+        />
+      }
+      playlistsContent={
+        <PlaylistsSection
+          playlists={playlists}
+          onCreatePlaylist={handleCreatePlaylist}
+          canCreate={canCreatePlaylists}
+        />
+      }
+      merchContent={
+        <MerchStore variant="full" />
+      }
+    />
   );
 
   const header = (
