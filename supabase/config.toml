@@ -12,6 +12,12 @@ verify_jwt = true
 [functions.scheduled-artist-payouts]
 verify_jwt = false
 
+[functions.square-oauth-url]
+verify_jwt = true
+
+[functions.square-oauth-callback]
+verify_jwt = false
+
 [functions.label-staff-chat]
 verify_jwt = true
 
