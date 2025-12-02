@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Zap, TrendingUp, TrendingDown, Activity, Target,
-  Calendar, CheckCircle2, AlertCircle, Flame, Award
+  Calendar, CheckCircle2, AlertCircle, Flame, Award, Plus
 } from "lucide-react";
 import {
   AreaChart, Area,
@@ -15,11 +18,14 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-// Pillar 4: Momentum Continuity
 export const MomentumTracker = () => {
   const [momentumScore, setMomentumScore] = useState<any>(null);
   const [milestones, setMilestones] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAddMilestone, setShowAddMilestone] = useState(false);
+  const [newMilestoneTitle, setNewMilestoneTitle] = useState("");
+  const [newMilestoneTarget, setNewMilestoneTarget] = useState("");
+  const [newMilestoneImpact, setNewMilestoneImpact] = useState("10");
 
   useEffect(() => {
     loadMomentumData();
@@ -30,39 +36,194 @@ export const MomentumTracker = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const [scoreRes, milestonesRes] = await Promise.all([
-        supabase
+      // Load momentum score
+      const { data: scoreData, error: scoreError } = await supabase
+        .from("momentum_scores")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (scoreError && scoreError.code !== 'PGRST116') throw scoreError;
+
+      // Calculate real momentum based on activity
+      const realMomentum = await calculateRealMomentum(user.id);
+
+      if (scoreData) {
+        // Update existing score
+        const updatedScore = {
+          ...scoreData,
+          ...realMomentum
+        };
+        
+        await supabase
           .from("momentum_scores")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .single(),
-        supabase
-          .from("milestones")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-      ]);
+          .update(realMomentum)
+          .eq("id", scoreData.id);
+          
+        setMomentumScore(updatedScore);
+      } else {
+        // Create new score
+        const { data: newScore, error: insertError } = await supabase
+          .from("momentum_scores")
+          .insert({
+            user_id: user.id,
+            ...realMomentum
+          })
+          .select()
+          .single();
 
-      if (scoreRes.error && scoreRes.error.code !== 'PGRST116') throw scoreRes.error;
-      if (milestonesRes.error) throw milestonesRes.error;
+        if (insertError) throw insertError;
+        setMomentumScore(newScore);
+      }
 
-      setMomentumScore(scoreRes.data || {
-        score: 0,
-        streak_days: 0,
-        release_velocity: 0,
-        engagement_rate: 0,
-        content_consistency: 0,
-        fan_growth: 0
-      });
-      setMilestones(milestonesRes.data || []);
+      // Load milestones
+      const { data: milestonesData, error: milestonesError } = await supabase
+        .from("milestones")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (milestonesError) throw milestonesError;
+      setMilestones(milestonesData || []);
     } catch (error) {
       console.error("Error loading momentum data:", error);
       toast.error("Failed to load momentum data");
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateRealMomentum = async (userId: string) => {
+    // Get tracks released in last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data: recentTracks } = await supabase
+      .from("tracks")
+      .select("id, created_at, play_count, like_count")
+      .eq("user_id", userId)
+      .gte("created_at", thirtyDaysAgo.toISOString());
+
+    // Get total plays and likes
+    const { data: allTracks } = await supabase
+      .from("tracks")
+      .select("play_count, like_count")
+      .eq("user_id", userId);
+
+    // Get follower count
+    const { count: followerCount } = await supabase
+      .from("artist_follows")
+      .select("*", { count: "exact" })
+      .eq("artist_id", userId);
+
+    // Calculate factors
+    const releaseVelocity = Math.min(100, (recentTracks?.length || 0) * 20);
+    
+    const totalPlays = allTracks?.reduce((sum, t) => sum + (t.play_count || 0), 0) || 0;
+    const totalLikes = allTracks?.reduce((sum, t) => sum + (t.like_count || 0), 0) || 0;
+    const engagementRate = totalPlays > 0 ? Math.min(100, (totalLikes / totalPlays) * 100 * 10) : 0;
+    
+    // Content consistency - check calendar events
+    const { data: calendarEvents } = await supabase
+      .from("content_calendar")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("status", "scheduled");
+    
+    const contentConsistency = Math.min(100, (calendarEvents?.length || 0) * 5);
+    
+    // Fan growth
+    const fanGrowth = followerCount || 0;
+
+    // Calculate overall score
+    const score = Math.round(
+      (releaseVelocity * 0.3) + 
+      (engagementRate * 0.25) + 
+      (contentConsistency * 0.25) + 
+      (Math.min(100, fanGrowth) * 0.2)
+    );
+
+    // Calculate streak (days with activity)
+    const { data: recentActivity } = await supabase
+      .from("activity_log")
+      .select("created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(30);
+
+    const uniqueDays = new Set(
+      recentActivity?.map(a => new Date(a.created_at).toDateString()) || []
+    );
+    const streakDays = uniqueDays.size;
+
+    return {
+      score,
+      streak_days: streakDays,
+      release_velocity: releaseVelocity,
+      engagement_rate: engagementRate,
+      content_consistency: contentConsistency,
+      fan_growth: fanGrowth
+    };
+  };
+
+  const addMilestone = async () => {
+    if (!newMilestoneTitle) {
+      toast.error("Please enter a milestone title");
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { error } = await supabase
+        .from("milestones")
+        .insert({
+          user_id: user.id,
+          title: newMilestoneTitle,
+          target_value: parseInt(newMilestoneTarget) || null,
+          current_value: 0,
+          momentum_impact: parseInt(newMilestoneImpact),
+          achieved: false
+        });
+
+      if (error) throw error;
+
+      toast.success("Milestone added!");
+      setNewMilestoneTitle("");
+      setNewMilestoneTarget("");
+      setShowAddMilestone(false);
+      loadMomentumData();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const completeMilestone = async (milestoneId: string) => {
+    try {
+      const { error } = await supabase
+        .from("milestones")
+        .update({
+          achieved: true,
+          date_achieved: new Date().toISOString()
+        })
+        .eq("id", milestoneId);
+
+      if (error) throw error;
+
+      toast.success("Milestone completed! 🎉");
+      loadMomentumData();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const performAction = async (action: string, impact: number) => {
+    toast.success(`${action} - +${impact} momentum!`);
+    // In a real implementation, this would trigger the actual action
+    // and update momentum accordingly
   };
 
   if (loading) {
@@ -109,8 +270,12 @@ export const MomentumTracker = () => {
                 {momentumScore?.score || 0}
               </div>
               <div className="text-xs text-muted-foreground flex items-center gap-1 justify-end">
-                <TrendingUp className="w-3 h-3 text-green-500" />
-                Track your growth
+                {(momentumScore?.score || 0) > 50 ? (
+                  <TrendingUp className="w-3 h-3 text-green-500" />
+                ) : (
+                  <TrendingDown className="w-3 h-3 text-red-500" />
+                )}
+                {(momentumScore?.score || 0) > 50 ? "Growing" : "Needs attention"}
               </div>
             </div>
           </CardTitle>
@@ -174,11 +339,13 @@ export const MomentumTracker = () => {
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Score</span>
-                  <Badge className="bg-green-500/20 text-green-500">{(momentumScore?.release_velocity || 0).toFixed(1)}</Badge>
+                  <Badge className="bg-green-500/20 text-green-500">
+                    {(momentumScore?.release_velocity || 0).toFixed(0)}
+                  </Badge>
                 </div>
                 <Progress value={momentumScore?.release_velocity || 0} className="h-2" />
                 <p className="text-xs text-muted-foreground">
-                  Keep releasing consistently to maintain momentum
+                  Tracks released in last 30 days × 20
                 </p>
               </CardContent>
             </Card>
@@ -193,11 +360,13 @@ export const MomentumTracker = () => {
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Score</span>
-                  <Badge className="bg-blue-500/20 text-blue-500">{(momentumScore?.engagement_rate || 0).toFixed(1)}</Badge>
+                  <Badge className="bg-blue-500/20 text-blue-500">
+                    {(momentumScore?.engagement_rate || 0).toFixed(1)}
+                  </Badge>
                 </div>
                 <Progress value={momentumScore?.engagement_rate || 0} className="h-2" />
                 <p className="text-xs text-muted-foreground">
-                  Higher engagement = stronger momentum
+                  Likes ÷ Plays ratio
                 </p>
               </CardContent>
             </Card>
@@ -212,11 +381,13 @@ export const MomentumTracker = () => {
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Score</span>
-                  <Badge className="bg-purple-500/20 text-purple-500">{(momentumScore?.content_consistency || 0).toFixed(1)}</Badge>
+                  <Badge className="bg-purple-500/20 text-purple-500">
+                    {(momentumScore?.content_consistency || 0).toFixed(0)}
+                  </Badge>
                 </div>
                 <Progress value={momentumScore?.content_consistency || 0} className="h-2" />
                 <p className="text-xs text-muted-foreground">
-                  Consistency builds trust and momentum
+                  Scheduled content events
                 </p>
               </CardContent>
             </Card>
@@ -230,12 +401,14 @@ export const MomentumTracker = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">New fans</span>
-                  <Badge className="bg-orange-500/20 text-orange-500">+{momentumScore?.fan_growth || 0}</Badge>
+                  <span className="text-sm">Followers</span>
+                  <Badge className="bg-orange-500/20 text-orange-500">
+                    {momentumScore?.fan_growth || 0}
+                  </Badge>
                 </div>
-                <Progress value={Math.min(100, (momentumScore?.fan_growth || 0) / 10)} className="h-2" />
+                <Progress value={Math.min(100, momentumScore?.fan_growth || 0)} className="h-2" />
                 <p className="text-xs text-muted-foreground">
-                  Growing fanbase = accelerating momentum
+                  Total follower count
                 </p>
               </CardContent>
             </Card>
@@ -261,15 +434,63 @@ export const MomentumTracker = () => {
         <TabsContent value="milestones" className="space-y-4">
           <Card className="glass-card">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Award className="w-5 h-5 text-primary" />
-                Career Milestones
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Award className="w-5 h-5 text-primary" />
+                  Career Milestones
+                </span>
+                <Button size="sm" onClick={() => setShowAddMilestone(true)}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Milestone
+                </Button>
               </CardTitle>
               <CardDescription>
                 Each milestone compounds your momentum
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
+              {showAddMilestone && (
+                <Card className="p-4 border-primary/30 bg-primary/5">
+                  <div className="space-y-3">
+                    <div>
+                      <Label>Milestone Title</Label>
+                      <Input
+                        placeholder="e.g., Reach 1,000 streams"
+                        value={newMilestoneTitle}
+                        onChange={(e) => setNewMilestoneTitle(e.target.value)}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label>Target Value (optional)</Label>
+                        <Input
+                          type="number"
+                          placeholder="e.g., 1000"
+                          value={newMilestoneTarget}
+                          onChange={(e) => setNewMilestoneTarget(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label>Momentum Impact</Label>
+                        <Input
+                          type="number"
+                          value={newMilestoneImpact}
+                          onChange={(e) => setNewMilestoneImpact(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={addMilestone} className="flex-1">
+                        Add Milestone
+                      </Button>
+                      <Button variant="outline" onClick={() => setShowAddMilestone(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
               {milestones.length === 0 ? (
                 <div className="text-center py-8">
                   <Award className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
@@ -278,7 +499,7 @@ export const MomentumTracker = () => {
                   </p>
                 </div>
               ) : (
-                milestones.map((milestone, idx) => (
+                milestones.map((milestone) => (
                   <Card 
                     key={milestone.id} 
                     className={`p-4 ${
@@ -293,7 +514,10 @@ export const MomentumTracker = () => {
                           {milestone.achieved ? (
                             <CheckCircle2 className="w-5 h-5 text-green-500" />
                           ) : (
-                            <div className="w-5 h-5 rounded-full border-2 border-muted" />
+                            <div 
+                              className="w-5 h-5 rounded-full border-2 border-muted cursor-pointer hover:border-primary"
+                              onClick={() => completeMilestone(milestone.id)}
+                            />
                           )}
                           <h4 className="font-semibold">{milestone.title}</h4>
                           <Badge 
@@ -308,24 +532,33 @@ export const MomentumTracker = () => {
                         </div>
                         {milestone.achieved ? (
                           <p className="text-xs text-muted-foreground ml-7">
-                            Achieved {milestone.date_achieved}
+                            Achieved {new Date(milestone.date_achieved).toLocaleDateString()}
                           </p>
-                        ) : milestone.current_value && milestone.target_value ? (
+                        ) : milestone.current_value !== null && milestone.target_value ? (
                           <div className="ml-7 space-y-2">
                             <div className="flex items-center justify-between text-sm">
                               <span className="text-muted-foreground">
-                                {milestone.current_value.toLocaleString()} / {milestone.target_value.toLocaleString()}
+                                {(milestone.current_value || 0).toLocaleString()} / {milestone.target_value.toLocaleString()}
                               </span>
                               <span className="font-semibold">
-                                {Math.round((milestone.current_value / milestone.target_value) * 100)}%
+                                {Math.round(((milestone.current_value || 0) / milestone.target_value) * 100)}%
                               </span>
                             </div>
                             <Progress 
-                              value={(milestone.current_value / milestone.target_value) * 100} 
+                              value={((milestone.current_value || 0) / milestone.target_value) * 100} 
                               className="h-2" 
                             />
                           </div>
-                        ) : null}
+                        ) : !milestone.achieved && (
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="ml-7 mt-2"
+                            onClick={() => completeMilestone(milestone.id)}
+                          >
+                            Mark Complete
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </Card>
@@ -415,7 +648,12 @@ export const MomentumTracker = () => {
                         </span>
                       </div>
                     </div>
-                    <Button>Do It</Button>
+                    <Button 
+                      size="sm"
+                      onClick={() => performAction(item.action, parseInt(item.impact))}
+                    >
+                      Do It
+                    </Button>
                   </div>
                 </Card>
               ))}
@@ -425,49 +663,66 @@ export const MomentumTracker = () => {
 
         {/* Insights */}
         <TabsContent value="insights" className="space-y-4">
-          <Card className="glass-card border-green-500/30 bg-green-500/5">
+          <Card className="glass-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-green-500" />
-                What's Working
+                <Activity className="w-5 h-5 text-primary" />
+                Momentum Insights
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <p>• Upload and release music consistently to build momentum</p>
-              <p>• Engage with your audience authentically</p>
-              <p>• Track your metrics and adjust your strategy</p>
-              <p>• Focus on building a loyal fanbase</p>
-            </CardContent>
-          </Card>
+            <CardContent className="space-y-4">
+              <Card className="p-4 bg-green-500/10 border-green-500/30">
+                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-green-500" />
+                  What's Working
+                </h4>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  {(momentumScore?.release_velocity || 0) > 40 && (
+                    <li>• Great release velocity - keep the music coming!</li>
+                  )}
+                  {(momentumScore?.engagement_rate || 0) > 30 && (
+                    <li>• Strong engagement - your fans are connecting</li>
+                  )}
+                  {(momentumScore?.streak_days || 0) > 7 && (
+                    <li>• Impressive activity streak - consistency pays off</li>
+                  )}
+                  {(momentumScore?.score || 0) === 0 && (
+                    <li>• Upload your first track to start building momentum!</li>
+                  )}
+                </ul>
+              </Card>
 
-          <Card className="glass-card border-red-500/30 bg-red-500/5">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-red-500" />
-                Momentum Risks
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <p>• Long gaps between releases kill momentum</p>
-              <p>• Inconsistent content posting reduces visibility</p>
-              <p>• Ignoring analytics prevents optimization</p>
-              <p>• Not engaging with fans weakens connection</p>
-            </CardContent>
-          </Card>
+              <Card className="p-4 bg-red-500/10 border-red-500/30">
+                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-500" />
+                  Momentum Risks
+                </h4>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  {(momentumScore?.release_velocity || 0) < 20 && (
+                    <li>• Low release velocity - consider dropping new music</li>
+                  )}
+                  {(momentumScore?.content_consistency || 0) < 30 && (
+                    <li>• Content calendar is empty - schedule some posts</li>
+                  )}
+                  {(momentumScore?.fan_growth || 0) < 10 && (
+                    <li>• Fan base needs growth - promote your profile</li>
+                  )}
+                </ul>
+              </Card>
 
-          <Card className="glass-card p-4 bg-primary/10 border-primary/30">
-            <div className="flex gap-2 items-start">
-              <Activity className="w-5 h-5 text-primary mt-0.5" />
-              <div>
-                <h4 className="font-semibold mb-2">Momentum Truth</h4>
-                <p className="text-sm text-muted-foreground">
-                  Most artists fail not from lack of talent, but from stopping too soon. 
-                  Momentum compounds - small consistent actions beat sporadic big wins. 
-                  Your current momentum score predicts your success in 12 months more 
-                  accurately than your current follower count.
+              <Card className="p-4 bg-primary/10 border-primary/30">
+                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <Flame className="w-4 h-4 text-orange-500" />
+                  Momentum Truth
+                </h4>
+                <p className="text-sm text-muted-foreground italic">
+                  "The industry doesn't reward talent alone. It rewards momentum. 
+                  The artists who stay visible, stay consistent, and keep shipping work 
+                  are the ones who break through. Your momentum score isn't just a number - 
+                  it's a prediction of your future success."
                 </p>
-              </div>
-            </div>
+              </Card>
+            </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
