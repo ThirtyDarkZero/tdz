@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe, Image, Heart, BookOpen, Zap, Film, User, ShoppingBag, Sparkles, Compass, Lock, Wallet } from "lucide-react";
+import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe, Image, Heart, BookOpen, Zap, Film, User, ShoppingBag, Sparkles, Compass, Lock, Wallet, GraduationCap, MapPin } from "lucide-react";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { MusicLibrary } from "@/components/MusicLibrary";
 import { ArtistDashboard } from "@/components/ArtistDashboard";
@@ -17,6 +17,9 @@ import { DistributionAnalytics } from "@/components/DistributionAnalytics";
 import { MultiTrackUploader } from "@/components/MultiTrackUploader";
 import { ArtistGalleryManager } from "@/components/ArtistGalleryManager";
 import { FanEngagementHub } from "@/components/FanEngagementHub";
+import { FanDemographics } from "@/components/FanDemographics";
+import { TourRecommendations } from "@/components/TourRecommendations";
+import { MasterClasses } from "@/components/MasterClasses";
 import { StorytellingStudio } from "@/components/StorytellingStudio";
 import { MomentumTracker } from "@/components/MomentumTracker";
 import { CanvasManager } from "@/components/CanvasManager";
@@ -347,6 +350,20 @@ const Studio = () => {
                 <Wallet className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Payouts</span>
               </TabsTrigger>
+              <TabsTrigger 
+                value="learn" 
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
+              >
+                <GraduationCap className="h-4 w-4 md:h-5 md:w-5" />
+                <span className="hidden sm:inline">Learn</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="tour" 
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
+              >
+                <MapPin className="h-4 w-4 md:h-5 md:w-5" />
+                <span className="hidden sm:inline">Tour</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -385,7 +402,10 @@ const Studio = () => {
 
             <TabsContent value="fans" className="mt-0">
               <FeatureGate feature="fanEngagement">
-                <FanEngagementHub />
+                <div className="space-y-8">
+                  <FanEngagementHub />
+                  <FanDemographics />
+                </div>
               </FeatureGate>
             </TabsContent>
 
@@ -437,6 +457,14 @@ const Studio = () => {
 
             <TabsContent value="payouts" className="mt-0">
               <ArtistPayoutSettings />
+            </TabsContent>
+
+            <TabsContent value="learn" className="mt-0">
+              <MasterClasses />
+            </TabsContent>
+
+            <TabsContent value="tour" className="mt-0">
+              <TourRecommendations />
             </TabsContent>
           </div>
         </Tabs>
