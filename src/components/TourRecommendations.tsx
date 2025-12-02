@@ -81,7 +81,7 @@ export const TourRecommendations = () => {
                       {rec.city}
                       <Badge className="bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border-primary/30 group-hover:scale-110 transition-transform">
                         <Star className="w-3 h-3 mr-1" />
-                        {rec.matchScore}% Match
+                        {rec.match_score}% Match
                       </Badge>
                     </h3>
                     <p className="text-sm text-muted-foreground mt-1">{rec.reason}</p>
@@ -93,19 +93,19 @@ export const TourRecommendations = () => {
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                       <Users className="w-4 h-4 text-white" />
                     </div>
-                    <span className="font-medium">{rec.audienceSize}</span>
+                    <span className="font-medium">{rec.audience_size}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
                       <Calendar className="w-4 h-4 text-white" />
                     </div>
-                    <span className="font-medium">{rec.bestMonth}</span>
+                    <span className="font-medium">{rec.best_month}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
                       <MapPin className="w-4 h-4 text-white" />
                     </div>
-                    <span className="font-medium">{rec.venues.length} venues</span>
+                    <span className="font-medium">{(rec.venues || []).length} venues</span>
                   </div>
                 </div>
 
