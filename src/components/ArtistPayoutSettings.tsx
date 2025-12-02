@@ -57,8 +57,9 @@ export const ArtistPayoutSettings = () => {
     if (!user) return;
 
     try {
+      // Use raw query since types aren't generated yet
       const { data, error } = await supabase
-        .from('artist_payout_details')
+        .from('artist_payout_details' as any)
         .select('*')
         .eq('artist_id', user.id)
         .maybeSingle();
@@ -67,9 +68,17 @@ export const ArtistPayoutSettings = () => {
         console.error('Error loading payout details:', error);
       }
       
-      setPayoutDetails(data);
-      if (data?.account_holder_name) {
-        setAccountHolderName(data.account_holder_name);
+      if (data) {
+        const details = data as any;
+        setPayoutDetails({
+          square_customer_id: details.square_customer_id,
+          account_holder_name: details.account_holder_name,
+          payout_enabled: details.payout_enabled,
+          last_payout_date: details.last_payout_date,
+        });
+        if (details.account_holder_name) {
+          setAccountHolderName(details.account_holder_name);
+        }
       }
     } catch (error) {
       console.error('Error:', error);

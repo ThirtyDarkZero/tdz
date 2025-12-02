@@ -3,6 +3,12 @@ project_id = "rcjzvfskkoqygnlolrcs"
 [functions.create-square-subscription]
 verify_jwt = true
 
+[functions.process-artist-payout]
+verify_jwt = true
+
+[functions.setup-artist-payout]
+verify_jwt = true
+
 [functions.label-staff-chat]
 verify_jwt = true
 
