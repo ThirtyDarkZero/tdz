@@ -42,6 +42,11 @@ type DashboardMetrics = {
   revenuePoolBalance: number;
   totalDownloads: number;
   avgDownloadPrice: number;
+  // Real Revenue from platform_revenue table
+  fanSubscriptionRevenue: number;
+  artistSubscriptionRevenue: number;
+  downloadFeeRevenue: number;
+  totalPlatformRevenue: number;
 };
 
 const COLORS = ['#22c55e', '#8B5CF6', '#EC4899', '#06B6D4', '#10B981', '#F59E0B'];
@@ -100,8 +105,20 @@ export default function CEODashboard() {
       const totalStreamingRevenue = earnings.reduce((sum, e) => sum + (e.streaming_revenue || 0), 0);
       const totalDownloadRevenue = downloads.reduce((sum, d) => sum + (d.artist_revenue || 0), 0);
       const artistLiability = totalPlays * 1.00; // $1 per stream
-      const platformRevenue = revenue.reduce((sum, r) => sum + (r.amount || 0), 0);
-      const revenuePoolBalance = platformRevenue - artistLiability;
+      
+      // Real revenue breakdown from platform_revenue table
+      const fanSubscriptionRevenue = revenue
+        .filter((r: any) => r.revenue_type === 'fan_subscription')
+        .reduce((sum: number, r: any) => sum + (r.amount || 0), 0);
+      const artistSubscriptionRevenue = revenue
+        .filter((r: any) => r.revenue_type === 'artist_subscription')
+        .reduce((sum: number, r: any) => sum + (r.amount || 0), 0);
+      const downloadFeeRevenue = revenue
+        .filter((r: any) => r.revenue_type === 'download_fee')
+        .reduce((sum: number, r: any) => sum + (r.amount || 0), 0);
+      const totalPlatformRevenue = revenue.reduce((sum: number, r: any) => sum + (r.amount || 0), 0);
+      
+      const revenuePoolBalance = totalPlatformRevenue - artistLiability;
       const totalDownloads = downloads.length;
       const avgDownloadPrice = totalDownloads > 0 
         ? downloads.reduce((sum, d) => sum + (d.price || 0), 0) / totalDownloads 
@@ -233,7 +250,11 @@ export default function CEODashboard() {
         artistLiability,
         revenuePoolBalance,
         totalDownloads,
-        avgDownloadPrice
+        avgDownloadPrice,
+        fanSubscriptionRevenue,
+        artistSubscriptionRevenue,
+        downloadFeeRevenue,
+        totalPlatformRevenue
       });
 
       setLoading(false);
@@ -259,14 +280,22 @@ export default function CEODashboard() {
     );
   }
 
-  // Revenue pool data for chart
+  // Revenue pool data for chart - using real data
+  const totalRevForChart = metrics.totalPlatformRevenue || 1;
   const revenuePoolData = [
-    { name: "Subscriptions", value: 55, color: COLORS[0] },
-    { name: "Downloads", value: 20, color: COLORS[1] },
-    { name: "Ads", value: 15, color: COLORS[2] },
-    { name: "Premium", value: 7, color: COLORS[3] },
-    { name: "Events", value: 3, color: COLORS[4] }
-  ];
+    { name: "Artist Subscriptions", value: Math.round((metrics.artistSubscriptionRevenue / totalRevForChart) * 100) || 0, amount: metrics.artistSubscriptionRevenue, color: COLORS[0] },
+    { name: "Fan Subscriptions", value: Math.round((metrics.fanSubscriptionRevenue / totalRevForChart) * 100) || 0, amount: metrics.fanSubscriptionRevenue, color: COLORS[1] },
+    { name: "Download Fees", value: Math.round((metrics.downloadFeeRevenue / totalRevForChart) * 100) || 0, amount: metrics.downloadFeeRevenue, color: COLORS[2] },
+  ].filter(item => item.amount > 0);
+  
+  // If no real revenue yet, show placeholder
+  if (revenuePoolData.length === 0) {
+    revenuePoolData.push(
+      { name: "Subscriptions (pending)", value: 70, amount: 0, color: COLORS[0] },
+      { name: "Downloads (pending)", value: 20, amount: 0, color: COLORS[1] },
+      { name: "Ads (future)", value: 10, amount: 0, color: COLORS[3] }
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -302,11 +331,20 @@ export default function CEODashboard() {
               <PiggyBank className="w-8 h-8 text-primary" />
               <Badge variant="outline">Revenue Pool</Badge>
             </div>
-            <p className="text-3xl font-bold">${(metrics.artistLiability * 1.2).toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground">Total Inflow</p>
-            <div className="mt-2 text-xs flex items-center gap-1 text-green-500">
-              <ArrowUpRight className="w-3 h-3" />
-              <span>20% buffer above liability</span>
+            <p className="text-3xl font-bold">${metrics.totalPlatformRevenue.toLocaleString()}</p>
+            <p className="text-sm text-muted-foreground">Total Platform Revenue</p>
+            <div className="mt-2 text-xs flex items-center gap-1">
+              {metrics.totalPlatformRevenue >= metrics.artistLiability ? (
+                <span className="text-green-500 flex items-center gap-1">
+                  <ArrowUpRight className="w-3 h-3" />
+                  Covers liability
+                </span>
+              ) : (
+                <span className="text-destructive flex items-center gap-1">
+                  <ArrowDownRight className="w-3 h-3" />
+                  ${(metrics.artistLiability - metrics.totalPlatformRevenue).toFixed(2)} short
+                </span>
+              )}
             </div>
           </Card>
 

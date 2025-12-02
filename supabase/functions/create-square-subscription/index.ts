@@ -131,7 +131,6 @@ serve(async (req) => {
 
       if (updateError) {
         console.error('Failed to update subscription:', updateError);
-        // Payment was successful but DB update failed - log for manual reconciliation
       }
     } else {
       // Create new subscription
@@ -148,6 +147,26 @@ serve(async (req) => {
       if (insertError) {
         console.error('Failed to create subscription:', insertError);
       }
+    }
+
+    // CRITICAL: Record revenue in platform_revenue table to fund artist payouts
+    const revenueType = plan === 'fan' ? 'fan_subscription' : 'artist_subscription';
+    const revenueAmount = planDetails.amount / 100; // Convert cents to dollars
+    
+    const { error: revenueError } = await supabase
+      .from('platform_revenue')
+      .insert({
+        revenue_type: revenueType,
+        amount: revenueAmount,
+        period_date: new Date().toISOString().split('T')[0],
+        description: `${planDetails.name} subscription - ${user.email}`,
+      });
+
+    if (revenueError) {
+      console.error('Failed to record platform revenue:', revenueError);
+      // Log for reconciliation but don't fail the request
+    } else {
+      console.log(`Recorded $${revenueAmount} ${revenueType} revenue`);
     }
 
     console.log(`Subscription created successfully for user ${user.id}`);

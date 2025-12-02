@@ -3,6 +3,9 @@ project_id = "rcjzvfskkoqygnlolrcs"
 [functions.create-square-subscription]
 verify_jwt = true
 
+[functions.process-download-purchase]
+verify_jwt = true
+
 [functions.process-artist-payout]
 verify_jwt = true
 
