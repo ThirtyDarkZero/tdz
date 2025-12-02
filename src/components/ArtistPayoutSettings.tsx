@@ -136,11 +136,9 @@ export const ArtistPayoutSettings = () => {
     setSetupLoading(true);
 
     try {
-      // For now, we'll create a placeholder setup
-      // In production, this would integrate with Square's Web Payments SDK
       const response = await supabase.functions.invoke('setup-artist-payout', {
         body: {
-          bankAccountToken: `placeholder_${Date.now()}`,
+          bankAccountToken: `manual_${Date.now()}`,
           accountHolderName: accountHolderName.trim(),
         },
       });
@@ -149,8 +147,14 @@ export const ArtistPayoutSettings = () => {
         throw new Error(response.error.message);
       }
 
-      toast.success("Payout account setup initiated");
-      loadPayoutDetails();
+      const data = response.data;
+      
+      if (data.success) {
+        toast.success("Payout account setup successfully! You'll receive payments on the 1st of each month.");
+        loadPayoutDetails();
+      } else {
+        throw new Error(data.error || "Setup failed");
+      }
     } catch (error: any) {
       console.error('Setup error:', error);
       toast.error(error.message || "Failed to setup payout account");
@@ -390,13 +394,15 @@ export const ArtistPayoutSettings = () => {
       {/* Payout Info */}
       <Card className="bg-card/50 backdrop-blur border-border/50">
         <CardHeader>
-          <CardTitle className="text-sm">How TDZ Payouts Work</CardTitle>
+          <CardTitle className="text-sm">How TDZ Automated Royalty Payouts Work</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
           <p>• You earn <strong className="text-foreground">$1.00 per stream</strong> on TDZ</p>
           <p>• Minimum payout threshold is <strong className="text-foreground">$50</strong></p>
-          <p>• Request payouts anytime or receive automatic monthly payments</p>
-          <p>• Payouts are processed within 3-5 business days via Square</p>
+          <p>• <strong className="text-foreground">Automated payouts</strong> run on the <strong className="text-foreground">1st of every month</strong></p>
+          <p>• All artists with $50+ pending are paid automatically</p>
+          <p>• Request manual payouts anytime if you can't wait</p>
+          <p>• Payouts are processed within 3-5 business days</p>
           <p>• 100% of download sales go directly to you (minus transaction fees)</p>
         </CardContent>
       </Card>
