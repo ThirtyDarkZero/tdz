@@ -487,6 +487,36 @@ export type Database = {
         }
         Relationships: []
       }
+      blocked_entities: {
+        Row: {
+          blocked_at: string
+          blocked_by: string | null
+          entity_type: string
+          entity_value: string
+          expires_at: string | null
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          blocked_at?: string
+          blocked_by?: string | null
+          entity_type: string
+          entity_value: string
+          expires_at?: string | null
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          blocked_at?: string
+          blocked_by?: string | null
+          entity_type?: string
+          entity_value?: string
+          expires_at?: string | null
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       characters: {
         Row: {
           created_at: string
@@ -793,6 +823,42 @@ export type Database = {
           status?: string
           transaction_type?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      device_fingerprints: {
+        Row: {
+          fingerprint: string
+          first_seen_at: string | null
+          flag_reason: string | null
+          id: string
+          is_flagged: boolean | null
+          last_seen_at: string | null
+          streams_today: number | null
+          unique_users_count: number | null
+          user_ids: string[] | null
+        }
+        Insert: {
+          fingerprint: string
+          first_seen_at?: string | null
+          flag_reason?: string | null
+          id?: string
+          is_flagged?: boolean | null
+          last_seen_at?: string | null
+          streams_today?: number | null
+          unique_users_count?: number | null
+          user_ids?: string[] | null
+        }
+        Update: {
+          fingerprint?: string
+          first_seen_at?: string | null
+          flag_reason?: string | null
+          id?: string
+          is_flagged?: boolean | null
+          last_seen_at?: string | null
+          streams_today?: number | null
+          unique_users_count?: number | null
+          user_ids?: string[] | null
         }
         Relationships: []
       }
@@ -1112,6 +1178,45 @@ export type Database = {
           super_fans_count?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      ip_stream_tracking: {
+        Row: {
+          created_at: string
+          day_window_start: string | null
+          flag_reason: string | null
+          id: string
+          ip_address: unknown
+          is_flagged: boolean | null
+          streams_today: number | null
+          unique_users_today: number | null
+          updated_at: string
+          user_ids: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          day_window_start?: string | null
+          flag_reason?: string | null
+          id?: string
+          ip_address: unknown
+          is_flagged?: boolean | null
+          streams_today?: number | null
+          unique_users_today?: number | null
+          updated_at?: string
+          user_ids?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          day_window_start?: string | null
+          flag_reason?: string | null
+          id?: string
+          ip_address?: unknown
+          is_flagged?: boolean | null
+          streams_today?: number | null
+          unique_users_today?: number | null
+          updated_at?: string
+          user_ids?: string[] | null
         }
         Relationships: []
       }
@@ -2238,6 +2343,39 @@ export type Database = {
         }
         Relationships: []
       }
+      stream_fraud_detection: {
+        Row: {
+          created_at: string
+          details: Json | null
+          detection_type: string
+          device_fingerprint: string | null
+          id: string
+          ip_address: unknown
+          severity: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          detection_type: string
+          device_fingerprint?: string | null
+          id?: string
+          ip_address?: unknown
+          severity?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          detection_type?: string
+          device_fingerprint?: string | null
+          id?: string
+          ip_address?: unknown
+          severity?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       tempo_maps: {
         Row: {
           beat_grid: Json
@@ -2760,6 +2898,51 @@ export type Database = {
           },
         ]
       }
+      user_stream_limits: {
+        Row: {
+          created_at: string
+          day_window_start: string | null
+          flag_reason: string | null
+          hour_window_start: string | null
+          id: string
+          is_flagged: boolean | null
+          last_stream_at: string | null
+          streams_this_hour: number | null
+          streams_today: number | null
+          unique_tracks_today: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_window_start?: string | null
+          flag_reason?: string | null
+          hour_window_start?: string | null
+          id?: string
+          is_flagged?: boolean | null
+          last_stream_at?: string | null
+          streams_this_hour?: number | null
+          streams_today?: number | null
+          unique_tracks_today?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_window_start?: string | null
+          flag_reason?: string | null
+          hour_window_start?: string | null
+          id?: string
+          is_flagged?: boolean | null
+          last_stream_at?: string | null
+          streams_this_hour?: number | null
+          streams_today?: number | null
+          unique_tracks_today?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_subscriptions: {
         Row: {
           ai_videos_reset_at: string
@@ -2881,6 +3064,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      validate_stream: {
+        Args: {
+          p_device_fingerprint: string
+          p_ip_address: unknown
+          p_track_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role:
@@ -2890,6 +3082,7 @@ export type Database = {
         | "user"
         | "listener"
         | "manager"
+        | "ceo"
       collaboration_permission:
         | "view_tracks"
         | "edit_tracks"
@@ -3032,6 +3225,7 @@ export const Constants = {
         "user",
         "listener",
         "manager",
+        "ceo",
       ],
       collaboration_permission: [
         "view_tracks",

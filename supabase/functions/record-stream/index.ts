@@ -1,14 +1,52 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Track listener demographics for each stream
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// This function records a stream and updates artist earnings ($1 per stream)
+// Generate device fingerprint from request headers
+function generateDeviceFingerprint(req: Request): string {
+  const userAgent = req.headers.get('user-agent') || '';
+  const acceptLanguage = req.headers.get('accept-language') || '';
+  const acceptEncoding = req.headers.get('accept-encoding') || '';
+  
+  // Create a simple fingerprint from available headers
+  const fingerprintData = `${userAgent}|${acceptLanguage}|${acceptEncoding}`;
+  
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < fingerprintData.length; i++) {
+    const char = fingerprintData.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return `fp_${Math.abs(hash).toString(16)}`;
+}
+
+// Get client IP address from request
+function getClientIP(req: Request): string | null {
+  // Check common headers for real IP (when behind proxy/CDN)
+  const forwardedFor = req.headers.get('x-forwarded-for');
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0].trim();
+  }
+  
+  const realIP = req.headers.get('x-real-ip');
+  if (realIP) {
+    return realIP;
+  }
+  
+  const cfConnectingIP = req.headers.get('cf-connecting-ip');
+  if (cfConnectingIP) {
+    return cfConnectingIP;
+  }
+  
+  return null;
+}
+
+// This function records a stream with fraud detection and updates artist earnings ($1 per stream)
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -18,6 +56,10 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get request metadata for fraud detection
+    const clientIP = getClientIP(req);
+    const deviceFingerprint = generateDeviceFingerprint(req);
 
     // Optional auth - streams can be recorded for anonymous users too
     const authHeader = req.headers.get('Authorization');
@@ -36,6 +78,33 @@ serve(async (req) => {
         JSON.stringify({ error: 'Missing trackId' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // FRAUD DETECTION: Validate stream before counting
+    if (userId) {
+      const { data: fraudCheck, error: fraudError } = await supabase.rpc('validate_stream', {
+        p_user_id: userId,
+        p_track_id: trackId,
+        p_ip_address: clientIP,
+        p_device_fingerprint: deviceFingerprint,
+      });
+
+      if (fraudError) {
+        console.error('Fraud check error:', fraudError);
+        // Continue with caution - log but don't block
+      } else if (fraudCheck && !fraudCheck.allowed) {
+        console.warn(`Stream blocked for user ${userId}: ${fraudCheck.reason}`);
+        return new Response(
+          JSON.stringify({ 
+            recorded: false, 
+            reason: fraudCheck.reason || 'Stream validation failed',
+            blocked: true 
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else if (fraudCheck && fraudCheck.fraud_score > 0) {
+        console.log(`Stream allowed with fraud score: ${fraudCheck.fraud_score} for user ${userId}`);
+      }
     }
 
     // Only count as a valid stream if:
@@ -77,6 +146,14 @@ serve(async (req) => {
       );
     }
 
+    // Prevent self-streaming (artists streaming their own tracks)
+    if (userId && userId === track.user_id) {
+      return new Response(
+        JSON.stringify({ recorded: false, reason: 'Self-streams not counted' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Record listening history if user is logged in
     if (userId) {
       await supabase
@@ -86,6 +163,7 @@ serve(async (req) => {
           track_id: trackId,
           play_duration: duration || 0,
           completion_percentage: completionPercentage || 0,
+          device_type: deviceFingerprint ? 'web' : null,
         });
     }
 
@@ -96,7 +174,7 @@ serve(async (req) => {
       .update({ play_count: newPlayCount })
       .eq('id', trackId);
 
-    // Update artist profile total plays (increment via raw update)
+    // Update artist profile total plays
     const { data: artistProfile } = await supabase
       .from('artist_profiles')
       .select('total_plays')
@@ -170,6 +248,10 @@ serve(async (req) => {
           target_type: 'track',
           target_id: trackId,
           is_public: false,
+          metadata: {
+            ip: clientIP,
+            fingerprint: deviceFingerprint,
+          }
         });
     }
 
