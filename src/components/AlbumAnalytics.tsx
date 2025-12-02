@@ -81,8 +81,8 @@ export function AlbumAnalytics({ albumId }: AlbumAnalyticsProps) {
       const totalStreams = tracks.reduce((sum, track) => sum + (track.play_count || 0), 0);
       const totalTracks = tracks.length;
       
-      // Estimate revenue ($0.003 per stream average)
-      const totalRevenue = totalStreams * 0.003;
+      // TDZ pays $1 per stream
+      const totalRevenue = totalStreams * 1.00;
       
       // Find unique listeners (estimate based on streams)
       const totalListeners = Math.floor(totalStreams * 0.6);
@@ -92,21 +92,19 @@ export function AlbumAnalytics({ albumId }: AlbumAnalyticsProps) {
         (track.play_count || 0) > (top?.play_count || 0) ? track : top
       , tracks[0]);
 
-      // Platform breakdown (simulated data based on industry standards)
+      // TDZ Platform data only - no external DSPs
       const platformBreakdown = [
-        { name: "Spotify", value: Math.floor(totalStreams * 0.35), color: "#1DB954" },
-        { name: "Apple Music", value: Math.floor(totalStreams * 0.25), color: "#FA243C" },
-        { name: "YouTube Music", value: Math.floor(totalStreams * 0.20), color: "#FF0000" },
-        { name: "Amazon Music", value: Math.floor(totalStreams * 0.12), color: "#FF9900" },
-        { name: "Others", value: Math.floor(totalStreams * 0.08), color: "#8B5CF6" }
+        { name: "TDZ Streaming", value: totalStreams, color: "hsl(var(--primary))" },
       ];
 
-      // Revenue by platform
-      const revenueByPlatform = platformBreakdown.map(platform => ({
-        name: platform.name,
-        revenue: (platform.value * 0.003).toFixed(2),
-        percentage: ((platform.value / totalStreams) * 100).toFixed(1)
-      }));
+      // Revenue breakdown - TDZ pays $1 per stream
+      const revenueByPlatform = [
+        {
+          name: "TDZ Streaming Revenue",
+          revenue: totalStreams.toFixed(2),
+          percentage: "100.0"
+        }
+      ];
 
       // Growth data (simulated last 7 days)
       const growthData = Array.from({ length: 7 }, (_, i) => {
@@ -234,9 +232,9 @@ export function AlbumAnalytics({ albumId }: AlbumAnalyticsProps) {
         />
         <StatCard
           icon={DollarSign}
-          label="Estimated Revenue"
+          label="TDZ Revenue"
           value={`$${analytics.totalRevenue.toFixed(2)}`}
-          subtext="Based on avg. $0.003/stream"
+          subtext="$1.00 per stream"
         />
         <StatCard
           icon={Music}
@@ -355,8 +353,8 @@ export function AlbumAnalytics({ albumId }: AlbumAnalyticsProps) {
                   <p className="text-xl font-bold">{analytics.topTrack.play_count?.toLocaleString() || 0}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Est. Earnings</p>
-                  <p className="text-xl font-bold">${((analytics.topTrack.play_count || 0) * 0.003).toFixed(2)}</p>
+                  <p className="text-sm text-muted-foreground">TDZ Earnings</p>
+                  <p className="text-xl font-bold">${((analytics.topTrack.play_count || 0) * 1.00).toFixed(2)}</p>
                 </div>
               </div>
             </div>

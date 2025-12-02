@@ -87,7 +87,7 @@ export function FeatureGate({
         </div>
 
         <Button 
-          onClick={() => navigate("/auth?upgrade=true")}
+          onClick={() => navigate("/pricing")}
           className="bg-gradient-to-r from-primary to-secondary"
         >
           <Sparkles className="w-4 h-4 mr-2" />

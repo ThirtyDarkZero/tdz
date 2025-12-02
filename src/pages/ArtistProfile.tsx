@@ -265,14 +265,9 @@ export default function ArtistProfile() {
       <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden">
         {artist.banner_image_path ? (
           <img
-            src={supabase.storage.from("artist-banners").getPublicUrl(artist.banner_image_path).data.publicUrl}
+            src={supabase.storage.from("artist-images").getPublicUrl(artist.banner_image_path).data.publicUrl}
             alt="Banner"
             className="w-full h-full object-cover"
-            onError={(e) => {
-              // Fallback to artist-images bucket
-              const target = e.target as HTMLImageElement;
-              target.src = supabase.storage.from("artist-images").getPublicUrl(artist.banner_image_path).data.publicUrl;
-            }}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-primary/30 via-primary-glow/20 to-secondary/30" />
@@ -285,14 +280,9 @@ export default function ArtistProfile() {
               <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-2 sm:border-4 border-background shadow-glow">
                 {artist.profile_image_path ? (
                   <img
-                    src={supabase.storage.from("artist-profiles").getPublicUrl(artist.profile_image_path).data.publicUrl}
+                    src={supabase.storage.from("artist-images").getPublicUrl(artist.profile_image_path).data.publicUrl}
                     alt={artist.artist_name}
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      // Fallback to artist-images bucket
-                      const target = e.target as HTMLImageElement;
-                      target.src = supabase.storage.from("artist-images").getPublicUrl(artist.profile_image_path).data.publicUrl;
-                    }}
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center">

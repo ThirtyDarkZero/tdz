@@ -27,7 +27,7 @@ export function SubscriptionModal({ open, onOpenChange }: SubscriptionModalProps
 
   const handleSubscribe = () => {
     onOpenChange(false);
-    navigate("/auth?plan=premium");
+    navigate("/pricing");
   };
 
   return (
