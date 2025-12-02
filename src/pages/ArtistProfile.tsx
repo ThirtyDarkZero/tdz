@@ -300,6 +300,10 @@ export default function ArtistProfile() {
             <div className="flex-1 min-w-0">
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-2 glow-text truncate">{artist.artist_name}</h1>
               <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 flex-wrap">
+                <span>{(artist.monthly_listeners || 0).toLocaleString()} monthly listeners</span>
+                <span className="hidden sm:inline">•</span>
+                <span>{(artist.total_plays || 0).toLocaleString()} total plays</span>
+                <span className="hidden sm:inline">•</span>
                 <span>{tracks.length} releases</span>
                 {artist.verified && (
                   <>

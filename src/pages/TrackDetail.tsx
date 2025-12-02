@@ -515,51 +515,92 @@ export default function TrackDetail() {
             </div>
           </Card>
 
-          {/* Publishing Data */}
+          {/* Credits */}
           <Card className="glass-card-premium p-6">
             <div className="flex items-center gap-2 mb-4">
               <Radio className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-bold">Publishing Information</h2>
+              <h2 className="text-xl font-bold">Credits</h2>
             </div>
             <div className="space-y-3">
+              {/* Main Artist */}
               <div className="flex justify-between items-start py-2 border-b border-border/50">
-                <span className="text-sm text-muted-foreground">Status</span>
-                <Badge variant={track.is_published ? "default" : "secondary"} className="text-xs">
-                  {track.is_published ? "Published" : "Unpublished"}
-                </Badge>
+                <span className="text-sm text-muted-foreground">Artist</span>
+                <button 
+                  onClick={() => navigate(`/artist/${track.user_id}`)}
+                  className="text-sm font-medium text-primary hover:underline text-right"
+                >
+                  {track.artist_name}
+                </button>
               </div>
+              
+              {/* Contributors from ai_tags metadata */}
+              {track.ai_tags?.metadata?.contributors && track.ai_tags.metadata.contributors.length > 0 && (
+                <>
+                  {track.ai_tags.metadata.contributors.map((contributor: any, index: number) => (
+                    <div key={index} className="flex justify-between items-start py-2 border-b border-border/50">
+                      <span className="text-sm text-muted-foreground capitalize">{contributor.role || 'Contributor'}</span>
+                      <span className="text-sm font-medium text-right">{contributor.name}</span>
+                    </div>
+                  ))}
+                </>
+              )}
+              
+              {/* Copyright Info */}
+              {track.ai_tags?.metadata?.copyrightHolder && (
+                <div className="flex justify-between items-start py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">℗ {track.ai_tags.metadata.copyrightYear || ''}</span>
+                  <span className="text-sm font-medium text-right">{track.ai_tags.metadata.copyrightHolder}</span>
+                </div>
+              )}
+              
+              {track.ai_tags?.metadata?.cLine && (
+                <div className="flex justify-between items-start py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">© Copyright</span>
+                  <span className="text-sm font-medium text-right">{track.ai_tags.metadata.cLine}</span>
+                </div>
+              )}
+              
+              {track.ai_tags?.metadata?.publishingRights && (
+                <div className="flex justify-between items-start py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">Publishing</span>
+                  <span className="text-sm font-medium text-right">{track.ai_tags.metadata.publishingRights}</span>
+                </div>
+              )}
+              
+              {/* Release Info */}
               {track.release_date && (
                 <div className="flex justify-between items-start py-2 border-b border-border/50">
                   <span className="text-sm text-muted-foreground">Release Date</span>
                   <span className="text-sm font-medium">{formatDate(track.release_date)}</span>
                 </div>
               )}
-              <div className="flex justify-between items-start py-2 border-b border-border/50">
-                <span className="text-sm text-muted-foreground">Upload Date</span>
-                <span className="text-sm font-medium">{formatDate(track.created_at)}</span>
-              </div>
-              <div className="flex justify-between items-start py-2 border-b border-border/50">
-                <span className="text-sm text-muted-foreground">Last Updated</span>
-                <span className="text-sm font-medium">{formatDate(track.updated_at)}</span>
-              </div>
+              
+              {/* Album Link */}
               {track.albums && (
-                <>
-                  <div className="flex justify-between items-start py-2 border-b border-border/50">
-                    <span className="text-sm text-muted-foreground">Album</span>
-                    <button 
-                      onClick={() => navigate(`/album/${track.albums.id}`)}
-                      className="text-sm font-medium text-primary hover:underline text-right"
-                    >
-                      {track.albums.title}
-                    </button>
-                  </div>
-                  {track.albums.release_date && (
-                    <div className="flex justify-between items-start py-2 border-b border-border/50">
-                      <span className="text-sm text-muted-foreground">Album Release</span>
-                      <span className="text-sm font-medium">{formatDate(track.albums.release_date)}</span>
-                    </div>
-                  )}
-                </>
+                <div className="flex justify-between items-start py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">Album</span>
+                  <button 
+                    onClick={() => navigate(`/album/${track.albums.id}`)}
+                    className="text-sm font-medium text-primary hover:underline text-right"
+                  >
+                    {track.albums.title}
+                  </button>
+                </div>
+              )}
+              
+              {/* Identifiers */}
+              {track.ai_tags?.metadata?.isrc && (
+                <div className="flex justify-between items-start py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">ISRC</span>
+                  <span className="text-sm font-medium font-mono">{track.ai_tags.metadata.isrc}</span>
+                </div>
+              )}
+              
+              {track.ai_tags?.metadata?.upc && (
+                <div className="flex justify-between items-start py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">UPC</span>
+                  <span className="text-sm font-medium font-mono">{track.ai_tags.metadata.upc}</span>
+                </div>
               )}
             </div>
           </Card>
