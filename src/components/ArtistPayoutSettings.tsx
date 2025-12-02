@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
@@ -15,11 +13,13 @@ import {
   AlertCircle, 
   Clock,
   Wallet,
-  ArrowUpRight
+  ArrowUpRight,
+  ExternalLink,
+  Loader2
 } from "lucide-react";
 
 interface PayoutDetails {
-  square_customer_id: string | null;
+  square_merchant_id: string | null;
   account_holder_name: string | null;
   payout_enabled: boolean;
   last_payout_date: string | null;
@@ -42,9 +42,8 @@ export const ArtistPayoutSettings = () => {
     nextPayoutDate: null,
   });
   const [loading, setLoading] = useState(true);
-  const [setupLoading, setSetupLoading] = useState(false);
+  const [connectLoading, setConnectLoading] = useState(false);
   const [payoutLoading, setPayoutLoading] = useState(false);
-  const [accountHolderName, setAccountHolderName] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -57,7 +56,6 @@ export const ArtistPayoutSettings = () => {
     if (!user) return;
 
     try {
-      // Use raw query since types aren't generated yet
       const { data, error } = await supabase
         .from('artist_payout_details' as any)
         .select('*')
@@ -71,14 +69,11 @@ export const ArtistPayoutSettings = () => {
       if (data) {
         const details = data as any;
         setPayoutDetails({
-          square_customer_id: details.square_customer_id,
+          square_merchant_id: details.square_merchant_id,
           account_holder_name: details.account_holder_name,
           payout_enabled: details.payout_enabled,
           last_payout_date: details.last_payout_date,
         });
-        if (details.account_holder_name) {
-          setAccountHolderName(details.account_holder_name);
-        }
       }
     } catch (error) {
       console.error('Error:', error);
@@ -112,7 +107,6 @@ export const ArtistPayoutSettings = () => {
       const streams = earningsData
         ?.reduce((sum, e) => sum + (e.total_streams || 0), 0) || 0;
 
-      // Next payout is the 1st of next month
       const now = new Date();
       const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
@@ -127,20 +121,17 @@ export const ArtistPayoutSettings = () => {
     }
   };
 
-  const handleSetupPayout = async () => {
-    if (!user || !session || !accountHolderName.trim()) {
-      toast.error("Please enter your account holder name");
-      return;
-    }
+  const handleConnectSquare = async () => {
+    if (!user || !session) return;
 
-    setSetupLoading(true);
+    setConnectLoading(true);
 
     try {
-      const response = await supabase.functions.invoke('setup-artist-payout', {
-        body: {
-          bankAccountToken: `manual_${Date.now()}`,
-          accountHolderName: accountHolderName.trim(),
-        },
+      // Get OAuth URL from edge function
+      const redirectUri = `${window.location.origin}/square-callback`;
+      
+      const response = await supabase.functions.invoke('square-oauth-url', {
+        body: { redirectUri },
       });
 
       if (response.error) {
@@ -149,17 +140,16 @@ export const ArtistPayoutSettings = () => {
 
       const data = response.data;
       
-      if (data.success) {
-        toast.success("Payout account setup successfully! You'll receive payments on the 1st of each month.");
-        loadPayoutDetails();
+      if (data.success && data.authUrl) {
+        // Redirect to Square OAuth
+        window.location.href = data.authUrl;
       } else {
-        throw new Error(data.error || "Setup failed");
+        throw new Error(data.error || 'Failed to get authorization URL');
       }
     } catch (error: any) {
-      console.error('Setup error:', error);
-      toast.error(error.message || "Failed to setup payout account");
-    } finally {
-      setSetupLoading(false);
+      console.error('Connect error:', error);
+      toast.error(error.message || "Failed to connect to Square");
+      setConnectLoading(false);
     }
   };
 
@@ -175,9 +165,7 @@ export const ArtistPayoutSettings = () => {
 
     try {
       const response = await supabase.functions.invoke('process-artist-payout', {
-        body: {
-          artistId: user.id,
-        },
+        body: { artistId: user.id },
       });
 
       if (response.error) {
@@ -214,7 +202,8 @@ export const ArtistPayoutSettings = () => {
   }
 
   const MINIMUM_PAYOUT = 50;
-  const canRequestPayout = payoutDetails?.payout_enabled && earnings.totalPending >= MINIMUM_PAYOUT;
+  const isConnected = !!payoutDetails?.square_merchant_id;
+  const canRequestPayout = isConnected && payoutDetails?.payout_enabled && earnings.totalPending >= MINIMUM_PAYOUT;
 
   return (
     <div className="space-y-6">
@@ -272,7 +261,7 @@ export const ArtistPayoutSettings = () => {
         </Card>
       </div>
 
-      {/* Payout Account Setup */}
+      {/* Square Connection */}
       <Card className="bg-card/50 backdrop-blur border-border/50">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -282,30 +271,30 @@ export const ArtistPayoutSettings = () => {
                 Payout Account
               </CardTitle>
               <CardDescription>
-                Set up your bank account to receive royalty payments
+                Connect your Square account to receive royalty payments
               </CardDescription>
             </div>
-            {payoutDetails?.payout_enabled ? (
+            {isConnected ? (
               <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
                 <CheckCircle className="h-3 w-3 mr-1" />
-                Active
+                Connected
               </Badge>
             ) : (
               <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
                 <AlertCircle className="h-3 w-3 mr-1" />
-                Setup Required
+                Not Connected
               </Badge>
             )}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {payoutDetails?.payout_enabled ? (
+          {isConnected ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                 <div>
-                  <p className="font-medium">{payoutDetails.account_holder_name}</p>
+                  <p className="font-medium">{payoutDetails?.account_holder_name || 'Square Account'}</p>
                   <p className="text-sm text-muted-foreground">
-                    Connected via Square
+                    Merchant ID: {payoutDetails?.square_merchant_id?.slice(0, 8)}...
                   </p>
                 </div>
                 <CheckCircle className="h-5 w-5 text-green-500" />
@@ -330,7 +319,7 @@ export const ArtistPayoutSettings = () => {
                 >
                   {payoutLoading ? (
                     <>
-                      <Clock className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       Processing...
                     </>
                   ) : (
@@ -352,40 +341,47 @@ export const ArtistPayoutSettings = () => {
             <div className="space-y-4">
               <div className="p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground mb-4">
-                  Connect your bank account to receive royalty payments. We use Square for secure, fast payouts.
+                  Connect your Square account to receive royalty payments directly to your bank. 
+                  Square handles secure payment processing for millions of businesses.
                 </p>
                 
-                <div className="space-y-3">
-                  <div>
-                    <Label htmlFor="accountHolder">Account Holder Name</Label>
-                    <Input
-                      id="accountHolder"
-                      placeholder="Enter your full legal name"
-                      value={accountHolderName}
-                      onChange={(e) => setAccountHolderName(e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
+                <ul className="text-sm text-muted-foreground space-y-1 mb-4">
+                  <li>✓ Secure OAuth connection</li>
+                  <li>✓ Direct bank deposits</li>
+                  <li>✓ Real-time payment tracking</li>
+                  <li>✓ Automatic monthly payouts</li>
+                </ul>
               </div>
 
               <Button 
-                onClick={handleSetupPayout}
-                disabled={setupLoading || !accountHolderName.trim()}
+                onClick={handleConnectSquare}
+                disabled={connectLoading}
                 className="w-full"
               >
-                {setupLoading ? (
+                {connectLoading ? (
                   <>
-                    <Clock className="h-4 w-4 mr-2 animate-spin" />
-                    Setting up...
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Connecting...
                   </>
                 ) : (
                   <>
-                    <Building2 className="h-4 w-4 mr-2" />
-                    Setup Payout Account
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Connect Square Account
                   </>
                 )}
               </Button>
+              
+              <p className="text-xs text-center text-muted-foreground">
+                Don't have a Square account?{" "}
+                <a 
+                  href="https://squareup.com/signup" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  Sign up free
+                </a>
+              </p>
             </div>
           )}
         </CardContent>

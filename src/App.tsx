@@ -24,6 +24,7 @@ import Privacy from "./pages/Privacy";
 import Support from "./pages/Support";
 import Pricing from "./pages/Pricing";
 import Checkout from "./pages/Checkout";
+import SquareOAuthCallback from "./pages/SquareOAuthCallback";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +56,7 @@ const App = () => (
           <Route path="/support" element={<Support />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/square-callback" element={<SquareOAuthCallback />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
