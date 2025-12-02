@@ -11,12 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   ArrowLeft, Edit, Save, X, Music, Heart, Clock, 
   Camera, Users, ListMusic, Share2, Settings, Play,
-  Trophy, Flame, Star, Zap, Headphones, TrendingUp
+  Trophy, Flame, Star, Zap, Headphones, TrendingUp, MessageCircle, Mail
 } from "lucide-react";
 import { toast } from "sonner";
 import { PlaylistManager } from "@/components/PlaylistManager";
 import { MotionCover } from "@/components/MotionCover";
 import { ShareProfileModal } from "@/components/ShareProfileModal";
+import { DirectMessagePanel } from "@/components/DirectMessagePanel";
 import tdzLogo from "@/assets/tdz-logo.png";
 
 export default function ListenerProfile() {
@@ -33,6 +34,9 @@ export default function ListenerProfile() {
   const [playlists, setPlaylists] = useState<any[]>([]);
   const [followingCount, setFollowingCount] = useState(0);
   const [followersCount, setFollowersCount] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<any>(null);
   
   const [formData, setFormData] = useState({
     display_name: "",
@@ -168,6 +172,71 @@ export default function ListenerProfile() {
         .eq("follower_id", user.id);
       
       setFollowingCount(followingCountData || 0);
+
+      // Load unread messages count
+      const { count: unreadCount } = await supabase
+        .from("direct_messages")
+        .select("*", { count: "exact", head: true })
+        .eq("receiver_id", user.id)
+        .eq("is_read", false);
+      
+      setUnreadMessages(unreadCount || 0);
+
+      // Load recent conversations
+      const { data: messagesData } = await supabase
+        .from("direct_messages")
+        .select("*")
+        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        .order("created_at", { ascending: false });
+
+      if (messagesData) {
+        // Group by conversation partner
+        const convMap = new Map<string, any>();
+        for (const msg of messagesData) {
+          const partnerId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
+          if (!convMap.has(partnerId)) {
+            convMap.set(partnerId, {
+              partnerId,
+              lastMessage: msg.content,
+              lastMessageTime: msg.created_at,
+              unread: msg.receiver_id === user.id && !msg.is_read ? 1 : 0
+            });
+          } else if (msg.receiver_id === user.id && !msg.is_read) {
+            const conv = convMap.get(partnerId);
+            conv.unread++;
+          }
+        }
+
+        // Fetch partner profiles
+        const partnerIds = Array.from(convMap.keys());
+        if (partnerIds.length > 0) {
+          const { data: artistProfiles } = await supabase
+            .from("artist_profiles")
+            .select("user_id, artist_name, profile_image_path")
+            .in("user_id", partnerIds);
+
+          const { data: listenerProfiles } = await supabase
+            .from("listener_profiles")
+            .select("user_id, display_name, profile_image_path")
+            .in("user_id", partnerIds);
+
+          const convArray = Array.from(convMap.values()).map(conv => {
+            const artistProfile = artistProfiles?.find(p => p.user_id === conv.partnerId);
+            const listenerProfile = listenerProfiles?.find(p => p.user_id === conv.partnerId);
+            return {
+              ...conv,
+              partnerName: artistProfile?.artist_name || listenerProfile?.display_name || "Unknown",
+              partnerAvatar: artistProfile?.profile_image_path 
+                ? supabase.storage.from("artist-profiles").getPublicUrl(artistProfile.profile_image_path).data.publicUrl
+                : listenerProfile?.profile_image_path
+                ? supabase.storage.from("listener-images").getPublicUrl(listenerProfile.profile_image_path).data.publicUrl
+                : undefined
+            };
+          });
+
+          setConversations(convArray);
+        }
+      }
 
     } catch (error: any) {
       console.error("Error loading profile:", error);
@@ -518,7 +587,7 @@ export default function ListenerProfile() {
       {/* Main Content Tabs */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-8">
         <Tabs defaultValue="liked" className="space-y-6">
-          <TabsList className="w-full sm:w-auto glass-card-premium p-1 h-auto">
+          <TabsList className="w-full sm:w-auto glass-card-premium p-1 h-auto flex-wrap">
             <TabsTrigger value="liked" className="gap-2 flex-1 sm:flex-none py-2 sm:py-3 px-3 sm:px-6">
               <Heart className="w-4 h-4" />
               <span>Liked</span>
@@ -526,6 +595,15 @@ export default function ListenerProfile() {
             <TabsTrigger value="playlists" className="gap-2 flex-1 sm:flex-none py-2 sm:py-3 px-3 sm:px-6">
               <ListMusic className="w-4 h-4" />
               <span>Playlists</span>
+            </TabsTrigger>
+            <TabsTrigger value="messages" className="gap-2 flex-1 sm:flex-none py-2 sm:py-3 px-3 sm:px-6 relative">
+              <Mail className="w-4 h-4" />
+              <span>Messages</span>
+              {unreadMessages > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px] bg-primary">
+                  {unreadMessages > 9 ? '9+' : unreadMessages}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-2 flex-1 sm:flex-none py-2 sm:py-3 px-3 sm:px-6">
               <Clock className="w-4 h-4" />
@@ -586,6 +664,46 @@ export default function ListenerProfile() {
               userId={user?.id} 
               onPlaylistSelect={(id) => navigate(`/playlist/${id}`)}
             />
+          </TabsContent>
+
+          {/* Messages */}
+          <TabsContent value="messages" className="space-y-4">
+            {conversations.length === 0 ? (
+              <Card className="glass-card-premium p-8 sm:p-12 text-center">
+                <MessageCircle className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-xl sm:text-2xl font-bold mb-2">No Messages Yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Follow artists and start conversations from their profiles
+                </p>
+                <Button onClick={() => navigate("/discover")}>Discover Artists</Button>
+              </Card>
+            ) : (
+              <div className="grid gap-2">
+                {conversations.map((conv: any) => (
+                  <Card 
+                    key={conv.partnerId}
+                    className="glass-card p-4 hover:border-primary/50 transition-all cursor-pointer"
+                    onClick={() => setSelectedConversation(conv)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={conv.partnerAvatar} />
+                        <AvatarFallback>{conv.partnerName?.charAt(0)?.toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold truncate">{conv.partnerName}</h3>
+                          {conv.unread > 0 && (
+                            <Badge className="ml-2">{conv.unread}</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate">{conv.lastMessage}</p>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           {/* Listening History */}
@@ -666,6 +784,17 @@ export default function ListenerProfile() {
             : ["Electronic", "Hip-Hop", "Pop"],
         }}
       />
+
+      {/* Direct Message Panel */}
+      {selectedConversation && (
+        <DirectMessagePanel
+          open={!!selectedConversation}
+          onClose={() => setSelectedConversation(null)}
+          recipientId={selectedConversation.partnerId}
+          recipientName={selectedConversation.partnerName}
+          recipientAvatar={selectedConversation.partnerAvatar}
+        />
+      )}
     </div>
   );
 }
