@@ -438,6 +438,51 @@ export default function Landing() {
             ))}
           </div>
 
+          {/* Fan Subscription Plan */}
+          <div className="mb-12 md:mb-20">
+            <Card className="glass-card p-6 md:p-8 max-w-lg mx-auto relative overflow-hidden border-secondary/40 hover:border-secondary/60 transition-all">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-secondary/20 to-transparent rounded-full blur-2xl" />
+              <div className="relative z-10 text-center">
+                <Badge className="bg-secondary/20 text-secondary border-secondary/30 mb-4">
+                  <Headphones className="w-3 h-3 mr-1" />
+                  FAN SUBSCRIPTION
+                </Badge>
+                <h3 className="text-2xl md:text-3xl font-display font-bold mb-2">Unlimited Streaming</h3>
+                <div className="text-4xl md:text-5xl font-black text-secondary mb-2">
+                  $12<span className="text-lg font-normal text-muted-foreground">/month</span>
+                </div>
+                <p className="text-muted-foreground mb-6">
+                  Stream unlimited, support artists directly
+                </p>
+                <div className="space-y-3 text-left mb-6">
+                  {[
+                    "Unlimited high-fidelity streaming",
+                    "Every stream pays artists $1",
+                    "Create & share unlimited playlists",
+                    "Access motion covers & social features",
+                    "Follow artists & get exclusive updates",
+                    "No ads, ever"
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-sm">
+                      <CheckCircle2 className="w-4 h-4 text-secondary flex-shrink-0" />
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+                <Button 
+                  onClick={() => navigate("/auth")} 
+                  className="w-full bg-gradient-to-r from-secondary to-accent text-background font-bold h-12"
+                >
+                  Start Listening
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+                <p className="text-xs text-muted-foreground mt-3">
+                  30-second previews free • Full access requires subscription
+                </p>
+              </div>
+            </Card>
+          </div>
+
           {/* Latest Releases */}
           {latestReleases.length > 0 && (
             <div className="space-y-8">
