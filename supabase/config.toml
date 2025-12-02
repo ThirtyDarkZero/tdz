@@ -9,6 +9,9 @@ verify_jwt = true
 [functions.setup-artist-payout]
 verify_jwt = true
 
+[functions.scheduled-artist-payouts]
+verify_jwt = false
+
 [functions.label-staff-chat]
 verify_jwt = true
 

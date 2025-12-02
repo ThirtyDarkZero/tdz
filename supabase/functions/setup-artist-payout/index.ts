@@ -20,7 +20,7 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const squareAccessToken = Deno.env.get('SQUARE_ACCESS_TOKEN')!;
+    const squareAccessToken = Deno.env.get('SQUARE_ACCESS_TOKEN');
 
     // Get auth user
     const authHeader = req.headers.get('Authorization');
@@ -45,9 +45,9 @@ serve(async (req) => {
 
     const { bankAccountToken, accountHolderName } = await req.json() as PayoutSetupRequest;
 
-    if (!bankAccountToken || !accountHolderName) {
+    if (!accountHolderName) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: 'Account holder name is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -55,44 +55,46 @@ serve(async (req) => {
     // Get user's email for Square customer
     const userEmail = user.email || `${user.id}@tdz.app`;
 
-    // Check if artist already has a Square customer
+    // Check if artist already has payout details
     const { data: existingDetails } = await supabase
       .from('artist_payout_details')
       .select('*')
       .eq('artist_id', user.id)
       .maybeSingle();
 
-    let squareCustomerId = existingDetails?.square_customer_id;
+    let squareCustomerId = existingDetails?.square_customer_id || null;
 
-    // Create Square customer if not exists
-    if (!squareCustomerId) {
-      const customerResponse = await fetch('https://connect.squareup.com/v2/customers', {
-        method: 'POST',
-        headers: {
-          'Square-Version': '2024-01-18',
-          'Authorization': `Bearer ${squareAccessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          idempotency_key: crypto.randomUUID(),
-          given_name: accountHolderName,
-          email_address: userEmail,
-          reference_id: user.id,
-        }),
-      });
+    // Try to create Square customer if token is available and valid
+    if (!squareCustomerId && squareAccessToken) {
+      try {
+        const customerResponse = await fetch('https://connect.squareup.com/v2/customers', {
+          method: 'POST',
+          headers: {
+            'Square-Version': '2024-01-18',
+            'Authorization': `Bearer ${squareAccessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            idempotency_key: crypto.randomUUID(),
+            given_name: accountHolderName,
+            email_address: userEmail,
+            reference_id: user.id,
+          }),
+        });
 
-      const customerData = await customerResponse.json();
-      console.log('Square customer response:', JSON.stringify(customerData));
+        const customerData = await customerResponse.json();
+        console.log('Square customer response:', JSON.stringify(customerData));
 
-      if (!customerResponse.ok || customerData.errors) {
-        const errorMessage = customerData.errors?.[0]?.detail || 'Failed to create customer';
-        return new Response(
-          JSON.stringify({ error: errorMessage }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        if (customerResponse.ok && !customerData.errors) {
+          squareCustomerId = customerData.customer?.id;
+        } else {
+          // Log but don't fail - we can still save payout details without Square
+          console.warn('Square customer creation failed:', customerData.errors);
+        }
+      } catch (squareError) {
+        console.error('Square API error:', squareError);
+        // Continue without Square - manual payouts will be used
       }
-
-      squareCustomerId = customerData.customer?.id;
     }
 
     // Store bank account token for payouts
