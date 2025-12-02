@@ -68,23 +68,26 @@ export default function Auth() {
     validateSession();
   }, []);
 
-  // Only redirect after successful authentication
+  // Redirect if user is already logged in (not just authenticated)
   useEffect(() => {
-    if (!user || roleLoading || !justAuthenticated) return;
+    if (!user || roleLoading) return;
+    
+    // If user just authenticated OR already logged in, redirect appropriately
+    if (justAuthenticated || user) {
+      // Check if user has a role
+      if (!role) {
+        navigate("/role-selection");
+        return;
+      }
 
-    // Check if user has a role
-    if (!role) {
-      navigate("/role-selection");
-      return;
-    }
-
-    // Redirect based on role
-    if (role === "artist" || role === "verified_artist") {
-      navigate("/studio");
-    } else if (role === "listener") {
-      navigate("/discover");
-    } else {
-      navigate("/discover");
+      // Redirect based on role - artists go to Studio, listeners go to Discover
+      if (role === "artist" || role === "verified_artist") {
+        navigate("/studio");
+      } else if (role === "listener") {
+        navigate("/discover");
+      } else {
+        navigate("/discover");
+      }
     }
   }, [user, role, roleLoading, justAuthenticated, navigate]);
 

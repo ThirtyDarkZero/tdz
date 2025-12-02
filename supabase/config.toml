@@ -1,5 +1,8 @@
 project_id = "rcjzvfskkoqygnlolrcs"
 
+[functions.create-square-subscription]
+verify_jwt = true
+
 [functions.label-staff-chat]
 verify_jwt = true
 
