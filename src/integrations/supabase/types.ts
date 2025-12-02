@@ -748,6 +748,68 @@ export type Database = {
           },
         ]
       }
+      exec_conversations: {
+        Row: {
+          agent_type: string
+          created_at: string
+          id: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_type: string
+          created_at?: string
+          id?: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_type?: string
+          created_at?: string
+          id?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      exec_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+          timestamp: number
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role: string
+          timestamp: number
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          timestamp?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exec_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "exec_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exports: {
         Row: {
           completed_at: string | null
