@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Upload, Music, Disc, Album as AlbumIcon, GripVertical, Edit, Sparkles, AlertTriangle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,6 +63,7 @@ type ReleaseType = 'single' | 'ep' | 'album';
 
 export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) => {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [releaseType, setReleaseType] = useState<ReleaseType>('single');
   const [tracks, setTracks] = useState<TrackFile[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -415,36 +416,46 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
       )}
 
       {/* File Upload Area */}
-      <div className="border-2 border-dashed border-primary/40 rounded-lg p-8 text-center bg-gradient-to-br from-primary/5 via-transparent to-accent/5">
+      <div 
+        className="border-2 border-dashed border-primary/40 rounded-lg p-8 text-center bg-gradient-to-br from-primary/5 via-transparent to-accent/5 cursor-pointer hover:border-primary/60 transition-colors"
+        onClick={() => !uploading && fileInputRef.current?.click()}
+      >
         <div className="flex items-center justify-center gap-2 mb-4">
           <Music className="h-12 w-12 text-primary" />
           <Sparkles className="h-6 w-6 text-accent animate-pulse" />
         </div>
-        <Label htmlFor="files" className="cursor-pointer">
-          <div className="text-lg font-medium mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            {releaseType === 'single' ? 'Upload High-Fidelity Track' : `Upload ${releaseType.toUpperCase()} Tracks`}
-          </div>
-          <div className="text-sm text-muted-foreground mb-2">
-            <div className="font-semibold text-primary">✨ Dolby Atmos & HD Audio Ready</div>
-            <div className="mt-1">Immersive 3D sound • Up to 24-bit/192kHz</div>
-          </div>
-          <div className="text-xs text-muted-foreground mb-4">
-            All formats: MP3, WAV, FLAC, ALAC, EC-3, AC-4 • Max 500MB per file
-          </div>
-          <Input
-            id="files"
-            type="file"
-            accept="audio/*,.ec3,.eac3,.ac4,.dsd,.dsf,.dff"
-            className="hidden"
-            multiple={releaseType !== 'single'}
-            onChange={(e) => e.target.files && handleFileSelect(e.target.files)}
-            disabled={uploading}
-          />
-          <Button type="button" variant="default" disabled={uploading} className="bg-gradient-to-r from-primary to-accent shadow-glow">
-            <Upload className="h-4 w-4 mr-2" />
-            Choose Audio Files
-          </Button>
-        </Label>
+        <div className="text-lg font-medium mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          {releaseType === 'single' ? 'Upload High-Fidelity Track' : `Upload ${releaseType.toUpperCase()} Tracks`}
+        </div>
+        <div className="text-sm text-muted-foreground mb-2">
+          <div className="font-semibold text-primary">✨ Dolby Atmos & HD Audio Ready</div>
+          <div className="mt-1">Immersive 3D sound • Up to 24-bit/192kHz</div>
+        </div>
+        <div className="text-xs text-muted-foreground mb-4">
+          All formats: MP3, WAV, FLAC, ALAC, EC-3, AC-4 • Max 500MB per file
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="audio/*,.ec3,.eac3,.ac4,.dsd,.dsf,.dff"
+          className="hidden"
+          multiple={releaseType !== 'single'}
+          onChange={(e) => e.target.files && handleFileSelect(e.target.files)}
+          disabled={uploading}
+        />
+        <Button 
+          type="button" 
+          variant="default" 
+          disabled={uploading} 
+          className="bg-gradient-to-r from-primary to-accent shadow-glow"
+          onClick={(e) => {
+            e.stopPropagation();
+            fileInputRef.current?.click();
+          }}
+        >
+          <Upload className="h-4 w-4 mr-2" />
+          Choose Audio Files
+        </Button>
       </div>
 
       {/* Track List with Drag & Drop */}
