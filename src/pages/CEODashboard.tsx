@@ -52,12 +52,24 @@ type DashboardMetrics = {
 const COLORS = ['#22c55e', '#8B5CF6', '#EC4899', '#06B6D4', '#10B981', '#F59E0B'];
 
 export default function CEODashboard() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check if user is CEO
+  // Check if user is CEO - only after auth has loaded
   const isCEO = user?.email === 'info@thirtydarkzero.com';
+  
+  // Wait for auth to load before checking access
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Activity className="w-16 h-16 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-lg text-muted-foreground">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (!isCEO) return;
