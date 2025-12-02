@@ -279,31 +279,35 @@ const Studio = () => {
               </TabsTrigger>
               <TabsTrigger 
                 value="fans" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap relative"
               >
                 <Heart className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Fans</span>
+                {!hasFeature('fanEngagement') && <Lock className="h-3 w-3 absolute -top-1 -right-1 text-muted-foreground" />}
               </TabsTrigger>
               <TabsTrigger 
                 value="storytelling" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap relative"
               >
                 <BookOpen className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Story</span>
+                {!hasFeature('presaveCampaigns') && <Lock className="h-3 w-3 absolute -top-1 -right-1 text-muted-foreground" />}
               </TabsTrigger>
               <TabsTrigger 
                 value="momentum" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap relative"
               >
                 <Zap className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Momentum</span>
+                {!hasFeature('advancedAnalytics') && <Lock className="h-3 w-3 absolute -top-1 -right-1 text-muted-foreground" />}
               </TabsTrigger>
               <TabsTrigger 
                 value="canvas" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap relative"
               >
                 <Film className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Canvas</span>
+                {!hasFeature('advancedAnalytics') && <Lock className="h-3 w-3 absolute -top-1 -right-1 text-muted-foreground" />}
               </TabsTrigger>
               <TabsTrigger 
                 value="profile" 
@@ -321,17 +325,19 @@ const Studio = () => {
               </TabsTrigger>
               <TabsTrigger 
                 value="quantum" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap animate-pulse"
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap animate-pulse relative"
               >
                 <Sparkles className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Quantum</span>
+                {!hasFeature('advancedAnalytics') && <Lock className="h-3 w-3 absolute -top-1 -right-1 text-muted-foreground" />}
               </TabsTrigger>
               <TabsTrigger 
                 value="collaborators" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
+                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap relative"
               >
                 <Users className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="hidden sm:inline">Collaborators</span>
+                {!hasFeature('collaborationTools') && <Lock className="h-3 w-3 absolute -top-1 -right-1 text-muted-foreground" />}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -345,40 +351,28 @@ const Studio = () => {
             )}
 
             <TabsContent value="label-staff" className="mt-0">
-              <FeatureGate feature="uploads">
-                <LabelStaff />
-              </FeatureGate>
+              <LabelStaff />
             </TabsContent>
 
             <TabsContent value="release" className="mt-0">
-              <FeatureGate feature="uploads">
-                <ReleaseManager />
-              </FeatureGate>
+              <ReleaseManager />
             </TabsContent>
 
             <TabsContent value="analytics" className="mt-0">
               {/* Basic analytics for all artists, advanced features gated inside component */}
-              <FeatureGate feature="basicAnalytics">
-                <DistributionAnalytics showAdvanced={hasFeature('advancedAnalytics')} />
-              </FeatureGate>
+              <DistributionAnalytics showAdvanced={hasFeature('advancedAnalytics')} />
             </TabsContent>
 
             <TabsContent value="library" className="mt-0">
-              <FeatureGate feature="uploads">
-                <MusicLibrary onPlayTrack={handlePlayTrack} />
-              </FeatureGate>
+              <MusicLibrary onPlayTrack={handlePlayTrack} />
             </TabsContent>
 
             <TabsContent value="gallery" className="mt-0">
-              <FeatureGate feature="uploads">
-                <ArtistGalleryManager />
-              </FeatureGate>
+              <ArtistGalleryManager />
             </TabsContent>
 
             <TabsContent value="dashboard" className="mt-0">
-              <FeatureGate feature="basicAnalytics">
-                <ArtistDashboard />
-              </FeatureGate>
+              <ArtistDashboard />
             </TabsContent>
 
             <TabsContent value="fans" className="mt-0">
@@ -406,15 +400,11 @@ const Studio = () => {
             </TabsContent>
 
             <TabsContent value="profile" className="mt-0">
-              <FeatureGate feature="uploads">
-                <ArtistProfileEditor />
-              </FeatureGate>
+              <ArtistProfileEditor />
             </TabsContent>
 
             <TabsContent value="merch" className="mt-0">
-              <FeatureGate feature="uploads">
-                <MerchStore variant="full" />
-              </FeatureGate>
+              <MerchStore variant="full" />
             </TabsContent>
 
             <TabsContent value="quantum" className="mt-0">
