@@ -1,12 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { LogOut, Upload } from "lucide-react";
+import { LogOut, Upload, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { NotificationsPanel } from "./NotificationsPanel";
 
 export const TopBar = ({ onUploadClick }: { onUploadClick?: () => void }) => {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  
+  // CEO check
+  const isCEO = user?.email === 'info@thirtydarkzero.com';
 
   const handleUploadMusic = () => {
     if (onUploadClick) {
@@ -37,6 +42,29 @@ export const TopBar = ({ onUploadClick }: { onUploadClick?: () => void }) => {
       
       <div className="flex items-center gap-2 md:gap-4">
         <NotificationsPanel />
+        
+        {isCEO && (
+          <Button
+            onClick={() => navigate('/ceo')}
+            variant="outline"
+            size="sm"
+            className="hidden md:flex bg-primary/10 border-primary/30 hover:bg-primary/20"
+          >
+            <LayoutDashboard className="w-4 h-4 mr-2" />
+            CEO Dashboard
+          </Button>
+        )}
+        
+        {isCEO && (
+          <Button
+            onClick={() => navigate('/ceo')}
+            variant="outline"
+            size="icon"
+            className="md:hidden h-9 w-9 bg-primary/10 border-primary/30"
+          >
+            <LayoutDashboard className="w-4 h-4" />
+          </Button>
+        )}
         
         <Button
           onClick={handleUploadMusic}

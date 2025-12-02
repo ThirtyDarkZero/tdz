@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, User, Mic2, Menu } from "lucide-react";
+import { Search, User, Mic2, Menu, LayoutDashboard } from "lucide-react";
 import tdzLogo from "@/assets/tdz-logo.png";
 import {
   DropdownMenu,
@@ -27,6 +27,9 @@ export function DiscoveryHeader({
 }: DiscoveryHeaderProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  
+  // CEO check
+  const isCEO = user?.email === 'info@thirtydarkzero.com';
 
   return (
     <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 py-3">
@@ -97,6 +100,12 @@ export function DiscoveryHeader({
               {isArtist && (
                 <DropdownMenuItem onClick={() => navigate("/studio")}>
                   Artist Studio
+                </DropdownMenuItem>
+              )}
+              {isCEO && (
+                <DropdownMenuItem onClick={() => navigate("/ceo")} className="text-primary">
+                  <LayoutDashboard className="w-4 h-4 mr-2" />
+                  CEO Dashboard
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={() => navigate("/auth")}>
