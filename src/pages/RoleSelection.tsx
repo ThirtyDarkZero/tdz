@@ -80,6 +80,23 @@ export default function RoleSelection() {
 
       if (roleError) throw roleError;
 
+      // Create initial subscription (free plan - users must upgrade)
+      const { error: subError } = await supabase
+        .from("user_subscriptions")
+        .upsert(
+          { 
+            user_id: user.id, 
+            plan: 'free',
+            status: 'active'
+          },
+          { onConflict: 'user_id', ignoreDuplicates: true }
+        );
+
+      if (subError) {
+        console.error("Subscription creation error:", subError);
+        // Don't block signup if subscription creation fails
+      }
+
       // Create profile based on role
       if (selectedRole === "artist" || selectedRole === "manager") {
         // Check if artist profile already exists
@@ -100,6 +117,11 @@ export default function RoleSelection() {
 
           if (profileError) throw profileError;
         }
+        
+        // Show upgrade prompt for artists
+        toast.success("Welcome to TDZ Distribution!", {
+          description: "Upgrade to Starter ($9.99/mo) to unlock all features",
+        });
         navigate("/studio");
       } else {
         // Check if listener profile already exists
@@ -120,10 +142,13 @@ export default function RoleSelection() {
 
           if (profileError) throw profileError;
         }
+        
+        // Show upgrade prompt for fans
+        toast.success("Welcome to TDZ Distribution!", {
+          description: "Subscribe for $12/mo for unlimited streaming",
+        });
         navigate("/discover");
       }
-
-      toast.success("Welcome to TDZ Distribution!");
     } catch (error: any) {
       console.error("Role selection error:", error);
       toast.error(error.message || "Failed to set up profile");
