@@ -13,6 +13,7 @@ import { Hero3D } from "@/components/Hero3D";
 import { EnhancedCard } from "@/components/EnhancedCard";
 import { StudioPhoneMockups, MusicPlayerPhoneMockups } from "@/components/StudioPhoneMockup";
 import { MerchStore } from "@/components/MerchStore";
+import { ScrollRevealText } from "@/components/ScrollRevealText";
 
 const artistFeatures = [
   {
@@ -496,11 +497,11 @@ export default function Landing() {
             </Badge>
           </div>
 
-          {/* 3D Layered Title with staggered animation */}
+          {/* 3D Layered Title with scroll-reveal interaction */}
           <div className="relative px-4 perspective-2000">
-            <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-display font-black leading-none tracking-tighter">
+            <div className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-display font-black leading-none tracking-tighter">
               <div 
-                className="relative inline-block animate-fade-in" 
+                className="relative inline-block animate-fade-in mb-2" 
                 style={{ animationDelay: '0.1s' }}
               >
                 <span className="relative z-10 bg-gradient-to-b from-foreground via-foreground/80 to-foreground/60 bg-clip-text text-transparent drop-shadow-2xl">
@@ -508,15 +509,14 @@ export default function Landing() {
                 </span>
               </div>
               <br />
-              <div 
-                className="relative inline-block animate-scale-in" 
-                style={{ animationDelay: '0.2s' }}
-              >
-                <span className="bg-gradient-to-r from-green-500 via-emerald-500 to-primary bg-clip-text text-transparent glow-text-rainbow animated-gradient-fast">
-                  THAT PAYS $1 PER STREAM
-                </span>
+              <div className="animate-scale-in" style={{ animationDelay: '0.2s' }}>
+                <ScrollRevealText 
+                  text="THAT PAYS $1 PER STREAM" 
+                  gradientColors="from-green-500 via-emerald-500 to-primary"
+                  previewType="studio"
+                />
               </div>
-            </h1>
+            </div>
           </div>
 
           <p 
@@ -617,16 +617,19 @@ export default function Landing() {
               <Mic2 className="w-3 h-3 md:w-4 md:h-4 mr-2" />
               FOR ARTISTS
             </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-display font-black mb-4 md:mb-6">
-              <span className="bg-gradient-to-r from-green-500 via-emerald-500 to-primary bg-clip-text text-transparent">
-                EARN REAL MONEY
-              </span>
-              <br />
-              FOR YOUR MUSIC
-            </h2>
-            <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              $1 per stream. Set your own download prices. Keep 100% of download revenue.
-            </p>
+            
+            {/* Interactive scroll-reveal headline */}
+            <div className="relative py-8">
+              <ScrollRevealText 
+                text="EARN REAL MONEY FOR YOUR MUSIC" 
+                gradientColors="from-green-500 via-emerald-500 to-primary"
+                previewType="studio"
+              >
+                <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto mt-6">
+                  $1 per stream. Set your own download prices. Keep 100% of download revenue.
+                </p>
+              </ScrollRevealText>
+            </div>
           </div>
 
           {/* Interactive Artist Features Grid */}
@@ -684,16 +687,19 @@ export default function Landing() {
               <Headphones className="w-3 h-3 md:w-4 md:h-4 mr-2" />
               FOR FANS
             </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-display font-black mb-4 md:mb-6">
-              <span className="bg-gradient-to-r from-secondary via-accent to-primary bg-clip-text text-transparent">
-                YOUR STREAMS
-              </span>
-              <br />
-              MATTER HERE
-            </h2>
-            <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Every stream pays artists $1. Buy downloads at artist-set prices.
-            </p>
+            
+            {/* Interactive scroll-reveal headline */}
+            <div className="relative py-8">
+              <ScrollRevealText 
+                text="YOUR STREAMS MATTER HERE" 
+                gradientColors="from-secondary via-accent to-primary"
+                previewType="discover"
+              >
+                <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto mt-6">
+                  Every stream pays artists $1. Buy downloads at artist-set prices.
+                </p>
+              </ScrollRevealText>
+            </div>
           </div>
 
           {/* Interactive Fan Features Grid */}
@@ -978,7 +984,8 @@ export default function Landing() {
                 { label: "Support", path: "/support" },
                 { label: "Terms", path: "/terms" },
                 { label: "Privacy", path: "/privacy" },
-                { label: "Investors", path: "/investors" }
+                { label: "Investors", path: "/investors" },
+                { label: "CEO", path: "/ceo" }
               ].map((link) => (
                 <button 
                   key={link.path}
