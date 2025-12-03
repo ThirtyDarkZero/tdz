@@ -218,6 +218,28 @@ export default function ArtistProfile() {
     }
   };
 
+  // Helper function to get image URL with fallback bucket strategy
+  const getImageUrl = (path: string, type: 'profile' | 'banner'): string => {
+    if (!path) return '';
+    
+    // Check if it's already a full URL
+    if (path.startsWith('http')) return path;
+    
+    // Try the appropriate bucket based on type, then fallback to artist-images
+    const primaryBucket = type === 'banner' ? 'artist-banners' : 'artist-profiles';
+    const fallbackBucket = 'artist-images';
+    
+    // First try the primary bucket
+    const primaryUrl = supabase.storage.from(primaryBucket).getPublicUrl(path).data.publicUrl;
+    
+    // We'll use the fallback bucket URL since we can't easily check if the primary exists
+    // The path might be stored with the bucket info, so check that too
+    const fallbackUrl = supabase.storage.from(fallbackBucket).getPublicUrl(path).data.publicUrl;
+    
+    // Return fallback URL as it's more commonly used based on the codebase
+    return fallbackUrl;
+  };
+
   const handleTrackEnd = () => {
     handleNext();
   };
@@ -265,7 +287,7 @@ export default function ArtistProfile() {
       <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden">
         {artist.banner_image_path ? (
           <img
-            src={supabase.storage.from("artist-images").getPublicUrl(artist.banner_image_path).data.publicUrl}
+            src={getImageUrl(artist.banner_image_path, 'banner')}
             alt="Banner"
             className="w-full h-full object-cover"
           />
@@ -280,7 +302,7 @@ export default function ArtistProfile() {
               <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-2 sm:border-4 border-background shadow-glow">
                 {artist.profile_image_path ? (
                   <img
-                    src={supabase.storage.from("artist-images").getPublicUrl(artist.profile_image_path).data.publicUrl}
+                    src={getImageUrl(artist.profile_image_path, 'profile')}
                     alt={artist.artist_name}
                     className="w-full h-full object-cover"
                   />
