@@ -1,38 +1,22 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Music, LayoutDashboard, Library, TrendingUp, Users, Globe, Image, Heart, BookOpen, Zap, Film, User, ShoppingBag, Sparkles, Compass, Lock, Wallet, GraduationCap, MapPin } from "lucide-react";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { MusicPlayer } from "@/components/MusicPlayer";
-import { MusicLibrary } from "@/components/MusicLibrary";
-import { ArtistDashboard } from "@/components/ArtistDashboard";
-import { ManagerDashboard } from "@/components/ManagerDashboard";
-import { LabelStaff } from "@/components/LabelStaff";
-import { PendingInvitesPanel } from "@/components/PendingInvitesPanel";
-import { CollaboratorsList } from "@/components/CollaboratorsList";
-import { CollaboratorInviteDialog } from "@/components/CollaboratorInviteDialog";
-import { ReleaseManager } from "@/components/ReleaseManager";
-import { DistributionAnalytics } from "@/components/DistributionAnalytics";
 import { MultiTrackUploader } from "@/components/MultiTrackUploader";
-import { ArtistGalleryManager } from "@/components/ArtistGalleryManager";
-import { FanEngagementHub } from "@/components/FanEngagementHub";
-import { FanDemographics } from "@/components/FanDemographics";
-import { TourRecommendations } from "@/components/TourRecommendations";
-import { MasterClasses } from "@/components/MasterClasses";
-import { StorytellingStudio } from "@/components/StorytellingStudio";
-import { MomentumTracker } from "@/components/MomentumTracker";
-import { CanvasManager } from "@/components/CanvasManager";
-import { ArtistProfileEditor } from "@/components/ArtistProfileEditor";
-import { MerchStore } from "@/components/MerchStore";
-import { QuantumAdvisor } from "@/components/QuantumAdvisor";
-import { ArtistPayoutSettings } from "@/components/ArtistPayoutSettings";
-import { TopBar } from "@/components/TopBar";
+import { PendingInvitesPanel } from "@/components/PendingInvitesPanel";
+import { ManagerDashboard } from "@/components/ManagerDashboard";
+import { ArtistDashboard } from "@/components/ArtistDashboard";
+import { StudioSidebar } from "@/components/studio/StudioSidebar";
+import { StudioHome } from "@/components/studio/StudioHome";
+import { StudioMusic } from "@/components/studio/StudioMusic";
+import { StudioInsights } from "@/components/studio/StudioInsights";
+import { StudioPromote } from "@/components/studio/StudioPromote";
+import { StudioLearn } from "@/components/studio/StudioLearn";
+import { StudioSettings } from "@/components/studio/StudioSettings";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useSubscription } from "@/hooks/useSubscription";
-import { FeatureGate } from "@/components/FeatureGate";
-import { SubscriptionBadge } from "@/components/SubscriptionBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -52,16 +36,17 @@ interface Track {
 const Studio = () => {
   const { user, loading } = useAuth();
   const { role, loading: roleLoading } = useUserRole(user);
-  const { hasFeature, getPlan, isPaidPlan, loading: subLoading } = useSubscription(user);
+  const { loading: subLoading } = useSubscription(user);
   const navigate = useNavigate();
+  
+  const [activeSection, setActiveSection] = useState("home");
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [queue, setQueue] = useState<Track[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [artistName, setArtistName] = useState<string>("");
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [collaboratorsKey, setCollaboratorsKey] = useState(0);
-  const plan = getPlan();
+  const [artistName, setArtistName] = useState<string>("Artist");
+  const [profileImage, setProfileImage] = useState<string | undefined>();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -70,7 +55,6 @@ const Studio = () => {
     }
   }, [user, loading, navigate]);
 
-  // Protect studio from listeners/fans - redirect immediately
   useEffect(() => {
     if (!roleLoading && role) {
       if (role === 'listener') {
@@ -86,7 +70,7 @@ const Studio = () => {
       
       const { data, error } = await supabase
         .from("artist_profiles")
-        .select("artist_name")
+        .select("artist_name, profile_image_path")
         .eq("user_id", user.id)
         .maybeSingle();
       
@@ -95,9 +79,7 @@ const Studio = () => {
         return;
       }
       
-      // If no profile exists, redirect to complete setup without deleting roles
       if (!data) {
-        console.log("No artist profile found, redirecting to complete setup");
         toast.error("Profile incomplete", {
           description: "Please complete your artist profile setup"
         });
@@ -105,10 +87,10 @@ const Studio = () => {
         return;
       }
       
-      if (data.artist_name) {
-        setArtistName(data.artist_name);
-      } else {
-        setArtistName("Artist");
+      setArtistName(data.artist_name || "Artist");
+      if (data.profile_image_path) {
+        const url = supabase.storage.from("artist-images").getPublicUrl(data.profile_image_path).data.publicUrl;
+        setProfileImage(url);
       }
     };
     
@@ -117,7 +99,7 @@ const Studio = () => {
 
   if (loading || roleLoading) {
     return (
-      <div className="h-screen flex items-center justify-center">
+      <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-3">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-muted-foreground">Loading...</p>
@@ -126,7 +108,6 @@ const Studio = () => {
     );
   }
 
-  // Block rendering if user is a listener/fan
   if (!user || role === 'listener') {
     return null;
   }
@@ -158,343 +139,92 @@ const Studio = () => {
     handleNext();
   };
 
+  const renderContent = () => {
+    // Manager gets their own dashboard
+    if (role === 'manager' && activeSection === 'home') {
+      return <ManagerDashboard />;
+    }
+
+    switch (activeSection) {
+      case "home":
+        return (
+          <StudioHome 
+            artistName={artistName} 
+            onNavigate={setActiveSection}
+            onUploadClick={() => setUploadDialogOpen(true)}
+          />
+        );
+      case "music":
+        return <StudioMusic onPlayTrack={handlePlayTrack} />;
+      case "insights":
+        return <StudioInsights />;
+      case "promote":
+        return <StudioPromote />;
+      case "learn":
+        return <StudioLearn />;
+      case "settings":
+        return <StudioSettings />;
+      default:
+        return (
+          <StudioHome 
+            artistName={artistName} 
+            onNavigate={setActiveSection}
+            onUploadClick={() => setUploadDialogOpen(true)}
+          />
+        );
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background pb-32 relative overflow-hidden">
-      {/* Epic background effects */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-primary/10 rounded-full blur-[150px] animate-pulse" />
-        <div className="absolute top-1/3 right-0 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[100px]" />
+    <TooltipProvider>
+      <div className="min-h-screen bg-background">
+        {/* Sidebar */}
+        <StudioSidebar
+          activeSection={activeSection}
+          onSectionChange={setActiveSection}
+          onUploadClick={() => setUploadDialogOpen(true)}
+          artistName={artistName}
+          profileImage={profileImage}
+          collapsed={sidebarCollapsed}
+          onCollapsedChange={setSidebarCollapsed}
+        />
+
+        {/* Main Content */}
+        <main className={`${sidebarCollapsed ? 'ml-[72px]' : 'ml-[72px] md:ml-[240px]'} transition-all duration-300 min-h-screen pb-32`}>
+          {/* Background Effects */}
+          <div className={`fixed inset-0 pointer-events-none z-0 ${sidebarCollapsed ? 'ml-[72px]' : 'ml-[72px] md:ml-[240px]'}`}>
+            <div className="absolute top-0 right-0 w-[600px] h-[400px] bg-primary/5 rounded-full blur-[120px]" />
+            <div className="absolute bottom-1/3 left-1/4 w-[400px] h-[400px] bg-primary/3 rounded-full blur-[100px]" />
+          </div>
+
+          <div className="relative z-10 p-6 md:p-8 lg:p-10 max-w-7xl">
+            <PendingInvitesPanel />
+            {renderContent()}
+          </div>
+        </main>
+
+        {/* Music Player */}
+        <MusicPlayer
+          currentTrack={currentTrack}
+          queue={queue}
+          onNext={handleNext}
+          onPrevious={handlePrevious}
+          onTrackEnd={handleTrackEnd}
+        />
+
+        {/* Upload Dialog */}
+        <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card border-border">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-display font-bold">
+                Upload Your Music
+              </DialogTitle>
+            </DialogHeader>
+            <MultiTrackUploader onSuccess={() => setUploadDialogOpen(false)} />
+          </DialogContent>
+        </Dialog>
       </div>
-      
-      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <TopBar onUploadClick={() => setUploadDialogOpen(true)} />
-          <Button
-            variant="outline"
-            onClick={() => navigate("/discover")}
-            className="gap-2"
-          >
-            <Compass className="h-4 w-4" />
-            Discover
-          </Button>
-        </div>
-      </div>
-      
-      <main className="container mx-auto px-4 py-12 relative z-10">
-        <PendingInvitesPanel />
-        
-        {/* Epic hero section */}
-        <div className="mb-8 md:mb-12 text-center space-y-4 md:space-y-6">
-          <div className="inline-block">
-            <div className="relative">
-              <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black bg-gradient-to-r from-primary via-primary-glow to-primary bg-clip-text text-transparent mb-4 glow-text-lg animate-fade-in tracking-tight">
-                Welcome {artistName}
-              </h1>
-              <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 blur-3xl -z-10 animate-pulse" />
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-center gap-3">
-            <SubscriptionBadge size="lg" />
-            {!isPaidPlan() && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => navigate("/auth?upgrade=true")}
-                className="border-primary/50 hover:bg-primary/10"
-              >
-                <Sparkles className="w-4 h-4 mr-1" />
-                Upgrade
-              </Button>
-            )}
-          </div>
-          
-          <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-muted-foreground font-light tracking-wide animate-fade-in px-4" style={{ animationDelay: '0.2s' }}>
-            Your Complete <span className="text-primary font-semibold">Record Label Studio</span>
-          </p>
-          
-          <div className="flex items-center justify-center gap-2 md:gap-3 text-xs sm:text-sm text-muted-foreground animate-fade-in flex-wrap px-4" style={{ animationDelay: '0.4s' }}>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <span>Live</span>
-            </div>
-            <span className="text-border">•</span>
-            <span>Powered by AI</span>
-            <span className="text-border hidden sm:inline">•</span>
-            <span className="hidden sm:inline">Real-time Analytics</span>
-          </div>
-        </div>
-
-        {/* Epic tabs with glass morphism */}
-        <Tabs defaultValue={role === 'manager' ? 'manager' : 'label-staff'} className="space-y-6 md:space-y-8">
-          <div className="flex justify-center animate-fade-in overflow-x-auto pb-2 -mx-4 px-4" style={{ animationDelay: '0.6s' }}>
-            <TabsList className="glass-card-premium p-1.5 md:p-2 gap-1 md:gap-2 h-auto inline-flex min-w-max">
-              {role === 'manager' && (
-                <TabsTrigger 
-                  value="manager" 
-                  className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
-                >
-                  <Users className="h-4 w-4 md:h-5 md:w-5" />
-                  <span className="hidden sm:inline">Manager</span>
-                </TabsTrigger>
-              )}
-              <TabsTrigger 
-                value="label-staff" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
-              >
-                <Users className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="hidden sm:inline">Staff</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="release" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
-              >
-                <Globe className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="hidden sm:inline">Release</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="analytics" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
-              >
-                <TrendingUp className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="hidden sm:inline">Analytics</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="library" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
-              >
-                <Library className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="hidden sm:inline">Library</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="gallery" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
-              >
-                <Image className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="hidden sm:inline">Gallery</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="dashboard" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
-              >
-                <LayoutDashboard className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="hidden sm:inline">Dashboard</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="fans" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap relative"
-              >
-                <Heart className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="hidden sm:inline">Fans</span>
-                {!hasFeature('fanEngagement') && <Lock className="h-3 w-3 absolute -top-1 -right-1 text-muted-foreground" />}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="storytelling" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap relative"
-              >
-                <BookOpen className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="hidden sm:inline">Story</span>
-                {!hasFeature('presaveCampaigns') && <Lock className="h-3 w-3 absolute -top-1 -right-1 text-muted-foreground" />}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="momentum" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap relative"
-              >
-                <Zap className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="hidden sm:inline">Momentum</span>
-                {!hasFeature('advancedAnalytics') && <Lock className="h-3 w-3 absolute -top-1 -right-1 text-muted-foreground" />}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="canvas" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap relative"
-              >
-                <Film className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="hidden sm:inline">Canvas</span>
-                {!hasFeature('advancedAnalytics') && <Lock className="h-3 w-3 absolute -top-1 -right-1 text-muted-foreground" />}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="profile" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
-              >
-                <User className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="hidden sm:inline">Profile</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="merch" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
-              >
-                <ShoppingBag className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="hidden sm:inline">Merch</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="quantum" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap animate-pulse relative"
-              >
-                <Sparkles className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="hidden sm:inline">Quantum</span>
-                {!hasFeature('advancedAnalytics') && <Lock className="h-3 w-3 absolute -top-1 -right-1 text-muted-foreground" />}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="collaborators" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap relative"
-              >
-                <Users className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="hidden sm:inline">Collaborators</span>
-                {!hasFeature('collaborationTools') && <Lock className="h-3 w-3 absolute -top-1 -right-1 text-muted-foreground" />}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="payouts" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
-              >
-                <Wallet className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="hidden sm:inline">Payouts</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="learn" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
-              >
-                <GraduationCap className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="hidden sm:inline">Learn</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="tour" 
-                className="gap-1.5 md:gap-2 px-3 md:px-6 py-2 md:py-3 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow transition-all hover:scale-105 whitespace-nowrap"
-              >
-                <MapPin className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="hidden sm:inline">Tour</span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <div className="animate-fade-in" style={{ animationDelay: '0.8s' }}>
-            {role === 'manager' && (
-              <TabsContent value="manager" className="mt-0">
-                {/* Manager Dashboard available to all managers - they manage artists */}
-                <ManagerDashboard />
-              </TabsContent>
-            )}
-
-            <TabsContent value="label-staff" className="mt-0">
-              <LabelStaff />
-            </TabsContent>
-
-            <TabsContent value="release" className="mt-0">
-              <ReleaseManager />
-            </TabsContent>
-
-            <TabsContent value="analytics" className="mt-0">
-              {/* Basic analytics for all artists, advanced features gated inside component */}
-              <DistributionAnalytics showAdvanced={hasFeature('advancedAnalytics')} />
-            </TabsContent>
-
-            <TabsContent value="library" className="mt-0">
-              <MusicLibrary onPlayTrack={handlePlayTrack} />
-            </TabsContent>
-
-            <TabsContent value="gallery" className="mt-0">
-              <ArtistGalleryManager />
-            </TabsContent>
-
-            <TabsContent value="dashboard" className="mt-0">
-              <ArtistDashboard />
-            </TabsContent>
-
-            <TabsContent value="fans" className="mt-0">
-              <FeatureGate feature="fanEngagement">
-                <div className="space-y-8">
-                  <FanEngagementHub />
-                  <FanDemographics />
-                </div>
-              </FeatureGate>
-            </TabsContent>
-
-            <TabsContent value="storytelling" className="mt-0">
-              <FeatureGate feature="presaveCampaigns">
-                <StorytellingStudio />
-              </FeatureGate>
-            </TabsContent>
-
-            <TabsContent value="momentum" className="mt-0">
-              <FeatureGate feature="advancedAnalytics">
-                <MomentumTracker />
-              </FeatureGate>
-            </TabsContent>
-
-            <TabsContent value="canvas" className="mt-0">
-              <FeatureGate feature="advancedAnalytics">
-                <CanvasManager />
-              </FeatureGate>
-            </TabsContent>
-
-            <TabsContent value="profile" className="mt-0">
-              <ArtistProfileEditor />
-            </TabsContent>
-
-            <TabsContent value="merch" className="mt-0">
-              <MerchStore variant="full" />
-            </TabsContent>
-
-            <TabsContent value="quantum" className="mt-0">
-              <FeatureGate feature="advancedAnalytics">
-                <QuantumAdvisor />
-              </FeatureGate>
-            </TabsContent>
-
-            <TabsContent value="collaborators" className="mt-0">
-              <FeatureGate feature="collaborationTools">
-                <div className="space-y-6">
-                  <div className="flex justify-end">
-                    <Button onClick={() => setShowInviteDialog(true)} className="gap-2">
-                      <Users className="h-4 w-4" />
-                      Invite Collaborator
-                    </Button>
-                  </div>
-                  <CollaboratorsList key={collaboratorsKey} />
-                </div>
-              </FeatureGate>
-            </TabsContent>
-
-            <TabsContent value="payouts" className="mt-0">
-              <ArtistPayoutSettings />
-            </TabsContent>
-
-            <TabsContent value="learn" className="mt-0">
-              <MasterClasses />
-            </TabsContent>
-
-            <TabsContent value="tour" className="mt-0">
-              <TourRecommendations />
-            </TabsContent>
-          </div>
-        </Tabs>
-      </main>
-
-      <MusicPlayer
-        currentTrack={currentTrack}
-        queue={queue}
-        onNext={handleNext}
-        onPrevious={handlePrevious}
-        onTrackEnd={handleTrackEnd}
-      />
-
-      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card-premium border-primary/30">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary via-primary-glow to-primary bg-clip-text text-transparent">
-              Upload Your Music
-            </DialogTitle>
-          </DialogHeader>
-          <MultiTrackUploader onSuccess={() => setUploadDialogOpen(false)} />
-        </DialogContent>
-      </Dialog>
-
-      <CollaboratorInviteDialog 
-        open={showInviteDialog} 
-        onOpenChange={setShowInviteDialog}
-        onInviteSent={() => setCollaboratorsKey(prev => prev + 1)}
-      />
-    </div>
+    </TooltipProvider>
   );
 };
 
