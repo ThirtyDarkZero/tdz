@@ -14,6 +14,7 @@ import { EnhancedCard } from "@/components/EnhancedCard";
 import { StudioPhoneMockups, MusicPlayerPhoneMockups } from "@/components/StudioPhoneMockup";
 import { MerchStore } from "@/components/MerchStore";
 import { ScrollRevealText } from "@/components/ScrollRevealText";
+import { HeroScrollText } from "@/components/HeroScrollText";
 
 const artistFeatures = [
   {
@@ -510,10 +511,9 @@ export default function Landing() {
               </div>
               <br />
               <div className="animate-scale-in" style={{ animationDelay: '0.2s' }}>
-              <ScrollRevealText 
+                <HeroScrollText 
                   text="THAT PAYS $1 PER STREAM" 
                   gradientColors="from-green-500 via-emerald-500 to-primary"
-                  previewType="earnings"
                 />
               </div>
             </div>
