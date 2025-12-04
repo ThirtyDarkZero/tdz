@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { 
   BookOpen, Sparkles, Calendar, Image, Video, 
   FileText, TrendingUp, Target, Lightbulb, Plus,
-  Check, Upload, Palette, Type, Save, Trash2
+  Check, Upload, Palette, Type, Save, Trash2, X, Eye
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -21,8 +21,10 @@ interface ContentItem {
   id: string;
   content_type: string;
   title: string;
-  file_path?: string;
-  description?: string;
+  file_path?: string | null;
+  thumbnail_path?: string | null;
+  description?: string | null;
+  tags?: any;
   created_at: string;
 }
 
@@ -34,6 +36,7 @@ interface CalendarEvent {
   scheduled_time?: string;
   platform?: string;
   status: string;
+  description?: string;
 }
 
 export const StorytellingStudio = () => {
@@ -52,7 +55,17 @@ export const StorytellingStudio = () => {
   const [newEventType, setNewEventType] = useState("post");
   const [newEventDate, setNewEventDate] = useState("");
   const [newEventPlatform, setNewEventPlatform] = useState("instagram");
+  const [newEventDescription, setNewEventDescription] = useState("");
   const [showAddEvent, setShowAddEvent] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [showAddContent, setShowAddContent] = useState(false);
+  const [newContentType, setNewContentType] = useState("photo");
+  const [newContentTitle, setNewContentTitle] = useState("");
+  const [newContentDescription, setNewContentDescription] = useState("");
+  const [selectedColors, setSelectedColors] = useState<string[]>(["primary", "secondary"]);
+  const [editColorOpen, setEditColorOpen] = useState(false);
+  const [customColor, setCustomColor] = useState("#8B5CF6");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const templates = [
     {
@@ -85,6 +98,14 @@ export const StorytellingStudio = () => {
     }
   ];
 
+  const colorPresets = [
+    { name: "primary", color: "hsl(var(--primary))" },
+    { name: "purple-pink", color: "linear-gradient(to br, #8B5CF6, #EC4899)" },
+    { name: "blue-cyan", color: "linear-gradient(to br, #3B82F6, #06B6D4)" },
+    { name: "green-emerald", color: "linear-gradient(to br, #22C55E, #10B981)" },
+    { name: "orange-red", color: "linear-gradient(to br, #F97316, #EF4444)" },
+  ];
+
   useEffect(() => {
     loadData();
   }, []);
@@ -109,6 +130,9 @@ export const StorytellingStudio = () => {
         setCurrentChapter(narrativeData.current_chapter || "");
         setFutureVision(narrativeData.future_vision || "");
         setVisualStyle(narrativeData.visual_style || "");
+        if (narrativeData.color_palette) {
+          setSelectedColors(narrativeData.color_palette as string[]);
+        }
       }
 
       // Load content library
@@ -161,6 +185,7 @@ export const StorytellingStudio = () => {
         current_chapter: currentChapter,
         future_vision: futureVision,
         visual_style: visualStyle,
+        color_palette: selectedColors,
         narrative_strength: calculateNarrativeStrength()
       };
 
@@ -186,6 +211,67 @@ export const StorytellingStudio = () => {
     }
   };
 
+  const handleFileUpload = async (file: File, contentType: string) => {
+    setUploading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      const bucket = contentType === 'video' ? 'post-media' : 'artist-gallery';
+
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(fileName);
+
+      // Save to content library
+      const { error: insertError } = await supabase
+        .from("content_library")
+        .insert({
+          user_id: user.id,
+          content_type: contentType,
+          title: newContentTitle || file.name,
+          description: newContentDescription || null,
+          file_path: urlData.publicUrl,
+          tags: []
+        });
+
+      if (insertError) throw insertError;
+
+      toast.success("Content uploaded successfully!");
+      setShowAddContent(false);
+      setNewContentTitle("");
+      setNewContentDescription("");
+      loadData();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const deleteContent = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("content_library")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      toast.success("Content deleted");
+      loadData();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
   const addCalendarEvent = async () => {
     if (!newEventTitle || !newEventDate) {
       toast.error("Please fill in event title and date");
@@ -204,6 +290,7 @@ export const StorytellingStudio = () => {
           content_type: newEventType,
           scheduled_date: newEventDate,
           platform: newEventPlatform,
+          description: newEventDescription || null,
           status: "scheduled"
         });
 
@@ -212,7 +299,23 @@ export const StorytellingStudio = () => {
       toast.success("Event added to calendar!");
       setNewEventTitle("");
       setNewEventDate("");
+      setNewEventDescription("");
       setShowAddEvent(false);
+      loadData();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const updateEventStatus = async (id: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from("content_calendar")
+        .update({ status })
+        .eq("id", id);
+
+      if (error) throw error;
+      toast.success(`Event marked as ${status}`);
       loadData();
     } catch (error: any) {
       toast.error(error.message);
@@ -238,13 +341,6 @@ export const StorytellingStudio = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-
-      // Generate schedule for next 30 days
-      const schedule = [
-        { type: "story", frequency: 1 }, // Daily
-        { type: "post", frequency: 3 }, // Every 3 days
-        { type: "bts", frequency: 7 }, // Weekly
-      ];
 
       const events = [];
       const today = new Date();
@@ -299,6 +395,17 @@ export const StorytellingStudio = () => {
     } catch (error: any) {
       toast.error(error.message);
     }
+  };
+
+  const addColorTopalette = () => {
+    if (!selectedColors.includes(customColor)) {
+      setSelectedColors([...selectedColors, customColor]);
+    }
+    setEditColorOpen(false);
+  };
+
+  const removeColor = (color: string) => {
+    setSelectedColors(selectedColors.filter(c => c !== color));
   };
 
   const narrativeStrength = calculateNarrativeStrength();
@@ -503,52 +610,152 @@ export const StorytellingStudio = () => {
         <TabsContent value="content" className="space-y-4">
           <Card className="glass-card">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-primary" />
-                Content Library
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  Content Library
+                </span>
+                <Button size="sm" onClick={() => setShowAddContent(true)}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Content
+                </Button>
               </CardTitle>
               <CardDescription>
                 Behind-the-scenes, process, journey moments
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Add Content Form */}
+              {showAddContent && (
+                <Card className="p-4 border-primary/30 bg-primary/5">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold">Upload New Content</h4>
+                    <Button size="sm" variant="ghost" onClick={() => setShowAddContent(false)}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="grid gap-3">
+                    <div>
+                      <Label>Content Type</Label>
+                      <select 
+                        className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm mt-1"
+                        value={newContentType}
+                        onChange={(e) => setNewContentType(e.target.value)}
+                      >
+                        <option value="photo">Photo / Image</option>
+                        <option value="video">Video</option>
+                        <option value="story">Story Post</option>
+                        <option value="bts">Behind the Scenes</option>
+                      </select>
+                    </div>
+                    <div>
+                      <Label>Title</Label>
+                      <Input 
+                        placeholder="Content title..."
+                        value={newContentTitle}
+                        onChange={(e) => setNewContentTitle(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Description (optional)</Label>
+                      <Textarea 
+                        placeholder="Brief description..."
+                        rows={2}
+                        value={newContentDescription}
+                        onChange={(e) => setNewContentDescription(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        className="hidden"
+                        accept={newContentType === 'video' ? 'video/*' : 'image/*'}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileUpload(file, newContentType);
+                        }}
+                      />
+                      <Button 
+                        className="w-full" 
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        {uploading ? "Uploading..." : "Select File & Upload"}
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
               <div className="grid md:grid-cols-3 gap-3">
-                <Card className="p-4 hover:border-primary/60 transition-all cursor-pointer">
+                <Card className="p-4 hover:border-primary/60 transition-all">
                   <Video className="w-8 h-8 text-primary mb-2" />
                   <p className="font-semibold text-sm mb-1">Studio Sessions</p>
                   <p className="text-xs text-muted-foreground mb-2">
                     {contentLibrary.filter(c => c.content_type === 'video').length} videos
                   </p>
-                  <Button size="sm" variant="outline" className="w-full">
-                    <Upload className="w-3 h-3 mr-1" />
-                    Upload
-                  </Button>
                 </Card>
 
-                <Card className="p-4 hover:border-primary/60 transition-all cursor-pointer">
+                <Card className="p-4 hover:border-primary/60 transition-all">
                   <Image className="w-8 h-8 text-primary mb-2" />
                   <p className="font-semibold text-sm mb-1">Behind the Scenes</p>
                   <p className="text-xs text-muted-foreground mb-2">
-                    {contentLibrary.filter(c => c.content_type === 'photo').length} photos
+                    {contentLibrary.filter(c => c.content_type === 'photo' || c.content_type === 'bts').length} photos
                   </p>
-                  <Button size="sm" variant="outline" className="w-full">
-                    <Upload className="w-3 h-3 mr-1" />
-                    Upload
-                  </Button>
                 </Card>
 
-                <Card className="p-4 hover:border-primary/60 transition-all cursor-pointer">
+                <Card className="p-4 hover:border-primary/60 transition-all">
                   <FileText className="w-8 h-8 text-primary mb-2" />
                   <p className="font-semibold text-sm mb-1">Stories</p>
                   <p className="text-xs text-muted-foreground mb-2">
                     {contentLibrary.filter(c => c.content_type === 'story').length} posts
                   </p>
-                  <Button size="sm" variant="outline" className="w-full">
-                    <Plus className="w-3 h-3 mr-1" />
-                    Create
-                  </Button>
                 </Card>
               </div>
+
+              {/* Content Grid */}
+              {contentLibrary.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                  {contentLibrary.map((item) => (
+                    <Card key={item.id} className="group relative overflow-hidden">
+                      {item.file_path && (
+                        item.content_type === 'video' ? (
+                          <video 
+                            src={item.file_path} 
+                            className="w-full aspect-square object-cover"
+                          />
+                        ) : (
+                          <img 
+                            src={item.file_path} 
+                            alt={item.title}
+                            className="w-full aspect-square object-cover"
+                          />
+                        )
+                      )}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <Button size="sm" variant="secondary">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="destructive"
+                          onClick={() => deleteContent(item.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="p-2">
+                        <p className="text-xs font-medium truncate">{item.title}</p>
+                        <Badge variant="secondary" className="text-[10px] mt-1">
+                          {item.content_type}
+                        </Badge>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
 
               <Card className="p-4 bg-primary/10 border-primary/30">
                 <h4 className="font-semibold mb-2 flex items-center gap-2">
@@ -582,18 +789,71 @@ export const StorytellingStudio = () => {
               <div className="grid md:grid-cols-2 gap-4">
                 <Card className="p-4">
                   <Label className="mb-2 block">Color Palette</Label>
-                  <div className="flex gap-2 mb-3">
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-secondary cursor-pointer hover:scale-105 transition-transform" />
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 cursor-pointer hover:scale-105 transition-transform" />
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 cursor-pointer hover:scale-105 transition-transform" />
-                    <div className="w-12 h-12 rounded-lg border-2 border-dashed border-muted flex items-center justify-center cursor-pointer hover:border-primary transition-colors">
-                      <Plus className="w-4 h-4 text-muted-foreground" />
-                    </div>
+                  <div className="flex gap-2 flex-wrap mb-3">
+                    {selectedColors.map((color, i) => (
+                      <div 
+                        key={i}
+                        className="w-12 h-12 rounded-lg cursor-pointer hover:scale-105 transition-transform relative group"
+                        style={{ 
+                          background: color.startsWith('#') ? color : `hsl(var(--${color}))` 
+                        }}
+                      >
+                        <button
+                          className="absolute -top-1 -right-1 w-4 h-4 bg-destructive rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                          onClick={() => removeColor(color)}
+                        >
+                          <X className="w-3 h-3 text-white" />
+                        </button>
+                      </div>
+                    ))}
+                    <Dialog open={editColorOpen} onOpenChange={setEditColorOpen}>
+                      <DialogTrigger asChild>
+                        <div className="w-12 h-12 rounded-lg border-2 border-dashed border-muted flex items-center justify-center cursor-pointer hover:border-primary transition-colors">
+                          <Plus className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Add Color</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label>Color Presets</Label>
+                            <div className="flex gap-2 mt-2">
+                              {colorPresets.map((preset) => (
+                                <div
+                                  key={preset.name}
+                                  className="w-10 h-10 rounded-lg cursor-pointer hover:scale-105 transition-transform"
+                                  style={{ background: preset.color }}
+                                  onClick={() => {
+                                    setSelectedColors([...selectedColors, preset.name]);
+                                    setEditColorOpen(false);
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <Label>Custom Color</Label>
+                            <div className="flex gap-2 mt-2">
+                              <Input
+                                type="color"
+                                value={customColor}
+                                onChange={(e) => setCustomColor(e.target.value)}
+                                className="w-16 h-10 p-1"
+                              />
+                              <Input
+                                value={customColor}
+                                onChange={(e) => setCustomColor(e.target.value)}
+                                placeholder="#8B5CF6"
+                              />
+                              <Button onClick={addColorTopalette}>Add</Button>
+                            </div>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
-                  <Button size="sm" variant="outline" className="w-full">
-                    <Palette className="w-3 h-3 mr-1" />
-                    Edit Colors
-                  </Button>
                 </Card>
 
                 <Card className="p-4">
@@ -606,10 +866,6 @@ export const StorytellingStudio = () => {
                       <p className="text-sm">Body Font - Sans Serif</p>
                     </div>
                   </div>
-                  <Button size="sm" variant="outline" className="w-full">
-                    <Type className="w-3 h-3 mr-1" />
-                    Edit Fonts
-                  </Button>
                 </Card>
               </div>
 
@@ -670,6 +926,15 @@ export const StorytellingStudio = () => {
                         onChange={(e) => setNewEventTitle(e.target.value)}
                       />
                     </div>
+                    <div>
+                      <Label>Description (optional)</Label>
+                      <Textarea 
+                        placeholder="Event details..."
+                        rows={2}
+                        value={newEventDescription}
+                        onChange={(e) => setNewEventDescription(e.target.value)}
+                      />
+                    </div>
                     <div className="grid grid-cols-3 gap-2">
                       <div>
                         <Label>Type</Label>
@@ -683,6 +948,8 @@ export const StorytellingStudio = () => {
                           <option value="bts">BTS</option>
                           <option value="release">Release</option>
                           <option value="live">Live</option>
+                          <option value="presave">Pre-Save Campaign</option>
+                          <option value="exclusive">Exclusive Content</option>
                         </select>
                       </div>
                       <div>
@@ -780,6 +1047,15 @@ export const StorytellingStudio = () => {
                           <span className="text-xs text-muted-foreground">
                             {format(new Date(event.scheduled_date), "MMM d")}
                           </span>
+                          {event.status === 'scheduled' && (
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => updateEventStatus(event.id, 'completed')}
+                            >
+                              <Check className="w-3 h-3 text-green-500" />
+                            </Button>
+                          )}
                           <Button 
                             size="sm" 
                             variant="ghost"
