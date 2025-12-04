@@ -607,6 +607,14 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ========== FERRARI-STYLE SCROLL REVEAL - ARTIST EARNINGS ========== */}
+      <ScrollRevealText 
+        text="$1 PER STREAM"
+        gradientColors="from-green-500 via-emerald-500 to-primary"
+        previewType="earnings"
+        sectionId="scroll-reveal-earnings"
+      />
+
       <SectionDivider label="For Artists" scrollTo="artists-section" />
 
       {/* ========== FOR ARTISTS SECTION ========== */}
@@ -618,18 +626,14 @@ export default function Landing() {
               FOR ARTISTS
             </Badge>
             
-            {/* Interactive scroll-reveal headline */}
-            <div className="relative py-8">
-              <ScrollRevealText 
-                text="EARN REAL MONEY FOR YOUR MUSIC" 
-                gradientColors="from-green-500 via-emerald-500 to-primary"
-                previewType="earnings"
-              >
-                <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto mt-6">
-                  $1 per stream. Set your own download prices. Keep 100% of download revenue.
-                </p>
-              </ScrollRevealText>
-            </div>
+            <h2 className="text-3xl md:text-5xl lg:text-6xl font-display font-black mb-6">
+              <span className="bg-gradient-to-r from-green-500 via-emerald-500 to-primary bg-clip-text text-transparent">
+                EARN REAL MONEY FOR YOUR MUSIC
+              </span>
+            </h2>
+            <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto">
+              $1 per stream. Set your own download prices. Keep 100% of download revenue.
+            </p>
           </div>
 
           {/* Interactive Artist Features Grid */}
@@ -678,6 +682,14 @@ export default function Landing() {
 
       <SectionDivider label="For Fans" scrollTo="fans-section" />
 
+      {/* ========== FERRARI-STYLE SCROLL REVEAL - FAN DISCOVERY ========== */}
+      <ScrollRevealText 
+        text="YOUR STREAMS MATTER"
+        gradientColors="from-secondary via-accent to-primary"
+        previewType="discover"
+        sectionId="scroll-reveal-discover"
+      />
+
       {/* ========== FOR FANS SECTION ========== */}
       <section id="fans-section" className="py-16 md:py-32 px-4 md:px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 to-transparent" />
@@ -688,18 +700,14 @@ export default function Landing() {
               FOR FANS
             </Badge>
             
-            {/* Interactive scroll-reveal headline */}
-            <div className="relative py-8">
-              <ScrollRevealText 
-                text="YOUR STREAMS MATTER HERE" 
-                gradientColors="from-secondary via-accent to-primary"
-                previewType="discover"
-              >
-                <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto mt-6">
-                  Every stream pays artists $1. Buy downloads at artist-set prices.
-                </p>
-              </ScrollRevealText>
-            </div>
+            <h2 className="text-3xl md:text-5xl lg:text-6xl font-display font-black mb-6">
+              <span className="bg-gradient-to-r from-secondary via-accent to-primary bg-clip-text text-transparent">
+                YOUR STREAMS MATTER HERE
+              </span>
+            </h2>
+            <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto">
+              Every stream pays artists $1. Buy downloads at artist-set prices.
+            </p>
           </div>
 
           {/* Interactive Fan Features Grid */}

@@ -1,11 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { ChevronDown, TrendingUp, DollarSign, Music, Users, Play, Download } from "lucide-react";
+import { TrendingUp, DollarSign, Music, Users, Play, Download } from "lucide-react";
 
 interface ScrollRevealTextProps {
   text: string;
   previewType?: "discover" | "studio" | "earnings";
   gradientColors?: string;
-  children?: React.ReactNode;
   sectionId?: string;
 }
 
@@ -147,21 +146,26 @@ function DiscoverDashboard() {
   );
 }
 
+/**
+ * Ferrari-style scroll reveal:
+ * 1. Preview starts visible as fullscreen background
+ * 2. As you scroll, text EMERGES from inside the preview (clipped initially)
+ * 3. Text expands, preview visible THROUGH the text letterforms
+ * 4. Text continues expanding, preview recedes
+ * 5. Text is fully visible, preview gone
+ * 6. Continue scrolling = exit and resume normal page scroll
+ */
 export function ScrollRevealText({ 
   text, 
   previewType = "earnings",
   gradientColors = "from-primary via-secondary to-accent",
-  children,
   sectionId
 }: ScrollRevealTextProps) {
   const [isActive, setIsActive] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [showPreview, setShowPreview] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollAccumulator = useRef(0);
   const animationFrame = useRef<number>();
-  
-  const words = text.split(' ');
 
   const handleWheel = useCallback((e: WheelEvent) => {
     if (!isActive) return;
@@ -169,23 +173,21 @@ export function ScrollRevealText({
     e.preventDefault();
     e.stopPropagation();
     
-    const delta = e.deltaY * 0.005;
+    const delta = e.deltaY * 0.003;
     const newValue = scrollAccumulator.current + delta;
     
-    // If scrolling down past 1, close preview and resume normal scroll
-    if (newValue > 1.2 && showPreview) {
+    // Exit animation when scrolling past end
+    if (newValue > 1.1) {
       setIsActive(false);
-      setShowPreview(false);
       setProgress(0);
       scrollAccumulator.current = 0;
       document.body.style.overflow = '';
       return;
     }
     
-    // If scrolling up past 0, close and resume
-    if (newValue < -0.2) {
+    // Exit if scrolling back up before animation starts
+    if (newValue < -0.1) {
       setIsActive(false);
-      setShowPreview(false);
       setProgress(0);
       scrollAccumulator.current = 0;
       document.body.style.overflow = '';
@@ -200,14 +202,8 @@ export function ScrollRevealText({
     
     animationFrame.current = requestAnimationFrame(() => {
       setProgress(scrollAccumulator.current);
-      
-      if (scrollAccumulator.current >= 0.6 && !showPreview) {
-        setShowPreview(true);
-      } else if (scrollAccumulator.current < 0.4 && showPreview) {
-        setShowPreview(false);
-      }
     });
-  }, [isActive, showPreview]);
+  }, [isActive]);
 
   useEffect(() => {
     if (isActive) {
@@ -232,159 +228,143 @@ export function ScrollRevealText({
   };
 
   const handleMouseLeave = () => {
-    setIsActive(false);
-    const resetAnimation = () => {
-      scrollAccumulator.current *= 0.85;
-      setProgress(scrollAccumulator.current);
-      
-      if (scrollAccumulator.current > 0.01) {
-        requestAnimationFrame(resetAnimation);
-      } else {
-        scrollAccumulator.current = 0;
-        setProgress(0);
-        setShowPreview(false);
-      }
-    };
-    requestAnimationFrame(resetAnimation);
+    if (progress < 0.1) {
+      setIsActive(false);
+      setProgress(0);
+      scrollAccumulator.current = 0;
+    }
   };
 
-  // Visual properties - SOLID text, no blur
-  const wordSpacing = 0.5 + progress * 3;
-  const textScale = 1 + progress * 0.2;
+  // Progress phases:
+  // 0.0-0.3: Preview visible, text starts emerging (small, visible through clip)
+  // 0.3-0.7: Text expands, preview visible through text letterforms, then fades
+  // 0.7-1.0: Text fully visible, preview gone, ready to exit
+
+  // Preview opacity: starts at 1, fades as text expands
+  const previewOpacity = Math.max(0, 1 - progress * 1.5);
+  
+  // Text scale: starts small inside preview, grows to full size
+  const textScale = 0.3 + progress * 0.7;
+  
+  // Text letter spacing: increases as text expands
+  const letterSpacing = progress * 0.15;
+  
+  // Text opacity: starts visible, stays visible
+  const textOpacity = Math.min(1, progress * 3);
+  
+  // Clip path: text starts clipped to small center area, expands to full
+  const clipInset = Math.max(0, 40 - progress * 50);
 
   return (
     <div 
       ref={containerRef}
-      className="relative cursor-pointer select-none py-4"
+      id={sectionId}
+      className="relative h-screen w-full overflow-hidden cursor-pointer"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Scroll instruction */}
-      <div className={`
-        absolute -top-10 left-1/2 -translate-x-1/2 z-20
-        flex items-center gap-2 px-4 py-2 rounded-full
-        bg-card/95 backdrop-blur-sm border border-primary/40
-        transition-all duration-300
-        ${isActive && progress < 0.3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}
-      `}>
-        <ChevronDown className="w-4 h-4 text-primary animate-bounce" />
-        <span className="text-sm font-medium text-foreground">Scroll to explore</span>
-        <ChevronDown className="w-4 h-4 text-primary animate-bounce" />
-      </div>
-
-      {/* Main text - SOLID, readable, no blur */}
+      {/* Background Preview (Dashboard) - starts visible */}
       <div 
-        className="relative z-10 transition-all duration-200 ease-out"
-        style={{
-          transform: `scale(${textScale})`,
+        className="absolute inset-0 z-10 transition-opacity duration-300"
+        style={{ 
+          opacity: isActive ? previewOpacity : 1,
         }}
       >
-        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-display font-black leading-tight text-center">
-          <span 
-            className={`bg-gradient-to-r ${gradientColors} bg-clip-text text-transparent inline-flex flex-wrap justify-center`}
-            style={{
-              gap: `0.25rem ${wordSpacing}rem`,
-            }}
-          >
-            {words.map((word, idx) => (
-              <span 
-                key={idx}
-                className="inline-block transition-transform duration-200 whitespace-nowrap"
-                style={{
-                  transform: `translateY(${Math.sin(idx * 0.5 + progress * 2) * progress * 8}px)`,
-                }}
-              >
-                {word}
-              </span>
-            ))}
-          </span>
+        {/* Glow effect behind preview */}
+        <div className={`absolute inset-0 bg-gradient-to-b ${gradientColors} opacity-20`} />
+        
+        {/* Preview container - centered */}
+        <div className="absolute inset-0 flex items-center justify-center p-8">
+          <div className="relative w-full max-w-5xl">
+            {/* Outer glow */}
+            <div className={`absolute -inset-8 rounded-3xl bg-gradient-to-r ${gradientColors} opacity-30 blur-3xl`} />
+            
+            {/* Browser window */}
+            <div className="relative rounded-2xl overflow-hidden border border-primary/30 shadow-2xl bg-card">
+              {/* Browser chrome */}
+              <div className="flex items-center gap-2 px-4 py-3 bg-card border-b border-border">
+                <div className="flex gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                  <div className="w-3 h-3 rounded-full bg-green-500" />
+                </div>
+                <div className="flex-1 mx-4">
+                  <div className="h-7 rounded-lg bg-muted flex items-center justify-center px-4">
+                    <span className="text-sm text-muted-foreground">
+                      {previewType === "discover" ? "discover.tdz.app" : "studio.tdz.app/earnings"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Dashboard content */}
+              <div className="h-[500px] overflow-hidden">
+                {previewType === "discover" ? <DiscoverDashboard /> : <StudioEarningsDashboard />}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Scroll hint - only when not active */}
+        {!isActive && (
+          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-pulse">
+            <span className="text-sm font-medium text-foreground/80">Scroll to reveal</span>
+            <div className="w-6 h-10 rounded-full border-2 border-foreground/40 flex justify-center pt-2">
+              <div className="w-1.5 h-3 rounded-full bg-foreground/60 animate-bounce" />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Text Layer - emerges from preview, expands across screen */}
+      <div 
+        className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
+        style={{
+          opacity: isActive ? textOpacity : 0,
+        }}
+      >
+        <h2 
+          className="text-center font-display font-black leading-none select-none px-4"
+          style={{
+            fontSize: 'clamp(3rem, 15vw, 12rem)',
+            transform: `scale(${textScale})`,
+            letterSpacing: `${letterSpacing}em`,
+            clipPath: `inset(${clipInset}% ${clipInset}% ${clipInset}% ${clipInset}%)`,
+            transition: 'clip-path 0.1s ease-out, transform 0.1s ease-out',
+            // Text has preview as background texture during mid-animation
+            background: progress < 0.7 
+              ? `linear-gradient(to right, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--accent)))`
+              : `linear-gradient(to right, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--accent)))`,
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}
+        >
+          {text}
         </h2>
       </div>
 
-      {/* Preview - FOREGROUND overlay */}
-      <div 
-        className={`
-          fixed inset-0 z-50 flex items-center justify-center p-4
-          transition-all duration-500 ease-out
-          ${showPreview ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}
-        `}
-        style={{
-          backgroundColor: `hsl(var(--background) / 0.95)`,
-        }}
-      >
-        <div 
-          className="relative w-full max-w-4xl"
-          style={{
-            transform: showPreview ? 'scale(1) translateY(0)' : 'scale(0.9) translateY(30px)',
-            transition: 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
-          }}
-        >
-          {/* Glow effect */}
-          <div className={`
-            absolute -inset-6 rounded-3xl
-            bg-gradient-to-r ${gradientColors}
-            opacity-40 blur-3xl
-          `} />
-          
-          {/* Preview container */}
-          <div className="relative rounded-2xl overflow-hidden border-2 border-primary/50 shadow-2xl bg-card">
-            {/* Browser chrome */}
-            <div className="flex items-center gap-2 px-4 py-3 bg-card border-b border-border">
-              <div className="flex gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-              </div>
-              <div className="flex-1 mx-4">
-                <div className="h-7 rounded-lg bg-muted flex items-center justify-center px-4">
-                  <span className="text-sm text-muted-foreground">
-                    {previewType === "discover" ? "discover.tdz.app" : "studio.tdz.app/earnings"}
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Mock dashboard content - NOT an iframe */}
-            <div className="h-[400px] md:h-[450px] overflow-hidden">
-              {previewType === "discover" ? <DiscoverDashboard /> : <StudioEarningsDashboard />}
-            </div>
-          </div>
-
-          {/* Continue scrolling hint */}
-          <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
-            <span className="text-sm text-muted-foreground">Keep scrolling to continue</span>
-            <ChevronDown className="w-5 h-5 text-primary animate-bounce" />
-          </div>
+      {/* Progress indicator at bottom */}
+      {isActive && (
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 w-48 h-1 rounded-full bg-foreground/20 overflow-hidden">
+          <div 
+            className={`h-full rounded-full bg-gradient-to-r ${gradientColors}`}
+            style={{ width: `${progress * 100}%`, transition: 'width 0.1s ease-out' }}
+          />
         </div>
-      </div>
+      )}
 
-      {/* Progress indicator */}
-      <div className={`
-        absolute -bottom-6 left-1/2 -translate-x-1/2 
-        w-24 h-1 rounded-full bg-muted/40 overflow-hidden
-        transition-opacity duration-200
-        ${isActive ? 'opacity-100' : 'opacity-0'}
-      `}>
-        <div 
-          className={`h-full rounded-full bg-gradient-to-r ${gradientColors}`}
-          style={{ width: `${progress * 100}%` }}
-        />
-      </div>
-
-      {/* Children fade when preview shows */}
-      {children && (
-        <div className={`
-          transition-all duration-300
-          ${showPreview ? 'opacity-0' : 'opacity-100'}
-        `}>
-          {children}
+      {/* Continue hint when fully expanded */}
+      {isActive && progress > 0.8 && (
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-30 text-center animate-pulse">
+          <span className="text-sm text-foreground/60">Keep scrolling to continue</span>
         </div>
       )}
     </div>
   );
 }
 
-// Simpler inline word reveal
+// Simpler inline word reveal for inline text
 export function ScrollRevealWord({ 
   word, 
   color = "primary" 
