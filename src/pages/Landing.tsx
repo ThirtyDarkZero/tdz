@@ -510,10 +510,10 @@ export default function Landing() {
               </div>
               <br />
               <div className="animate-scale-in" style={{ animationDelay: '0.2s' }}>
-                <ScrollRevealText 
+              <ScrollRevealText 
                   text="THAT PAYS $1 PER STREAM" 
                   gradientColors="from-green-500 via-emerald-500 to-primary"
-                  previewType="studio"
+                  previewType="earnings"
                 />
               </div>
             </div>
@@ -623,7 +623,7 @@ export default function Landing() {
               <ScrollRevealText 
                 text="EARN REAL MONEY FOR YOUR MUSIC" 
                 gradientColors="from-green-500 via-emerald-500 to-primary"
-                previewType="studio"
+                previewType="earnings"
               >
                 <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto mt-6">
                   $1 per stream. Set your own download prices. Keep 100% of download revenue.
