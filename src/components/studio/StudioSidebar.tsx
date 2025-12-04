@@ -1,12 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { supabase } from "@/integrations/supabase/client";
+import tdzLogo from "@/assets/tdz-logo.png";
 import { 
-  Plus, Disc3, Activity, Rocket, BookMarked, 
-  Cog, LayoutDashboard, Globe2, Headphones
+  Plus, 
+  Sparkles,
+  BarChart3,
+  Megaphone,
+  GraduationCap,
+  Settings2,
+  Compass,
+  LifeBuoy,
+  Crown,
+  Music4
 } from "lucide-react";
 
 interface StudioSidebarProps {
@@ -20,12 +30,12 @@ interface StudioSidebarProps {
 }
 
 const navItems = [
-  { id: "home", icon: LayoutDashboard, label: "Dashboard" },
-  { id: "music", icon: Disc3, label: "Music" },
-  { id: "insights", icon: Activity, label: "Insights" },
-  { id: "promote", icon: Rocket, label: "Promote" },
-  { id: "learn", icon: BookMarked, label: "Academy" },
-  { id: "settings", icon: Cog, label: "Settings" },
+  { id: "home", icon: Sparkles, label: "Dashboard" },
+  { id: "music", icon: Music4, label: "Music" },
+  { id: "insights", icon: BarChart3, label: "Insights" },
+  { id: "promote", icon: Megaphone, label: "Promote" },
+  { id: "learn", icon: GraduationCap, label: "Academy" },
+  { id: "settings", icon: Settings2, label: "Settings" },
 ];
 
 export const StudioSidebar = ({ 
@@ -39,6 +49,17 @@ export const StudioSidebar = ({
 }: StudioSidebarProps) => {
   const navigate = useNavigate();
   const [isHovering, setIsHovering] = useState(false);
+  const [isCEO, setIsCEO] = useState(false);
+
+  useEffect(() => {
+    const checkCEOStatus = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email === "info@thirtydarkzero.com") {
+        setIsCEO(true);
+      }
+    };
+    checkCEOStatus();
+  }, []);
 
   const shouldExpand = !collapsed || isHovering;
 
@@ -54,9 +75,11 @@ export const StudioSidebar = ({
       {/* Logo/Brand */}
       <div className="p-4 border-b border-border/50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary via-violet-500 to-fuchsia-500 flex items-center justify-center font-black text-primary-foreground text-lg shadow-glow">
-            III
-          </div>
+          <img 
+            src={tdzLogo} 
+            alt="TDZ" 
+            className="w-10 h-10 rounded-xl object-contain"
+          />
           <span className={cn(
             "font-display text-lg font-bold tracking-tight transition-all duration-300",
             shouldExpand ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 absolute"
@@ -140,6 +163,33 @@ export const StudioSidebar = ({
             {!shouldExpand && <TooltipContent side="right">{item.label}</TooltipContent>}
           </Tooltip>
         ))}
+
+        {/* CEO Dashboard - Only visible to CEO */}
+        {isCEO && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => navigate("/ceo-dashboard")}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group mt-4 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 text-amber-500 hover:from-amber-500/20 hover:to-orange-500/20",
+                  !shouldExpand && "justify-center px-0"
+                )}
+              >
+                <Crown className={cn(
+                  "w-5 h-5 flex-shrink-0 transition-transform duration-200",
+                  "group-hover:scale-110"
+                )} />
+                <span className={cn(
+                  "font-medium transition-all duration-300",
+                  shouldExpand ? "opacity-100" : "opacity-0 hidden"
+                )}>
+                  CEO Dashboard
+                </span>
+              </button>
+            </TooltipTrigger>
+            {!shouldExpand && <TooltipContent side="right">CEO Dashboard</TooltipContent>}
+          </Tooltip>
+        )}
       </nav>
 
       {/* Bottom Actions */}
@@ -153,7 +203,7 @@ export const StudioSidebar = ({
                 !shouldExpand && "justify-center px-0"
               )}
             >
-              <Globe2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              <Compass className="w-5 h-5 group-hover:scale-110 transition-transform" />
               <span className={cn(
                 "font-medium transition-all duration-300",
                 shouldExpand ? "opacity-100" : "opacity-0 hidden"
@@ -174,7 +224,7 @@ export const StudioSidebar = ({
                 !shouldExpand && "justify-center px-0"
               )}
             >
-              <Headphones className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              <LifeBuoy className="w-5 h-5 group-hover:scale-110 transition-transform" />
               <span className={cn(
                 "font-medium transition-all duration-300",
                 shouldExpand ? "opacity-100" : "opacity-0 hidden"
