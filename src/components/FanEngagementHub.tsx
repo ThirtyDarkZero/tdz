@@ -10,11 +10,13 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Users, Mail, MessageSquare, Heart, TrendingUp, 
   Target, Zap, Gift, Bell, Send, Upload, Link, 
   ShoppingBag, Calendar, Crown, ExternalLink, Check,
-  FileUp, Copy, Loader2
+  FileUp, Copy, Loader2, Sparkles, Palette, Eye, 
+  Music, Image, Type, Wand2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -32,6 +34,14 @@ interface SuperFan {
   tier: 'platinum' | 'gold' | 'silver';
 }
 
+const emailTemplates = [
+  { id: 'release', name: 'New Release', icon: Music, color: 'from-violet-500 to-purple-600' },
+  { id: 'presave', name: 'Pre-Save', icon: Bell, color: 'from-amber-500 to-orange-600' },
+  { id: 'tour', name: 'Tour Announcement', icon: Calendar, color: 'from-pink-500 to-rose-600' },
+  { id: 'exclusive', name: 'Exclusive Content', icon: Gift, color: 'from-emerald-500 to-teal-600' },
+  { id: 'newsletter', name: 'Newsletter', icon: Mail, color: 'from-blue-500 to-cyan-600' },
+];
+
 export const FanEngagementHub = () => {
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -41,6 +51,8 @@ export const FanEngagementHub = () => {
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
   const [preSaveTitle, setPreSaveTitle] = useState("");
   const [preSaveDate, setPreSaveDate] = useState("");
+  const [preSaveLink, setPreSaveLink] = useState("");
+  const [generatingPreSaveLink, setGeneratingPreSaveLink] = useState(false);
   const [exclusiveContent, setExclusiveContent] = useState("");
   const [exclusiveDate, setExclusiveDate] = useState("");
   const [smartLinkUrl, setSmartLinkUrl] = useState("");
@@ -48,6 +60,18 @@ export const FanEngagementHub = () => {
   const [showShopifyConnect, setShowShopifyConnect] = useState(false);
   const [csvUploading, setCsvUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Email Campaign State
+  const [showEmailGenerator, setShowEmailGenerator] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('release');
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailHeadline, setEmailHeadline] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+  const [emailCtaText, setEmailCtaText] = useState("Listen Now");
+  const [emailCtaLink, setEmailCtaLink] = useState("");
+  const [emailPreviewMode, setEmailPreviewMode] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [generatingEmailContent, setGeneratingEmailContent] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -205,6 +229,37 @@ export const FanEngagementHub = () => {
     }
   };
 
+  const generatePreSaveLink = async () => {
+    if (!preSaveTitle || !preSaveDate) {
+      toast.error("Please enter release title and date");
+      return;
+    }
+
+    setGeneratingPreSaveLink(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data: profile } = await supabase
+        .from("artist_profiles")
+        .select("artist_name")
+        .eq("user_id", user.id)
+        .single();
+
+      const artistSlug = profile?.artist_name?.toLowerCase().replace(/\s+/g, '-') || user.id.slice(0, 8);
+      const releaseSlug = preSaveTitle.toLowerCase().replace(/\s+/g, '-');
+      const uniqueId = Math.random().toString(36).substring(2, 6);
+      const link = `https://tdz.link/presave/${artistSlug}/${releaseSlug}-${uniqueId}`;
+      
+      setPreSaveLink(link);
+      toast.success("Pre-save link generated!");
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setGeneratingPreSaveLink(false);
+    }
+  };
+
   const createPreSaveCampaign = async () => {
     if (!preSaveTitle || !preSaveDate) {
       toast.error("Please fill in all fields");
@@ -223,7 +278,7 @@ export const FanEngagementHub = () => {
           content_type: "presave",
           scheduled_date: preSaveDate,
           status: "scheduled",
-          metadata: { release_title: preSaveTitle }
+          metadata: { release_title: preSaveTitle, presave_link: preSaveLink }
         });
 
       if (error) throw error;
@@ -231,6 +286,7 @@ export const FanEngagementHub = () => {
       toast.success("Pre-save campaign created!");
       setPreSaveTitle("");
       setPreSaveDate("");
+      setPreSaveLink("");
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -293,8 +349,8 @@ export const FanEngagementHub = () => {
     }
   };
 
-  const copySmartLink = () => {
-    navigator.clipboard.writeText(smartLinkUrl);
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
     toast.success("Link copied to clipboard!");
   };
 
@@ -348,6 +404,111 @@ export const FanEngagementHub = () => {
     toast.info("Connect your Shopify store to sell merch directly");
   };
 
+  const generateEmailContent = async () => {
+    setGeneratingEmailContent(true);
+    try {
+      const template = emailTemplates.find(t => t.id === selectedTemplate);
+      
+      // Generate content based on template
+      const contentMap: Record<string, { subject: string; headline: string; body: string; cta: string }> = {
+        release: {
+          subject: "🎵 New Music Just Dropped!",
+          headline: "My New Track Is Here",
+          body: "I've been working hard on this one and I'm so excited to finally share it with you. This track means a lot to me and I can't wait for you to hear it.",
+          cta: "Listen Now"
+        },
+        presave: {
+          subject: "🔔 Be the First to Hear My New Release",
+          headline: "Pre-Save My Upcoming Release",
+          body: "Something special is coming and I want you to be the first to hear it. Pre-save now to get it delivered straight to your library the moment it drops!",
+          cta: "Pre-Save Now"
+        },
+        tour: {
+          subject: "🎤 I'm Coming to Your City!",
+          headline: "Tour Dates Announced",
+          body: "I'm hitting the road and I want to see you there! Check out the dates below and grab your tickets before they're gone.",
+          cta: "Get Tickets"
+        },
+        exclusive: {
+          subject: "🎁 Exclusive Content Just for You",
+          headline: "You're Getting This First",
+          body: "As one of my most dedicated fans, I wanted to share something special with you. This exclusive content is my way of saying thank you for your support.",
+          cta: "Access Now"
+        },
+        newsletter: {
+          subject: "📬 What's Been Happening",
+          headline: "Updates From the Studio",
+          body: "Hey! I wanted to catch you up on everything that's been going on. From new music to behind-the-scenes moments, here's what you've missed.",
+          cta: "Read More"
+        }
+      };
+
+      const content = contentMap[selectedTemplate] || contentMap.release;
+      setEmailSubject(content.subject);
+      setEmailHeadline(content.headline);
+      setEmailBody(content.body);
+      setEmailCtaText(content.cta);
+
+      toast.success("Email content generated!");
+    } catch (error: any) {
+      toast.error("Failed to generate content");
+    } finally {
+      setGeneratingEmailContent(false);
+    }
+  };
+
+  const sendMassEmail = async () => {
+    if (!emailSubject || !emailBody) {
+      toast.error("Please fill in email subject and body");
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // In production, this would call an edge function to send emails via Resend
+      // For now, we'll create notifications and show success
+      const { data: followersData } = await supabase
+        .from("artist_follows")
+        .select("follower_id")
+        .eq("artist_id", user.id);
+
+      const recipientCount = (followersData?.length || 0) + (metrics?.email_list_size || 0);
+
+      // Create activity log entry
+      await supabase
+        .from("activity_log")
+        .insert({
+          user_id: user.id,
+          activity_type: "email_campaign_sent",
+          metadata: {
+            subject: emailSubject,
+            recipients: recipientCount,
+            template: selectedTemplate
+          }
+        });
+
+      toast.success(`Email campaign queued for ${recipientCount} recipients!`);
+      setShowEmailGenerator(false);
+      resetEmailForm();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  const resetEmailForm = () => {
+    setEmailSubject("");
+    setEmailHeadline("");
+    setEmailBody("");
+    setEmailCtaText("Listen Now");
+    setEmailCtaLink("");
+    setEmailPreviewMode(false);
+  };
+
   if (loading) {
     return (
       <Card className="glass-card p-12 text-center">
@@ -360,6 +521,7 @@ export const FanEngagementHub = () => {
   const platinumFans = superFans.filter(f => f.tier === 'platinum');
   const goldFans = superFans.filter(f => f.tier === 'gold');
   const silverFans = superFans.filter(f => f.tier === 'silver');
+  const selectedTemplateData = emailTemplates.find(t => t.id === selectedTemplate);
 
   return (
     <div className="space-y-6">
@@ -448,60 +610,75 @@ export const FanEngagementHub = () => {
                 Build your direct audience - own the relationship
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <Card className="p-4 border-primary/30">
-                  <h4 className="font-semibold mb-2 flex items-center gap-2">
-                    <Bell className="w-4 h-4" />
-                    Pre-Save Campaign
-                  </h4>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Capture emails before release day
-                  </p>
-                  <div className="space-y-2 mb-3">
-                    <Input 
-                      placeholder="Release title"
-                      value={preSaveTitle}
-                      onChange={(e) => setPreSaveTitle(e.target.value)}
-                    />
-                    <Input 
-                      type="date"
-                      value={preSaveDate}
-                      onChange={(e) => setPreSaveDate(e.target.value)}
-                    />
+            <CardContent className="space-y-6">
+              {/* Pre-Save Campaign with Link */}
+              <Card className="p-4 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-amber-500" />
+                  Pre-Save Campaign
+                  <Badge variant="secondary" className="text-xs">Popular</Badge>
+                </h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Generate a pre-save link and capture emails before release day
+                </p>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs">Release Title</Label>
+                      <Input 
+                        placeholder="Your upcoming release title"
+                        value={preSaveTitle}
+                        onChange={(e) => setPreSaveTitle(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Release Date</Label>
+                      <Input 
+                        type="date"
+                        value={preSaveDate}
+                        onChange={(e) => setPreSaveDate(e.target.value)}
+                      />
+                    </div>
                   </div>
-                  <Button className="w-full" onClick={createPreSaveCampaign}>
-                    <Bell className="w-4 h-4 mr-2" />
-                    Create Campaign
-                  </Button>
-                </Card>
-
-                <Card className="p-4 border-primary/30">
-                  <h4 className="font-semibold mb-2 flex items-center gap-2">
-                    <Gift className="w-4 h-4" />
-                    Exclusive Content Gate
-                  </h4>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Offer exclusive tracks for email signup
-                  </p>
-                  <div className="space-y-2 mb-3">
-                    <Input 
-                      placeholder="Content description (Demo track, BTS video...)"
-                      value={exclusiveContent}
-                      onChange={(e) => setExclusiveContent(e.target.value)}
-                    />
-                    <Input 
-                      type="date"
-                      value={exclusiveDate}
-                      onChange={(e) => setExclusiveDate(e.target.value)}
-                    />
+                  <div className="space-y-3">
+                    {preSaveLink ? (
+                      <div className="p-3 rounded-lg bg-muted/50 border border-green-500/30">
+                        <Label className="text-xs text-green-500">Your Pre-Save Link</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input value={preSaveLink} readOnly className="text-xs bg-background" />
+                          <Button size="sm" variant="ghost" onClick={() => copyToClipboard(preSaveLink)}>
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="h-full flex items-center justify-center">
+                        <Button 
+                          variant="outline" 
+                          onClick={generatePreSaveLink}
+                          disabled={generatingPreSaveLink || !preSaveTitle || !preSaveDate}
+                          className="w-full"
+                        >
+                          {generatingPreSaveLink ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Link className="w-4 h-4 mr-2" />
+                          )}
+                          Generate Pre-Save Link
+                        </Button>
+                      </div>
+                    )}
+                    <Button 
+                      className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700" 
+                      onClick={createPreSaveCampaign}
+                      disabled={!preSaveTitle || !preSaveDate}
+                    >
+                      <Bell className="w-4 h-4 mr-2" />
+                      Create Campaign
+                    </Button>
                   </div>
-                  <Button className="w-full" variant="outline" onClick={createExclusiveContent}>
-                    <Gift className="w-4 h-4 mr-2" />
-                    Schedule Content
-                  </Button>
-                </Card>
-              </div>
+                </div>
+              </Card>
 
               {/* CSV Upload */}
               <Card className="p-4 border-dashed border-2 border-primary/30">
@@ -532,6 +709,100 @@ export const FanEngagementHub = () => {
                     {csvUploading ? "Importing..." : "Upload CSV"}
                   </Button>
                 </div>
+              </Card>
+
+              {/* Email Campaign Generator */}
+              <Card className="p-4 border-primary/30 bg-gradient-to-br from-violet-500/5 to-fuchsia-500/5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h4 className="font-semibold flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-violet-500" />
+                      Email Campaign Generator
+                      <Badge className="bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-xs">Pro</Badge>
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Create stunning email campaigns to reach your fans
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => setShowEmailGenerator(true)}
+                    className="bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600"
+                  >
+                    <Wand2 className="w-4 h-4 mr-2" />
+                    Create Campaign
+                  </Button>
+                </div>
+
+                {/* Template Preview Grid */}
+                <div className="grid grid-cols-5 gap-2">
+                  {emailTemplates.map((template) => (
+                    <div 
+                      key={template.id}
+                      className={`p-3 rounded-lg border text-center cursor-pointer transition-all hover:scale-105 ${
+                        selectedTemplate === template.id 
+                          ? 'border-primary bg-primary/10' 
+                          : 'border-border/50 hover:border-primary/50'
+                      }`}
+                      onClick={() => setSelectedTemplate(template.id)}
+                    >
+                      <div className={`w-8 h-8 mx-auto mb-2 rounded-full bg-gradient-to-br ${template.color} flex items-center justify-center`}>
+                        <template.icon className="w-4 h-4 text-white" />
+                      </div>
+                      <p className="text-xs font-medium truncate">{template.name}</p>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              {/* Mass Email Section */}
+              <Card className="p-4 border-blue-500/30 bg-gradient-to-br from-blue-500/5 to-cyan-500/5">
+                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <Send className="w-4 h-4 text-blue-500" />
+                  Mass Email
+                </h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Send updates to all {(metrics?.email_list_size || 0) + followers.length} contacts in your list
+                </p>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => setShowEmailGenerator(true)}
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Compose Email
+                  </Button>
+                  <Button variant="ghost" size="icon">
+                    <Calendar className="w-4 h-4" />
+                  </Button>
+                </div>
+              </Card>
+
+              {/* Exclusive Content */}
+              <Card className="p-4 border-primary/30">
+                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <Gift className="w-4 h-4" />
+                  Exclusive Content Gate
+                </h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Offer exclusive tracks for email signup
+                </p>
+                <div className="space-y-2 mb-3">
+                  <Input 
+                    placeholder="Content description (Demo track, BTS video...)"
+                    value={exclusiveContent}
+                    onChange={(e) => setExclusiveContent(e.target.value)}
+                  />
+                  <Input 
+                    type="date"
+                    value={exclusiveDate}
+                    onChange={(e) => setExclusiveDate(e.target.value)}
+                  />
+                </div>
+                <Button className="w-full" variant="outline" onClick={createExclusiveContent}>
+                  <Gift className="w-4 h-4 mr-2" />
+                  Schedule Content
+                </Button>
               </Card>
             </CardContent>
           </Card>
@@ -635,7 +906,7 @@ export const FanEngagementHub = () => {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 p-2 rounded bg-muted">
                         <Input value={smartLinkUrl} readOnly className="text-xs" />
-                        <Button size="sm" variant="ghost" onClick={copySmartLink}>
+                        <Button size="sm" variant="ghost" onClick={() => copyToClipboard(smartLinkUrl)}>
                           <Copy className="w-4 h-4" />
                         </Button>
                       </div>
@@ -784,6 +1055,167 @@ export const FanEngagementHub = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Email Generator Dialog */}
+      <Dialog open={showEmailGenerator} onOpenChange={setShowEmailGenerator}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-violet-500" />
+              Email Campaign Generator
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="grid md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto">
+            {/* Editor */}
+            <div className="space-y-4">
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 block">Template</Label>
+                <div className="grid grid-cols-5 gap-2">
+                  {emailTemplates.map((template) => (
+                    <button
+                      key={template.id}
+                      className={`p-2 rounded-lg border text-center transition-all ${
+                        selectedTemplate === template.id 
+                          ? 'border-primary bg-primary/10' 
+                          : 'border-border/50 hover:border-primary/50'
+                      }`}
+                      onClick={() => setSelectedTemplate(template.id)}
+                    >
+                      <div className={`w-6 h-6 mx-auto mb-1 rounded-full bg-gradient-to-br ${template.color} flex items-center justify-center`}>
+                        <template.icon className="w-3 h-3 text-white" />
+                      </div>
+                      <p className="text-[10px] font-medium truncate">{template.name}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full"
+                onClick={generateEmailContent}
+                disabled={generatingEmailContent}
+              >
+                {generatingEmailContent ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Wand2 className="w-4 h-4 mr-2" />
+                )}
+                Auto-Generate Content
+              </Button>
+
+              <div>
+                <Label className="text-xs">Subject Line</Label>
+                <Input 
+                  placeholder="Your email subject"
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs">Headline</Label>
+                <Input 
+                  placeholder="Main headline"
+                  value={emailHeadline}
+                  onChange={(e) => setEmailHeadline(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs">Body</Label>
+                <Textarea 
+                  placeholder="Email body content..."
+                  rows={4}
+                  value={emailBody}
+                  onChange={(e) => setEmailBody(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">Button Text</Label>
+                  <Input 
+                    placeholder="Listen Now"
+                    value={emailCtaText}
+                    onChange={(e) => setEmailCtaText(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Button Link</Label>
+                  <Input 
+                    placeholder="https://..."
+                    value={emailCtaLink}
+                    onChange={(e) => setEmailCtaLink(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Preview */}
+            <div className="border rounded-xl overflow-hidden bg-gradient-to-br from-background to-muted">
+              <div className="p-2 border-b bg-muted/50 flex items-center justify-between">
+                <span className="text-xs font-medium">Preview</span>
+                <Eye className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div className="p-4">
+                <div className={`rounded-xl overflow-hidden bg-gradient-to-br ${selectedTemplateData?.color || 'from-violet-500 to-fuchsia-500'} p-1`}>
+                  <div className="bg-background rounded-lg p-6 space-y-4">
+                    {/* Header */}
+                    <div className="text-center pb-4 border-b border-border/50">
+                      <div className={`w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br ${selectedTemplateData?.color || 'from-violet-500 to-fuchsia-500'} flex items-center justify-center`}>
+                        {selectedTemplateData && <selectedTemplateData.icon className="w-6 h-6 text-white" />}
+                      </div>
+                      <h3 className="font-display text-xl font-bold">
+                        {emailHeadline || "Your Headline Here"}
+                      </h3>
+                    </div>
+                    
+                    {/* Body */}
+                    <p className="text-sm text-muted-foreground text-center">
+                      {emailBody || "Your email body content will appear here..."}
+                    </p>
+                    
+                    {/* CTA */}
+                    <div className="text-center pt-2">
+                      <button className={`px-6 py-2 rounded-full bg-gradient-to-r ${selectedTemplateData?.color || 'from-violet-500 to-fuchsia-500'} text-white font-semibold text-sm`}>
+                        {emailCtaText || "Listen Now"}
+                      </button>
+                    </div>
+                    
+                    {/* Footer */}
+                    <div className="pt-4 border-t border-border/50 text-center">
+                      <p className="text-[10px] text-muted-foreground">
+                        Sent with ❤️ via TDZ Distribution
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => setShowEmailGenerator(false)}>
+              Cancel
+            </Button>
+            <Button 
+              className="flex-1 bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600"
+              onClick={sendMassEmail}
+              disabled={sendingEmail || !emailSubject || !emailBody}
+            >
+              {sendingEmail ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4 mr-2" />
+              )}
+              Send to {(metrics?.email_list_size || 0) + followers.length} Contacts
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

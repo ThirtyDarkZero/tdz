@@ -169,7 +169,7 @@ export const StudioSidebar = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                onClick={() => navigate("/ceo-dashboard")}
+                onClick={() => navigate("/ceo")}
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group mt-4 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 text-amber-500 hover:from-amber-500/20 hover:to-orange-500/20",
                   !shouldExpand && "justify-center px-0"
