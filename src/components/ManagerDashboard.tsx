@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,16 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { UserPlus, Users, TrendingUp, DollarSign, Music, BarChart3, Upload, Eye, ChevronRight } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { UserPlus, Users, TrendingUp, DollarSign, Music, Upload, ChevronRight, Image, X, Check } from "lucide-react";
 import {
-  BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart
 } from "recharts";
 
 interface Artist {
@@ -41,15 +39,34 @@ interface Artist {
 export const ManagerDashboard = () => {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(true);
-  const [onboardOpen, setOnboardOpen] = useState(false);
   const [createProfileOpen, setCreateProfileOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
   const [newArtistName, setNewArtistName] = useState("");
   const [newArtistEmail, setNewArtistEmail] = useState("");
   const [newArtistBio, setNewArtistBio] = useState("");
   const [notes, setNotes] = useState("");
   const [commissionRate, setCommissionRate] = useState("15");
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
+  
+  // Upload for artist state
+  const [uploadTrackTitle, setUploadTrackTitle] = useState("");
+  const [uploadTrackGenre, setUploadTrackGenre] = useState("Hip-Hop");
+  const [uploadTrackFile, setUploadTrackFile] = useState<File | null>(null);
+  const [uploadCoverFile, setUploadCoverFile] = useState<File | null>(null);
+  const [uploadCoverPreview, setUploadCoverPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const genres = [
+    "Hip-Hop", "R&B", "Pop", "Rock", "Electronic", "Jazz", "Classical",
+    "Country", "Reggae", "Latin", "Soul", "Folk", "Metal", "Ambient", "Spoken Word"
+  ];
 
   useEffect(() => {
     loadArtists();
@@ -82,11 +99,8 @@ export const ManagerDashboard = () => {
 
           const totalTracks = tracks?.length || 0;
           const totalPlays = tracks?.reduce((sum, t) => sum + (t.play_count || 0), 0) || 0;
-
-          // Calculate earnings based on $1 per stream
           const streamingRevenue = totalPlays * 1;
 
-          // Get download revenue
           const { data: downloads } = await supabase
             .from('download_purchases')
             .select('artist_revenue')
@@ -142,6 +156,14 @@ export const ManagerDashboard = () => {
     }
   };
 
+  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setProfileImage(file);
+      setProfileImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleCreateArtistProfile = async () => {
     if (!newArtistName) {
       toast({
@@ -156,8 +178,25 @@ export const ManagerDashboard = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Create a placeholder user ID for the artist (in production, this would be a real user)
       const artistUserId = crypto.randomUUID();
+      let profileImagePath = null;
+
+      // Upload profile image if provided
+      if (profileImage) {
+        const fileExt = profileImage.name.split('.').pop();
+        const fileName = `${artistUserId}/profile.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('artist-images')
+          .upload(fileName, profileImage);
+
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage
+            .from('artist-images')
+            .getPublicUrl(fileName);
+          profileImagePath = urlData.publicUrl;
+        }
+      }
 
       // Create artist profile
       const { error: profileError } = await supabase
@@ -165,7 +204,8 @@ export const ManagerDashboard = () => {
         .insert({
           user_id: artistUserId,
           artist_name: newArtistName,
-          bio: newArtistBio || null
+          bio: newArtistBio || null,
+          profile_image_path: profileImagePath
         });
 
       if (profileError) throw profileError;
@@ -188,11 +228,7 @@ export const ManagerDashboard = () => {
       });
 
       setCreateProfileOpen(false);
-      setNewArtistName("");
-      setNewArtistEmail("");
-      setNewArtistBio("");
-      setNotes("");
-      setCommissionRate("15");
+      resetCreateForm();
       loadArtists();
     } catch (error: any) {
       toast({
@@ -203,11 +239,116 @@ export const ManagerDashboard = () => {
     }
   };
 
+  const resetCreateForm = () => {
+    setNewArtistName("");
+    setNewArtistEmail("");
+    setNewArtistBio("");
+    setNotes("");
+    setCommissionRate("15");
+    setProfileImage(null);
+    setProfileImagePreview(null);
+  };
+
+  const handleUploadForArtist = async () => {
+    if (!selectedArtist || !uploadTrackTitle || !uploadTrackFile) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in track title and select an audio file",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      // Upload audio file
+      const audioExt = uploadTrackFile.name.split('.').pop();
+      const audioFileName = `${selectedArtist.artist_id}/${Date.now()}.${audioExt}`;
+      
+      const { error: audioUploadError } = await supabase.storage
+        .from('track-files')
+        .upload(audioFileName, uploadTrackFile);
+
+      if (audioUploadError) throw audioUploadError;
+
+      const { data: audioUrl } = supabase.storage
+        .from('track-files')
+        .getPublicUrl(audioFileName);
+
+      // Upload cover art if provided
+      let coverArtPath = null;
+      if (uploadCoverFile) {
+        const coverExt = uploadCoverFile.name.split('.').pop();
+        const coverFileName = `${selectedArtist.artist_id}/${Date.now()}_cover.${coverExt}`;
+        
+        const { error: coverUploadError } = await supabase.storage
+          .from('album-covers')
+          .upload(coverFileName, uploadCoverFile);
+
+        if (!coverUploadError) {
+          const { data: coverUrl } = supabase.storage
+            .from('album-covers')
+            .getPublicUrl(coverFileName);
+          coverArtPath = coverUrl.publicUrl;
+        }
+      }
+
+      // Create track record
+      const { error: trackError } = await supabase
+        .from('tracks')
+        .insert([{
+          user_id: selectedArtist.artist_id,
+          title: uploadTrackTitle,
+          artist_name: selectedArtist.artist_name,
+          genre: uploadTrackGenre,
+          file_path: audioFileName,
+          album_cover_path: coverArtPath,
+          is_published: false,
+          play_count: 0,
+          duration: 0 // Will be updated when audio is processed
+        }]);
+
+      if (trackError) throw trackError;
+
+      toast({
+        title: "Track Uploaded",
+        description: `"${uploadTrackTitle}" has been uploaded for ${selectedArtist.artist_name}`
+      });
+
+      setUploadDialogOpen(false);
+      resetUploadForm();
+      loadArtists();
+    } catch (error: any) {
+      toast({
+        title: "Upload Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const resetUploadForm = () => {
+    setUploadTrackTitle("");
+    setUploadTrackGenre("Hip-Hop");
+    setUploadTrackFile(null);
+    setUploadCoverFile(null);
+    setUploadCoverPreview(null);
+  };
+
+  const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUploadCoverFile(file);
+      setUploadCoverPreview(URL.createObjectURL(file));
+    }
+  };
+
   const totalRevenue = artists.reduce((sum, artist) => sum + (artist.total_earnings * artist.commission_rate / 100), 0);
   const totalPlays = artists.reduce((sum, artist) => sum + artist.total_plays, 0);
   const totalTracks = artists.reduce((sum, artist) => sum + artist.total_tracks, 0);
 
-  // Generate mock historical data for the selected artist
   const generateHistoricalData = (artist: Artist) => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
     return months.map((month, i) => ({
@@ -240,7 +381,7 @@ export const ManagerDashboard = () => {
                 Create Artist Profile
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>Create New Artist Profile</DialogTitle>
                 <DialogDescription>
@@ -248,6 +389,30 @@ export const ManagerDashboard = () => {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
+                {/* Profile Image Upload */}
+                <div className="flex justify-center">
+                  <div 
+                    className="relative w-24 h-24 rounded-full border-2 border-dashed border-muted cursor-pointer hover:border-primary transition-colors overflow-hidden"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {profileImagePreview ? (
+                      <img src={profileImagePreview} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Image className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleProfileImageChange}
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-center text-muted-foreground">Click to upload profile photo</p>
+                
                 <div>
                   <Label htmlFor="artist-name">Artist Name *</Label>
                   <Input
@@ -451,10 +616,129 @@ export const ManagerDashboard = () => {
                         </div>
                       </div>
                     </div>
-                    <Button variant="outline" className="gap-2">
-                      <Upload className="w-4 h-4" />
-                      Upload for Artist
-                    </Button>
+                    <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="gap-2">
+                          <Upload className="w-4 h-4" />
+                          Upload for Artist
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-lg">
+                        <DialogHeader>
+                          <DialogTitle>Upload Track for {selectedArtist.artist_name}</DialogTitle>
+                          <DialogDescription>
+                            Upload music on behalf of your artist
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          {/* Cover Art */}
+                          <div className="flex justify-center">
+                            <div 
+                              className="relative w-32 h-32 rounded-lg border-2 border-dashed border-muted cursor-pointer hover:border-primary transition-colors overflow-hidden"
+                              onClick={() => coverInputRef.current?.click()}
+                            >
+                              {uploadCoverPreview ? (
+                                <img src={uploadCoverPreview} alt="Cover" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center">
+                                  <Image className="w-8 h-8 text-muted-foreground mb-2" />
+                                  <span className="text-xs text-muted-foreground">Cover Art</span>
+                                </div>
+                              )}
+                              <input
+                                ref={coverInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleCoverImageChange}
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <Label>Track Title *</Label>
+                            <Input
+                              placeholder="Enter track title"
+                              value={uploadTrackTitle}
+                              onChange={(e) => setUploadTrackTitle(e.target.value)}
+                            />
+                          </div>
+
+                          <div>
+                            <Label>Genre</Label>
+                            <Select value={uploadTrackGenre} onValueChange={setUploadTrackGenre}>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {genres.map(g => (
+                                  <SelectItem key={g} value={g}>{g}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Label>Audio File *</Label>
+                            <div 
+                              className="border-2 border-dashed border-muted rounded-lg p-4 text-center cursor-pointer hover:border-primary transition-colors"
+                              onClick={() => audioInputRef.current?.click()}
+                            >
+                              {uploadTrackFile ? (
+                                <div className="flex items-center justify-center gap-2">
+                                  <Check className="w-5 h-5 text-green-500" />
+                                  <span className="text-sm">{uploadTrackFile.name}</span>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setUploadTrackFile(null);
+                                    }}
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div>
+                                  <Music className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                                  <p className="text-sm text-muted-foreground">Click to select audio file</p>
+                                  <p className="text-xs text-muted-foreground">MP3, WAV, FLAC up to 500MB</p>
+                                </div>
+                              )}
+                              <input
+                                ref={audioInputRef}
+                                type="file"
+                                accept="audio/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) setUploadTrackFile(file);
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          <Button 
+                            onClick={handleUploadForArtist} 
+                            className="w-full"
+                            disabled={uploading || !uploadTrackFile || !uploadTrackTitle}
+                          >
+                            {uploading ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                Uploading...
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="w-4 h-4 mr-2" />
+                                Upload Track
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 </CardContent>
               </Card>
