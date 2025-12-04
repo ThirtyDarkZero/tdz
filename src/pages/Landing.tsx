@@ -992,8 +992,7 @@ export default function Landing() {
                 { label: "Support", path: "/support" },
                 { label: "Terms", path: "/terms" },
                 { label: "Privacy", path: "/privacy" },
-                { label: "Investors", path: "/investors" },
-                { label: "CEO", path: "/ceo" }
+                { label: "Investors", path: "/investors" }
               ].map((link) => (
                 <button 
                   key={link.path}
