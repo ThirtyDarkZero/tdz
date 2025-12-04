@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users, Send, Sparkles, TrendingUp, DollarSign,
-  Music, BarChart3, Loader2, History, Plus
+  Music, BarChart3, Loader2, History, Plus, Atom, Zap
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,47 +46,47 @@ const staffMembers: StaffMember[] = [
   {
     id: "ar_director",
     name: "Maya Rodriguez",
-    role: "A&R Director",
-    avatar: "🎵",
-    color: "from-purple-500 to-pink-500",
+    role: "Quantum A&R Director",
+    avatar: "⚛️",
+    color: "from-violet-500 via-purple-500 to-fuchsia-500",
     icon: Music,
-    expertise: ["Talent Development", "Track Feedback", "Release Strategy"],
+    expertise: ["AI Talent Analysis", "Predictive Track Feedback", "Quantum Release Strategy"],
   },
   {
     id: "marketing_manager",
     name: "Jordan Chen",
-    role: "Marketing Manager",
-    avatar: "📱",
-    color: "from-blue-500 to-cyan-500",
+    role: "Quantum Marketing Strategist",
+    avatar: "🔮",
+    color: "from-cyan-500 via-blue-500 to-indigo-500",
     icon: TrendingUp,
-    expertise: ["Social Media", "Campaign Planning", "Playlist Pitching"],
+    expertise: ["Neural Campaign Planning", "Algorithmic Playlist Pitching", "Viral Prediction"],
   },
   {
     id: "distribution_manager",
     name: "Alex Thompson",
-    role: "Distribution Manager",
-    avatar: "🌍",
-    color: "from-green-500 to-emerald-500",
+    role: "Quantum Distribution Architect",
+    avatar: "🌐",
+    color: "from-emerald-500 via-green-500 to-teal-500",
     icon: BarChart3,
-    expertise: ["Platform Strategy", "Metadata", "Release Scheduling"],
+    expertise: ["Multi-Platform Optimization", "AI Metadata", "Predictive Scheduling"],
   },
   {
     id: "producer",
     name: "Sam Rivera",
-    role: "Executive Producer",
-    avatar: "🎚️",
-    color: "from-orange-500 to-red-500",
+    role: "Quantum Sound Engineer",
+    avatar: "🎛️",
+    color: "from-orange-500 via-amber-500 to-yellow-500",
     icon: Sparkles,
-    expertise: ["Production", "Mixing", "Sound Design"],
+    expertise: ["AI Production Analysis", "Neural Mixing", "Quantum Sound Design"],
   },
   {
     id: "business_manager",
     name: "Taylor Washington",
-    role: "Business Manager",
-    avatar: "💼",
-    color: "from-yellow-500 to-amber-500",
+    role: "Quantum Revenue Strategist",
+    avatar: "💎",
+    color: "from-rose-500 via-pink-500 to-red-500",
     icon: DollarSign,
-    expertise: ["Contracts", "Revenue", "Financial Planning"],
+    expertise: ["AI Contract Analysis", "Revenue Prediction", "Quantum Financial Planning"],
   },
 ];
 
@@ -102,12 +102,10 @@ export const LabelStaff = () => {
   const currentStaff = staffMembers.find((s) => s.id === selectedStaff)!;
   const currentMessages = conversations[selectedStaff] || [];
 
-  // Load saved conversations for current staff
   useEffect(() => {
     loadSavedConversations();
   }, [selectedStaff]);
 
-  // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -192,10 +190,8 @@ export const LabelStaff = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
 
-      // If we have a current conversation, use it
       if (currentConversationId) return currentConversationId;
 
-      // Create new conversation
       const title = firstUserMessage.slice(0, 50) + (firstUserMessage.length > 50 ? "..." : "");
 
       const { data, error } = await supabase
@@ -237,17 +233,13 @@ export const LabelStaff = () => {
     setIsLoading(true);
 
     try {
-      // Get or create conversation
       const conversationId = await createOrGetConversation(userMessage.content);
-      
-      // Save user message
       await saveMessage(conversationId, userMessage);
 
-      // Get the user's session token
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        toast.error("Please sign in to chat with label staff");
+        toast.error("Please sign in to chat with quantum advisors");
         setIsLoading(false);
         return;
       }
@@ -290,7 +282,6 @@ export const LabelStaff = () => {
       let assistantMessage = "";
       let textBuffer = "";
 
-      // Create initial assistant message
       setConversations((prev) => ({
         ...prev,
         [selectedStaff]: [
@@ -328,7 +319,6 @@ export const LabelStaff = () => {
             const content = parsed.choices?.[0]?.delta?.content;
             if (content) {
               assistantMessage += content;
-              // Update the last message
               setConversations((prev) => {
                 const messages = [...(prev[selectedStaff] || [])];
                 if (messages.length > 0 && messages[messages.length - 1].role === "assistant") {
@@ -342,14 +332,12 @@ export const LabelStaff = () => {
               });
             }
           } catch (e) {
-            // Incomplete JSON, put it back
             textBuffer = line + "\n" + textBuffer;
             break;
           }
         }
       }
 
-      // Save assistant message to database
       if (assistantMessageObj && conversationId) {
         await saveMessage(conversationId, assistantMessageObj);
       }
@@ -363,26 +351,33 @@ export const LabelStaff = () => {
   };
 
   return (
-    <Card className="glass-card h-[600px] flex flex-col">
-      <div className="p-6 border-b border-border/50">
+    <Card className="glass-card h-[600px] flex flex-col overflow-hidden">
+      <div className="p-6 border-b border-border/50 bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-fuchsia-500/10">
         <div className="flex items-center gap-3 mb-4">
-          <Users className="w-6 h-6 text-primary" />
+          <div className="relative">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 flex items-center justify-center shadow-glow animate-pulse">
+              <Atom className="w-6 h-6 text-white" />
+            </div>
+            <div className="absolute -inset-1 bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 rounded-xl blur-xl opacity-30 -z-10" />
+          </div>
           <div>
-            <h2 className="text-2xl font-display font-bold">Label Staff</h2>
-            <p className="text-sm text-muted-foreground">
-              Chat with AI-powered industry professionals
+            <h2 className="text-2xl font-display font-bold bg-gradient-to-r from-violet-400 via-purple-400 to-fuchsia-400 bg-clip-text text-transparent">
+              Quantum Label Staff
+            </h2>
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
+              <Zap className="w-3 h-3 text-primary animate-pulse" />
+              AI-Powered Industry Intelligence
             </p>
           </div>
         </div>
 
-        {/* Staff Selector */}
         <Tabs value={selectedStaff} onValueChange={setSelectedStaff}>
           <TabsList className="grid w-full grid-cols-5 h-auto glass-card p-1">
             {staffMembers.map((staff) => (
               <TabsTrigger
                 key={staff.id}
                 value={staff.id}
-                className="flex flex-col gap-1 py-2 data-[state=active]:bg-primary/20"
+                className="flex flex-col gap-1 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-secondary/20"
               >
                 <span className="text-2xl">{staff.avatar}</span>
                 <span className="text-xs font-medium hidden md:block">{staff.name.split(" ")[0]}</span>
@@ -392,18 +387,23 @@ export const LabelStaff = () => {
         </Tabs>
       </div>
 
-      {/* Current Staff Info */}
       <div className="px-6 py-4 border-b border-border/50 bg-gradient-to-r from-background to-background/50">
         <div className="flex items-start gap-3">
-          <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${currentStaff.color} flex items-center justify-center text-2xl`}>
+          <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${currentStaff.color} flex items-center justify-center text-2xl shadow-lg`}>
             {currentStaff.avatar}
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold">{currentStaff.name}</h3>
+            <h3 className="font-semibold flex items-center gap-2">
+              {currentStaff.name}
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/50 text-primary">
+                <Atom className="w-2.5 h-2.5 mr-1" />
+                QUANTUM
+              </Badge>
+            </h3>
             <p className="text-sm text-muted-foreground mb-2">{currentStaff.role}</p>
             <div className="flex flex-wrap gap-1">
               {currentStaff.expertise.map((exp, idx) => (
-                <Badge key={idx} variant="secondary" className="text-xs">
+                <Badge key={idx} variant="secondary" className="text-xs bg-primary/10">
                   {exp}
                 </Badge>
               ))}
@@ -412,17 +412,16 @@ export const LabelStaff = () => {
         </div>
       </div>
 
-      {/* Chat Messages */}
       <ScrollArea ref={scrollRef} className="flex-1 p-6">
         {currentMessages.length === 0 ? (
           <div className="text-center py-12">
-            <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br ${currentStaff.color} flex items-center justify-center text-3xl`}>
+            <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br ${currentStaff.color} flex items-center justify-center text-3xl shadow-glow`}>
               {currentStaff.avatar}
             </div>
-            <h4 className="font-semibold mb-2">Start a conversation with {currentStaff.name}</h4>
+            <h4 className="font-semibold mb-2">Start a quantum session with {currentStaff.name}</h4>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              {currentStaff.name} specializes in {currentStaff.expertise.join(", ")}. 
-              Ask for advice, feedback, or guidance on your music career.
+              {currentStaff.name} harnesses quantum intelligence for {currentStaff.expertise.join(", ")}. 
+              Get data-driven insights to optimize your music career.
             </p>
           </div>
         ) : (
@@ -435,8 +434,8 @@ export const LabelStaff = () => {
                 <div
                   className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                     msg.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "glass-card"
+                      ? "bg-gradient-to-r from-primary to-secondary text-primary-foreground"
+                      : "glass-card border-primary/20"
                   }`}
                 >
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
@@ -445,8 +444,12 @@ export const LabelStaff = () => {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="glass-card rounded-2xl px-4 py-3">
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                <div className="glass-card rounded-2xl px-4 py-3 border-primary/20">
+                  <div className="flex gap-1.5">
+                    <div className="w-2 h-2 rounded-full bg-primary animate-bounce" />
+                    <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0.15s' }} />
+                    <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0.3s' }} />
+                  </div>
                 </div>
               </div>
             )}
@@ -454,20 +457,19 @@ export const LabelStaff = () => {
         )}
       </ScrollArea>
 
-      {/* Input */}
-      <div className="p-4 border-t border-border/50">
+      <div className="p-4 border-t border-border/50 bg-gradient-to-r from-violet-500/5 via-purple-500/5 to-fuchsia-500/5">
         <div className="flex gap-2 mb-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-2 border-primary/30">
                 <History className="w-4 h-4" />
-                Saved Chats ({savedConversations.length})
+                Sessions ({savedConversations.length})
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-80">
               <DropdownMenuItem onClick={startNewConversation}>
                 <Plus className="w-4 h-4 mr-2" />
-                New Conversation
+                New Quantum Session
               </DropdownMenuItem>
               {savedConversations.length > 0 && <DropdownMenuSeparator />}
               {savedConversations.map((conv) => (
@@ -490,14 +492,14 @@ export const LabelStaff = () => {
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-            placeholder={`Message ${currentStaff.name}...`}
+            placeholder={`Ask ${currentStaff.name} for quantum insights...`}
             disabled={isLoading}
-            className="flex-1 bg-background/50"
+            className="flex-1 bg-background/50 border-primary/30 focus:border-primary"
           />
           <Button
             onClick={sendMessage}
             disabled={!inputMessage.trim() || isLoading}
-            className="bg-gradient-to-r from-primary to-secondary"
+            className="bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 hover:shadow-glow"
           >
             <Send className="w-4 h-4" />
           </Button>
@@ -505,4 +507,4 @@ export const LabelStaff = () => {
       </div>
     </Card>
   );
-}
+};
