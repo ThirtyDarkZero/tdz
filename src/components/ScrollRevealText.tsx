@@ -1,190 +1,249 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { ChevronDown } from "lucide-react";
 
 interface ScrollRevealTextProps {
   text: string;
-  previewImage?: string;
   previewType?: "discover" | "studio";
   gradientColors?: string;
   children?: React.ReactNode;
+  sectionId?: string;
 }
 
 export function ScrollRevealText({ 
   text, 
-  previewImage,
   previewType = "discover",
   gradientColors = "from-primary via-secondary to-accent",
-  children
+  children,
+  sectionId
 }: ScrollRevealTextProps) {
-  const [isHovering, setIsHovering] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [isRevealed, setIsRevealed] = useState(false);
+  const [isActive, setIsActive] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [showPreview, setShowPreview] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollAccumulator = useRef(0);
+  const animationFrame = useRef<number>();
   
-  // Handle wheel scroll to expand text
-  useEffect(() => {
-    if (!isHovering) {
-      // Reset when not hovering
-      scrollAccumulator.current = 0;
-      setScrollProgress(0);
-      setIsRevealed(false);
-      return;
+  // Split into words for cleaner animation
+  const words = text.split(' ');
+
+  const handleWheel = useCallback((e: WheelEvent) => {
+    if (!isActive) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Smooth scroll accumulation
+    const delta = e.deltaY * 0.004;
+    scrollAccumulator.current = Math.max(0, Math.min(1, scrollAccumulator.current + delta));
+    
+    // Animate to target
+    if (animationFrame.current) {
+      cancelAnimationFrame(animationFrame.current);
     }
-
-    const handleWheel = (e: WheelEvent) => {
-      if (!isHovering) return;
+    
+    animationFrame.current = requestAnimationFrame(() => {
+      setProgress(scrollAccumulator.current);
       
-      e.preventDefault();
-      
-      // Accumulate scroll delta
-      scrollAccumulator.current += Math.abs(e.deltaY) * 0.003;
-      const newProgress = Math.min(1, scrollAccumulator.current);
-      setScrollProgress(newProgress);
-      
-      if (newProgress >= 0.8 && !isRevealed) {
-        setIsRevealed(true);
+      if (scrollAccumulator.current >= 0.7 && !showPreview) {
+        setShowPreview(true);
+      } else if (scrollAccumulator.current < 0.5 && showPreview) {
+        setShowPreview(false);
       }
-    };
+    });
+  }, [isActive, showPreview]);
 
-    window.addEventListener('wheel', handleWheel, { passive: false });
+  useEffect(() => {
+    if (isActive) {
+      window.addEventListener('wheel', handleWheel, { passive: false });
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
     
     return () => {
       window.removeEventListener('wheel', handleWheel);
+      document.body.style.overflow = '';
+      if (animationFrame.current) {
+        cancelAnimationFrame(animationFrame.current);
+      }
     };
-  }, [isHovering, isRevealed]);
+  }, [isActive, handleWheel]);
 
-  // Split text into individual letters for animation
-  const letters = text.split('');
-  
-  // Calculate letter spacing based on scroll progress
-  const baseSpacing = 0.04; // em
-  const maxSpacing = 0.8; // em at full expansion
-  const currentSpacing = baseSpacing + (maxSpacing - baseSpacing) * scrollProgress;
-  
-  // Calculate font size scaling
-  const baseScale = 1;
-  const maxScale = 1.3;
-  const currentScale = baseScale + (maxScale - baseScale) * scrollProgress;
+  const handleMouseEnter = () => {
+    setIsActive(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsActive(false);
+    // Smooth reset
+    const resetAnimation = () => {
+      scrollAccumulator.current *= 0.9;
+      setProgress(scrollAccumulator.current);
+      
+      if (scrollAccumulator.current > 0.01) {
+        requestAnimationFrame(resetAnimation);
+      } else {
+        scrollAccumulator.current = 0;
+        setProgress(0);
+        setShowPreview(false);
+      }
+    };
+    requestAnimationFrame(resetAnimation);
+  };
+
+  // Calculate visual properties based on progress
+  const wordSpacing = 0.5 + progress * 2; // rem
+  const textOpacity = 1 - progress * 0.3;
+  const textScale = 1 + progress * 0.15;
+  const textY = progress * -20;
 
   return (
     <div 
       ref={containerRef}
-      className="relative cursor-pointer overflow-visible"
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => {
-        setIsHovering(false);
-        setScrollProgress(0);
-        setIsRevealed(false);
-        scrollAccumulator.current = 0;
-      }}
+      className="relative cursor-pointer select-none"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
-      {/* Instruction indicator */}
+      {/* Scroll instruction */}
       <div className={`
-        absolute -top-8 left-1/2 -translate-x-1/2 
-        text-xs text-muted-foreground/80 whitespace-nowrap
-        flex items-center gap-2 transition-all duration-500
-        ${isHovering && scrollProgress < 0.3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}
+        absolute -top-12 left-1/2 -translate-x-1/2 z-20
+        flex items-center gap-2 px-4 py-2 rounded-full
+        bg-card/90 backdrop-blur-md border border-primary/30
+        transition-all duration-500 ease-out
+        ${isActive && progress < 0.2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}
       `}>
-        <span className="animate-bounce">↕</span>
-        <span>Scroll to reveal</span>
-        <span className="animate-bounce">↕</span>
+        <ChevronDown className="w-4 h-4 text-primary animate-bounce" />
+        <span className="text-sm font-medium text-foreground">Scroll to explore</span>
+        <ChevronDown className="w-4 h-4 text-primary animate-bounce" />
       </div>
 
-      {/* Animated text container */}
-      <h2 
-        className={`
-          text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-display font-black 
-          transition-all duration-300 ease-out select-none
-          bg-gradient-to-r ${gradientColors} bg-clip-text text-transparent
-          ${isHovering ? 'glow-text-ultra' : ''}
-        `}
+      {/* Main text container */}
+      <div 
+        className="relative z-10 transition-all duration-300 ease-out"
         style={{
-          letterSpacing: `${currentSpacing}em`,
-          transform: `scale(${currentScale})`,
-          textShadow: isHovering 
-            ? `0 0 ${40 + scrollProgress * 60}px hsl(var(--primary) / ${0.3 + scrollProgress * 0.5})` 
-            : 'none'
+          transform: `scale(${textScale}) translateY(${textY}px)`,
+          opacity: showPreview ? 0.4 : textOpacity,
         }}
       >
-        {letters.map((letter, idx) => (
-          <span 
-            key={idx} 
-            className="inline-block transition-all duration-200"
-            style={{
-              transform: `translateY(${Math.sin(idx * 0.5 + scrollProgress * 5) * scrollProgress * 8}px)`,
-              opacity: letter === ' ' ? 0 : 1,
-              animationDelay: `${idx * 0.02}s`
-            }}
+        <h2 className={`
+          text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 
+          font-display font-black leading-tight text-center
+          transition-all duration-300
+        `}>
+          <span className={`
+            bg-gradient-to-r ${gradientColors} bg-clip-text text-transparent
+            inline-flex flex-wrap justify-center gap-x-3 md:gap-x-4
+          `}
+          style={{
+            gap: `0 ${wordSpacing}rem`,
+            textShadow: isActive 
+              ? `0 0 ${20 + progress * 40}px hsl(var(--primary) / ${0.2 + progress * 0.3})` 
+              : 'none',
+          }}
           >
-            {letter === ' ' ? '\u00A0' : letter}
+            {words.map((word, idx) => (
+              <span 
+                key={idx}
+                className="inline-block transition-transform duration-300 ease-out whitespace-nowrap"
+                style={{
+                  transform: `translateY(${Math.sin(idx * 0.8 + progress * 3) * progress * 6}px)`,
+                  animationDelay: `${idx * 50}ms`,
+                }}
+              >
+                {word}
+              </span>
+            ))}
           </span>
-        ))}
-      </h2>
+        </h2>
+      </div>
 
-      {/* Platform preview that emerges from the text */}
+      {/* Live Preview - emerges prominently in foreground */}
       <div 
         className={`
-          absolute left-1/2 -translate-x-1/2
+          fixed inset-0 z-50 flex items-center justify-center
           transition-all duration-700 ease-out
-          ${isRevealed ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'}
+          ${showPreview ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}
         `}
         style={{
-          top: `${60 + scrollProgress * 20}%`,
-          width: `${Math.min(100, 40 + scrollProgress * 60)}%`,
-          zIndex: isRevealed ? 50 : -1
+          backgroundColor: `hsl(var(--background) / ${0.5 + progress * 0.4})`,
         }}
       >
-        <div className="relative">
+        <div 
+          className="relative w-full max-w-5xl mx-4"
+          style={{
+            transform: showPreview ? 'scale(1) translateY(0)' : 'scale(0.8) translateY(50px)',
+            transition: 'transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+        >
           {/* Glowing frame */}
           <div className={`
-            absolute -inset-2 rounded-2xl
+            absolute -inset-4 md:-inset-6 rounded-3xl
             bg-gradient-to-r ${gradientColors}
-            opacity-60 blur-xl animate-pulse
+            opacity-60 blur-2xl animate-pulse
           `} />
           
           {/* Preview container */}
-          <div className="relative rounded-xl overflow-hidden border-2 border-primary/50 shadow-2xl">
-            {/* Live preview iframe or image */}
-            <div className="aspect-video bg-card relative">
-              {previewType === "discover" ? (
-                <iframe 
-                  src="/discover" 
-                  className="w-full h-full pointer-events-none"
-                  style={{ transform: 'scale(0.5)', transformOrigin: 'top left', width: '200%', height: '200%' }}
-                />
-              ) : (
-                <iframe 
-                  src="/studio" 
-                  className="w-full h-full pointer-events-none"
-                  style={{ transform: 'scale(0.5)', transformOrigin: 'top left', width: '200%', height: '200%' }}
-                />
-              )}
-              
-              {/* Overlay with CTA */}
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent flex items-end justify-center pb-4">
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {previewType === "discover" ? "Discover amazing music" : "Create your next hit"}
-                  </p>
-                  <span className="text-xs px-3 py-1 rounded-full bg-primary/20 text-primary border border-primary/30">
-                    Scroll down to continue
+          <div className="relative rounded-2xl overflow-hidden border-2 border-primary/50 shadow-2xl bg-card">
+            {/* Header bar */}
+            <div className="flex items-center gap-2 px-4 py-3 bg-card/90 border-b border-border/50">
+              <div className="flex gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                <div className="w-3 h-3 rounded-full bg-green-500/80" />
+              </div>
+              <div className="flex-1 mx-4">
+                <div className="h-6 rounded-md bg-muted/50 flex items-center justify-center">
+                  <span className="text-xs text-muted-foreground">
+                    {previewType === "discover" ? "discover.tdz.app" : "studio.tdz.app"}
                   </span>
                 </div>
               </div>
             </div>
+            
+            {/* Live preview iframe */}
+            <div className="aspect-video relative overflow-hidden">
+              <iframe 
+                src={previewType === "discover" ? "/discover" : "/studio"} 
+                className="w-full h-full border-0"
+                style={{ 
+                  transform: 'scale(0.6)', 
+                  transformOrigin: 'top left', 
+                  width: '166.67%', 
+                  height: '166.67%',
+                  pointerEvents: 'none'
+                }}
+                title={`${previewType} preview`}
+              />
+              
+              {/* Gradient overlay at bottom */}
+              <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-card to-transparent" />
+            </div>
+            
+            {/* CTA footer */}
+            <div className="absolute bottom-0 left-0 right-0 p-6 text-center">
+              <p className="text-lg font-semibold text-foreground mb-2">
+                {previewType === "discover" ? "Discover amazing music" : "Your professional studio"}
+              </p>
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <span className="px-3 py-1.5 rounded-full bg-primary/20 text-primary border border-primary/30">
+                  Scroll down to continue
+                </span>
+              </div>
+            </div>
           </div>
-          
-          {/* Floating particles around preview */}
-          <div className="absolute -inset-8 pointer-events-none">
-            {[...Array(8)].map((_, i) => (
+
+          {/* Floating accent particles */}
+          <div className="absolute -inset-12 pointer-events-none">
+            {[...Array(6)].map((_, i) => (
               <div 
                 key={i}
-                className="absolute w-2 h-2 rounded-full bg-primary animate-pulse"
+                className={`absolute w-3 h-3 rounded-full bg-gradient-to-r ${gradientColors}`}
                 style={{
-                  left: `${10 + Math.random() * 80}%`,
-                  top: `${10 + Math.random() * 80}%`,
+                  left: `${15 + i * 15}%`,
+                  top: `${10 + (i % 3) * 30}%`,
+                  animation: `float ${2 + i * 0.3}s ease-in-out infinite`,
                   animationDelay: `${i * 0.2}s`,
-                  opacity: 0.5 + Math.random() * 0.5
+                  opacity: 0.6 + Math.random() * 0.4
                 }}
               />
             ))}
@@ -192,30 +251,33 @@ export function ScrollRevealText({
         </div>
       </div>
 
-      {/* Static children content (subtitle, etc.) */}
+      {/* Progress bar */}
+      <div className={`
+        absolute -bottom-8 left-1/2 -translate-x-1/2 
+        w-32 h-1.5 rounded-full bg-muted/30 overflow-hidden
+        transition-opacity duration-300
+        ${isActive ? 'opacity-100' : 'opacity-0'}
+      `}>
+        <div 
+          className={`h-full rounded-full bg-gradient-to-r ${gradientColors} transition-all duration-150`}
+          style={{ width: `${progress * 100}%` }}
+        />
+      </div>
+
+      {/* Children (subtitle) - fades when preview shows */}
       {children && (
         <div className={`
           transition-all duration-500
-          ${isRevealed ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}
+          ${showPreview ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}
         `}>
           {children}
-        </div>
-      )}
-
-      {/* Progress indicator */}
-      {isHovering && (
-        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-32 h-1 rounded-full bg-muted/30 overflow-hidden">
-          <div 
-            className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-150"
-            style={{ width: `${scrollProgress * 100}%` }}
-          />
         </div>
       )}
     </div>
   );
 }
 
-// Simpler version for smaller sections
+// Simpler inline word reveal for smaller usage
 export function ScrollRevealWord({ 
   word, 
   color = "primary" 
@@ -238,8 +300,8 @@ export function ScrollRevealWord({
       if (!isHovered) return;
       e.preventDefault();
       
-      scrollRef.current += Math.abs(e.deltaY) * 0.002;
-      const newScale = Math.min(2, 1 + scrollRef.current);
+      scrollRef.current = Math.max(0, Math.min(1, scrollRef.current + e.deltaY * 0.003));
+      const newScale = 1 + scrollRef.current * 0.5;
       setScale(newScale);
     };
 
@@ -257,12 +319,11 @@ export function ScrollRevealWord({
     <span 
       className={`
         ${colorMap[color]} font-bold inline-block cursor-pointer
-        transition-all duration-300
-        ${isHovered ? 'glow-text-lg' : ''}
+        transition-all duration-300 hover:drop-shadow-[0_0_12px_hsl(var(--${color})/0.5)]
       `}
       style={{ 
         transform: `scale(${scale})`,
-        letterSpacing: `${0.04 + (scale - 1) * 0.15}em`
+        letterSpacing: `${(scale - 1) * 0.1}em`
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
