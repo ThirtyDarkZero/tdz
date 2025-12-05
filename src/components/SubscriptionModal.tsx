@@ -67,10 +67,10 @@ const ARTIST_PLANS: PlanConfig[] = [
 ];
 
 const FAN_PLAN: PlanConfig = {
-  name: "Fan",
+  name: "Participant",
   price: "$12",
   priceAmount: 1200,
-  features: ["Unlimited streaming", "HD & Dolby Atmos", "Offline downloads", "Ad-free"],
+  features: ["Immersive listening", "HD & Dolby Atmos", "Offline exploration", "Ad-free experience"],
   icon: Zap,
   planType: "fan",
 };
@@ -106,10 +106,10 @@ export function SubscriptionModal({ open, onOpenChange, defaultAudience = 'fan' 
       <DialogContent className="sm:max-w-2xl glass-card-premium border-primary/30 max-h-[90vh] overflow-y-auto">
         <DialogHeader className="text-center space-y-2">
           <DialogTitle className="text-2xl font-black">
-            Upgrade Your Plan
+            Join the Movement
           </DialogTitle>
           <DialogDescription>
-            Unlock premium features and support artists with $1 per stream
+            Support artists directly with $1 per stream — be part of stories that matter
           </DialogDescription>
         </DialogHeader>
 
@@ -133,7 +133,7 @@ export function SubscriptionModal({ open, onOpenChange, defaultAudience = 'fan' 
                 className="px-4"
               >
                 <Zap className="w-4 h-4 mr-2" />
-                Fan
+                Participant
               </Button>
             </div>
           </div>

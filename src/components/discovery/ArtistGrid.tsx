@@ -65,9 +65,9 @@ export function ArtistGrid({ artists, followedArtists, onToggleFollow }: ArtistG
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl md:text-4xl font-black tracking-tight glow-text">Top 100 Artists</h2>
+        <h2 className="text-3xl md:text-4xl font-black tracking-tight glow-text">Featured Artists</h2>
         <Badge variant="outline" className="text-sm px-4 py-2 border-primary/50">
-          {artists.length} Artists
+          {artists.length} Voices
         </Badge>
       </div>
       
@@ -122,7 +122,7 @@ export function ArtistGrid({ artists, followedArtists, onToggleFollow }: ArtistG
               
               <h3 className="font-bold truncate mb-2 text-sm md:text-base">{artist.artist_name}</h3>
               <p className="text-xs md:text-sm text-muted-foreground mb-4 font-medium">
-                {artist.monthly_listeners?.toLocaleString() || 0} listeners
+                {artist.monthly_listeners?.toLocaleString() || 0} invested
               </p>
               
               <Button
@@ -139,7 +139,7 @@ export function ArtistGrid({ artists, followedArtists, onToggleFollow }: ArtistG
                 }`}
               >
                 <UserPlus className="w-4 h-4 mr-2" />
-                {followedArtists.has(artist.user_id) ? "Following" : "Follow"}
+                {followedArtists.has(artist.user_id) ? "In Your Circle" : "Join Journey"}
               </Button>
             </Card>
           );

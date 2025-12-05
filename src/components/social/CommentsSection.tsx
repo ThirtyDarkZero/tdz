@@ -66,18 +66,21 @@ export function CommentsSection({ parentType, parentId, title = 'Comments', clas
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
           <MessageCircle className="w-5 h-5 text-primary" />
-          {title} ({comments.length})
+          {title} 
+          <span className="text-sm font-normal text-muted-foreground">
+            — {comments.length} {comments.length === 1 ? 'voice' : 'voices'} in the conversation
+          </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* New Comment Input */}
+        {/* Join the Discussion */}
         <div className="flex gap-3">
           <Avatar className="w-8 h-8">
             <AvatarFallback className="bg-primary/20 text-primary text-xs">U</AvatarFallback>
           </Avatar>
           <div className="flex-1 space-y-2">
             <Textarea
-              placeholder="Add a comment..."
+              placeholder="Share your thoughts... What does this mean to you?"
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               className="min-h-[60px] bg-background/50 border-border/50 resize-none text-sm"
@@ -89,18 +92,20 @@ export function CommentsSection({ parentType, parentId, title = 'Comments', clas
                 disabled={!newComment.trim() || isSubmitting}
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 mr-1" />}
-                Comment
+                Join Discussion
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Comments List */}
+        {/* Discussion Thread */}
         <div className="space-y-4">
           {comments.length === 0 ? (
-            <p className="text-center text-muted-foreground py-6 text-sm">
-              No comments yet. Be the first to comment!
-            </p>
+            <div className="text-center py-8">
+              <MessageCircle className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
+              <p className="text-muted-foreground text-sm font-medium">Start the conversation</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">Your perspective matters here</p>
+            </div>
           ) : (
             comments.map((comment) => (
               <CommentItem

@@ -37,9 +37,9 @@ export function NowPlayingSidebar({
       <div className="space-y-4">
         <Card className="glass-card p-6 text-center">
           <Disc3 className="w-12 h-12 mx-auto mb-3 text-muted-foreground animate-spin-slow" />
-          <h3 className="font-bold mb-1">Nothing Playing</h3>
+          <h3 className="font-bold mb-1">Your Journey Awaits</h3>
           <p className="text-sm text-muted-foreground">
-            Select a track to start listening
+            Explore and discover music that moves you
           </p>
         </Card>
       </div>
@@ -79,12 +79,12 @@ export function NowPlayingSidebar({
         </div>
       </Card>
 
-      {/* Artist Info */}
+      {/* Artist Story */}
       {artistInfo && (
         <Card className="glass-card p-4 space-y-3">
           <div className="flex items-center gap-2">
             <User className="w-4 h-4 text-primary" />
-            <h4 className="font-semibold text-sm">About the Artist</h4>
+            <h4 className="font-semibold text-sm">Meet the Artist</h4>
           </div>
           
           <div 
@@ -126,15 +126,15 @@ export function NowPlayingSidebar({
             className="w-full"
             onClick={() => navigate(`/artist/${artistInfo.id}`)}
           >
-            View Profile
+            Explore Their Story
           </Button>
         </Card>
       )}
 
-      {/* More from Artist */}
+      {/* Continue the Journey */}
       {relatedTracks.length > 0 && (
         <div className="space-y-2">
-          <h4 className="font-semibold text-sm px-1">More from {currentTrack.artist_name}</h4>
+          <h4 className="font-semibold text-sm px-1">Continue exploring {currentTrack.artist_name}</h4>
           <div className="space-y-1">
             {relatedTracks.slice(0, 5).map((track) => (
               <div

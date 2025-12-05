@@ -528,9 +528,9 @@ export const FanEngagementHub = () => {
       <div className="flex items-center gap-3">
         <Heart className="w-6 h-6 text-primary" />
         <div>
-          <h2 className="text-2xl font-display font-bold">Fan Engagement Hub</h2>
+          <h2 className="text-2xl font-display font-bold">Community Hub</h2>
           <p className="text-sm text-muted-foreground">
-            Direct connection with your true fans - no algorithm tolls
+            Build real connections — fans aren't data points, they're participants in your story
           </p>
         </div>
       </div>
@@ -546,7 +546,7 @@ export const FanEngagementHub = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{(metrics?.email_list_size || 0).toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Direct reach</p>
+            <p className="text-xs text-muted-foreground">Direct connection</p>
           </CardContent>
         </Card>
 
@@ -554,12 +554,12 @@ export const FanEngagementHub = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-500" />
-              Followers
+              Community
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-500">{followers.length.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Platform followers</p>
+            <p className="text-xs text-muted-foreground">Invested participants</p>
           </CardContent>
         </Card>
 
@@ -567,12 +567,12 @@ export const FanEngagementHub = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Target className="w-4 h-4 text-green-500" />
-              Conversion
+              Engagement
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-500">{(metrics?.conversion_rate || 0).toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">Attention → Sales</p>
+            <p className="text-xs text-muted-foreground">Active participation</p>
           </CardContent>
         </Card>
 
@@ -580,12 +580,12 @@ export const FanEngagementHub = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Heart className="w-4 h-4 text-red-500" />
-              Super Fans
+              Inner Circle
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-500">{superFans.length}</div>
-            <p className="text-xs text-muted-foreground">High engagement</p>
+            <p className="text-xs text-muted-foreground">Your champions</p>
           </CardContent>
         </Card>
       </div>
@@ -595,7 +595,7 @@ export const FanEngagementHub = () => {
           <TabsTrigger value="capture">Capture</TabsTrigger>
           <TabsTrigger value="nurture">Nurture</TabsTrigger>
           <TabsTrigger value="convert">Convert</TabsTrigger>
-          <TabsTrigger value="superfans">Super Fans</TabsTrigger>
+          <TabsTrigger value="superfans">Inner Circle</TabsTrigger>
         </TabsList>
 
         {/* Capture Tab */}
@@ -721,7 +721,7 @@ export const FanEngagementHub = () => {
                       <Badge className="bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-xs">Pro</Badge>
                     </h4>
                     <p className="text-sm text-muted-foreground">
-                      Create stunning email campaigns to reach your fans
+                      Create compelling stories to connect with your community
                     </p>
                   </div>
                   <Button 
@@ -761,7 +761,7 @@ export const FanEngagementHub = () => {
                   Mass Email
                 </h4>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Send updates to all {(metrics?.email_list_size || 0) + followers.length} contacts in your list
+                  Reach all {(metrics?.email_list_size || 0) + followers.length} participants in your community
                 </p>
                 <div className="flex gap-2">
                   <Button 
