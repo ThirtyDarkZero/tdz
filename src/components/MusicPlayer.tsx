@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { QueuePanel } from "./QueuePanel";
 import { LyricsPanel } from "./LyricsPanel";
-import { AudioVisualizer } from "./AudioVisualizer";
+import { AudioVisualizer3D } from "./3D/AudioVisualizer3D";
 import { EqualizerPanel } from "./EqualizerPanel";
 import { CreditsPanel } from "./CreditsPanel";
 import {
@@ -417,10 +417,10 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
           crossOrigin="anonymous"
         />
         
-        {/* Visualizer Section */}
+        {/* 3D Visualizer Section */}
         {showVisualizer && (
-          <div className="border-b border-border/50 bg-black/40">
-            <AudioVisualizer audioElement={audioRef.current} isPlaying={isPlaying} />
+          <div className="border-b border-border/50">
+            <AudioVisualizer3D audioElement={audioRef.current} isPlaying={isPlaying} />
           </div>
         )}
         

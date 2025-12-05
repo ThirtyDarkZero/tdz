@@ -1,0 +1,411 @@
+import { useRef, useMemo, useState, useEffect } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
+import * as THREE from "three";
+import { Button } from "@/components/ui/button";
+import { Sparkles, Waves, Mountain, Circle, Zap } from "lucide-react";
+
+interface AudioVisualizer3DProps {
+  audioElement: HTMLAudioElement | null;
+  isPlaying: boolean;
+}
+
+type VisualizerMode = "aurora" | "waves" | "sphere" | "terrain" | "pulse";
+
+// Audio analyzer hook
+function useAudioAnalyzer(audioElement: HTMLAudioElement | null) {
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const connectedRef = useRef(false);
+
+  useEffect(() => {
+    if (!audioElement) return;
+
+    // Only create audio context and source once
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+
+    if (!connectedRef.current) {
+      try {
+        sourceRef.current = audioContextRef.current.createMediaElementSource(audioElement);
+        const analyser = audioContextRef.current.createAnalyser();
+        sourceRef.current.connect(analyser);
+        analyser.connect(audioContextRef.current.destination);
+        analyser.fftSize = 512;
+        analyser.smoothingTimeConstant = 0.8;
+        
+        const bufferLength = analyser.frequencyBinCount;
+        dataArrayRef.current = new Uint8Array(bufferLength);
+        analyserRef.current = analyser;
+        connectedRef.current = true;
+      } catch (error) {
+        console.warn("Audio element already connected to AudioContext");
+      }
+    }
+
+    return () => {
+      // Don't disconnect - keep the connection alive
+    };
+  }, [audioElement]);
+
+  const getFrequencyData = () => {
+    if (analyserRef.current && dataArrayRef.current) {
+      analyserRef.current.getByteFrequencyData(dataArrayRef.current);
+      return dataArrayRef.current;
+    }
+    return new Uint8Array(256).fill(128);
+  };
+
+  const getAverageFrequency = () => {
+    const data = getFrequencyData();
+    return data.reduce((a, b) => a + b, 0) / data.length / 255;
+  };
+
+  return { getFrequencyData, getAverageFrequency };
+}
+
+// Aurora Borealis Visualizer
+function AuroraVisualizer({ getFrequencyData, getAverageFrequency, isPlaying }: any) {
+  const meshRef = useRef<THREE.Points>(null);
+  const particleCount = 5000;
+
+  const [positions, colors] = useMemo(() => {
+    const pos = new Float32Array(particleCount * 3);
+    const col = new Float32Array(particleCount * 3);
+    
+    for (let i = 0; i < particleCount; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * 20;
+      pos[i * 3 + 1] = Math.random() * 10 - 2;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 10;
+      
+      // Aurora colors
+      const t = Math.random();
+      col[i * 3] = t < 0.5 ? 0.2 : 0.1;
+      col[i * 3 + 1] = 0.8 + Math.random() * 0.2;
+      col[i * 3 + 2] = t < 0.5 ? 0.5 : 1.0;
+    }
+    return [pos, col];
+  }, []);
+
+  useFrame((state) => {
+    if (!meshRef.current || !isPlaying) return;
+    
+    const frequencyData = getFrequencyData();
+    const avg = getAverageFrequency();
+    const positions = meshRef.current.geometry.attributes.position.array as Float32Array;
+    
+    for (let i = 0; i < particleCount; i++) {
+      const freqIndex = Math.floor((i / particleCount) * frequencyData.length);
+      const freq = frequencyData[freqIndex] / 255;
+      
+      positions[i * 3 + 1] += Math.sin(state.clock.elapsedTime * 2 + i * 0.01) * 0.02 * (1 + freq);
+      positions[i * 3] += Math.cos(state.clock.elapsedTime + i * 0.005) * 0.01;
+      
+      // Reset if too far
+      if (positions[i * 3 + 1] > 8) positions[i * 3 + 1] = -2;
+    }
+    
+    meshRef.current.geometry.attributes.position.needsUpdate = true;
+    meshRef.current.rotation.y = state.clock.elapsedTime * 0.05;
+  });
+
+  return (
+    <points ref={meshRef}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" count={particleCount} array={positions} itemSize={3} />
+        <bufferAttribute attach="attributes-color" count={particleCount} array={colors} itemSize={3} />
+      </bufferGeometry>
+      <pointsMaterial size={0.08} vertexColors transparent opacity={0.9} blending={THREE.AdditiveBlending} />
+    </points>
+  );
+}
+
+// Sound Wave Visualizer
+function WaveVisualizer({ getFrequencyData, isPlaying }: any) {
+  const meshRef = useRef<THREE.Line>(null);
+  const numPoints = 256;
+
+  const positions = useMemo(() => {
+    const pos = new Float32Array(numPoints * 3);
+    for (let i = 0; i < numPoints; i++) {
+      pos[i * 3] = (i / numPoints) * 16 - 8;
+      pos[i * 3 + 1] = 0;
+      pos[i * 3 + 2] = 0;
+    }
+    return pos;
+  }, []);
+
+  useFrame((state) => {
+    if (!meshRef.current || !isPlaying) return;
+    
+    const frequencyData = getFrequencyData();
+    const positions = meshRef.current.geometry.attributes.position.array as Float32Array;
+    
+    for (let i = 0; i < numPoints; i++) {
+      const freq = frequencyData[i] / 255;
+      positions[i * 3 + 1] = freq * 4 * Math.sin(state.clock.elapsedTime * 3 + i * 0.1);
+      positions[i * 3 + 2] = Math.sin(state.clock.elapsedTime + i * 0.05) * freq * 2;
+    }
+    
+    meshRef.current.geometry.attributes.position.needsUpdate = true;
+  });
+
+  return (
+    <line ref={meshRef as any}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" count={numPoints} array={positions} itemSize={3} />
+      </bufferGeometry>
+      <lineBasicMaterial color="#7FFF00" linewidth={2} />
+    </line>
+  );
+}
+
+// Reactive Sphere Visualizer
+function SphereVisualizer({ getFrequencyData, getAverageFrequency, isPlaying }: any) {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const originalPositions = useRef<Float32Array | null>(null);
+
+  useEffect(() => {
+    if (meshRef.current) {
+      originalPositions.current = new Float32Array(
+        (meshRef.current.geometry.attributes.position.array as Float32Array).length
+      );
+      originalPositions.current.set(meshRef.current.geometry.attributes.position.array as Float32Array);
+    }
+  }, []);
+
+  useFrame((state) => {
+    if (!meshRef.current || !isPlaying || !originalPositions.current) return;
+    
+    const frequencyData = getFrequencyData();
+    const avg = getAverageFrequency();
+    const positions = meshRef.current.geometry.attributes.position.array as Float32Array;
+    const original = originalPositions.current;
+    
+    for (let i = 0; i < positions.length / 3; i++) {
+      const freqIndex = Math.floor((i / (positions.length / 3)) * frequencyData.length);
+      const freq = frequencyData[freqIndex] / 255;
+      
+      const ox = original[i * 3];
+      const oy = original[i * 3 + 1];
+      const oz = original[i * 3 + 2];
+      
+      const length = Math.sqrt(ox * ox + oy * oy + oz * oz);
+      const scale = 1 + freq * 0.5 + Math.sin(state.clock.elapsedTime * 4 + i * 0.1) * 0.1 * avg;
+      
+      positions[i * 3] = ox * scale;
+      positions[i * 3 + 1] = oy * scale;
+      positions[i * 3 + 2] = oz * scale;
+    }
+    
+    meshRef.current.geometry.attributes.position.needsUpdate = true;
+    meshRef.current.geometry.computeVertexNormals();
+    meshRef.current.rotation.y = state.clock.elapsedTime * 0.3;
+    meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.5) * 0.2;
+  });
+
+  return (
+    <mesh ref={meshRef}>
+      <icosahedronGeometry args={[2, 5]} />
+      <meshStandardMaterial 
+        color="#7FFF00" 
+        wireframe 
+        emissive="#7FFF00"
+        emissiveIntensity={0.5}
+      />
+    </mesh>
+  );
+}
+
+// Terrain Visualizer
+function TerrainVisualizer({ getFrequencyData, isPlaying }: any) {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const originalPositions = useRef<Float32Array | null>(null);
+
+  useEffect(() => {
+    if (meshRef.current) {
+      originalPositions.current = new Float32Array(
+        (meshRef.current.geometry.attributes.position.array as Float32Array).length
+      );
+      originalPositions.current.set(meshRef.current.geometry.attributes.position.array as Float32Array);
+    }
+  }, []);
+
+  useFrame((state) => {
+    if (!meshRef.current || !isPlaying || !originalPositions.current) return;
+    
+    const frequencyData = getFrequencyData();
+    const positions = meshRef.current.geometry.attributes.position.array as Float32Array;
+    const original = originalPositions.current;
+    const segments = 64;
+    
+    for (let i = 0; i < positions.length / 3; i++) {
+      const ix = i % (segments + 1);
+      const iy = Math.floor(i / (segments + 1));
+      const freqIndex = Math.floor((ix / segments) * frequencyData.length);
+      const freq = frequencyData[freqIndex] / 255;
+      
+      positions[i * 3 + 2] = freq * 3 + 
+        Math.sin(state.clock.elapsedTime * 2 + ix * 0.3) * 0.5 +
+        Math.cos(state.clock.elapsedTime * 1.5 + iy * 0.3) * 0.3;
+    }
+    
+    meshRef.current.geometry.attributes.position.needsUpdate = true;
+    meshRef.current.geometry.computeVertexNormals();
+  });
+
+  return (
+    <mesh ref={meshRef} rotation={[-Math.PI / 3, 0, 0]} position={[0, -2, 0]}>
+      <planeGeometry args={[16, 10, 64, 64]} />
+      <meshStandardMaterial 
+        color="#00FFFF" 
+        wireframe 
+        emissive="#00FFFF"
+        emissiveIntensity={0.3}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+}
+
+// Pulse Rings Visualizer
+function PulseVisualizer({ getFrequencyData, getAverageFrequency, isPlaying }: any) {
+  const groupRef = useRef<THREE.Group>(null);
+  const ringsCount = 8;
+
+  useFrame((state) => {
+    if (!groupRef.current || !isPlaying) return;
+    
+    const frequencyData = getFrequencyData();
+    const avg = getAverageFrequency();
+    
+    groupRef.current.children.forEach((ring, i) => {
+      const freqIndex = Math.floor((i / ringsCount) * frequencyData.length);
+      const freq = frequencyData[freqIndex] / 255;
+      
+      const scale = 1 + freq * 2 + i * 0.5;
+      ring.scale.setScalar(scale);
+      ring.rotation.z = state.clock.elapsedTime * (0.5 - i * 0.1) + i * 0.5;
+      ring.rotation.x = Math.sin(state.clock.elapsedTime + i) * 0.3;
+      
+      // Update material opacity
+      (ring as THREE.Mesh).material = (ring as THREE.Mesh).material;
+      ((ring as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = 0.3 + freq * 0.7;
+    });
+    
+    groupRef.current.rotation.y = state.clock.elapsedTime * 0.2;
+  });
+
+  return (
+    <group ref={groupRef}>
+      {Array.from({ length: ringsCount }).map((_, i) => (
+        <mesh key={i}>
+          <torusGeometry args={[1 + i * 0.3, 0.02, 16, 100]} />
+          <meshBasicMaterial 
+            color={i % 2 === 0 ? "#FF00FF" : "#00FFFF"} 
+            transparent 
+            opacity={0.6}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// Main scene component
+function VisualizerScene({ mode, audioElement, isPlaying }: { mode: VisualizerMode; audioElement: HTMLAudioElement | null; isPlaying: boolean }) {
+  const { getFrequencyData, getAverageFrequency } = useAudioAnalyzer(audioElement);
+
+  return (
+    <>
+      <PerspectiveCamera makeDefault position={[0, 2, 8]} />
+      <OrbitControls enableZoom={false} enablePan={false} autoRotate autoRotateSpeed={0.5} />
+      
+      <ambientLight intensity={0.2} />
+      <pointLight position={[10, 10, 10]} intensity={1} color="#7FFF00" />
+      <pointLight position={[-10, -10, -10]} intensity={0.5} color="#FF00FF" />
+      
+      {mode === "aurora" && (
+        <AuroraVisualizer 
+          getFrequencyData={getFrequencyData} 
+          getAverageFrequency={getAverageFrequency}
+          isPlaying={isPlaying} 
+        />
+      )}
+      {mode === "waves" && (
+        <WaveVisualizer getFrequencyData={getFrequencyData} isPlaying={isPlaying} />
+      )}
+      {mode === "sphere" && (
+        <SphereVisualizer 
+          getFrequencyData={getFrequencyData} 
+          getAverageFrequency={getAverageFrequency}
+          isPlaying={isPlaying} 
+        />
+      )}
+      {mode === "terrain" && (
+        <TerrainVisualizer getFrequencyData={getFrequencyData} isPlaying={isPlaying} />
+      )}
+      {mode === "pulse" && (
+        <PulseVisualizer 
+          getFrequencyData={getFrequencyData} 
+          getAverageFrequency={getAverageFrequency}
+          isPlaying={isPlaying} 
+        />
+      )}
+    </>
+  );
+}
+
+export function AudioVisualizer3D({ audioElement, isPlaying }: AudioVisualizer3DProps) {
+  const [mode, setMode] = useState<VisualizerMode>("aurora");
+
+  const modes: { id: VisualizerMode; label: string; icon: any }[] = [
+    { id: "aurora", label: "Aurora", icon: Sparkles },
+    { id: "waves", label: "Waves", icon: Waves },
+    { id: "sphere", label: "Sphere", icon: Circle },
+    { id: "terrain", label: "Terrain", icon: Mountain },
+    { id: "pulse", label: "Pulse", icon: Zap },
+  ];
+
+  return (
+    <div className="relative w-full h-64 bg-black/90 rounded-lg overflow-hidden">
+      {/* Mode selector */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex gap-1 p-1 bg-black/60 backdrop-blur-sm rounded-full border border-primary/20">
+        {modes.map(({ id, label, icon: Icon }) => (
+          <Button
+            key={id}
+            variant={mode === id ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setMode(id)}
+            className={`h-8 px-3 rounded-full transition-all ${
+              mode === id 
+                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30" 
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Icon className="h-3.5 w-3.5 mr-1.5" />
+            <span className="text-xs font-medium">{label}</span>
+          </Button>
+        ))}
+      </div>
+
+      {/* 3D Canvas */}
+      <Canvas>
+        <color attach="background" args={['#000000']} />
+        <fog attach="fog" args={['#000000', 5, 20]} />
+        <VisualizerScene mode={mode} audioElement={audioElement} isPlaying={isPlaying} />
+      </Canvas>
+
+      {/* Glow overlay */}
+      <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-primary/5 via-transparent to-accent/5" />
+      
+      {/* Corner accents */}
+      <div className="absolute top-0 left-0 w-20 h-20 bg-gradient-to-br from-primary/20 to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-20 h-20 bg-gradient-to-tl from-accent/20 to-transparent pointer-events-none" />
+    </div>
+  );
+}

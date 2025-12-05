@@ -167,43 +167,67 @@ export function ScrollRevealText({
   const scrollAccumulator = useRef(0);
   const animationFrame = useRef<number>();
 
+  // Smooth spring-based animation
+  const targetProgress = useRef(0);
+  const currentProgress = useRef(0);
+  const velocity = useRef(0);
+
+  const animateSpring = useCallback(() => {
+    const tension = 0.15;
+    const friction = 0.75;
+    
+    const diff = targetProgress.current - currentProgress.current;
+    velocity.current = velocity.current * friction + diff * tension;
+    currentProgress.current += velocity.current;
+    
+    if (Math.abs(diff) > 0.001 || Math.abs(velocity.current) > 0.001) {
+      setProgress(currentProgress.current);
+      animationFrame.current = requestAnimationFrame(animateSpring);
+    } else {
+      currentProgress.current = targetProgress.current;
+      setProgress(currentProgress.current);
+    }
+  }, []);
+
   const handleWheel = useCallback((e: WheelEvent) => {
     if (!isActive) return;
     
     e.preventDefault();
     e.stopPropagation();
     
-    const delta = e.deltaY * 0.003;
+    // Smoother delta with easing
+    const delta = e.deltaY * 0.0025;
     const newValue = scrollAccumulator.current + delta;
     
     // Exit animation when scrolling past end
-    if (newValue > 1.1) {
+    if (newValue > 1.15) {
       setIsActive(false);
-      setProgress(0);
+      targetProgress.current = 0;
+      currentProgress.current = progress;
       scrollAccumulator.current = 0;
       document.body.style.overflow = '';
       return;
     }
     
     // Exit if scrolling back up before animation starts
-    if (newValue < -0.1) {
+    if (newValue < -0.15) {
       setIsActive(false);
-      setProgress(0);
+      targetProgress.current = 0;
+      currentProgress.current = progress;
       scrollAccumulator.current = 0;
       document.body.style.overflow = '';
       return;
     }
     
     scrollAccumulator.current = Math.max(0, Math.min(1, newValue));
+    targetProgress.current = scrollAccumulator.current;
     
     if (animationFrame.current) {
       cancelAnimationFrame(animationFrame.current);
     }
     
-    animationFrame.current = requestAnimationFrame(() => {
-      setProgress(scrollAccumulator.current);
-    });
-  }, [isActive]);
+    animationFrame.current = requestAnimationFrame(animateSpring);
+  }, [isActive, progress, animateSpring]);
 
   useEffect(() => {
     if (isActive) {
