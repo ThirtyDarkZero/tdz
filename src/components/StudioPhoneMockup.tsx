@@ -849,15 +849,15 @@ export function StudioPhoneMockup({ title, color }: PhoneMockupProps) {
   };
 
   return (
-    <div className="relative group">
-      {/* Phone frame */}
-      <div className="relative w-[280px] mx-auto">
+    <div className="relative group flex justify-center">
+      {/* Phone frame - consistent sizing */}
+      <div className="relative w-[260px] h-[540px]">
         {/* Phone body */}
-        <div className="relative bg-gradient-to-b from-gray-800 to-gray-900 rounded-[40px] p-3 shadow-2xl">
+        <div className="relative h-full bg-gradient-to-b from-gray-800 to-gray-900 rounded-[40px] p-3 shadow-2xl">
           {/* Screen */}
-          <div className="bg-background rounded-[32px] overflow-hidden shadow-inner">
+          <div className="bg-background rounded-[32px] overflow-hidden shadow-inner h-full flex flex-col">
             {/* Status bar */}
-            <div className="bg-background/95 backdrop-blur px-6 py-2 flex items-center justify-between border-b border-border/50">
+            <div className="bg-background/95 backdrop-blur px-6 py-2 flex items-center justify-between border-b border-border/50 flex-shrink-0">
               <span className="text-[10px] font-semibold">9:41</span>
               <div className="flex items-center gap-1">
                 <div className="w-4 h-2 bg-primary/30 rounded-sm"></div>
@@ -867,7 +867,7 @@ export function StudioPhoneMockup({ title, color }: PhoneMockupProps) {
             </div>
 
             {/* App header */}
-            <div className="bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/10 px-4 py-3 border-b border-border/50">
+            <div className="bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/10 px-4 py-3 border-b border-border/50 flex-shrink-0">
               <div className="flex items-center justify-between mb-2">
                 <div className="text-sm font-black">TDZ Studio</div>
                 <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
@@ -879,13 +879,13 @@ export function StudioPhoneMockup({ title, color }: PhoneMockupProps) {
               </div>
             </div>
 
-            {/* Content area */}
-            <div className="px-4 py-4 min-h-[420px]">
+            {/* Content area - scrollable */}
+            <div className="px-3 py-3 flex-1 overflow-y-auto scrollbar-hide">
               {getContent()}
             </div>
 
             {/* Bottom navigation */}
-            <div className="bg-background/95 backdrop-blur border-t border-border/50 px-6 py-3">
+            <div className="bg-background/95 backdrop-blur border-t border-border/50 px-6 py-3 flex-shrink-0">
               <div className="flex items-center justify-around">
                 {[LayoutDashboard, Music, Video, Heart, Star].map((Icon, i) => (
                   <button
@@ -903,7 +903,7 @@ export function StudioPhoneMockup({ title, color }: PhoneMockupProps) {
           </div>
 
           {/* Home indicator */}
-          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-32 h-1 bg-gray-600 rounded-full"></div>
+          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-24 h-1 bg-gray-600 rounded-full"></div>
         </div>
 
         {/* Glow effect */}
