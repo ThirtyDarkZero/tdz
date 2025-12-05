@@ -126,10 +126,10 @@ export const StudioHome = ({ artistName, onNavigate, onUploadClick }: StudioHome
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
               <TrendingUp className="w-5 h-5 text-primary" />
             </div>
-            <span className="text-sm text-muted-foreground font-medium">STREAMS</span>
+            <span className="text-sm text-muted-foreground font-medium">IMPACT</span>
           </div>
           <p className="text-3xl font-bold">{stats.totalStreams.toLocaleString()}</p>
-          <p className="text-xs text-muted-foreground mt-1">All-time streams</p>
+          <p className="text-xs text-muted-foreground mt-1">Intentional plays</p>
         </Card>
 
         <Card className="p-5 bg-card/50 border-border/50 hover:border-primary/30 transition-colors cursor-pointer" onClick={() => onNavigate("music")}>
@@ -159,10 +159,10 @@ export const StudioHome = ({ artistName, onNavigate, onUploadClick }: StudioHome
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
               <Users className="w-5 h-5 text-primary" />
             </div>
-            <span className="text-sm text-muted-foreground font-medium">AUDIENCE</span>
+            <span className="text-sm text-muted-foreground font-medium">COMMUNITY</span>
           </div>
           <p className="text-3xl font-bold">{stats.followers.toLocaleString()}</p>
-          <p className="text-xs text-muted-foreground mt-1">Monthly listeners</p>
+          <p className="text-xs text-muted-foreground mt-1">Invested in your journey</p>
         </Card>
       </div>
 
@@ -170,7 +170,7 @@ export const StudioHome = ({ artistName, onNavigate, onUploadClick }: StudioHome
         {/* Manage Your Release */}
         <Card className="md:col-span-2 p-6 bg-card/50 border-border/50">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-display font-bold">Manage Your Releases</h2>
+            <h2 className="text-xl font-display font-bold">Your Story So Far</h2>
             <Button variant="ghost" size="sm" onClick={() => onNavigate("music")} className="gap-1 text-muted-foreground hover:text-foreground">
               View All <ArrowRight className="w-4 h-4" />
             </Button>

@@ -432,7 +432,7 @@ export const StorytellingStudio = () => {
         <div>
           <h2 className="text-2xl font-display font-bold">Storytelling Studio</h2>
           <p className="text-sm text-muted-foreground">
-            Build a narrative that makes people invest in your journey
+            Build culture, context, and community — not just monthly listeners
           </p>
         </div>
       </div>
@@ -450,7 +450,7 @@ export const StorytellingStudio = () => {
             </Badge>
           </CardTitle>
           <CardDescription>
-            People invest in journeys, not just music. Strengthen your story.
+            Your fans aren't just listeners — they're participants in your story. Give them something to believe in.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

@@ -83,7 +83,7 @@ export default function ListenerProfile() {
           .from("listener_profiles")
           .insert({
             user_id: user.id,
-            display_name: user.email?.split('@')[0] || "Music Lover"
+            display_name: user.email?.split('@')[0] || "Music Explorer"
           })
           .select()
           .single();
@@ -411,12 +411,12 @@ export default function ListenerProfile() {
                 <Input
                   value={formData.display_name}
                   onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-                  placeholder="Display Name"
+                  placeholder="Your name in this story"
                   className="text-xl sm:text-2xl md:text-3xl font-bold bg-transparent border-primary/50 mb-2"
                 />
               ) : (
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-black mb-1">
-                  {formData.display_name || "Music Lover"}
+                  {formData.display_name || "Music Explorer"}
                 </h1>
               )}
               
@@ -467,7 +467,7 @@ export default function ListenerProfile() {
             <Textarea
               value={formData.bio}
               onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-              placeholder="Tell us about yourself..."
+              placeholder="What's your story? What does music mean to you?"
               className="min-h-[80px]"
             />
             <Input

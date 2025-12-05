@@ -174,7 +174,7 @@ export function LibrarySidebar({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-bold text-lg">Your Library</h3>
+        <h3 className="font-bold text-lg">Your Collection</h3>
         <Button 
           variant="ghost" 
           size="icon" 
@@ -194,7 +194,7 @@ export function LibrarySidebar({
         <Card className="p-3 bg-primary/5 border-primary/20">
           <div className="flex items-center gap-2 text-sm">
             <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-muted-foreground">Subscribe for playlists</span>
+            <span className="text-muted-foreground">Join to curate playlists</span>
           </div>
         </Card>
       )}
@@ -209,8 +209,8 @@ export function LibrarySidebar({
             <Heart className="w-5 h-5 text-white" fill="white" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm truncate">Liked Songs</p>
-            <p className="text-xs text-muted-foreground">{likedTracksCount} songs</p>
+            <p className="font-semibold text-sm truncate">Songs That Move You</p>
+            <p className="text-xs text-muted-foreground">{likedTracksCount} resonated</p>
           </div>
           <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
@@ -252,12 +252,12 @@ export function LibrarySidebar({
         </ScrollArea>
       </div>
 
-      {/* Recently Played */}
+      {/* Recently Explored */}
       {recentlyPlayed.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-muted-foreground" />
-            <h4 className="text-sm font-medium text-muted-foreground">Recently Played</h4>
+            <h4 className="text-sm font-medium text-muted-foreground">Your Journey</h4>
           </div>
           
           <div className="space-y-1">
