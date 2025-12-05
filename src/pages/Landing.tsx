@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Music, Upload, TrendingUp, Zap, Globe, Radio, Shield, Users, ArrowRight, CheckCircle2, DollarSign, BarChart3, Headphones, Heart, Play, Mic2, Layers, Library, Image, BookOpen, Film, User, ShoppingBag, LayoutDashboard, Download, CreditCard, ChevronDown, Sparkles, Star } from "lucide-react";
+import { Music, Upload, TrendingUp, Zap, Globe, Radio, Shield, Users, ArrowRight, CheckCircle2, DollarSign, BarChart3, Headphones, Heart, Play, Mic2, Layers, Library, Image, BookOpen, Film, User, ShoppingBag, LayoutDashboard, Download, CreditCard, ChevronDown, Sparkles, Star, MessageCircle, Palette } from "lucide-react";
 import studioBackground from "@/assets/studio-background.jpg";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,8 @@ import { StudioPhoneMockups, MusicPlayerPhoneMockups } from "@/components/Studio
 import { MerchStore } from "@/components/MerchStore";
 import { ScrollRevealText } from "@/components/ScrollRevealText";
 import { HeroScrollText } from "@/components/HeroScrollText";
+import { Canvas } from "@react-three/fiber";
+import { DecorativeVisualizerScene } from "@/components/3D/DecorativeVisualizer";
 
 const artistFeatures = [
   {
@@ -476,15 +478,15 @@ export default function Landing() {
         </div>
 
         {/* Hero Content */}
-        <div className="relative z-10 max-w-7xl mx-auto px-6 text-center space-y-12 py-20">
+        <div className="relative z-10 max-w-7xl mx-auto px-6 text-center space-y-10 py-16 md:py-20">
           {/* Logo with entrance animation */}
           <div className="animate-fade-in flex justify-center">
             <img 
               src={tdzLogo} 
               alt="TDZ Distribution Logo" 
-              className="h-48 md:h-64 lg:h-80 w-auto object-contain drop-shadow-2xl"
+              className="h-32 md:h-48 lg:h-56 w-auto object-contain drop-shadow-2xl"
               style={{
-                filter: 'drop-shadow(0 0 60px hsl(var(--primary) / 0.3))'
+                filter: 'drop-shadow(0 0 60px hsl(var(--primary) / 0.4))'
               }}
             />
           </div>
@@ -607,6 +609,80 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ========== MISSION STATEMENT SECTION ========== */}
+      <section className="py-20 md:py-32 px-4 md:px-6 relative overflow-hidden">
+        {/* 3D Visualizer Background */}
+        <div className="absolute inset-0 opacity-30">
+          <Suspense fallback={null}>
+            <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
+              <DecorativeVisualizerScene />
+            </Canvas>
+          </Suspense>
+        </div>
+        
+        <div className="max-w-6xl mx-auto relative z-10">
+          {/* TDZ Logo watermark */}
+          <div className="absolute -top-10 -left-10 opacity-5 pointer-events-none">
+            <img src={tdzLogo} alt="" className="w-64 h-64" />
+          </div>
+          
+          <div className="text-center mb-12">
+            <Badge className="bg-primary/20 text-primary border-primary/30 mb-6 px-4 py-2">
+              <Heart className="w-4 h-4 mr-2" />
+              OUR MISSION
+            </Badge>
+            <h2 className="text-4xl md:text-6xl lg:text-7xl font-display font-black mb-8">
+              <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+                MUSIC IS MORE THAN DATA
+              </span>
+            </h2>
+          </div>
+
+          {/* Mission Pillars */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            {[
+              { icon: Users, title: "Build Culture", desc: "Artists build culture, context, and community — not just monthly listeners." },
+              { icon: MessageCircle, title: "Share & Discuss", desc: "Music isn't just streamed — it's shared, discussed, and explored together." },
+              { icon: Play, title: "Active Listening", desc: "Listening is active, intentional, immersive — not passive consumption." },
+              { icon: Palette, title: "Artist Identity", desc: "Technology amplifies depth over distraction, artist identity over utility." },
+              { icon: Heart, title: "Human Expression", desc: "Human expression should be the point — not just another data point." },
+              { icon: Sparkles, title: "Be Part of the Story", desc: "Fans aren't \"users\" — they're participants in the story." }
+            ].map((pillar, idx) => (
+              <Card 
+                key={idx} 
+                className="glass-card-premium p-6 hover:scale-105 hover:border-primary/50 transition-all duration-500 group"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <pillar.icon className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-display font-bold text-lg mb-2 group-hover:text-primary transition-colors">{pillar.title}</h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed">{pillar.desc}</p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          {/* Mission Statement Card */}
+          <Card className="glass-ultra p-8 md:p-12 text-center border-primary/30 relative overflow-hidden">
+            <div className="absolute top-4 right-4">
+              <img src={tdzLogo} alt="" className="w-12 h-12 opacity-30" />
+            </div>
+            <p className="text-xl md:text-2xl lg:text-3xl font-light leading-relaxed text-foreground/90">
+              "We believe the future of music belongs to <span className="text-primary font-semibold">artists who tell stories</span>, 
+              <span className="text-secondary font-semibold"> fans who care deeply</span>, and 
+              <span className="text-accent font-semibold"> platforms that value human connection</span> over algorithmic scale."
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <img src={tdzLogo} alt="TDZ" className="h-8 w-auto" />
+              <span className="font-display text-muted-foreground">TDZ Distribution</span>
+            </div>
+          </Card>
+        </div>
+      </section>
+
       {/* ========== FERRARI-STYLE SCROLL REVEAL - ARTIST EARNINGS ========== */}
       <ScrollRevealText 
         text="$1 PER STREAM"
@@ -620,6 +696,11 @@ export default function Landing() {
       {/* ========== FOR ARTISTS SECTION ========== */}
       <section id="artists-section" className="py-16 md:py-32 px-4 md:px-6 relative">
         <div className="max-w-7xl mx-auto">
+          {/* Section logo accent */}
+          <div className="flex justify-center mb-8">
+            <img src={tdzLogo} alt="" className="h-16 w-auto opacity-20" />
+          </div>
+          
           <div className="text-center mb-12 md:mb-20">
             <Badge className="bg-green-500/20 text-green-500 border-green-500/30 mb-4 md:mb-6 text-sm md:text-base px-4 py-2">
               <Mic2 className="w-3 h-3 md:w-4 md:h-4 mr-2" />
@@ -979,8 +1060,26 @@ export default function Landing() {
       </section>
 
       {/* ========== FOOTER ========== */}
-      <footer className="py-12 px-4 md:px-6 border-t border-border/50">
-        <div className="max-w-7xl mx-auto">
+      <footer className="py-16 px-4 md:px-6 border-t border-border/50 relative">
+        {/* Footer background accent */}
+        <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent pointer-events-none" />
+        
+        <div className="max-w-7xl mx-auto relative z-10">
+          {/* Large logo */}
+          <div className="flex justify-center mb-8">
+            <img 
+              src={tdzLogo} 
+              alt="TDZ Distribution" 
+              className="h-20 md:h-24 w-auto opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            />
+          </div>
+          
+          {/* Mission tagline */}
+          <p className="text-center text-muted-foreground max-w-xl mx-auto mb-8">
+            Where artists build culture, fans participate in stories, and every stream matters.
+          </p>
+          
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3 group cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
               <img src={tdzLogo} alt="TDZ" className="h-8 w-auto group-hover:scale-110 transition-transform" />
@@ -1005,8 +1104,14 @@ export default function Landing() {
               ))}
             </div>
           </div>
-          <div className="text-center mt-8 text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Thirty Dark Zero Records. All rights reserved.
+          <div className="text-center mt-8 pt-8 border-t border-border/30">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <img src={tdzLogo} alt="" className="h-5 w-auto opacity-50" />
+              <span className="text-sm text-muted-foreground">Thirty Dark Zero Records</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              © {new Date().getFullYear()} All rights reserved. Music is more than data.
+            </p>
           </div>
         </div>
       </footer>
