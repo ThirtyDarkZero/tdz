@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { SubscriptionBadge } from "@/components/SubscriptionBadge";
 import { format } from "date-fns";
+import { AnimatedCounter, ScrollReveal } from "@/components/AnimatedHeading";
 
 interface StudioHomeProps {
   artistName: string;
@@ -121,49 +122,65 @@ export const StudioHome = ({ artistName, onNavigate, onUploadClick }: StudioHome
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="p-5 bg-card/50 border-border/50 hover:border-primary/30 transition-colors cursor-pointer" onClick={() => onNavigate("insights")}>
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-primary" />
+        <ScrollReveal delay={0}>
+          <Card className="p-5 bg-card/50 border-border/50 hover:border-primary/30 transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg" onClick={() => onNavigate("insights")}>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-primary" />
+              </div>
+              <span className="text-sm text-muted-foreground font-medium">IMPACT</span>
             </div>
-            <span className="text-sm text-muted-foreground font-medium">IMPACT</span>
-          </div>
-          <p className="text-3xl font-bold">{stats.totalStreams.toLocaleString()}</p>
-          <p className="text-xs text-muted-foreground mt-1">Intentional plays</p>
-        </Card>
+            <p className="text-3xl font-bold">
+              <AnimatedCounter value={stats.totalStreams} />
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">Intentional plays</p>
+          </Card>
+        </ScrollReveal>
 
-        <Card className="p-5 bg-card/50 border-border/50 hover:border-primary/30 transition-colors cursor-pointer" onClick={() => onNavigate("music")}>
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Music className="w-5 h-5 text-primary" />
+        <ScrollReveal delay={0.1}>
+          <Card className="p-5 bg-card/50 border-border/50 hover:border-primary/30 transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg" onClick={() => onNavigate("music")}>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Music className="w-5 h-5 text-primary" />
+              </div>
+              <span className="text-sm text-muted-foreground font-medium">RELEASES</span>
             </div>
-            <span className="text-sm text-muted-foreground font-medium">RELEASES</span>
-          </div>
-          <p className="text-3xl font-bold">{stats.totalTracks}</p>
-          <p className="text-xs text-muted-foreground mt-1">Total tracks</p>
-        </Card>
+            <p className="text-3xl font-bold">
+              <AnimatedCounter value={stats.totalTracks} />
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">Total tracks</p>
+          </Card>
+        </ScrollReveal>
 
-        <Card className="p-5 bg-card/50 border-border/50 hover:border-primary/30 transition-colors cursor-pointer" onClick={() => onNavigate("settings")}>
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-              <Wallet className="w-5 h-5 text-green-500" />
+        <ScrollReveal delay={0.2}>
+          <Card className="p-5 bg-card/50 border-border/50 hover:border-primary/30 transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg" onClick={() => onNavigate("settings")}>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                <Wallet className="w-5 h-5 text-green-500" />
+              </div>
+              <span className="text-sm text-muted-foreground font-medium">EARNINGS</span>
             </div>
-            <span className="text-sm text-muted-foreground font-medium">EARNINGS</span>
-          </div>
-          <p className="text-3xl font-bold text-green-500">${stats.pendingEarnings.toFixed(2)}</p>
-          <p className="text-xs text-muted-foreground mt-1">Pending payout</p>
-        </Card>
+            <p className="text-3xl font-bold text-green-500">
+              <AnimatedCounter value={Math.floor(stats.pendingEarnings)} prefix="$" suffix={`.${(stats.pendingEarnings % 1).toFixed(2).slice(2)}`} />
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">Pending payout</p>
+          </Card>
+        </ScrollReveal>
 
-        <Card className="p-5 bg-card/50 border-border/50 hover:border-primary/30 transition-colors cursor-pointer" onClick={() => onNavigate("promote")}>
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Users className="w-5 h-5 text-primary" />
+        <ScrollReveal delay={0.3}>
+          <Card className="p-5 bg-card/50 border-border/50 hover:border-primary/30 transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg" onClick={() => onNavigate("promote")}>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Users className="w-5 h-5 text-primary" />
+              </div>
+              <span className="text-sm text-muted-foreground font-medium">COMMUNITY</span>
             </div>
-            <span className="text-sm text-muted-foreground font-medium">COMMUNITY</span>
-          </div>
-          <p className="text-3xl font-bold">{stats.followers.toLocaleString()}</p>
-          <p className="text-xs text-muted-foreground mt-1">Invested in your journey</p>
-        </Card>
+            <p className="text-3xl font-bold">
+              <AnimatedCounter value={stats.followers} />
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">Invested in your journey</p>
+          </Card>
+        </ScrollReveal>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
