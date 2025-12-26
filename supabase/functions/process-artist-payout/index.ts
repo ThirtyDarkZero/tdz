@@ -6,9 +6,41 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface PayoutRequest {
-  artistId: string;
-  amount?: number; // Optional - if not provided, pays all pending earnings
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+// Input validation
+function validateInput(data: unknown): { artistId: string; amount?: number } | { error: string } {
+  if (!data || typeof data !== 'object') {
+    return { error: 'Invalid request body' };
+  }
+
+  const { artistId, amount } = data as Record<string, unknown>;
+
+  // Validate artistId - required and must be UUID
+  if (!artistId || typeof artistId !== 'string') {
+    return { error: 'Missing or invalid artistId' };
+  }
+  if (!UUID_REGEX.test(artistId)) {
+    return { error: 'Invalid artistId format - must be a valid UUID' };
+  }
+
+  // Validate amount - optional, but if provided must be positive number
+  let validatedAmount: number | undefined;
+  if (amount !== undefined) {
+    if (typeof amount !== 'number' || isNaN(amount)) {
+      return { error: 'amount must be a number' };
+    }
+    if (amount <= 0) {
+      return { error: 'amount must be a positive number' };
+    }
+    if (amount > 1000000) { // Max $1M per payout
+      return { error: 'amount exceeds maximum allowed payout' };
+    }
+    validatedAmount = amount;
+  }
+
+  return { artistId, amount: validatedAmount };
 }
 
 serve(async (req) => {
@@ -43,13 +75,32 @@ serve(async (req) => {
       );
     }
 
-    const { artistId, amount } = await req.json() as PayoutRequest;
+    // Parse and validate input
+    let rawBody: unknown;
+    try {
+      rawBody = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const validation = validateInput(rawBody);
+    if ('error' in validation) {
+      return new Response(
+        JSON.stringify({ error: validation.error }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { artistId, amount } = validation;
 
     // Verify the user is the artist or an admin
     if (artistId !== user.id) {
       // Check if user is admin
       const { data: roleData } = await supabase
-        .rpc('has_role', { user_id: user.id, role: 'admin' });
+        .rpc('has_role', { _user_id: user.id, _role: 'admin' });
       
       if (!roleData) {
         return new Response(

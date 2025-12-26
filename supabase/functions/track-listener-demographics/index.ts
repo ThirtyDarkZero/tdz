@@ -6,6 +6,56 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+// Input validation
+function validateInput(data: unknown): { trackId?: string; artistId: string; listenerId?: string } | { error: string } {
+  if (!data || typeof data !== 'object') {
+    return { error: 'Invalid request body' };
+  }
+
+  const { trackId, artistId, listenerId } = data as Record<string, unknown>;
+
+  // Validate artistId - required and must be UUID
+  if (!artistId || typeof artistId !== 'string') {
+    return { error: 'Missing or invalid artistId' };
+  }
+  if (!UUID_REGEX.test(artistId)) {
+    return { error: 'Invalid artistId format - must be a valid UUID' };
+  }
+
+  // Validate trackId - optional, but if provided must be UUID
+  let validatedTrackId: string | undefined;
+  if (trackId !== undefined) {
+    if (typeof trackId !== 'string') {
+      return { error: 'trackId must be a string' };
+    }
+    if (!UUID_REGEX.test(trackId)) {
+      return { error: 'Invalid trackId format - must be a valid UUID' };
+    }
+    validatedTrackId = trackId;
+  }
+
+  // Validate listenerId - optional, but if provided must be UUID
+  let validatedListenerId: string | undefined;
+  if (listenerId !== undefined && listenerId !== null) {
+    if (typeof listenerId !== 'string') {
+      return { error: 'listenerId must be a string' };
+    }
+    if (!UUID_REGEX.test(listenerId)) {
+      return { error: 'Invalid listenerId format - must be a valid UUID' };
+    }
+    validatedListenerId = listenerId;
+  }
+
+  return { 
+    trackId: validatedTrackId, 
+    artistId, 
+    listenerId: validatedListenerId 
+  };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -17,7 +67,26 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { trackId, artistId, listenerId } = await req.json();
+    // Parse and validate input
+    let rawBody: unknown;
+    try {
+      rawBody = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const validation = validateInput(rawBody);
+    if ('error' in validation) {
+      return new Response(
+        JSON.stringify({ error: validation.error }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { trackId, artistId, listenerId } = validation;
 
     // Get IP address from request headers
     const forwardedFor = req.headers.get('x-forwarded-for');
