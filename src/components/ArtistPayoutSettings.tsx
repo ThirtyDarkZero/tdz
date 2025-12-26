@@ -56,8 +56,9 @@ export const ArtistPayoutSettings = () => {
     if (!user) return;
 
     try {
+      // Use the secure view that excludes sensitive tokens
       const { data, error } = await supabase
-        .from('artist_payout_details' as any)
+        .from('artist_payout_info' as any)
         .select('*')
         .eq('artist_id', user.id)
         .maybeSingle();
