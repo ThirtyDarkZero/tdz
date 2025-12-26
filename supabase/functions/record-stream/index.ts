@@ -6,6 +6,56 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+// Input validation
+function validateInput(data: unknown): { trackId: string; completionPercentage?: number; duration?: number } | { error: string } {
+  if (!data || typeof data !== 'object') {
+    return { error: 'Invalid request body' };
+  }
+
+  const { trackId, completionPercentage, duration } = data as Record<string, unknown>;
+
+  // Validate trackId - required and must be UUID
+  if (!trackId || typeof trackId !== 'string') {
+    return { error: 'Missing or invalid trackId' };
+  }
+  if (!UUID_REGEX.test(trackId)) {
+    return { error: 'Invalid trackId format - must be a valid UUID' };
+  }
+
+  // Validate completionPercentage - optional, must be number 0-100
+  let validatedCompletionPercentage: number | undefined;
+  if (completionPercentage !== undefined) {
+    if (typeof completionPercentage !== 'number' || isNaN(completionPercentage)) {
+      return { error: 'completionPercentage must be a number' };
+    }
+    if (completionPercentage < 0 || completionPercentage > 100) {
+      return { error: 'completionPercentage must be between 0 and 100' };
+    }
+    validatedCompletionPercentage = completionPercentage;
+  }
+
+  // Validate duration - optional, must be non-negative number
+  let validatedDuration: number | undefined;
+  if (duration !== undefined) {
+    if (typeof duration !== 'number' || isNaN(duration)) {
+      return { error: 'duration must be a number' };
+    }
+    if (duration < 0 || duration > 86400) { // Max 24 hours
+      return { error: 'duration must be between 0 and 86400 seconds' };
+    }
+    validatedDuration = duration;
+  }
+
+  return { 
+    trackId, 
+    completionPercentage: validatedCompletionPercentage, 
+    duration: validatedDuration 
+  };
+}
+
 // Generate device fingerprint from request headers
 function generateDeviceFingerprint(req: Request): string {
   const userAgent = req.headers.get('user-agent') || '';
@@ -71,14 +121,26 @@ serve(async (req) => {
       userId = user?.id || null;
     }
 
-    const { trackId, completionPercentage, duration } = await req.json();
-
-    if (!trackId) {
+    // Parse and validate input
+    let rawBody: unknown;
+    try {
+      rawBody = await req.json();
+    } catch {
       return new Response(
-        JSON.stringify({ error: 'Missing trackId' }),
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const validation = validateInput(rawBody);
+    if ('error' in validation) {
+      return new Response(
+        JSON.stringify({ error: validation.error }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { trackId, completionPercentage, duration } = validation;
 
     // FRAUD DETECTION: Validate stream before counting
     if (userId) {
