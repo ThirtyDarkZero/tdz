@@ -2987,6 +2987,42 @@ export type Database = {
       }
     }
     Views: {
+      artist_payout_info: {
+        Row: {
+          account_holder_name: string | null
+          artist_id: string | null
+          created_at: string | null
+          id: string | null
+          last_payout_date: string | null
+          payout_enabled: boolean | null
+          square_customer_id: string | null
+          square_merchant_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_holder_name?: string | null
+          artist_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          last_payout_date?: string | null
+          payout_enabled?: boolean | null
+          square_customer_id?: string | null
+          square_merchant_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          account_holder_name?: string | null
+          artist_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          last_payout_date?: string | null
+          payout_enabled?: boolean | null
+          square_customer_id?: string | null
+          square_merchant_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       published_tracks_view: {
         Row: {
           ai_tags: Json | null
