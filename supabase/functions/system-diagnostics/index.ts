@@ -1,0 +1,440 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface DiagnosticResult {
+  name: string;
+  status: 'healthy' | 'degraded' | 'error' | 'unknown';
+  responseTime?: number;
+  message?: string;
+  details?: Record<string, unknown>;
+}
+
+interface SystemDiagnostics {
+  timestamp: string;
+  overallStatus: 'healthy' | 'degraded' | 'critical';
+  services: DiagnosticResult[];
+  summary: {
+    healthy: number;
+    degraded: number;
+    errors: number;
+    total: number;
+  };
+}
+
+// Check Supabase database connection
+async function checkDatabase(supabase: SupabaseClient): Promise<DiagnosticResult> {
+  const start = performance.now();
+  try {
+    const { data, error } = await supabase
+      .from('tracks')
+      .select('id')
+      .limit(1);
+
+    const responseTime = performance.now() - start;
+
+    if (error) {
+      return {
+        name: 'Database',
+        status: 'error',
+        responseTime,
+        message: error.message,
+      };
+    }
+
+    return {
+      name: 'Database',
+      status: responseTime < 1000 ? 'healthy' : 'degraded',
+      responseTime,
+      message: responseTime < 1000 ? 'Connection OK' : 'Slow response',
+    };
+  } catch (error) {
+    return {
+      name: 'Database',
+      status: 'error',
+      responseTime: performance.now() - start,
+      message: error instanceof Error ? error.message : 'Connection failed',
+    };
+  }
+}
+
+// Check Supabase storage
+async function checkStorage(supabase: SupabaseClient): Promise<DiagnosticResult> {
+  const start = performance.now();
+  try {
+    const { data, error } = await supabase.storage.listBuckets();
+
+    const responseTime = performance.now() - start;
+
+    if (error) {
+      return {
+        name: 'Storage',
+        status: 'error',
+        responseTime,
+        message: error.message,
+      };
+    }
+
+    const bucketNames = data?.map(b => b.name) || [];
+    const requiredBuckets = ['track-files', 'album-covers', 'artist-images'];
+    const missingBuckets = requiredBuckets.filter(b => !bucketNames.includes(b));
+
+    if (missingBuckets.length > 0) {
+      return {
+        name: 'Storage',
+        status: 'degraded',
+        responseTime,
+        message: `Missing buckets: ${missingBuckets.join(', ')}`,
+        details: { buckets: bucketNames, missing: missingBuckets },
+      };
+    }
+
+    return {
+      name: 'Storage',
+      status: 'healthy',
+      responseTime,
+      message: `${bucketNames.length} buckets available`,
+      details: { buckets: bucketNames },
+    };
+  } catch (error) {
+    return {
+      name: 'Storage',
+      status: 'error',
+      responseTime: performance.now() - start,
+      message: error instanceof Error ? error.message : 'Storage check failed',
+    };
+  }
+}
+
+// Check AI gateway (Lovable AI)
+async function checkAIGateway(): Promise<DiagnosticResult> {
+  const start = performance.now();
+  const apiKey = Deno.env.get('LOVABLE_API_KEY');
+
+  if (!apiKey) {
+    return {
+      name: 'AI Gateway',
+      status: 'error',
+      message: 'LOVABLE_API_KEY not configured',
+    };
+  }
+
+  try {
+    // Just check if we can reach the endpoint (don't actually make a full request)
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash-lite',
+        messages: [{ role: 'user', content: 'ping' }],
+        max_tokens: 1,
+      }),
+    });
+
+    const responseTime = performance.now() - start;
+
+    if (response.status === 429) {
+      return {
+        name: 'AI Gateway',
+        status: 'degraded',
+        responseTime,
+        message: 'Rate limited',
+      };
+    }
+
+    if (response.status === 402) {
+      return {
+        name: 'AI Gateway',
+        status: 'degraded',
+        responseTime,
+        message: 'Credits exhausted',
+      };
+    }
+
+    if (!response.ok && response.status !== 400) {
+      return {
+        name: 'AI Gateway',
+        status: 'error',
+        responseTime,
+        message: `HTTP ${response.status}`,
+      };
+    }
+
+    return {
+      name: 'AI Gateway',
+      status: 'healthy',
+      responseTime,
+      message: 'Connected',
+    };
+  } catch (error) {
+    return {
+      name: 'AI Gateway',
+      status: 'error',
+      responseTime: performance.now() - start,
+      message: error instanceof Error ? error.message : 'Connection failed',
+    };
+  }
+}
+
+// Check OpenAI API
+async function checkOpenAI(): Promise<DiagnosticResult> {
+  const apiKey = Deno.env.get('OPENAI_API_KEY');
+
+  if (!apiKey) {
+    return {
+      name: 'OpenAI API',
+      status: 'unknown',
+      message: 'Not configured',
+    };
+  }
+
+  const start = performance.now();
+  try {
+    const response = await fetch('https://api.openai.com/v1/models', {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+      },
+    });
+
+    const responseTime = performance.now() - start;
+
+    if (response.status === 401) {
+      return {
+        name: 'OpenAI API',
+        status: 'error',
+        responseTime,
+        message: 'Invalid API key',
+      };
+    }
+
+    if (!response.ok) {
+      return {
+        name: 'OpenAI API',
+        status: 'error',
+        responseTime,
+        message: `HTTP ${response.status}`,
+      };
+    }
+
+    return {
+      name: 'OpenAI API',
+      status: 'healthy',
+      responseTime,
+      message: 'Connected',
+    };
+  } catch (error) {
+    return {
+      name: 'OpenAI API',
+      status: 'error',
+      responseTime: performance.now() - start,
+      message: error instanceof Error ? error.message : 'Connection failed',
+    };
+  }
+}
+
+// Check Square API
+async function checkSquare(): Promise<DiagnosticResult> {
+  const accessToken = Deno.env.get('SQUARE_ACCESS_TOKEN');
+  const appId = Deno.env.get('SQUARE_APPLICATION_ID');
+
+  if (!accessToken || !appId) {
+    return {
+      name: 'Square Payments',
+      status: 'unknown',
+      message: 'Not configured',
+    };
+  }
+
+  const start = performance.now();
+  try {
+    const response = await fetch('https://connect.squareup.com/v2/locations', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const responseTime = performance.now() - start;
+
+    if (response.status === 401) {
+      return {
+        name: 'Square Payments',
+        status: 'error',
+        responseTime,
+        message: 'Invalid credentials',
+      };
+    }
+
+    if (!response.ok) {
+      return {
+        name: 'Square Payments',
+        status: 'error',
+        responseTime,
+        message: `HTTP ${response.status}`,
+      };
+    }
+
+    const data = await response.json();
+    const locations = data.locations?.length || 0;
+
+    return {
+      name: 'Square Payments',
+      status: 'healthy',
+      responseTime,
+      message: `${locations} location(s) configured`,
+      details: { locations },
+    };
+  } catch (error) {
+    return {
+      name: 'Square Payments',
+      status: 'error',
+      responseTime: performance.now() - start,
+      message: error instanceof Error ? error.message : 'Connection failed',
+    };
+  }
+}
+
+// Provider health interface
+interface ProviderHealthRecord {
+  provider_name: string;
+  status: string;
+  avg_response_time_ms?: number;
+  last_error_message?: string;
+  success_count_1h: number;
+  error_count_1h: number;
+  last_success_at?: string;
+}
+
+// Check provider health table
+async function checkProviderHealth(supabase: SupabaseClient): Promise<DiagnosticResult[]> {
+  try {
+    const { data: providers } = await supabase
+      .from('provider_health')
+      .select('*')
+      .order('checked_at', { ascending: false });
+
+    if (!providers || providers.length === 0) {
+      return [];
+    }
+
+    // Get latest status for each provider
+    const latestByProvider = new Map<string, ProviderHealthRecord>();
+    (providers as ProviderHealthRecord[]).forEach(p => {
+      if (!latestByProvider.has(p.provider_name)) {
+        latestByProvider.set(p.provider_name, p);
+      }
+    });
+
+    return Array.from(latestByProvider.values()).map(p => ({
+      name: `Video: ${p.provider_name}`,
+      status: p.status === 'healthy' ? 'healthy' : p.status === 'degraded' ? 'degraded' : 'error' as const,
+      responseTime: p.avg_response_time_ms || undefined,
+      message: p.last_error_message || 'OK',
+      details: {
+        successCount1h: p.success_count_1h,
+        errorCount1h: p.error_count_1h,
+        lastSuccess: p.last_success_at,
+      },
+    }));
+  } catch {
+    return [];
+  }
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Verify CEO access
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user } } = await supabase.auth.getUser(token);
+      
+      if (user?.email !== 'info@thirtydarkzero.com') {
+        return new Response(
+          JSON.stringify({ error: 'CEO access required' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    console.log('Running system diagnostics...');
+
+    // Run all checks in parallel
+    const [
+      dbResult,
+      storageResult,
+      aiResult,
+      openaiResult,
+      squareResult,
+      providerResults,
+    ] = await Promise.all([
+      checkDatabase(supabase),
+      checkStorage(supabase),
+      checkAIGateway(),
+      checkOpenAI(),
+      checkSquare(),
+      checkProviderHealth(supabase),
+    ]);
+
+    const services: DiagnosticResult[] = [
+      dbResult,
+      storageResult,
+      aiResult,
+      openaiResult,
+      squareResult,
+      ...providerResults,
+    ];
+
+    // Calculate summary
+    const summary = {
+      healthy: services.filter(s => s.status === 'healthy').length,
+      degraded: services.filter(s => s.status === 'degraded').length,
+      errors: services.filter(s => s.status === 'error').length,
+      total: services.length,
+    };
+
+    // Determine overall status
+    let overallStatus: 'healthy' | 'degraded' | 'critical' = 'healthy';
+    if (summary.errors > 0) {
+      overallStatus = summary.errors >= 2 ? 'critical' : 'degraded';
+    } else if (summary.degraded > 0) {
+      overallStatus = 'degraded';
+    }
+
+    const diagnostics: SystemDiagnostics = {
+      timestamp: new Date().toISOString(),
+      overallStatus,
+      services,
+      summary,
+    };
+
+    console.log(`Diagnostics complete: ${overallStatus}`);
+
+    return new Response(
+      JSON.stringify(diagnostics),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Diagnostics error:', error);
+    return new Response(
+      JSON.stringify({ error: 'Diagnostics failed' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});
