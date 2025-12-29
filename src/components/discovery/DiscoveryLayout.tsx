@@ -114,12 +114,15 @@ export function DiscoveryLayout({
         </div>
       </div>
 
-      {/* Fixed Player */}
-      <div className="fixed bottom-0 left-0 right-0 z-50">
-        <div className="glass-ultra border-t border-white/5 shadow-3d-lg">
-          {player}
+      {/* Fixed Player - only render if player prop is provided (legacy support) */}
+      {/* The global player is now rendered at App level */}
+      {player && (
+        <div className="fixed bottom-0 left-0 right-0 z-50">
+          <div className="glass-ultra border-t border-white/5 shadow-3d-lg">
+            {player}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

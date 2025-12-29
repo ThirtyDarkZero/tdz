@@ -11,7 +11,6 @@ import {
 import { useUserRole } from "@/hooks/useUserRole";
 import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
-import { MusicPlayer } from "@/components/MusicPlayer";
 import { MotionCover } from "@/components/MotionCover";
 import { DiscoveryLayout } from "@/components/discovery/DiscoveryLayout";
 import { DiscoveryHeader } from "@/components/discovery/DiscoveryHeader";
@@ -25,21 +24,18 @@ import { EnhancedArtistGrid } from "@/components/discovery/EnhancedArtistGrid";
 import { EnhancedTrendingSection } from "@/components/discovery/EnhancedTrendingSection";
 import { PremiumTabs } from "@/components/discovery/PremiumTabs";
 import { useDiscoveryData } from "@/hooks/useDiscoveryData";
-import { SubscriptionModal } from "@/components/SubscriptionModal";
 import { MerchStore } from "@/components/MerchStore";
-
-const PREVIEW_DURATION_SECONDS = 30;
+import { usePlayer } from "@/contexts/PlayerContext";
 
 export default function Discover() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentTrack, setCurrentTrack] = useState<any>(null);
-  const [queue, setQueue] = useState<any[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentArtistInfo, setCurrentArtistInfo] = useState<any>(null);
   const [relatedTracks, setRelatedTracks] = useState<any[]>([]);
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  
+  // Use global player context for persistent playback across navigation
+  const { currentTrack, playTrack, addToQueue } = usePlayer();
   
   const {
     tracks,
@@ -60,9 +56,6 @@ export default function Discover() {
   const { hasFeature, isPaidPlan, getPlan } = useSubscription(user);
   const isArtist = role === 'artist' || role === 'verified_artist' || role === 'manager';
   const isAuthenticated = !!user;
-  
-  // Fans need a subscription for unlimited streaming
-  const hasUnlimitedStreaming = hasFeature('unlimitedStreaming') || isArtist;
   
   // Artists always have playlist access, fans need subscription
   const canCreatePlaylists = isArtist || hasFeature('playlists');
@@ -107,36 +100,32 @@ export default function Discover() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Use global player for playback - this persists across navigation
   const handlePlayTrack = (track: any) => {
-    setCurrentTrack(track);
-    setQueue(filteredTracks);
-    const index = filteredTracks.findIndex(t => t.id === track.id);
-    setCurrentIndex(index);
+    // Ensure track has required fields with defaults
+    const normalizedTrack = {
+      ...track,
+      duration: track.duration || 0,
+      file_path: track.file_path || '',
+      play_count: track.play_count || 0,
+    };
+    playTrack(normalizedTrack, filteredTracks.map(t => ({
+      ...t,
+      duration: t.duration || 0,
+      file_path: t.file_path || '',
+      play_count: t.play_count || 0,
+    })));
   };
 
   const handleAddToQueue = (track: any) => {
-    setQueue(prev => [...prev, track]);
+    const normalizedTrack = {
+      ...track,
+      duration: track.duration || 0,
+      file_path: track.file_path || '',
+      play_count: track.play_count || 0,
+    };
+    addToQueue(normalizedTrack);
     toast.success(`Added "${track.title}" to queue`);
-  };
-
-  const handleNext = () => {
-    if (currentIndex < queue.length - 1) {
-      const nextTrack = queue[currentIndex + 1];
-      setCurrentTrack(nextTrack);
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentIndex > 0) {
-      const prevTrack = queue[currentIndex - 1];
-      setCurrentTrack(prevTrack);
-      setCurrentIndex(currentIndex - 1);
-    }
-  };
-
-  const handleTrackEnd = () => {
-    handleNext();
   };
 
   const filteredTracks = tracks.filter(track =>
@@ -233,22 +222,9 @@ export default function Discover() {
     />
   );
 
-  const handlePreviewEnd = () => {
-    setShowSubscriptionModal(true);
-    toast.info("Preview ended - Subscribe for unlimited streaming!");
-  };
-
-  const player = (
-    <MusicPlayer
-      currentTrack={currentTrack}
-      queue={queue}
-      onNext={handleNext}
-      onPrevious={handlePrevious}
-      onTrackEnd={handleTrackEnd}
-      maxDuration={!hasUnlimitedStreaming ? PREVIEW_DURATION_SECONDS : undefined}
-      onPreviewEnd={!hasUnlimitedStreaming ? handlePreviewEnd : undefined}
-    />
-  );
+  // Player is now rendered globally in App.tsx via GlobalMusicPlayer
+  // Pass null to DiscoveryLayout's player prop since we use the global one
+  const player = null;
 
   return (
     <>
@@ -273,11 +249,6 @@ export default function Discover() {
         onPlaylistSelect={(playlistId) => {
           navigate(`/playlist/${playlistId}`);
         }}
-      />
-
-      <SubscriptionModal
-        open={showSubscriptionModal}
-        onOpenChange={setShowSubscriptionModal}
       />
     </>
   );
