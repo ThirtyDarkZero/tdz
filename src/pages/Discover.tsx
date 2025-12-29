@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,10 @@ import { PremiumTabs } from "@/components/discovery/PremiumTabs";
 import { useDiscoveryData } from "@/hooks/useDiscoveryData";
 import { MerchStore } from "@/components/MerchStore";
 import { usePlayer } from "@/contexts/PlayerContext";
+import { GenreHeroSection } from "@/components/discovery/GenreHeroSection";
+import { UnifiedMusicStream } from "@/components/discovery/UnifiedMusicStream";
+import { GenrePlaylists } from "@/components/discovery/GenrePlaylists";
+import { YouTubeVideo } from "@/hooks/useYouTubePlayer";
 
 export default function Discover() {
   const navigate = useNavigate();
@@ -29,6 +33,7 @@ export default function Discover() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentArtistInfo, setCurrentArtistInfo] = useState<any>(null);
   const [relatedTracks, setRelatedTracks] = useState<any[]>([]);
+  const [selectedGenre, setSelectedGenre] = useState<string | undefined>(undefined);
   
   // Use global player context for persistent playback across navigation
   const { currentTrack, playTrack, addToQueue } = usePlayer();
@@ -137,6 +142,23 @@ export default function Discover() {
     // This will be handled by the LibrarySidebar component
   };
 
+  const handleGenreSelect = useCallback((genreId: string) => {
+    setSelectedGenre(genreId);
+  }, []);
+
+  const handlePlayGenre = useCallback((genre: string, genreTracks: any[]) => {
+    if (genreTracks.length > 0) {
+      playTrack(genreTracks[0], genreTracks);
+      toast.success(`Playing ${genre} playlist`);
+    }
+  }, [playTrack]);
+
+  const handlePlayYouTube = useCallback((video: YouTubeVideo) => {
+    toast.info(`Opening: ${video.title}`);
+    // YouTube playback is handled via the YouTube player component
+    window.open(`https://www.youtube.com/watch?v=${video.id}`, '_blank');
+  }, []);
+
   // Left column content - Now Playing info
   const leftColumn = (
     <NowPlayingSidebar
@@ -156,22 +178,33 @@ export default function Discover() {
     />
   );
 
-  // Center column content - Simplified version
+  // Center column content - with genre features
   const centerColumn = (
     <PremiumTabs
       defaultValue="discover"
       discoverContent={
         <div className="space-y-10">
-          {/* Track grid for discovery */}
-          <EnhancedTrackGrid
-            tracks={filteredTracks}
+          {/* Genre Hero Section */}
+          <GenreHeroSection onGenreSelect={handleGenreSelect} />
+          
+          {/* Genre Playlists */}
+          <GenrePlaylists
+            tracks={tracks}
+            onPlayGenre={handlePlayGenre}
+            onGenreClick={handleGenreSelect}
+          />
+          
+          {/* Unified Music Stream (TDZ + YouTube) */}
+          <UnifiedMusicStream
+            tdzTracks={filteredTracks}
             likedTracks={likedTracks}
-            playlists={playlists}
             currentTrackId={currentTrack?.id}
+            playlists={playlists}
+            selectedGenre={selectedGenre}
             onPlayTrack={handlePlayTrack}
             onToggleLike={toggleLike}
             onAddToQueue={handleAddToQueue}
-            title="Discover New Music"
+            onPlayYouTube={handlePlayYouTube}
           />
           
           {/* Featured albums */}
