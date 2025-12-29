@@ -14,17 +14,14 @@ import { DiscoveryHeader } from "@/components/discovery/DiscoveryHeader";
 import { NowPlayingSidebar } from "@/components/discovery/NowPlayingSidebar";
 import { LibrarySidebar } from "@/components/discovery/LibrarySidebar";
 import { MobileSidebar } from "@/components/discovery/MobileSidebar";
-import { GenreHeroSection } from "@/components/discovery/GenreHeroSection";
-import { GenrePlaylists } from "@/components/discovery/GenrePlaylists";
-import { UnifiedMusicStream } from "@/components/discovery/UnifiedMusicStream";
 import { EnhancedAlbumGrid } from "@/components/discovery/EnhancedAlbumGrid";
 import { EnhancedArtistGrid } from "@/components/discovery/EnhancedArtistGrid";
 import { EnhancedTrendingSection } from "@/components/discovery/EnhancedTrendingSection";
+import { EnhancedTrackGrid } from "@/components/discovery/EnhancedTrackGrid";
 import { PremiumTabs } from "@/components/discovery/PremiumTabs";
 import { useDiscoveryData } from "@/hooks/useDiscoveryData";
 import { MerchStore } from "@/components/MerchStore";
 import { usePlayer } from "@/contexts/PlayerContext";
-import { YouTubeVideo } from "@/hooks/useYouTubePlayer";
 
 export default function Discover() {
   const navigate = useNavigate();
@@ -32,7 +29,6 @@ export default function Discover() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentArtistInfo, setCurrentArtistInfo] = useState<any>(null);
   const [relatedTracks, setRelatedTracks] = useState<any[]>([]);
-  const [selectedGenre, setSelectedGenre] = useState<string | undefined>();
   
   // Use global player context for persistent playback across navigation
   const { currentTrack, playTrack, addToQueue } = usePlayer();
@@ -128,23 +124,6 @@ export default function Discover() {
     toast.success(`Added "${track.title}" to queue`);
   };
 
-  const handlePlayYouTube = (video: YouTubeVideo) => {
-    // For now, open YouTube in a new tab - can be enhanced with embedded player
-    window.open(`https://www.youtube.com/watch?v=${video.id}`, '_blank');
-    toast.info(`Opening "${video.title}" on YouTube`);
-  };
-
-  const handleGenreSelect = (genreId: string) => {
-    setSelectedGenre(genreId);
-  };
-
-  const handlePlayGenre = (genre: string, genreTracks: any[]) => {
-    if (genreTracks.length > 0) {
-      handlePlayTrack(genreTracks[0]);
-      toast.success(`Playing ${genre} playlist`);
-    }
-  };
-
   const filteredTracks = tracks.filter(track =>
     track.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     track.artist_name?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -177,40 +156,31 @@ export default function Discover() {
     />
   );
 
-  // Center column content - Updated with genre-focused layout
+  // Center column content - Simplified version
   const centerColumn = (
     <PremiumTabs
       defaultValue="discover"
       discoverContent={
         <div className="space-y-10">
-          {/* Full-bleed genre hero sections */}
-          <GenreHeroSection onGenreSelect={handleGenreSelect} />
-          
-          {/* Genre playlists carousel */}
-          <GenrePlaylists 
-            tracks={tracks} 
-            onPlayGenre={handlePlayGenre}
-            onGenreClick={handleGenreSelect}
-          />
-          
-          {/* Unified music stream - TDZ first, then YouTube */}
-          <UnifiedMusicStream
-            tdzTracks={filteredTracks}
+          {/* Track grid for discovery */}
+          <EnhancedTrackGrid
+            tracks={filteredTracks}
             likedTracks={likedTracks}
-            currentTrackId={currentTrack?.id}
             playlists={playlists}
-            selectedGenre={selectedGenre}
+            currentTrackId={currentTrack?.id}
             onPlayTrack={handlePlayTrack}
             onToggleLike={toggleLike}
             onAddToQueue={handleAddToQueue}
-            onPlayYouTube={handlePlayYouTube}
+            title="Discover New Music"
           />
           
           {/* Featured albums */}
-          <EnhancedAlbumGrid
-            albums={albums}
-            title="Featured Albums"
-          />
+          {albums.length > 0 && (
+            <EnhancedAlbumGrid
+              albums={albums}
+              title="Featured Albums"
+            />
+          )}
         </div>
       }
       trendingContent={

@@ -19,14 +19,14 @@ export function DiscoveryLayout({
 }: DiscoveryLayoutProps) {
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
-      {/* Multi-layer animated background */}
+      {/* Simplified background - removed heavy animations that may cause performance issues */}
       <div className="fixed inset-0 pointer-events-none z-0">
         {/* Base mesh gradient */}
-        <div className="absolute inset-0 mesh-bg opacity-40" />
+        <div className="absolute inset-0 mesh-bg opacity-30" />
         
-        {/* Primary aurora orb */}
+        {/* Static aurora orbs without animation */}
         <div 
-          className="absolute -top-[400px] -left-[200px] w-[1000px] h-[1000px] rounded-full animate-breathe"
+          className="absolute -top-[400px] -left-[200px] w-[1000px] h-[1000px] rounded-full opacity-60"
           style={{
             background: 'radial-gradient(circle, hsl(127 100% 60% / 0.15) 0%, transparent 70%)',
             filter: 'blur(60px)'
@@ -35,33 +35,10 @@ export function DiscoveryLayout({
         
         {/* Secondary orb */}
         <div 
-          className="absolute top-[20%] -right-[300px] w-[800px] h-[800px] rounded-full animate-breathe"
+          className="absolute top-[20%] -right-[300px] w-[800px] h-[800px] rounded-full opacity-60"
           style={{
             background: 'radial-gradient(circle, hsl(280 100% 65% / 0.12) 0%, transparent 70%)',
-            filter: 'blur(80px)',
-            animationDelay: '-2s'
-          }}
-        />
-        
-        {/* Accent orb */}
-        <div 
-          className="absolute -bottom-[200px] left-[30%] w-[700px] h-[700px] rounded-full animate-breathe"
-          style={{
-            background: 'radial-gradient(circle, hsl(200 100% 60% / 0.1) 0%, transparent 70%)',
-            filter: 'blur(100px)',
-            animationDelay: '-4s'
-          }}
-        />
-        
-        {/* Subtle grid pattern */}
-        <div 
-          className="absolute inset-0 opacity-[0.015]"
-          style={{
-            backgroundImage: `
-              linear-gradient(hsl(127 100% 60% / 0.3) 1px, transparent 1px),
-              linear-gradient(90deg, hsl(127 100% 60% / 0.3) 1px, transparent 1px)
-            `,
-            backgroundSize: '100px 100px'
+            filter: 'blur(80px)'
           }}
         />
         
