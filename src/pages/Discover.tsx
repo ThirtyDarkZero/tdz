@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -103,17 +103,11 @@ export default function Discover() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Show loading state while data is being fetched (AFTER all hooks)
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a0a0a' }}>
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-white">Loading music...</p>
-        </div>
-      </div>
-    );
-  }
+  // Derived values (keep non-hook to avoid hook-order issues)
+  const filteredTracks = tracks.filter(track =>
+    track.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    track.artist_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   // Use global player for playback - this persists across navigation
   const handlePlayTrack = (track: any) => {
@@ -124,12 +118,15 @@ export default function Discover() {
       file_path: track.file_path || '',
       play_count: track.play_count || 0,
     };
-    playTrack(normalizedTrack, filteredTracks.map(t => ({
-      ...t,
-      duration: t.duration || 0,
-      file_path: t.file_path || '',
-      play_count: t.play_count || 0,
-    })));
+    playTrack(
+      normalizedTrack,
+      filteredTracks.map(t => ({
+        ...t,
+        duration: t.duration || 0,
+        file_path: t.file_path || '',
+        play_count: t.play_count || 0,
+      }))
+    );
   };
 
   const handleAddToQueue = (track: any) => {
@@ -143,11 +140,6 @@ export default function Discover() {
     toast.success(`Added "${track.title}" to queue`);
   };
 
-  const filteredTracks = tracks.filter(track =>
-    track.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    track.artist_name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   const handleCreatePlaylist = async () => {
     if (!user) {
       toast.error("Please sign in to create playlists");
@@ -156,22 +148,34 @@ export default function Discover() {
     // This will be handled by the LibrarySidebar component
   };
 
-  const handleGenreSelect = useCallback((genreId: string) => {
+  const handleGenreSelect = (genreId: string) => {
     setSelectedGenre(genreId);
-  }, []);
+  };
 
-  const handlePlayGenre = useCallback((genre: string, genreTracks: any[]) => {
+  const handlePlayGenre = (genre: string, genreTracks: any[]) => {
     if (genreTracks.length > 0) {
       playTrack(genreTracks[0], genreTracks);
       toast.success(`Playing ${genre} playlist`);
     }
-  }, [playTrack]);
+  };
 
-  const handlePlayYouTube = useCallback((video: YouTubeVideo) => {
+  const handlePlayYouTube = (video: YouTubeVideo) => {
     toast.info(`Opening: ${video.title}`);
     // YouTube playback is handled via the YouTube player component
     window.open(`https://www.youtube.com/watch?v=${video.id}`, '_blank');
-  }, []);
+  };
+
+  // Show loading state while data is being fetched (AFTER all hooks)
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a0a0a' }}>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-white">Loading music...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Left column content - Now Playing info
   const leftColumn = (
