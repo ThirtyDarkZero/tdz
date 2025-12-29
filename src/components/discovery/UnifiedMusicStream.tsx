@@ -53,18 +53,22 @@ export function UnifiedMusicStream({
 }: UnifiedMusicStreamProps) {
   const { results: youtubeResults, getTrending, search, isLoading: youtubeLoading } = useYouTubeSearch();
   const [activeFilter, setActiveFilter] = useState<'all' | 'tdz' | 'youtube'>('all');
+  const [hasFetchedTrending, setHasFetchedTrending] = useState(false);
 
-  // Fetch YouTube trending on mount
+  // Fetch YouTube trending on mount - only once
   useEffect(() => {
-    getTrending();
-  }, []);
+    if (!hasFetchedTrending) {
+      setHasFetchedTrending(true);
+      getTrending();
+    }
+  }, [hasFetchedTrending, getTrending]);
 
   // Search YouTube when genre changes
   useEffect(() => {
     if (selectedGenre) {
       search(`${selectedGenre} music`);
     }
-  }, [selectedGenre]);
+  }, [selectedGenre, search]);
 
   const formatDuration = (seconds?: number) => {
     if (!seconds) return "0:00";
