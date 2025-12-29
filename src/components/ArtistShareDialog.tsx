@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription 
 } from "@/components/ui/dialog";
@@ -10,9 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { 
   Link2, Code, Copy, Check, ExternalLink, 
-  Share2, Twitter, Facebook, Mail, Calendar
+  Share2, Twitter, Facebook, Mail, Calendar, Loader2, TrendingUp
 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ArtistShareDialogProps {
   open: boolean;
@@ -23,6 +24,16 @@ interface ArtistShareDialogProps {
   artistName?: string;
   coverUrl?: string;
   releaseDate?: string;
+}
+
+// Generate a short code for smart links
+function generateShortCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
 }
 
 export function ArtistShareDialog({
@@ -37,10 +48,87 @@ export function ArtistShareDialog({
 }: ArtistShareDialogProps) {
   const [copied, setCopied] = useState<string | null>(null);
   const [embedSize, setEmbedSize] = useState<"small" | "medium" | "large">("medium");
+  const [smartLink, setSmartLink] = useState<{ shortCode: string; clicks: number } | null>(null);
+  const [loadingSmartLink, setLoadingSmartLink] = useState(false);
+  const [creatingSmartLink, setCreatingSmartLink] = useState(false);
 
   const baseUrl = window.location.origin;
-  const shareUrl = `${baseUrl}/${type}/${id}`;
+  const shareUrl = smartLink ? `${baseUrl}/s/${smartLink.shortCode}` : `${baseUrl}/${type}/${id}`;
+  const directUrl = `${baseUrl}/${type}/${id}`;
   const presaveUrl = `${baseUrl}/presave/${type}/${id}`;
+
+  // Load existing smart link or create one
+  useEffect(() => {
+    if (open && id) {
+      loadSmartLink();
+    }
+  }, [open, id, type]);
+
+  const loadSmartLink = async () => {
+    setLoadingSmartLink(true);
+    try {
+      const { data, error } = await supabase
+        .from("smart_links")
+        .select("short_code, clicks")
+        .eq("target_type", type)
+        .eq("target_id", id)
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      if (data) {
+        setSmartLink({ shortCode: data.short_code, clicks: data.clicks || 0 });
+      } else {
+        setSmartLink(null);
+      }
+    } catch (error) {
+      console.error("Error loading smart link:", error);
+    } finally {
+      setLoadingSmartLink(false);
+    }
+  };
+
+  const createSmartLink = async () => {
+    setCreatingSmartLink(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please sign in to create smart links");
+        return;
+      }
+
+      const shortCode = generateShortCode();
+      
+      const { data, error } = await supabase
+        .from("smart_links")
+        .insert({
+          user_id: user.id,
+          target_type: type,
+          target_id: id,
+          short_code: shortCode,
+          title: title,
+        })
+        .select("short_code, clicks")
+        .single();
+
+      if (error) {
+        if (error.code === '23505') { // Unique violation - link already exists
+          await loadSmartLink();
+          toast.success("Smart link already exists!");
+        } else {
+          throw error;
+        }
+      } else {
+        setSmartLink({ shortCode: data.short_code, clicks: data.clicks || 0 });
+        toast.success("Smart link created!");
+      }
+    } catch (error: any) {
+      console.error("Error creating smart link:", error);
+      toast.error("Failed to create smart link");
+    } finally {
+      setCreatingSmartLink(false);
+    }
+  };
 
   // Generate embed dimensions based on size
   const embedDimensions = {
@@ -53,7 +141,7 @@ export function ArtistShareDialog({
 
   // Generate embed code
   const embedCode = `<iframe 
-  src="${shareUrl}/embed" 
+  src="${directUrl}/embed" 
   width="${width}" 
   height="${height}" 
   frameborder="0" 
@@ -107,17 +195,64 @@ export function ArtistShareDialog({
 
           {/* Links Tab */}
           <TabsContent value="links" className="space-y-4 mt-4">
+            {/* Smart Link */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Smart Link</Label>
+                {smartLink && (
+                  <Badge variant="outline" className="text-xs gap-1">
+                    <TrendingUp className="w-3 h-3" />
+                    {smartLink.clicks} clicks
+                  </Badge>
+                )}
+              </div>
+              {loadingSmartLink ? (
+                <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm text-muted-foreground">Loading...</span>
+                </div>
+              ) : smartLink ? (
+                <div className="flex gap-2">
+                  <Input value={shareUrl} readOnly className="font-mono text-sm" />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => copyToClipboard(shareUrl, "Smart Link")}
+                  >
+                    {copied === "Smart Link" ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+              ) : (
+                <Button 
+                  onClick={createSmartLink} 
+                  disabled={creatingSmartLink}
+                  className="w-full gap-2"
+                  variant="outline"
+                >
+                  {creatingSmartLink ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Link2 className="w-4 h-4" />
+                  )}
+                  Generate Smart Link
+                </Button>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Smart links track clicks and can be used for analytics
+              </p>
+            </div>
+
             {/* Direct Link */}
             <div className="space-y-2">
               <Label>Direct Link</Label>
               <div className="flex gap-2">
-                <Input value={shareUrl} readOnly className="font-mono text-sm" />
+                <Input value={directUrl} readOnly className="font-mono text-sm" />
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => copyToClipboard(shareUrl, "Link")}
+                  onClick={() => copyToClipboard(directUrl, "Direct Link")}
                 >
-                  {copied === "Link" ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
+                  {copied === "Direct Link" ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
                 </Button>
               </div>
             </div>

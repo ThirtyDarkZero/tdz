@@ -2304,6 +2304,42 @@ export type Database = {
           },
         ]
       }
+      smart_links: {
+        Row: {
+          clicks: number | null
+          created_at: string
+          id: string
+          short_code: string
+          target_id: string
+          target_type: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          clicks?: number | null
+          created_at?: string
+          id?: string
+          short_code: string
+          target_id: string
+          target_type: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          clicks?: number | null
+          created_at?: string
+          id?: string
+          short_code?: string
+          target_id?: string
+          target_type?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       social_connections: {
         Row: {
           access_token: string | null
