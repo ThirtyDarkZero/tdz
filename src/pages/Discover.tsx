@@ -26,6 +26,7 @@ import { GenreHeroSection } from "@/components/discovery/GenreHeroSection";
 import { UnifiedMusicStream } from "@/components/discovery/UnifiedMusicStream";
 import { GenrePlaylists } from "@/components/discovery/GenrePlaylists";
 import { YouTubeVideo } from "@/hooks/useYouTubePlayer";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function Discover() {
   const navigate = useNavigate();
@@ -34,6 +35,7 @@ export default function Discover() {
   const [currentArtistInfo, setCurrentArtistInfo] = useState<any>(null);
   const [relatedTracks, setRelatedTracks] = useState<any[]>([]);
   const [selectedGenre, setSelectedGenre] = useState<string | undefined>(undefined);
+  const [genreError, setGenreError] = useState(false);
   
   // Use global player context for persistent playback across navigation
   const { currentTrack, playTrack, addToQueue } = usePlayer();
@@ -61,7 +63,7 @@ export default function Discover() {
   // Artists always have playlist access, fans need subscription
   const canCreatePlaylists = isArtist || hasFeature('playlists');
 
-  // Load artist info when current track changes
+  // Load artist info when current track changes - MUST be before any conditional return
   useEffect(() => {
     if (currentTrack?.artist_user_id || currentTrack?.user_id) {
       loadArtistInfo(currentTrack.artist_user_id || currentTrack.user_id);
@@ -100,6 +102,18 @@ export default function Discover() {
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // Show loading state while data is being fetched (AFTER all hooks)
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0a0a0a' }}>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-white">Loading music...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Use global player for playback - this persists across navigation
   const handlePlayTrack = (track: any) => {
@@ -178,41 +192,49 @@ export default function Discover() {
     />
   );
 
-  // Center column content - with genre features
+  // Center column content - with genre features (wrapped in error boundaries)
   const centerColumn = (
     <PremiumTabs
       defaultValue="discover"
       discoverContent={
         <div className="space-y-10">
           {/* Genre Hero Section */}
-          <GenreHeroSection onGenreSelect={handleGenreSelect} />
+          <ErrorBoundary fallback={<div className="h-40 bg-muted/20 rounded-lg flex items-center justify-center text-muted-foreground">Genre section unavailable</div>}>
+            <GenreHeroSection onGenreSelect={handleGenreSelect} />
+          </ErrorBoundary>
           
           {/* Genre Playlists */}
-          <GenrePlaylists
-            tracks={tracks}
-            onPlayGenre={handlePlayGenre}
-            onGenreClick={handleGenreSelect}
-          />
+          <ErrorBoundary fallback={<div className="h-40 bg-muted/20 rounded-lg flex items-center justify-center text-muted-foreground">Playlists section unavailable</div>}>
+            <GenrePlaylists
+              tracks={tracks}
+              onPlayGenre={handlePlayGenre}
+              onGenreClick={handleGenreSelect}
+            />
+          </ErrorBoundary>
           
           {/* Unified Music Stream (TDZ + YouTube) */}
-          <UnifiedMusicStream
-            tdzTracks={filteredTracks}
-            likedTracks={likedTracks}
-            currentTrackId={currentTrack?.id}
-            playlists={playlists}
-            selectedGenre={selectedGenre}
-            onPlayTrack={handlePlayTrack}
-            onToggleLike={toggleLike}
-            onAddToQueue={handleAddToQueue}
-            onPlayYouTube={handlePlayYouTube}
-          />
+          <ErrorBoundary fallback={<div className="h-40 bg-muted/20 rounded-lg flex items-center justify-center text-muted-foreground">Music stream unavailable</div>}>
+            <UnifiedMusicStream
+              tdzTracks={filteredTracks}
+              likedTracks={likedTracks}
+              currentTrackId={currentTrack?.id}
+              playlists={playlists}
+              selectedGenre={selectedGenre}
+              onPlayTrack={handlePlayTrack}
+              onToggleLike={toggleLike}
+              onAddToQueue={handleAddToQueue}
+              onPlayYouTube={handlePlayYouTube}
+            />
+          </ErrorBoundary>
           
           {/* Featured albums */}
           {albums.length > 0 && (
-            <EnhancedAlbumGrid
-              albums={albums}
-              title="Featured Albums"
-            />
+            <ErrorBoundary>
+              <EnhancedAlbumGrid
+                albums={albums}
+                title="Featured Albums"
+              />
+            </ErrorBoundary>
           )}
         </div>
       }
