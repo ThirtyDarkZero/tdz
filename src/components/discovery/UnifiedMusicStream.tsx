@@ -1,17 +1,16 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
-  Play, Heart, Plus, MoreHorizontal, Crown, 
-  Flame, Clock, TrendingUp, Music, Youtube 
+  Play, Heart, Plus, Crown, 
+  Flame, Music, Youtube 
 } from "lucide-react";
 import { MotionCover } from "@/components/MotionCover";
-import { useYouTubeSearch } from "@/hooks/useYouTubeSearch";
 import { YouTubeVideo } from "@/hooks/useYouTubePlayer";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Track {
   id: string;
@@ -51,28 +50,60 @@ export function UnifiedMusicStream({
   onAddToQueue,
   onPlayYouTube
 }: UnifiedMusicStreamProps) {
-  const { results: youtubeResults, getTrending, search, isLoading: youtubeLoading } = useYouTubeSearch();
   const [activeFilter, setActiveFilter] = useState<'all' | 'tdz' | 'youtube'>('all');
-  const [hasFetchedTrending, setHasFetchedTrending] = useState(false);
-  const [lastSearchedGenre, setLastSearchedGenre] = useState<string | undefined>();
+  const [youtubeResults, setYoutubeResults] = useState<YouTubeVideo[]>([]);
+  const [youtubeLoading, setYoutubeLoading] = useState(false);
+  
+  // Use refs to track fetch state and prevent infinite loops
+  const hasFetchedRef = useRef(false);
+  const lastGenreRef = useRef<string | undefined>(undefined);
 
-  // Fetch YouTube trending on mount - only once using ref pattern
+  // Fetch YouTube trending on mount - only once
   useEffect(() => {
-    if (!hasFetchedTrending) {
-      setHasFetchedTrending(true);
-      getTrending();
-    }
-    // Intentionally only run on mount - getTrending is stable via useCallback
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
+    
+    const fetchTrending = async () => {
+      setYoutubeLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('youtube-search', {
+          body: { type: 'trending', maxResults: 20 }
+        });
+        if (!error && data?.results) {
+          setYoutubeResults(data.results);
+        }
+      } catch (err) {
+        console.error('YouTube trending error:', err);
+      } finally {
+        setYoutubeLoading(false);
+      }
+    };
+    
+    fetchTrending();
   }, []);
 
-  // Search YouTube when genre changes - prevent duplicate searches
+  // Search YouTube when genre changes
   useEffect(() => {
-    if (selectedGenre && selectedGenre !== lastSearchedGenre) {
-      setLastSearchedGenre(selectedGenre);
-      search(`${selectedGenre} music`);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!selectedGenre || selectedGenre === lastGenreRef.current) return;
+    lastGenreRef.current = selectedGenre;
+    
+    const searchGenre = async () => {
+      setYoutubeLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('youtube-search', {
+          body: { query: `${selectedGenre} music`, type: 'search', maxResults: 20 }
+        });
+        if (!error && data?.results) {
+          setYoutubeResults(data.results);
+        }
+      } catch (err) {
+        console.error('YouTube search error:', err);
+      } finally {
+        setYoutubeLoading(false);
+      }
+    };
+    
+    searchGenre();
   }, [selectedGenre]);
 
   const formatDuration = (seconds?: number) => {
