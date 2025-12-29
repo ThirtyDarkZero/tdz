@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users, Music, TrendingUp, Activity, Database, HardDrive,
   Play, Heart, Download, AlertCircle, CheckCircle, Clock, Sparkles,
@@ -21,6 +20,8 @@ import { ExecAgentPanel } from "@/components/ExecAgentPanel";
 import { PaymentFlowDashboard } from "@/components/PaymentFlowDashboard";
 import { CEOArtistMessaging } from "@/components/CEOArtistMessaging";
 import { SystemDiagnosticsPanel } from "@/components/SystemDiagnosticsPanel";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { cn } from "@/lib/utils";
 
 type DashboardMetrics = {
   totalUsers: number;
@@ -61,6 +62,7 @@ export default function CEODashboard() {
   const navigate = useNavigate();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("executive");
 
   // Check if user is CEO - only after auth has loaded
   const isCEO = user?.email === 'info@thirtydarkzero.com';
@@ -321,14 +323,17 @@ export default function CEODashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 relative overflow-hidden">
+      {/* Admin Sidebar */}
+      <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      
       {/* Background effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none ml-[72px]">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-secondary/10 rounded-full blur-3xl" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-primary/5 via-transparent to-secondary/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="container mx-auto p-6 relative z-10">
+      <div className="ml-[72px] hover:ml-[220px] transition-all duration-300 p-6 relative z-10">
         {/* Header with crown */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
@@ -491,387 +496,377 @@ export default function CEODashboard() {
           </Card>
         </div>
 
-        {/* Detailed Analytics */}
-        <Tabs defaultValue="executive" className="space-y-6">
-          <TabsList className="glass-card flex-wrap h-auto p-2 gap-1">
-            <TabsTrigger value="executive" className="gap-2 data-[state=active]:bg-primary/20 data-[state=active]:shadow-lg">
-              <Bot className="w-4 h-4" />
-              Executive Advisory
-            </TabsTrigger>
-            <TabsTrigger value="messaging" className="gap-2 data-[state=active]:bg-primary/20 data-[state=active]:shadow-lg">
-              <MessageCircle className="w-4 h-4" />
-              Artist Messages
-            </TabsTrigger>
-            <TabsTrigger value="revenue" className="data-[state=active]:bg-primary/20 data-[state=active]:shadow-lg">Revenue Pool</TabsTrigger>
-            <TabsTrigger value="overview" className="data-[state=active]:bg-primary/20 data-[state=active]:shadow-lg">Overview</TabsTrigger>
-            <TabsTrigger value="users" className="data-[state=active]:bg-primary/20 data-[state=active]:shadow-lg">Users</TabsTrigger>
-            <TabsTrigger value="content" className="data-[state=active]:bg-primary/20 data-[state=active]:shadow-lg">Content</TabsTrigger>
-            <TabsTrigger value="health" className="data-[state=active]:bg-primary/20 data-[state=active]:shadow-lg">System Health</TabsTrigger>
-          </TabsList>
-
+        {/* Detailed Analytics - Sidebar-controlled */}
+        <div className="space-y-6">
           {/* Executive Advisory Tab */}
-          <TabsContent value="executive" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <ExecAgentPanel />
+          {activeTab === "executive" && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <ExecAgentPanel />
+                </div>
+                <div className="space-y-4">
+                  <Card className="glass-card p-6">
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-primary" />
+                      Quick Insights
+                    </h3>
+                    <div className="space-y-3 text-sm">
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-muted-foreground">Artist Liability</p>
+                        <p className="text-xl font-bold text-green-500">${metrics.artistLiability.toLocaleString()}</p>
+                      </div>
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-muted-foreground">Platform Revenue</p>
+                        <p className="text-xl font-bold">${metrics.totalPlatformRevenue.toLocaleString()}</p>
+                      </div>
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <p className="text-muted-foreground">Revenue Gap</p>
+                        <p className={cn("text-xl font-bold", metrics.totalPlatformRevenue >= metrics.artistLiability ? 'text-green-500' : 'text-destructive')}>
+                          ${Math.abs(metrics.totalPlatformRevenue - metrics.artistLiability).toLocaleString()}
+                          {metrics.totalPlatformRevenue >= metrics.artistLiability ? ' surplus' : ' deficit'}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                  <Card className="glass-card p-6">
+                    <h3 className="font-semibold mb-3">Platform Status</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Total Artists</span>
+                        <span className="font-medium">{metrics.totalArtists}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Total Listeners</span>
+                        <span className="font-medium">{metrics.totalListeners}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Total Tracks</span>
+                        <span className="font-medium">{metrics.totalTracks}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Total Streams</span>
+                        <span className="font-medium">{metrics.totalPlays.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
               </div>
-              <div className="space-y-4">
+            </div>
+          )}
+
+          {/* Artist Messaging Tab */}
+          {activeTab === "messaging" && (
+            <div className="animate-fade-in">
+              <CEOArtistMessaging />
+            </div>
+          )}
+
+          {/* Revenue Pool Tab */}
+          {activeTab === "revenue" && (
+            <div className="space-y-6 animate-fade-in">
+              <PaymentFlowDashboard />
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="glass-card p-6">
-                  <h3 className="font-semibold mb-3 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                    Quick Insights
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <PiggyBank className="w-5 h-5 text-green-500" />
+                    Revenue Pool Sources
                   </h3>
-                  <div className="space-y-3 text-sm">
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <p className="text-muted-foreground">Artist Liability</p>
-                      <p className="text-xl font-bold text-green-500">${metrics.artistLiability.toLocaleString()}</p>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={revenuePoolData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, value }) => `${name}: ${value}%`}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {revenuePoolData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Card>
+
+                <Card className="glass-card p-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-green-500" />
+                    Payout Economics
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center p-3 bg-green-500/10 rounded-lg">
+                      <span className="font-medium">Per Stream Payout</span>
+                      <span className="text-2xl font-bold text-green-500">$1.00</span>
                     </div>
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <p className="text-muted-foreground">Platform Revenue</p>
-                      <p className="text-xl font-bold">${metrics.totalPlatformRevenue.toLocaleString()}</p>
+                    <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                      <span>Total Streams</span>
+                      <span className="font-bold">{metrics.totalPlays.toLocaleString()}</span>
                     </div>
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <p className="text-muted-foreground">Revenue Gap</p>
-                      <p className={`text-xl font-bold ${metrics.totalPlatformRevenue >= metrics.artistLiability ? 'text-green-500' : 'text-destructive'}`}>
-                        ${Math.abs(metrics.totalPlatformRevenue - metrics.artistLiability).toLocaleString()}
-                        {metrics.totalPlatformRevenue >= metrics.artistLiability ? ' surplus' : ' deficit'}
+                    <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                      <span>Total Liability</span>
+                      <span className="font-bold">${metrics.artistLiability.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                      <span>Downloads Sold</span>
+                      <span className="font-bold">{metrics.totalDownloads}</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-secondary/10 rounded-lg">
+                      <span>Download Revenue (Artist)</span>
+                      <span className="font-bold text-secondary">${metrics.totalDownloadRevenue.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              <Card className="glass-card p-6">
+                <h3 className="text-lg font-semibold mb-4">Financial Health Indicators</h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 bg-green-500/10 rounded-lg">
+                    <p className="text-2xl font-bold text-green-500">
+                      {Math.ceil(metrics.artistLiability / 9.99).toLocaleString()}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Subscribers Needed</p>
+                    <p className="text-xs text-muted-foreground mt-1">@ $9.99/mo</p>
+                  </div>
+                  <div className="text-center p-4 bg-primary/10 rounded-lg">
+                    <p className="text-2xl font-bold text-primary">
+                      {(metrics.totalPlays / Math.max(metrics.totalUsers, 1)).toFixed(1)}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Streams/User</p>
+                    <p className="text-xs text-muted-foreground mt-1">Average engagement</p>
+                  </div>
+                  <div className="text-center p-4 bg-secondary/10 rounded-lg">
+                    <p className="text-2xl font-bold text-secondary">
+                      ${(metrics.avgDownloadPrice || 2.99).toFixed(2)}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Avg Download Price</p>
+                    <p className="text-xs text-muted-foreground mt-1">Artist-set pricing</p>
+                  </div>
+                  <div className="text-center p-4 bg-accent/10 rounded-lg">
+                    <p className="text-2xl font-bold text-accent">94%</p>
+                    <p className="text-sm text-muted-foreground">Artist Retention</p>
+                    <p className="text-xs text-muted-foreground mt-1">Industry-leading</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* Overview Tab */}
+          {activeTab === "overview" && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="glass-card p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Sparkles className="w-8 h-8 text-purple-400" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Dolby Atmos Tracks</p>
+                      <p className="text-3xl font-bold">{metrics.dolbyAtmosCount}</p>
+                    </div>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {((metrics.dolbyAtmosCount / Math.max(metrics.totalTracks, 1)) * 100).toFixed(1)}% adoption rate
+                  </div>
+                </Card>
+
+                <Card className="glass-card p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Music className="w-8 h-8 text-cyan-400" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">HD Audio Tracks</p>
+                      <p className="text-3xl font-bold">{metrics.hdAudioCount}</p>
+                    </div>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {((metrics.hdAudioCount / Math.max(metrics.totalTracks, 1)) * 100).toFixed(1)}% adoption rate
+                  </div>
+                </Card>
+
+                <Card className="glass-card p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <TrendingUp className="w-8 h-8 text-green-400" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Premium Quality</p>
+                      <p className="text-3xl font-bold">
+                        {metrics.dolbyAtmosCount + metrics.hdAudioCount}
                       </p>
                     </div>
                   </div>
+                  <div className="text-sm text-muted-foreground">
+                    {(((metrics.dolbyAtmosCount + metrics.hdAudioCount) / Math.max(metrics.totalTracks, 1)) * 100).toFixed(1)}% total
+                  </div>
                 </Card>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="glass-card p-6">
-                  <h3 className="font-semibold mb-3">Platform Status</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Total Artists</span>
-                      <span className="font-medium">{metrics.totalArtists}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Total Listeners</span>
-                      <span className="font-medium">{metrics.totalListeners}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Total Tracks</span>
-                      <span className="font-medium">{metrics.totalTracks}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Total Streams</span>
-                      <span className="font-medium">{metrics.totalPlays.toLocaleString()}</span>
-                    </div>
-                  </div>
+                  <h3 className="text-lg font-semibold mb-4">Daily Activity (Last 7 Days)</h3>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <LineChart data={metrics.dailyActivity}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                      <XAxis dataKey="date" stroke="#888" />
+                      <YAxis stroke="#888" />
+                      <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} />
+                      <Legend />
+                      <Line type="monotone" dataKey="plays" stroke="#8B5CF6" strokeWidth={2} />
+                      <Line type="monotone" dataKey="uploads" stroke="#EC4899" strokeWidth={2} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Card>
+
+                <Card className="glass-card p-6">
+                  <h3 className="text-lg font-semibold mb-4">Genre Distribution</h3>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={metrics.genreDistribution}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {metrics.genreDistribution.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </Card>
               </div>
-            </div>
-          </TabsContent>
-
-          {/* Artist Messaging Tab */}
-          <TabsContent value="messaging" className="space-y-6">
-            <CEOArtistMessaging />
-          </TabsContent>
-
-          {/* Revenue Pool Tab - NEW */}
-          <TabsContent value="revenue" className="space-y-6">
-            {/* Payment Flow Visualization */}
-            <PaymentFlowDashboard />
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="glass-card p-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <PiggyBank className="w-5 h-5 text-green-500" />
-                  Revenue Pool Sources
-                </h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={revenuePoolData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, value }) => `${name}: ${value}%`}
-                      outerRadius={100}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {revenuePoolData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </Card>
 
               <Card className="glass-card p-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-green-500" />
-                  Payout Economics
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-green-500/10 rounded-lg">
-                    <span className="font-medium">Per Stream Payout</span>
-                    <span className="text-2xl font-bold text-green-500">$1.00</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                    <span>Total Streams</span>
-                    <span className="font-bold">{metrics.totalPlays.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                    <span>Total Liability</span>
-                    <span className="font-bold">${metrics.artistLiability.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                    <span>Downloads Sold</span>
-                    <span className="font-bold">{metrics.totalDownloads}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-secondary/10 rounded-lg">
-                    <span>Download Revenue (Artist)</span>
-                    <span className="font-bold text-secondary">${metrics.totalDownloadRevenue.toFixed(2)}</span>
-                  </div>
-                </div>
-              </Card>
-            </div>
-
-            {/* Financial Health */}
-            <Card className="glass-card p-6">
-              <h3 className="text-lg font-semibold mb-4">Financial Health Indicators</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-green-500/10 rounded-lg">
-                  <p className="text-2xl font-bold text-green-500">
-                    {Math.ceil(metrics.artistLiability / 9.99).toLocaleString()}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Subscribers Needed</p>
-                  <p className="text-xs text-muted-foreground mt-1">@ $9.99/mo</p>
-                </div>
-                <div className="text-center p-4 bg-primary/10 rounded-lg">
-                  <p className="text-2xl font-bold text-primary">
-                    {(metrics.totalPlays / Math.max(metrics.totalUsers, 1)).toFixed(1)}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Streams/User</p>
-                  <p className="text-xs text-muted-foreground mt-1">Average engagement</p>
-                </div>
-                <div className="text-center p-4 bg-secondary/10 rounded-lg">
-                  <p className="text-2xl font-bold text-secondary">
-                    ${(metrics.avgDownloadPrice || 2.99).toFixed(2)}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Avg Download Price</p>
-                  <p className="text-xs text-muted-foreground mt-1">Artist-set pricing</p>
-                </div>
-                <div className="text-center p-4 bg-accent/10 rounded-lg">
-                  <p className="text-2xl font-bold text-accent">94%</p>
-                  <p className="text-sm text-muted-foreground">Artist Retention</p>
-                  <p className="text-xs text-muted-foreground mt-1">Industry-leading</p>
-                </div>
-              </div>
-            </Card>
-          </TabsContent>
-
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            {/* Audio Quality Adoption */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="glass-card p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <Sparkles className="w-8 h-8 text-purple-400" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Dolby Atmos Tracks</p>
-                    <p className="text-3xl font-bold">{metrics.dolbyAtmosCount}</p>
-                  </div>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {((metrics.dolbyAtmosCount / Math.max(metrics.totalTracks, 1)) * 100).toFixed(1)}% adoption rate
-                </div>
-              </Card>
-
-              <Card className="glass-card p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <Music className="w-8 h-8 text-cyan-400" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">HD Audio Tracks</p>
-                    <p className="text-3xl font-bold">{metrics.hdAudioCount}</p>
-                  </div>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {((metrics.hdAudioCount / Math.max(metrics.totalTracks, 1)) * 100).toFixed(1)}% adoption rate
-                </div>
-              </Card>
-
-              <Card className="glass-card p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <TrendingUp className="w-8 h-8 text-green-400" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Premium Quality</p>
-                    <p className="text-3xl font-bold">
-                      {metrics.dolbyAtmosCount + metrics.hdAudioCount}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {(((metrics.dolbyAtmosCount + metrics.hdAudioCount) / Math.max(metrics.totalTracks, 1)) * 100).toFixed(1)}% total
-                </div>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Daily Activity Chart */}
-              <Card className="glass-card p-6">
-                <h3 className="text-lg font-semibold mb-4">Daily Activity (Last 7 Days)</h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <LineChart data={metrics.dailyActivity}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                    <XAxis dataKey="date" stroke="#888" />
-                    <YAxis stroke="#888" />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
-                    />
-                    <Legend />
-                    <Line type="monotone" dataKey="plays" stroke="#8B5CF6" strokeWidth={2} />
-                    <Line type="monotone" dataKey="uploads" stroke="#EC4899" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </Card>
-
-              {/* Genre Distribution */}
-              <Card className="glass-card p-6">
-                <h3 className="text-lg font-semibold mb-4">Genre Distribution</h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={metrics.genreDistribution}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {metrics.genreDistribution.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </Card>
-            </div>
-
-            {/* Top Tracks */}
-            <Card className="glass-card p-6">
-              <h3 className="text-lg font-semibold mb-4">Top Performing Tracks</h3>
-              <div className="space-y-3">
-                {metrics.topTracks.slice(0, 5).map((track, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-background/50">
-                    <div className="flex items-center gap-3">
-                      <Badge variant="secondary" className="w-8 h-8 flex items-center justify-center">
-                        {idx + 1}
-                      </Badge>
-                      <div>
-                        <p className="font-medium">{track.title}</p>
-                        <p className="text-sm text-muted-foreground">{track.artist}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <div className="flex items-center gap-2">
-                          <Play className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-semibold">{track.plays.toLocaleString()}</span>
-                        </div>
-                        <p className="text-xs text-green-500">${track.plays.toLocaleString()} earned</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </TabsContent>
-
-          {/* Users Tab */}
-          <TabsContent value="users" className="space-y-6">
-            <Card className="glass-card p-6">
-              <h3 className="text-lg font-semibold mb-4">Top Artists by Plays</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={metrics.topArtists.slice(0, 8)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                  <XAxis dataKey="name" stroke="#888" />
-                  <YAxis stroke="#888" />
-                  <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} />
-                  <Bar dataKey="plays" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </Card>
-          </TabsContent>
-
-          {/* Content Tab */}
-          <TabsContent value="content" className="space-y-6">
-            <Card className="glass-card p-6">
-              <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-              <ScrollArea className="h-[400px]">
+                <h3 className="text-lg font-semibold mb-4">Top Performing Tracks</h3>
                 <div className="space-y-3">
-                  {metrics.recentActivity.map((activity, idx) => (
-                    <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
-                      <Upload className="w-5 h-5 text-primary mt-0.5" />
-                      <div className="flex-1">
-                        <p className="text-sm">
-                          <span className="font-medium">{activity.user}</span>
-                          {' '}{activity.action}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">{activity.timestamp}</p>
+                  {metrics.topTracks.slice(0, 5).map((track, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-background/50">
+                      <div className="flex items-center gap-3">
+                        <Badge variant="secondary" className="w-8 h-8 flex items-center justify-center">
+                          {idx + 1}
+                        </Badge>
+                        <div>
+                          <p className="font-medium">{track.title}</p>
+                          <p className="text-sm text-muted-foreground">{track.artist}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <div className="flex items-center gap-2">
+                            <Play className="w-4 h-4 text-muted-foreground" />
+                            <span className="font-semibold">{track.plays.toLocaleString()}</span>
+                          </div>
+                          <p className="text-xs text-green-500">${track.plays.toLocaleString()} earned</p>
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
-              </ScrollArea>
-            </Card>
-          </TabsContent>
-
-          {/* System Health Tab */}
-          <TabsContent value="health" className="space-y-6">
-            <SystemDiagnosticsPanel />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="glass-card p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <Database className="w-8 h-8 text-green-400" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Database</p>
-                    <p className="text-2xl font-bold">Healthy</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle className="w-4 h-4 text-green-400" />
-                  <span>All systems operational</span>
-                </div>
-              </Card>
-
-              <Card className="glass-card p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <HardDrive className="w-8 h-8 text-blue-400" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Storage Used</p>
-                    <p className="text-2xl font-bold">{metrics.storageUsed.toFixed(0)} MB</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Clock className="w-4 h-4 text-blue-400" />
-                  <span>Plenty of capacity</span>
-                </div>
-              </Card>
-
-              <Card className="glass-card p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <Activity className="w-8 h-8 text-purple-400" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Uptime</p>
-                    <p className="text-2xl font-bold">99.9%</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <CheckCircle className="w-4 h-4 text-purple-400" />
-                  <span>Excellent performance</span>
-                </div>
               </Card>
             </div>
-          </TabsContent>
-        </Tabs>
+          )}
+
+          {/* Users Tab */}
+          {activeTab === "users" && (
+            <div className="space-y-6 animate-fade-in">
+              <Card className="glass-card p-6">
+                <h3 className="text-lg font-semibold mb-4">Top Artists by Plays</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={metrics.topArtists.slice(0, 8)}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                    <XAxis dataKey="name" stroke="#888" />
+                    <YAxis stroke="#888" />
+                    <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} />
+                    <Bar dataKey="plays" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Card>
+            </div>
+          )}
+
+          {/* Content Tab */}
+          {activeTab === "content" && (
+            <div className="space-y-6 animate-fade-in">
+              <Card className="glass-card p-6">
+                <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
+                <ScrollArea className="h-[400px]">
+                  <div className="space-y-3">
+                    {metrics.recentActivity.map((activity, idx) => (
+                      <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
+                        <Upload className="w-5 h-5 text-primary mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-sm">
+                            <span className="font-medium">{activity.user}</span>
+                            {' '}{activity.action}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">{activity.timestamp}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </Card>
+            </div>
+          )}
+
+          {/* System Health Tab */}
+          {activeTab === "health" && (
+            <div className="space-y-6 animate-fade-in">
+              <SystemDiagnosticsPanel />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="glass-card p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Database className="w-8 h-8 text-green-400" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Database</p>
+                      <p className="text-2xl font-bold">Healthy</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                    <span>All systems operational</span>
+                  </div>
+                </Card>
+
+                <Card className="glass-card p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <HardDrive className="w-8 h-8 text-blue-400" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Storage Used</p>
+                      <p className="text-2xl font-bold">{metrics.storageUsed.toFixed(0)} MB</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="w-4 h-4 text-blue-400" />
+                    <span>Plenty of capacity</span>
+                  </div>
+                </Card>
+
+                <Card className="glass-card p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Activity className="w-8 h-8 text-purple-400" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Uptime</p>
+                      <p className="text-2xl font-bold">99.9%</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <CheckCircle className="w-4 h-4 text-purple-400" />
+                    <span>Excellent performance</span>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
