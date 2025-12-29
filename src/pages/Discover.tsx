@@ -26,6 +26,7 @@ import { PremiumTabs } from "@/components/discovery/PremiumTabs";
 import { useDiscoveryData } from "@/hooks/useDiscoveryData";
 import { MerchStore } from "@/components/MerchStore";
 import { usePlayer } from "@/contexts/PlayerContext";
+import { YouTubeSection } from "@/components/youtube";
 
 export default function Discover() {
   const navigate = useNavigate();
@@ -209,6 +210,9 @@ export default function Discover() {
       }
       merchContent={
         <MerchStore variant="full" />
+      }
+      youtubeContent={
+        <YouTubeSection />
       }
     />
   );

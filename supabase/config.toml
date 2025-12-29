@@ -101,3 +101,6 @@ verify_jwt = true
 
 [functions.record-stream]
 verify_jwt = false
+
+[functions.youtube-search]
+verify_jwt = false
