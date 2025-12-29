@@ -171,7 +171,7 @@ export function UnifiedMusicStream({
     return [...tdzMapped, ...youtubeMapped];
   }, [filteredTdzTracks, youtubeResults, activeFilter]);
 
-  const parseDurationToSeconds = (duration?: string): number => {
+  function parseDurationToSeconds(duration?: string): number {
     if (!duration) return 0;
     const parts = duration.split(':').map(Number);
     if (parts.length === 3) {
@@ -181,16 +181,20 @@ export function UnifiedMusicStream({
       return parts[0] * 60 + parts[1];
     }
     return parts[0] || 0;
-  };
+  }
 
-  const parseViewCount = (viewCount?: string): number => {
+  function parseViewCount(viewCount?: string): number {
     if (!viewCount) return 0;
     const num = viewCount.replace(/[^0-9.]/g, '');
-    const multiplier = viewCount.includes('B') ? 1e9 : 
-                       viewCount.includes('M') ? 1e6 : 
-                       viewCount.includes('K') ? 1e3 : 1;
+    const multiplier = viewCount.includes('B')
+      ? 1e9
+      : viewCount.includes('M')
+        ? 1e6
+        : viewCount.includes('K')
+          ? 1e3
+          : 1;
     return Math.round(parseFloat(num) * multiplier);
-  };
+  }
 
   const handlePlayUnified = (track: Track) => {
     if (track.source === 'youtube' && track.youtubeData) {
