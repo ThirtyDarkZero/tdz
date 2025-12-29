@@ -4,6 +4,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AppErrorFallback } from "@/components/AppErrorFallback";
+import { GlobalErrorTrap } from "@/components/GlobalErrorTrap";
 import { CommandPalette } from "@/components/CommandPalette";
 import { SmartFAB } from "@/components/SmartFAB";
 import { PlayerProvider } from "@/contexts/PlayerContext";
@@ -38,6 +41,7 @@ const App = () => (
       <PlayerProvider>
         <Toaster />
         <Sonner />
+        <GlobalErrorTrap />
         <BrowserRouter>
           <CommandPalette />
           <SmartFAB />
@@ -45,8 +49,22 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/role-selection" element={<RoleSelection />} />
-            <Route path="/studio" element={<Studio />} />
-            <Route path="/discover" element={<Discover />} />
+            <Route
+              path="/studio"
+              element={
+                <ErrorBoundary fallback={<AppErrorFallback title="Studio failed to load" />}>
+                  <Studio />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/discover"
+              element={
+                <ErrorBoundary fallback={<AppErrorFallback title="Discover failed to load" />}>
+                  <Discover />
+                </ErrorBoundary>
+              }
+            />
             <Route path="/browse" element={<Browse />} />
             <Route path="/artist/:artistId" element={<ArtistProfile />} />
             <Route path="/profile" element={<ListenerProfile />} />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -52,18 +52,34 @@ const Studio = () => {
   // This prevents fans from ever seeing Studio UI even briefly
   useEffect(() => {
     if (!loading && !user) {
-      navigate("/auth");
+      navigate("/auth", { replace: true });
       return;
     }
   }, [user, loading, navigate]);
 
   // Redirect listeners BEFORE any UI render
   useEffect(() => {
-    if (!roleLoading && role === 'listener') {
+    if (!roleLoading && role === "listener") {
       toast.error("Studio access is only available for artists and managers");
       navigate("/discover", { replace: true });
     }
   }, [role, roleLoading, navigate]);
+
+  // If a logged-in user has no role, force them through role selection (prevents blank Studio)
+  const roleRedirectedRef = useRef(false);
+  useEffect(() => {
+    if (loading || roleLoading) return;
+    if (!user) return;
+    if (role) return;
+
+    if (!roleRedirectedRef.current) {
+      roleRedirectedRef.current = true;
+      toast.info("Finish setup", {
+        description: "Choose your role to continue to Studio.",
+      });
+    }
+    navigate("/role-selection", { replace: true });
+  }, [loading, roleLoading, user, role, navigate]);
 
   // Load artist profile once access is verified (must be declared before conditional returns)
   useEffect(() => {
@@ -124,12 +140,16 @@ const Studio = () => {
     );
   }
 
-  // SECURITY: Double-check - if no role or listener, show nothing
-  if (!user || role === 'listener' || !role) {
-    return null;
+  // SECURITY: Don't render Studio UI unless role is verified and allowed
+  if (!user || role === "listener" || !role) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-2">
+          <p className="text-muted-foreground">Redirecting…</p>
+        </div>
+      </div>
+    );
   }
-
-
   // This block is now handled above for security
   // Removed duplicate loading check
 
