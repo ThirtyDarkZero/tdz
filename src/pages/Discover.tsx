@@ -160,10 +160,34 @@ export default function Discover() {
   };
 
   const handlePlayYouTube = (video: YouTubeVideo) => {
-    toast.info(`Opening: ${video.title}`);
-    // YouTube playback is handled via the YouTube player component
-    window.open(`https://www.youtube.com/watch?v=${video.id}`, '_blank');
+    // Convert YouTube video to Track format and play through global player
+    const youtubeTrack = {
+      id: `yt-${video.id}`,
+      title: video.title,
+      artist_name: video.channel,
+      duration: parseDurationToSeconds(video.duration),
+      file_path: '',
+      play_count: 0,
+      source: 'youtube' as const,
+      youtubeId: video.id,
+      thumbnail: video.thumbnail,
+    };
+    playTrack(youtubeTrack);
+    toast.success(`Now playing: ${video.title}`);
   };
+
+  // Helper to parse YouTube duration string to seconds
+  function parseDurationToSeconds(duration?: string): number {
+    if (!duration) return 0;
+    const parts = duration.split(':').map(Number);
+    if (parts.length === 3) {
+      return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    }
+    if (parts.length === 2) {
+      return parts[0] * 60 + parts[1];
+    }
+    return parts[0] || 0;
+  }
 
   // Show loading state while data is being fetched (AFTER all hooks)
   if (loading) {

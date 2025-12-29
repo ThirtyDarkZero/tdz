@@ -1,5 +1,6 @@
 import { usePlayer, Track as PlayerTrack } from "@/contexts/PlayerContext";
 import { MusicPlayer } from "@/components/MusicPlayer";
+import { YouTubePlayerInline } from "@/components/youtube/YouTubePlayerInline";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -13,7 +14,7 @@ export function GlobalMusicPlayer() {
   const { user } = useAuth();
   const { role } = useUserRole(user);
   const { hasFeature } = useSubscription(user);
-  const { currentTrack, queue, nextTrack, previousTrack, setIsPlaying } = usePlayer();
+  const { currentTrack, queue, nextTrack, previousTrack, setIsPlaying, isPlaying } = usePlayer();
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   
   const isArtist = role === 'artist' || role === 'verified_artist' || role === 'manager';
@@ -32,6 +33,32 @@ export function GlobalMusicPlayer() {
   // Only render if there's a track
   if (!currentTrack) {
     return null;
+  }
+
+  // Check if this is a YouTube track
+  const isYouTubeTrack = currentTrack.source === 'youtube' || currentTrack.youtubeId;
+
+  if (isYouTubeTrack) {
+    return (
+      <>
+        <div className="fixed bottom-0 left-0 right-0 z-50">
+          <div className="glass-ultra border-t border-white/5 shadow-3d-lg">
+            <YouTubePlayerInline
+              track={currentTrack}
+              onNext={nextTrack}
+              onPrevious={previousTrack}
+              onTrackEnd={handleTrackEnd}
+              isPlaying={isPlaying}
+              onPlayingChange={setIsPlaying}
+            />
+          </div>
+        </div>
+        <SubscriptionModal
+          open={showSubscriptionModal}
+          onOpenChange={setShowSubscriptionModal}
+        />
+      </>
+    );
   }
 
   // Cast to the expected type since we ensure required fields in PlayerContext

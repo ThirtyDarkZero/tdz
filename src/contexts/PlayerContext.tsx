@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useRef, useEffect } from 'react';
 
 // Track interface for the global player - matches MusicPlayer expectations
 export interface Track {
@@ -29,6 +29,18 @@ export interface Track {
       artworkUrl?: string;
     };
   };
+  // YouTube support
+  source?: 'tdz' | 'youtube';
+  youtubeId?: string;
+  thumbnail?: string;
+}
+
+interface YouTubePlayerState {
+  isReady: boolean;
+  currentTime: number;
+  duration: number;
+  volume: number;
+  isMuted: boolean;
 }
 
 interface PlayerContextType {
@@ -54,6 +66,20 @@ interface PlayerContextType {
   setIsPlaying: (playing: boolean) => void;
   setCurrentTime: (time: number) => void;
   currentTime: number;
+  
+  // YouTube player state
+  youtubeState: YouTubePlayerState;
+  youtubePlayer: any;
+  setYoutubePlayer: (player: any) => void;
+}
+
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady: () => void;
+    youtubeApiLoaded?: boolean;
+    youtubeApiCallbacks?: (() => void)[];
+  }
 }
 
 const PlayerContext = createContext<PlayerContextType | null>(null);
@@ -64,6 +90,78 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [youtubePlayer, setYoutubePlayer] = useState<any>(null);
+  const [youtubeState, setYoutubeState] = useState<YouTubePlayerState>({
+    isReady: false,
+    currentTime: 0,
+    duration: 0,
+    volume: 100,
+    isMuted: false,
+  });
+  
+  const intervalRef = useRef<number | null>(null);
+
+  // Load YouTube IFrame API on mount
+  useEffect(() => {
+    if (window.YT && window.YT.Player) {
+      setYoutubeState(s => ({ ...s, isReady: true }));
+      return;
+    }
+
+    // Set up callback for API ready
+    if (!window.youtubeApiCallbacks) {
+      window.youtubeApiCallbacks = [];
+    }
+    
+    window.youtubeApiCallbacks.push(() => {
+      setYoutubeState(s => ({ ...s, isReady: true }));
+    });
+
+    if (!window.youtubeApiLoaded) {
+      window.youtubeApiLoaded = true;
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+
+      window.onYouTubeIframeAPIReady = () => {
+        window.youtubeApiCallbacks?.forEach(cb => cb());
+      };
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
+
+  // Update time tracking for YouTube
+  useEffect(() => {
+    if (currentTrack?.source === 'youtube' && youtubePlayer && isPlaying) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      intervalRef.current = window.setInterval(() => {
+        if (youtubePlayer?.getCurrentTime) {
+          const time = youtubePlayer.getCurrentTime();
+          setCurrentTime(time);
+          setYoutubeState(s => ({ ...s, currentTime: time }));
+        }
+      }, 1000);
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+    
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [currentTrack, youtubePlayer, isPlaying]);
 
   const playTrack = useCallback((track: Track, newQueue?: Track[]) => {
     setCurrentTrack(track);
@@ -93,6 +191,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setCurrentTrack(next);
       setCurrentIndex(currentIndex + 1);
       setCurrentTime(0);
+      setIsPlaying(true);
     }
   }, [currentIndex, queue]);
 
@@ -102,6 +201,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setCurrentTrack(prev);
       setCurrentIndex(currentIndex - 1);
       setCurrentTime(0);
+      setIsPlaying(true);
     }
   }, [currentIndex, queue]);
 
@@ -158,6 +258,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setIsPlaying,
         setCurrentTime,
         currentTime,
+        youtubeState,
+        youtubePlayer,
+        setYoutubePlayer,
       }}
     >
       {children}
