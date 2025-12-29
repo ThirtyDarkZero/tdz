@@ -1,9 +1,9 @@
-import { useRef, useMemo, useState, useEffect } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { useRef, useMemo, useState, useEffect, useCallback, Suspense, lazy } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Waves, Mountain, Circle, Zap } from "lucide-react";
+import { Sparkles, Waves, Mountain, Circle, Zap, Maximize2, Minimize2 } from "lucide-react";
 
 interface AudioVisualizer3DProps {
   audioElement: HTMLAudioElement | null;
@@ -67,10 +67,10 @@ function useAudioAnalyzer(audioElement: HTMLAudioElement | null) {
   return { getFrequencyData, getAverageFrequency };
 }
 
-// Aurora Borealis Visualizer
+// Aurora Borealis Visualizer - Optimized with reduced particles
 function AuroraVisualizer({ getFrequencyData, getAverageFrequency, isPlaying }: any) {
   const meshRef = useRef<THREE.Points>(null);
-  const particleCount = 5000;
+  const particleCount = 2000; // Reduced from 5000 for better performance
 
   const [positions, colors] = useMemo(() => {
     const pos = new Float32Array(particleCount * 3);
@@ -360,8 +360,29 @@ function VisualizerScene({ mode, audioElement, isPlaying }: { mode: VisualizerMo
   );
 }
 
+// Performance-optimized Canvas wrapper
+function OptimizedCanvas({ children }: { children: React.ReactNode }) {
+  return (
+    <Canvas
+      dpr={[1, 1.5]} // Limit pixel ratio for performance
+      performance={{ min: 0.5 }} // Allow frame rate drops
+      gl={{ 
+        antialias: false, // Disable for performance
+        powerPreference: "high-performance",
+        alpha: false 
+      }}
+    >
+      <color attach="background" args={['#000000']} />
+      <fog attach="fog" args={['#000000', 5, 20]} />
+      {children}
+    </Canvas>
+  );
+}
+
 export function AudioVisualizer3D({ audioElement, isPlaying }: AudioVisualizer3DProps) {
   const [mode, setMode] = useState<VisualizerMode>("aurora");
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const modes: { id: VisualizerMode; label: string; icon: any }[] = [
     { id: "aurora", label: "Aurora", icon: Sparkles },
@@ -371,8 +392,37 @@ export function AudioVisualizer3D({ audioElement, isPlaying }: AudioVisualizer3D
     { id: "pulse", label: "Pulse", icon: Zap },
   ];
 
+  const toggleFullscreen = useCallback(async () => {
+    if (!containerRef.current) return;
+    
+    try {
+      if (!document.fullscreenElement) {
+        await containerRef.current.requestFullscreen();
+        setIsFullscreen(true);
+      } else {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    } catch (err) {
+      console.error("Fullscreen error:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
   return (
-    <div className="relative w-full h-64 bg-black/90 rounded-lg overflow-hidden">
+    <div 
+      ref={containerRef}
+      className={`relative bg-black/90 rounded-lg overflow-hidden transition-all duration-300 ${
+        isFullscreen ? "w-screen h-screen rounded-none" : "w-full h-64"
+      }`}
+    >
       {/* Mode selector */}
       <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex gap-1 p-1 bg-black/60 backdrop-blur-sm rounded-full border border-primary/20">
         {modes.map(({ id, label, icon: Icon }) => (
@@ -393,12 +443,26 @@ export function AudioVisualizer3D({ audioElement, isPlaying }: AudioVisualizer3D
         ))}
       </div>
 
-      {/* 3D Canvas */}
-      <Canvas>
-        <color attach="background" args={['#000000']} />
-        <fog attach="fog" args={['#000000', 5, 20]} />
-        <VisualizerScene mode={mode} audioElement={audioElement} isPlaying={isPlaying} />
-      </Canvas>
+      {/* Fullscreen toggle */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggleFullscreen}
+        className="absolute top-3 right-3 z-10 h-8 w-8 bg-black/60 backdrop-blur-sm border border-primary/20 rounded-full hover:bg-primary/20"
+      >
+        {isFullscreen ? (
+          <Minimize2 className="h-4 w-4 text-foreground" />
+        ) : (
+          <Maximize2 className="h-4 w-4 text-foreground" />
+        )}
+      </Button>
+
+      {/* 3D Canvas - Optimized */}
+      <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-muted-foreground">Loading...</div>}>
+        <OptimizedCanvas>
+          <VisualizerScene mode={mode} audioElement={audioElement} isPlaying={isPlaying} />
+        </OptimizedCanvas>
+      </Suspense>
 
       {/* Glow overlay */}
       <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-primary/5 via-transparent to-accent/5" />

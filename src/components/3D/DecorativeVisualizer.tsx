@@ -77,8 +77,8 @@ export function DecorativeAurora() {
   );
 }
 
-// Floating particles decoration
-export function DecorativeParticles({ count = 200 }: { count?: number }) {
+// Floating particles decoration - Optimized with reduced default count
+export function DecorativeParticles({ count = 100 }: { count?: number }) {
   const meshRef = useRef<THREE.Points>(null);
 
   const { positions, colors } = useMemo(() => {
@@ -139,13 +139,13 @@ export function DecorativeParticles({ count = 200 }: { count?: number }) {
   );
 }
 
-// Combined decorative scene
+// Combined decorative scene - Optimized particle count
 export function DecorativeVisualizerScene() {
   return (
     <>
       <ambientLight intensity={0.3} />
       <DecorativeAurora />
-      <DecorativeParticles count={150} />
+      <DecorativeParticles count={80} />
     </>
   );
 }
