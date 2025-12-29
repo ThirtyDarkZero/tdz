@@ -12,10 +12,13 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
-import { UserPlus, Users, TrendingUp, DollarSign, Music, Upload, ChevronRight, Image, X, Check } from "lucide-react";
+import { UserPlus, Users, TrendingUp, DollarSign, Music, Upload, ChevronRight, Image, X, Check, Lock } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart
 } from "recharts";
+import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useNavigate } from "react-router-dom";
 
 interface Artist {
   id: string;
@@ -37,6 +40,9 @@ interface Artist {
 }
 
 export const ManagerDashboard = () => {
+  const { user } = useAuth();
+  const { getPlan, loading: subLoading } = useSubscription(user);
+  const navigate = useNavigate();
   const [artists, setArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(true);
   const [createProfileOpen, setCreateProfileOpen] = useState(false);
@@ -63,10 +69,37 @@ export const ManagerDashboard = () => {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  // Enterprise-only gating
+  const plan = getPlan();
+  const isEnterprise = plan === 'enterprise';
+
   const genres = [
     "Hip-Hop", "R&B", "Pop", "Rock", "Electronic", "Jazz", "Classical",
     "Country", "Reggae", "Latin", "Soul", "Folk", "Metal", "Ambient", "Spoken Word"
   ];
+
+  // Gate non-enterprise users
+  if (!subLoading && !isEnterprise) {
+    return (
+      <Card className="glass-card p-8 text-center">
+        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+          <Lock className="w-8 h-8 text-primary" />
+        </div>
+        <h3 className="text-xl font-bold mb-2">Enterprise Feature</h3>
+        <p className="text-muted-foreground mb-4">
+          Artist Management is exclusively available to Enterprise subscribers.
+        </p>
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <Badge variant="outline">{plan.charAt(0).toUpperCase() + plan.slice(1)}</Badge>
+          <span className="text-muted-foreground">→</span>
+          <Badge className="bg-accent/20 text-accent border-accent/30">Enterprise $49.99/mo</Badge>
+        </div>
+        <Button onClick={() => navigate("/pricing")} className="bg-gradient-to-r from-primary to-secondary">
+          Upgrade to Enterprise
+        </Button>
+      </Card>
+    );
+  }
 
   useEffect(() => {
     loadArtists();

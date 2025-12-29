@@ -20,7 +20,7 @@ import { ExecAgentPanel } from "@/components/ExecAgentPanel";
 import { PaymentFlowDashboard } from "@/components/PaymentFlowDashboard";
 import { CEOArtistMessaging } from "@/components/CEOArtistMessaging";
 import { SystemDiagnosticsPanel } from "@/components/SystemDiagnosticsPanel";
-import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { AdminSidebar, CEORevenueControl } from "@/components/admin";
 import { cn } from "@/lib/utils";
 
 type DashboardMetrics = {
@@ -565,7 +565,7 @@ export default function CEODashboard() {
           {/* Revenue Pool Tab */}
           {activeTab === "revenue" && (
             <div className="space-y-6 animate-fade-in">
-              <PaymentFlowDashboard />
+              <CEORevenueControl />
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="glass-card p-6">
