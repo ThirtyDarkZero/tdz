@@ -10,8 +10,8 @@ import {
   Play, Heart, UserPlus, UserCheck, Share2, 
   Music, Image as ImageIcon, Bell, BellOff, ArrowLeft, Home, MessageCircle
 } from "lucide-react";
-import { MusicPlayer } from "@/components/MusicPlayer";
 import { DirectMessagePanel } from "@/components/DirectMessagePanel";
+import { usePlayer } from "@/contexts/PlayerContext";
 import tdzLogo from "@/assets/tdz-logo.png";
 
 export default function ArtistProfile() {
@@ -23,10 +23,10 @@ export default function ArtistProfile() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [presavedTracks, setPresavedTracks] = useState<Set<string>>(new Set());
   const [user, setUser] = useState<any>(null);
-  const [currentTrack, setCurrentTrack] = useState<any>(null);
-  const [queue, setQueue] = useState<any[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [showMessages, setShowMessages] = useState(false);
+  
+  // Use global player for persistent playback
+  const { playTrack, currentTrack } = usePlayer();
 
   // Validate artistId is a valid UUID
   useEffect(() => {
@@ -195,27 +195,21 @@ export default function ArtistProfile() {
     }
   };
 
+  // Use global player for playback - persists across navigation
   const handlePlayTrack = (track: any) => {
-    setCurrentTrack(track);
-    setQueue(tracks);
-    const index = tracks.findIndex(t => t.id === track.id);
-    setCurrentIndex(index);
-  };
-
-  const handleNext = () => {
-    if (currentIndex < queue.length - 1) {
-      const nextTrack = queue[currentIndex + 1];
-      setCurrentTrack(nextTrack);
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentIndex > 0) {
-      const prevTrack = queue[currentIndex - 1];
-      setCurrentTrack(prevTrack);
-      setCurrentIndex(currentIndex - 1);
-    }
+    const normalizedTrack = {
+      ...track,
+      duration: track.duration || 0,
+      file_path: track.file_path || '',
+      play_count: track.play_count || 0,
+    };
+    const normalizedQueue = tracks.map(t => ({
+      ...t,
+      duration: t.duration || 0,
+      file_path: t.file_path || '',
+      play_count: t.play_count || 0,
+    }));
+    playTrack(normalizedTrack, normalizedQueue);
   };
 
   // Helper function to get image URL with fallback bucket strategy
@@ -226,24 +220,12 @@ export default function ArtistProfile() {
     if (path.startsWith('http')) return path;
     
     // Try the appropriate bucket based on type, then fallback to artist-images
-    const primaryBucket = type === 'banner' ? 'artist-banners' : 'artist-profiles';
     const fallbackBucket = 'artist-images';
     
-    // First try the primary bucket
-    const primaryUrl = supabase.storage.from(primaryBucket).getPublicUrl(path).data.publicUrl;
-    
-    // We'll use the fallback bucket URL since we can't easily check if the primary exists
-    // The path might be stored with the bucket info, so check that too
-    const fallbackUrl = supabase.storage.from(fallbackBucket).getPublicUrl(path).data.publicUrl;
-    
     // Return fallback URL as it's more commonly used based on the codebase
+    const fallbackUrl = supabase.storage.from(fallbackBucket).getPublicUrl(path).data.publicUrl;
     return fallbackUrl;
   };
-
-  const handleTrackEnd = () => {
-    handleNext();
-  };
-
 
   if (!artist) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
@@ -498,14 +480,7 @@ export default function ArtistProfile() {
         </Tabs>
       </div>
 
-      <MusicPlayer
-        currentTrack={currentTrack}
-        queue={queue}
-        onNext={handleNext}
-        onPrevious={handlePrevious}
-        onTrackEnd={handleTrackEnd}
-      />
-
+      {/* Global player is now rendered at App level */}
       {/* Direct Message Panel */}
       <DirectMessagePanel
         open={showMessages}

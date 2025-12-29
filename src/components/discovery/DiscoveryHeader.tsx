@@ -1,16 +1,19 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, User, Mic2, Menu, LayoutDashboard } from "lucide-react";
+import { Search, User, Mic2, Menu, LayoutDashboard, LogOut, Settings, UserCircle } from "lucide-react";
 import tdzLogo from "@/assets/tdz-logo.png";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { NotificationsPanel } from "@/components/NotificationsPanel";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface DiscoveryHeaderProps {
   searchQuery: string;
@@ -30,6 +33,33 @@ export function DiscoveryHeader({
   
   // CEO check
   const isCEO = user?.email === 'info@thirtydarkzero.com';
+
+  // Proper sign out that clears all session data
+  const handleSignOut = async () => {
+    try {
+      // Clear local storage items related to auth
+      localStorage.removeItem('supabase.auth.token');
+      sessionStorage.clear();
+      
+      // Sign out from Supabase - this invalidates the session
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Sign out error:', error);
+        toast.error('Failed to sign out. Please try again.');
+        return;
+      }
+      
+      // Show success message
+      toast.success('Signed out successfully');
+      
+      // Force navigation to landing page with full page reload to clear all state
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Sign out error:', error);
+      toast.error('Failed to sign out. Please try again.');
+    }
+  };
 
   return (
     <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 py-3">
@@ -95,10 +125,12 @@ export function DiscoveryHeader({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={() => navigate("/profile")}>
+                <UserCircle className="w-4 h-4 mr-2" />
                 My Profile
               </DropdownMenuItem>
               {isArtist && (
                 <DropdownMenuItem onClick={() => navigate("/studio")}>
+                  <Mic2 className="w-4 h-4 mr-2" />
                   Artist Studio
                 </DropdownMenuItem>
               )}
@@ -108,7 +140,12 @@ export function DiscoveryHeader({
                   CEO Dashboard
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem onClick={() => navigate("/auth")}>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={handleSignOut}
+                className="text-destructive focus:text-destructive"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>
