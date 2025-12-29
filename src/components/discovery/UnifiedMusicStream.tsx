@@ -53,10 +53,20 @@ export function UnifiedMusicStream({
   const [activeFilter, setActiveFilter] = useState<'all' | 'tdz' | 'youtube'>('all');
   const [youtubeResults, setYoutubeResults] = useState<YouTubeVideo[]>([]);
   const [youtubeLoading, setYoutubeLoading] = useState(false);
+  const [youtubeError, setYoutubeError] = useState(false);
   
   // Use refs to track fetch state and prevent infinite loops
   const hasFetchedRef = useRef(false);
   const lastGenreRef = useRef<string | undefined>(undefined);
+  const isMountedRef = useRef(true);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Fetch YouTube trending on mount - only once
   useEffect(() => {
@@ -65,17 +75,26 @@ export function UnifiedMusicStream({
     
     const fetchTrending = async () => {
       setYoutubeLoading(true);
+      setYoutubeError(false);
       try {
         const { data, error } = await supabase.functions.invoke('youtube-search', {
           body: { type: 'trending', maxResults: 20 }
         });
+        if (!isMountedRef.current) return;
         if (!error && data?.results) {
           setYoutubeResults(data.results);
+        } else {
+          console.warn('YouTube trending returned no results');
         }
       } catch (err) {
         console.error('YouTube trending error:', err);
+        if (isMountedRef.current) {
+          setYoutubeError(true);
+        }
       } finally {
-        setYoutubeLoading(false);
+        if (isMountedRef.current) {
+          setYoutubeLoading(false);
+        }
       }
     };
     
@@ -88,18 +107,26 @@ export function UnifiedMusicStream({
     lastGenreRef.current = selectedGenre;
     
     const searchGenre = async () => {
+      if (!isMountedRef.current) return;
       setYoutubeLoading(true);
+      setYoutubeError(false);
       try {
         const { data, error } = await supabase.functions.invoke('youtube-search', {
           body: { query: `${selectedGenre} music`, type: 'search', maxResults: 20 }
         });
+        if (!isMountedRef.current) return;
         if (!error && data?.results) {
           setYoutubeResults(data.results);
         }
       } catch (err) {
         console.error('YouTube search error:', err);
+        if (isMountedRef.current) {
+          setYoutubeError(true);
+        }
       } finally {
-        setYoutubeLoading(false);
+        if (isMountedRef.current) {
+          setYoutubeLoading(false);
+        }
       }
     };
     
@@ -339,10 +366,17 @@ export function UnifiedMusicStream({
               </div>
             ))}
 
-            {unifiedTracks.length === 0 && (
+            {youtubeLoading && activeFilter !== 'tdz' && (
+              <div className="p-12 text-center text-muted-foreground">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p>Loading music...</p>
+              </div>
+            )}
+
+            {unifiedTracks.length === 0 && !youtubeLoading && (
               <div className="p-12 text-center text-muted-foreground">
                 <Music className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No tracks found for this genre</p>
+                <p>{youtubeError ? 'Unable to load YouTube content' : 'No tracks found for this genre'}</p>
               </div>
             )}
           </div>
