@@ -65,19 +65,24 @@ const Studio = () => {
     }
   }, [role, roleLoading, navigate]);
 
-  // If a logged-in user has no role, force them through role selection (prevents blank Studio)
+  // If a logged-in user has no role after loading completes, redirect to role selection
+  // CRITICAL: Only redirect ONCE and only after role loading is truly done
   const roleRedirectedRef = useRef(false);
   useEffect(() => {
+    // Don't do anything while still loading
     if (loading || roleLoading) return;
+    // Don't redirect if no user (handled by other effect)
     if (!user) return;
+    // User has a valid role - don't redirect
     if (role) return;
+    // Already redirected once - prevent infinite loop
+    if (roleRedirectedRef.current) return;
 
-    if (!roleRedirectedRef.current) {
-      roleRedirectedRef.current = true;
-      toast.info("Finish setup", {
-        description: "Choose your role to continue to Studio.",
-      });
-    }
+    // Mark as redirected BEFORE navigating to prevent loops
+    roleRedirectedRef.current = true;
+    toast.info("Finish setup", {
+      description: "Choose your role to continue to Studio.",
+    });
     navigate("/role-selection", { replace: true });
   }, [loading, roleLoading, user, role, navigate]);
 
