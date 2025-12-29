@@ -20,36 +20,70 @@ export default function RoleSelection() {
 
   const [existingRole, setExistingRole] = useState<string | null>(null);
 
-  // Check if user already has a role/profile
+  // Check if user already has a role/profile - but DON'T auto-redirect
+  // This prevents infinite redirect loops with Studio
+  const [checkingRole, setCheckingRole] = useState(true);
+  
   useEffect(() => {
+    let cancelled = false;
+    
     const checkExistingProfile = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user || cancelled) {
+          setCheckingRole(false);
+          return;
+        }
 
         // Check for existing role
-        const { data: roleData } = await supabase
+        const { data: roleData, error } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", user.id)
-          .single();
+          .maybeSingle();
 
-        if (roleData) {
+        if (cancelled) return;
+
+        if (roleData && !error) {
           setExistingRole(roleData.role);
-          // User already has a role, redirect to appropriate page
-          if (roleData.role === "listener") {
-            navigate("/discover");
+          // Only redirect if we're NOT already in a redirect loop
+          // Check if user came from Studio (via referrer or state)
+          const cameFromStudio = document.referrer.includes('/studio') || 
+                                  sessionStorage.getItem('studio_redirect') === 'true';
+          
+          if (!cameFromStudio) {
+            if (roleData.role === "listener") {
+              navigate("/discover", { replace: true });
+            } else {
+              navigate("/studio", { replace: true });
+            }
           } else {
-            navigate("/studio");
+            // Clear the flag and show the user they already have a profile
+            sessionStorage.removeItem('studio_redirect');
+            toast.info("You already have a profile", {
+              description: `Signed in as ${roleData.role}`,
+            });
+            if (roleData.role === "listener") {
+              navigate("/discover", { replace: true });
+            } else {
+              navigate("/studio", { replace: true });
+            }
           }
         }
       } catch (error) {
-        // If no role found, stay on this page
         console.log("No existing profile found");
+      } finally {
+        if (!cancelled) {
+          setCheckingRole(false);
+        }
       }
     };
 
     checkExistingProfile();
+    
+    return () => {
+      cancelled = true;
+    };
   }, [navigate]);
 
   const handleSubmit = async () => {
@@ -156,6 +190,18 @@ export default function RoleSelection() {
       setLoading(false);
     }
   };
+
+  // Show loading while checking for existing role
+  if (checkingRole) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-3">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-6">
