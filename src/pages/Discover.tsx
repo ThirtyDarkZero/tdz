@@ -2,23 +2,21 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { 
-  Play, Heart, Share2, TrendingUp, 
   ListMusic, Plus, Lock, Sparkles
 } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
-import { MotionCover } from "@/components/MotionCover";
 import { DiscoveryLayout } from "@/components/discovery/DiscoveryLayout";
 import { DiscoveryHeader } from "@/components/discovery/DiscoveryHeader";
 import { NowPlayingSidebar } from "@/components/discovery/NowPlayingSidebar";
 import { LibrarySidebar } from "@/components/discovery/LibrarySidebar";
 import { MobileSidebar } from "@/components/discovery/MobileSidebar";
-import { ImmersiveHero } from "@/components/discovery/ImmersiveHero";
-import { EnhancedTrackGrid } from "@/components/discovery/EnhancedTrackGrid";
+import { GenreHeroSection } from "@/components/discovery/GenreHeroSection";
+import { GenrePlaylists } from "@/components/discovery/GenrePlaylists";
+import { UnifiedMusicStream } from "@/components/discovery/UnifiedMusicStream";
 import { EnhancedAlbumGrid } from "@/components/discovery/EnhancedAlbumGrid";
 import { EnhancedArtistGrid } from "@/components/discovery/EnhancedArtistGrid";
 import { EnhancedTrendingSection } from "@/components/discovery/EnhancedTrendingSection";
@@ -26,7 +24,7 @@ import { PremiumTabs } from "@/components/discovery/PremiumTabs";
 import { useDiscoveryData } from "@/hooks/useDiscoveryData";
 import { MerchStore } from "@/components/MerchStore";
 import { usePlayer } from "@/contexts/PlayerContext";
-import { YouTubeSection } from "@/components/youtube";
+import { YouTubeVideo } from "@/hooks/useYouTubePlayer";
 
 export default function Discover() {
   const navigate = useNavigate();
@@ -34,6 +32,7 @@ export default function Discover() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentArtistInfo, setCurrentArtistInfo] = useState<any>(null);
   const [relatedTracks, setRelatedTracks] = useState<any[]>([]);
+  const [selectedGenre, setSelectedGenre] = useState<string | undefined>();
   
   // Use global player context for persistent playback across navigation
   const { currentTrack, playTrack, addToQueue } = usePlayer();
@@ -129,6 +128,23 @@ export default function Discover() {
     toast.success(`Added "${track.title}" to queue`);
   };
 
+  const handlePlayYouTube = (video: YouTubeVideo) => {
+    // For now, open YouTube in a new tab - can be enhanced with embedded player
+    window.open(`https://www.youtube.com/watch?v=${video.id}`, '_blank');
+    toast.info(`Opening "${video.title}" on YouTube`);
+  };
+
+  const handleGenreSelect = (genreId: string) => {
+    setSelectedGenre(genreId);
+  };
+
+  const handlePlayGenre = (genre: string, genreTracks: any[]) => {
+    if (genreTracks.length > 0) {
+      handlePlayTrack(genreTracks[0]);
+      toast.success(`Playing ${genre} playlist`);
+    }
+  };
+
   const filteredTracks = tracks.filter(track =>
     track.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     track.artist_name?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -161,29 +177,41 @@ export default function Discover() {
     />
   );
 
-  // Center column content
+  // Center column content - Updated with genre-focused layout
   const centerColumn = (
     <PremiumTabs
       defaultValue="discover"
       discoverContent={
-        <>
-          <ImmersiveHero />
-          <EnhancedTrackGrid
-            tracks={filteredTracks}
-            title="Latest Releases"
-            playlists={playlists}
+        <div className="space-y-10">
+          {/* Full-bleed genre hero sections */}
+          <GenreHeroSection onGenreSelect={handleGenreSelect} />
+          
+          {/* Genre playlists carousel */}
+          <GenrePlaylists 
+            tracks={tracks} 
+            onPlayGenre={handlePlayGenre}
+            onGenreClick={handleGenreSelect}
+          />
+          
+          {/* Unified music stream - TDZ first, then YouTube */}
+          <UnifiedMusicStream
+            tdzTracks={filteredTracks}
             likedTracks={likedTracks}
             currentTrackId={currentTrack?.id}
+            playlists={playlists}
+            selectedGenre={selectedGenre}
             onPlayTrack={handlePlayTrack}
             onToggleLike={toggleLike}
             onAddToQueue={handleAddToQueue}
-            onPlaylistUpdate={refreshPlaylists}
+            onPlayYouTube={handlePlayYouTube}
           />
+          
+          {/* Featured albums */}
           <EnhancedAlbumGrid
             albums={albums}
             title="Featured Albums"
           />
-        </>
+        </div>
       }
       trendingContent={
         <EnhancedTrendingSection
@@ -210,9 +238,6 @@ export default function Discover() {
       }
       merchContent={
         <MerchStore variant="full" />
-      }
-      youtubeContent={
-        <YouTubeSection />
       }
     />
   );
@@ -255,131 +280,6 @@ export default function Discover() {
         }}
       />
     </>
-  );
-}
-
-// Trending Section Component
-function TrendingSection({ 
-  tracks, 
-  likedTracks, 
-  onPlayTrack, 
-  onToggleLike,
-  formatDuration 
-}: {
-  tracks: any[];
-  likedTracks: Set<string>;
-  onPlayTrack: (track: any) => void;
-  onToggleLike: (trackId: string) => void;
-  formatDuration: (seconds: number) => string;
-}) {
-  const navigate = useNavigate();
-  
-  // Sort by play count for trending
-  const trendingTracks = [...tracks].sort((a, b) => (b.play_count || 0) - (a.play_count || 0));
-
-  return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-4xl md:text-5xl font-black tracking-tight">
-          <span className="glow-text-lg bg-gradient-to-r from-primary via-primary-glow to-secondary bg-clip-text text-transparent">
-            THE CHARTS
-          </span>
-        </h1>
-        <p className="text-lg text-muted-foreground">
-          Top trending tracks ranked by plays and engagement
-        </p>
-      </div>
-
-      {trendingTracks.length > 0 ? (
-        <Card className="glass-card-premium overflow-hidden border-primary/30 shadow-glow">
-          <div className="divide-y divide-border/50">
-            {trendingTracks.slice(0, 50).map((track, index) => (
-              <div
-                key={track.id}
-                className="flex items-center gap-4 p-4 hover:bg-primary/5 transition-colors group cursor-pointer"
-                onClick={() => onPlayTrack(track)}
-              >
-                <div className="flex-shrink-0 w-10 text-center">
-                  {index < 3 ? (
-                    <div className={`text-2xl font-black ${
-                      index === 0 ? 'text-yellow-500 glow-text' :
-                      index === 1 ? 'text-gray-400' :
-                      'text-amber-700'
-                    }`}>
-                      {index + 1}
-                    </div>
-                  ) : (
-                    <div className="text-lg font-bold text-muted-foreground">
-                      {index + 1}
-                    </div>
-                  )}
-                </div>
-
-                <div className="relative flex-shrink-0">
-                  <div className="w-14 h-14 rounded overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20">
-                    <MotionCover
-                      motionCoverPath={track.motion_cover_path}
-                      motionCoverBucket={track.motion_cover_bucket}
-                      staticCoverPath={track.album_cover_path}
-                      staticCoverBucket={track.album_cover_bucket || "album-covers"}
-                      alt={track.title}
-                      className="w-full h-full"
-                    />
-                  </div>
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded">
-                    <Play className="w-5 h-5 text-white" fill="currentColor" />
-                  </div>
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate">{track.title}</p>
-                  <p className="text-sm text-muted-foreground truncate">{track.artist_name}</p>
-                </div>
-
-                <div className="hidden md:block text-sm text-muted-foreground flex-shrink-0">
-                  {formatDuration(track.duration || 0)}
-                </div>
-
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleLike(track.id);
-                    }}
-                    className={likedTracks.has(track.id) ? "text-primary" : ""}
-                  >
-                    <Heart
-                      className="w-5 h-5"
-                      fill={likedTracks.has(track.id) ? "currentColor" : "none"}
-                    />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/track/${track.id}`);
-                    }}
-                  >
-                    <Share2 className="w-5 h-5" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      ) : (
-        <Card className="glass-card-premium p-16 text-center">
-          <TrendingUp className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-2xl font-bold mb-2">No Trending Tracks Yet</h3>
-          <p className="text-muted-foreground">
-            Charts are updated based on recent plays and engagement
-          </p>
-        </Card>
-      )}
-    </div>
   );
 }
 
@@ -471,6 +371,7 @@ function PlaylistsSection({
               key={playlist.id} 
               className="glass-card-premium p-5 hover:border-primary/70 transition-all hover-lift shadow-card-hover animate-fade-in cursor-pointer"
               style={{ animationDelay: `${index * 0.05}s` }}
+              onClick={() => navigate(`/playlist/${playlist.id}`)}
             >
               <div className="aspect-square rounded-xl bg-gradient-to-br from-primary/30 to-secondary/30 mb-4 shadow-glow flex items-center justify-center">
                 <ListMusic className="w-12 h-12 text-primary-foreground" />
