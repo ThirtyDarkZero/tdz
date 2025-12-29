@@ -9,13 +9,25 @@ const corsHeaders = {
 // UUID validation regex
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+// Focus metrics from client-side tracking
+interface FocusMetrics {
+  focusedDuration: number;
+  totalDuration: number;
+  focusPercentage: number;
+}
+
 // Input validation
-function validateInput(data: unknown): { trackId: string; completionPercentage?: number; duration?: number } | { error: string } {
+function validateInput(data: unknown): { 
+  trackId: string; 
+  completionPercentage?: number; 
+  duration?: number;
+  focusMetrics?: FocusMetrics;
+} | { error: string } {
   if (!data || typeof data !== 'object') {
     return { error: 'Invalid request body' };
   }
 
-  const { trackId, completionPercentage, duration } = data as Record<string, unknown>;
+  const { trackId, completionPercentage, duration, focusMetrics } = data as Record<string, unknown>;
 
   // Validate trackId - required and must be UUID
   if (!trackId || typeof trackId !== 'string') {
@@ -49,10 +61,26 @@ function validateInput(data: unknown): { trackId: string; completionPercentage?:
     validatedDuration = duration;
   }
 
+  // Validate focus metrics - optional
+  let validatedFocusMetrics: FocusMetrics | undefined;
+  if (focusMetrics && typeof focusMetrics === 'object') {
+    const fm = focusMetrics as Record<string, unknown>;
+    if (typeof fm.focusedDuration === 'number' && 
+        typeof fm.totalDuration === 'number' && 
+        typeof fm.focusPercentage === 'number') {
+      validatedFocusMetrics = {
+        focusedDuration: fm.focusedDuration,
+        totalDuration: fm.totalDuration,
+        focusPercentage: Math.min(100, Math.max(0, fm.focusPercentage)),
+      };
+    }
+  }
+
   return { 
     trackId, 
     completionPercentage: validatedCompletionPercentage, 
-    duration: validatedDuration 
+    duration: validatedDuration,
+    focusMetrics: validatedFocusMetrics,
   };
 }
 
@@ -140,7 +168,24 @@ serve(async (req) => {
       );
     }
 
-    const { trackId, completionPercentage, duration } = validation;
+    const { trackId, completionPercentage, duration, focusMetrics } = validation;
+
+    // FOCUS-BASED FRAUD DETECTION: Require minimum tab focus time
+    const MIN_FOCUS_PERCENTAGE = 50;
+    if (focusMetrics) {
+      if (focusMetrics.focusPercentage < MIN_FOCUS_PERCENTAGE) {
+        console.log(`Stream rejected: Focus percentage ${focusMetrics.focusPercentage.toFixed(1)}% below ${MIN_FOCUS_PERCENTAGE}% threshold`);
+        return new Response(
+          JSON.stringify({ 
+            recorded: false, 
+            reason: 'Insufficient active listening time',
+            focusPercentage: focusMetrics.focusPercentage,
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      console.log(`Focus validation passed: ${focusMetrics.focusPercentage.toFixed(1)}% focused time`);
+    }
 
     // FRAUD DETECTION: Validate stream before counting
     if (userId) {
@@ -226,6 +271,10 @@ serve(async (req) => {
           play_duration: duration || 0,
           completion_percentage: completionPercentage || 0,
           device_type: deviceFingerprint ? 'web' : null,
+          location_data: focusMetrics ? {
+            focus_percentage: focusMetrics.focusPercentage,
+            focused_duration: focusMetrics.focusedDuration,
+          } : null,
         });
     }
 
@@ -313,6 +362,7 @@ serve(async (req) => {
           metadata: {
             ip: clientIP,
             fingerprint: deviceFingerprint,
+            focus_metrics: focusMetrics,
           }
         });
     }
@@ -322,6 +372,8 @@ serve(async (req) => {
         recorded: true,
         playCount: newPlayCount,
         artistEarned: STREAM_PAYOUT_RATE,
+        artistId: track.user_id,
+        focusPercentage: focusMetrics?.focusPercentage,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

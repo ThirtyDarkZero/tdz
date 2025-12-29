@@ -15,6 +15,8 @@ import { EqualizerPanel } from "./EqualizerPanel";
 import { CreditsPanel } from "./CreditsPanel";
 import { useFocusTracking } from "@/hooks/useFocusTracking";
 import { useMultiSourceAudio } from "@/hooks/useMultiSourceAudio";
+import { useRadioMode } from "@/hooks/useRadioMode";
+import { useAudioQuality } from "@/hooks/useAudioQuality";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -113,6 +115,22 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
     trackId: currentTrack?.id || '',
     enableFallback: true,
   });
+
+  // Radio mode for continuous play
+  const { 
+    isRadioMode, 
+    currentStation, 
+    startRadioFromTrack, 
+    stopRadio,
+    isLoadingTracks: isLoadingRadioTracks 
+  } = useRadioMode();
+
+  // Audio quality detection
+  const { 
+    preferences: audioPrefs, 
+    getRecommendedQuality,
+    qualityLabels 
+  } = useAudioQuality();
 
   // Initialize audio sources when track changes
   useEffect(() => {
@@ -642,8 +660,16 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => isRadioMode ? stopRadio() : startRadioFromTrack()}>
+                    <Radio className={`h-4 w-4 mr-2 ${isRadioMode ? 'text-primary' : ''}`} />
+                    {isRadioMode ? 'Stop Radio' : 'Start Radio'}
+                    {isRadioMode && currentStation && (
+                      <span className="ml-auto text-xs text-muted-foreground">On</span>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setShowVisualizer(!showVisualizer)}>
-                    <Radio className="h-4 w-4 mr-2" />
+                    <Maximize2 className="h-4 w-4 mr-2" />
                     Visualizer
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowEqualizer(true)}>
