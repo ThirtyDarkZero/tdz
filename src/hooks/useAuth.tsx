@@ -8,7 +8,7 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
@@ -17,7 +17,7 @@ export const useAuth = () => {
       }
     );
 
-    // Check for existing session
+    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -48,9 +48,33 @@ export const useAuth = () => {
     return { error };
   };
 
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    });
     return { error };
+  };
+
+  const signOut = async () => {
+    // Complete session invalidation
+    try {
+      await supabase.auth.signOut();
+      // Clear any local storage data
+      localStorage.removeItem('supabase.auth.token');
+      sessionStorage.clear();
+      // Force reload to ensure clean state
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+    return { error: null };
   };
 
   return {
@@ -59,6 +83,7 @@ export const useAuth = () => {
     loading,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
   };
 };
