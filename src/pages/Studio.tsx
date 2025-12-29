@@ -48,6 +48,8 @@ const Studio = () => {
   const [profileImage, setProfileImage] = useState<string | undefined>();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // CRITICAL: Block render completely until auth AND role are verified
+  // This prevents fans from ever seeing Studio UI even briefly
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
@@ -55,14 +57,31 @@ const Studio = () => {
     }
   }, [user, loading, navigate]);
 
+  // Redirect listeners BEFORE any UI render
   useEffect(() => {
-    if (!roleLoading && role) {
-      if (role === 'listener') {
-        toast.error("Studio access is only available for artists and managers");
-        navigate("/discover");
-      }
+    if (!roleLoading && role === 'listener') {
+      toast.error("Studio access is only available for artists and managers");
+      navigate("/discover", { replace: true });
     }
   }, [role, roleLoading, navigate]);
+
+  // SECURITY: Return loading until we CONFIRM user is NOT a listener
+  // This is the key fix - we don't render ANY Studio UI until role is verified
+  if (loading || roleLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-3">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // SECURITY: Double-check - if no role or listener, show nothing
+  if (!user || role === 'listener' || !role) {
+    return null;
+  }
 
   useEffect(() => {
     const fetchArtistProfile = async () => {
@@ -97,20 +116,8 @@ const Studio = () => {
     fetchArtistProfile();
   }, [user, navigate]);
 
-  if (loading || roleLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-3">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user || role === 'listener') {
-    return null;
-  }
+  // This block is now handled above for security
+  // Removed duplicate loading check
 
   const handlePlayTrack = (track: Track, trackQueue: Track[]) => {
     setCurrentTrack(track);

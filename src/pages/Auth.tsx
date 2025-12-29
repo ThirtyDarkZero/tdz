@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { Chrome, Loader2 } from "lucide-react";
 
 // Security: Input validation schema
 const authSchema = z.object({
@@ -44,9 +46,10 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{ email?: string; password?: string }>({});
   const [justAuthenticated, setJustAuthenticated] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, signInWithGoogle, user } = useAuth();
   const { role, loading: roleLoading } = useUserRole(user);
   const navigate = useNavigate();
 
@@ -68,20 +71,18 @@ export default function Auth() {
     validateSession();
   }, []);
 
-  // Redirect if user is already logged in (not just authenticated)
+  // Redirect if user is already logged in
   useEffect(() => {
     if (!user || roleLoading) return;
     
-    // If user just authenticated OR already logged in, redirect appropriately
     if (justAuthenticated || user) {
-      // Check if user has a role
       if (!role) {
         navigate("/role-selection");
         return;
       }
 
       // Redirect based on role - artists go to Studio, listeners go to Discover
-      if (role === "artist" || role === "verified_artist") {
+      if (role === "artist" || role === "verified_artist" || role === "manager") {
         navigate("/studio");
       } else if (role === "listener") {
         navigate("/discover");
@@ -91,13 +92,26 @@ export default function Auth() {
     }
   }, [user, role, roleLoading, justAuthenticated, navigate]);
 
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        toast.error("Failed to sign in with Google. Please try again.");
+      }
+    } catch (error) {
+      toast.error("Failed to sign in with Google. Please try again.");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setValidationErrors({});
 
     try {
-      // Security: Validate input before sending to server
       const schema = isSignUp ? authSchema : signInSchema;
       const result = schema.safeParse({ email, password });
 
@@ -115,7 +129,6 @@ export default function Auth() {
       if (isSignUp) {
         const { error } = await signUp(result.data.email, result.data.password);
         if (error) {
-          // Security: Don't expose detailed error messages
           if (error.message.includes("already registered")) {
             toast.error("This email is already registered. Please sign in instead.");
           } else if (error.message.includes("Invalid email")) {
@@ -133,7 +146,6 @@ export default function Auth() {
       } else {
         const { error } = await signIn(result.data.email, result.data.password);
         if (error) {
-          // Security: Generic error message to prevent user enumeration
           toast.error("Invalid email or password.");
           setLoading(false);
           return;
@@ -142,7 +154,6 @@ export default function Auth() {
         setJustAuthenticated(true);
       }
     } catch (error: any) {
-      // Security: Don't log sensitive data in production
       if (process.env.NODE_ENV === 'development') {
         console.error('Auth error:', error);
       }
@@ -152,18 +163,47 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="glass-card p-8 w-full max-w-md space-y-6">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
+      {/* Background effects */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[150px]" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[120px]" />
+      </div>
+      
+      <Card className="glass-card p-8 w-full max-w-md space-y-6 relative z-10 border-border/50">
         <div className="flex flex-col items-center gap-4">
-          <img src={tdzLogo} alt="TDZ Distribution" className="h-24 w-auto" style={{ mixBlendMode: 'screen' }} />
+          <img src={tdzLogo} alt="TDZ Distribution" className="h-20 w-auto" style={{ mixBlendMode: 'screen' }} />
           <div className="text-center">
-            <h1 className="text-3xl font-bold glow-text mb-2">
-              TDZ Distribution
+            <h1 className="text-2xl font-display font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent mb-1">
+              TDZ DISTRIBUTION
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {isSignUp ? "Create your account" : "Sign in to continue"}
             </p>
           </div>
+        </div>
+
+        {/* Google Sign-In */}
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full h-12 gap-3 border-border/50 hover:bg-muted/50"
+          onClick={handleGoogleSignIn}
+          disabled={googleLoading}
+        >
+          {googleLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Chrome className="w-5 h-5" />
+          )}
+          Continue with Google
+        </Button>
+
+        <div className="relative">
+          <Separator className="bg-border/50" />
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs text-muted-foreground">
+            or
+          </span>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -178,7 +218,7 @@ export default function Auth() {
               }}
               required
               autoComplete="email"
-              className="bg-background/50 border-border/50 focus:border-primary/50"
+              className="h-11 bg-background/50 border-border/50 focus:border-primary/50"
               aria-invalid={!!validationErrors.email}
               aria-describedby={validationErrors.email ? "email-error" : undefined}
             />
@@ -200,7 +240,7 @@ export default function Auth() {
               required
               autoComplete={isSignUp ? "new-password" : "current-password"}
               minLength={isSignUp ? 8 : 1}
-              className="bg-background/50 border-border/50 focus:border-primary/50"
+              className="h-11 bg-background/50 border-border/50 focus:border-primary/50"
               aria-invalid={!!validationErrors.password}
               aria-describedby={validationErrors.password ? "password-error" : undefined}
             />
@@ -211,21 +251,23 @@ export default function Auth() {
             )}
             {isSignUp && !validationErrors.password && (
               <p className="text-xs text-muted-foreground">
-                Password must be at least 8 characters with uppercase, lowercase, and numbers
+                Min 8 characters with uppercase, lowercase, and numbers
               </p>
             )}
           </div>
 
           <Button
             type="submit"
-            className="w-full bg-gradient-to-r from-primary to-secondary hover:shadow-glow"
+            className="w-full h-11 bg-gradient-to-r from-primary via-violet-500 to-fuchsia-500 hover:shadow-glow font-semibold"
             disabled={loading}
           >
-            {loading ? "Loading..." : isSignUp ? "Sign Up" : "Sign In"}
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : isSignUp ? "Create Account" : "Sign In"}
           </Button>
         </form>
 
-        <div className="text-center text-sm">
+        <div className="text-center text-sm space-y-3">
           <button
             onClick={() => setIsSignUp(!isSignUp)}
             className="text-primary hover:underline"
@@ -234,17 +276,23 @@ export default function Auth() {
               ? "Already have an account? Sign in"
               : "Don't have an account? Sign up"}
           </button>
+          
+          <div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/")}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              ← Back to Home
+            </Button>
+          </div>
         </div>
 
-        <div className="text-center">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/")}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            ← Back to Home
-          </Button>
-        </div>
+        {/* Security note */}
+        <p className="text-[10px] text-center text-muted-foreground/60">
+          By continuing, you agree to our Terms of Service and Privacy Policy
+        </p>
       </Card>
     </div>
   );

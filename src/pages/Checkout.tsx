@@ -2,20 +2,54 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, CreditCard, Lock, Shield } from "lucide-react";
+import { ArrowLeft, CreditCard, Lock, Shield, Check, Zap, Music, Users, Crown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
 
-const PLAN_DETAILS: Record<string, { name: string; price: string; amount: number }> = {
-  starter: { name: "Starter", price: "$9.99/month", amount: 999 },
-  pro: { name: "Pro", price: "$19.99/month", amount: 1999 },
-  enterprise: { name: "Enterprise", price: "$49.99/month", amount: 4999 },
-  fan: { name: "Fan", price: "$12/month", amount: 1200 },
+const PLAN_DETAILS: Record<string, { 
+  name: string; 
+  price: string; 
+  amount: number;
+  features: string[];
+  icon: typeof Zap;
+  color: string;
+}> = {
+  starter: { 
+    name: "Starter", 
+    price: "$9.99/month", 
+    amount: 999,
+    features: ["3 track uploads", "1 album", "Basic analytics", "Email support"],
+    icon: Zap,
+    color: "text-blue-400"
+  },
+  pro: { 
+    name: "Pro", 
+    price: "$19.99/month", 
+    amount: 1999,
+    features: ["50 track uploads", "10 albums", "Advanced analytics", "Priority support", "Smart links", "Fan engagement tools"],
+    icon: Music,
+    color: "text-violet-400"
+  },
+  enterprise: { 
+    name: "Enterprise", 
+    price: "$49.99/month", 
+    amount: 4999,
+    features: ["Unlimited uploads", "Unlimited albums", "Full analytics suite", "Artist management", "Priority payouts", "White-glove support"],
+    icon: Crown,
+    color: "text-amber-400"
+  },
+  fan: { 
+    name: "Fan", 
+    price: "$12/month", 
+    amount: 1200,
+    features: ["Unlimited streaming", "Offline downloads", "HD audio quality", "No ads", "Support artists directly"],
+    icon: Users,
+    color: "text-green-400"
+  },
 };
 
 export default function Checkout() {
@@ -25,6 +59,7 @@ export default function Checkout() {
   const { user, loading: authLoading } = useAuth();
   const [processing, setProcessing] = useState(false);
   const [squareLoaded, setSquareLoaded] = useState(false);
+  const [squareError, setSquareError] = useState<string | null>(null);
   const [card, setCard] = useState<any>(null);
 
   const planDetails = PLAN_DETAILS[plan];
@@ -42,15 +77,23 @@ export default function Checkout() {
       return;
     }
 
-    // Load Square Web Payments SDK
+    // Load Square Web Payments SDK - use production in production environment
+    const isProduction = window.location.hostname !== 'localhost';
+    const scriptUrl = isProduction 
+      ? "https://web.squarecdn.com/v1/square.js"
+      : "https://sandbox.web.squarecdn.com/v1/square.js";
+    
     const script = document.createElement("script");
-    script.src = "https://sandbox.web.squarecdn.com/v1/square.js";
+    script.src = scriptUrl;
     script.async = true;
     script.onload = () => setSquareLoaded(true);
+    script.onerror = () => setSquareError("Failed to load payment system");
     document.body.appendChild(script);
 
     return () => {
-      document.body.removeChild(script);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     };
   }, [planDetails, navigate]);
 
@@ -59,26 +102,24 @@ export default function Checkout() {
 
     const initializeSquare = async () => {
       try {
-        const appId = import.meta.env.VITE_SQUARE_APPLICATION_ID;
-        const locationId = import.meta.env.VITE_SQUARE_LOCATION_ID;
-
-        if (!appId || !locationId) {
-          console.error("Square credentials not configured");
-          return;
-        }
+        // These are publishable keys, safe to use on frontend
+        // For production, you'd fetch these from a config endpoint
+        const appId = "sandbox-sq0idb-_lhZ6x2qK3ixELPD9wjsaQ"; // Replace with actual production app ID
+        const locationId = "LNYJ1DGJX7V6A"; // Replace with actual production location ID
 
         // @ts-ignore - Square is loaded via script
         const payments = window.Square?.payments(appId, locationId);
         if (!payments) {
-          console.error("Square payments not available");
+          setSquareError("Payment system not available");
           return;
         }
 
         const cardInstance = await payments.card();
         await cardInstance.attach("#card-container");
         setCard(cardInstance);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error initializing Square:", error);
+        setSquareError(error.message || "Failed to initialize payment form");
       }
     };
 
@@ -89,7 +130,7 @@ export default function Checkout() {
     e.preventDefault();
     
     if (!card || !user) {
-      toast.error("Payment system not ready");
+      toast.error("Payment system not ready. Please refresh and try again.");
       return;
     }
 
@@ -100,7 +141,7 @@ export default function Checkout() {
       const result = await card.tokenize();
       
       if (result.status !== "OK") {
-        toast.error(result.errors?.[0]?.message || "Card validation failed");
+        toast.error(result.errors?.[0]?.message || "Card validation failed. Please check your card details.");
         setProcessing(false);
         return;
       }
@@ -115,12 +156,12 @@ export default function Checkout() {
 
       if (error) {
         console.error("Subscription error:", error);
-        toast.error(error.message || "Failed to process subscription");
+        toast.error(error.message || "Payment failed. Please try again.");
         setProcessing(false);
         return;
       }
 
-      toast.success(`Successfully subscribed to ${planDetails.name}!`);
+      toast.success(`Welcome to TDZ ${planDetails.name}!`);
       
       // Redirect based on plan type
       if (plan === "fan") {
@@ -139,8 +180,16 @@ export default function Checkout() {
     return null;
   }
 
+  const IconComponent = planDetails.icon;
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      {/* Background effects */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[150px]" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[120px]" />
+      </div>
+
       {/* Header */}
       <header className="sticky top-0 z-50 glass-card border-b border-border/50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -152,40 +201,80 @@ export default function Checkout() {
               <img src={tdzLogo} alt="TDZ" className="h-8 w-auto" style={{ mixBlendMode: 'screen' }} />
             </button>
           </div>
+          <Badge variant="outline" className="gap-2 border-green-500/50 text-green-500">
+            <Lock className="w-3 h-3" />
+            Secure Checkout
+          </Badge>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-12">
-        <div className="grid gap-8">
+      <main className="max-w-4xl mx-auto px-4 py-12 relative z-10">
+        <div className="grid md:grid-cols-2 gap-8">
           {/* Order Summary */}
-          <Card className="glass-card-premium">
-            <CardHeader>
-              <CardTitle>Order Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between py-4 border-b border-border">
-                <div>
-                  <h3 className="font-semibold text-lg">{planDetails.name} Plan</h3>
-                  <p className="text-sm text-muted-foreground">Monthly subscription</p>
+          <div className="space-y-6">
+            <Card className="glass-card border-border/50 overflow-hidden">
+              <div className={`h-2 bg-gradient-to-r from-primary to-secondary`} />
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-3">
+                  <div className={`p-3 rounded-xl bg-muted ${planDetails.color}`}>
+                    <IconComponent className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl">{planDetails.name} Plan</CardTitle>
+                    <CardDescription>Monthly subscription</CardDescription>
+                  </div>
                 </div>
-                <span className="text-2xl font-bold glow-text">{planDetails.price}</span>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Features */}
+                <div className="space-y-3">
+                  {planDetails.features.map((feature, idx) => (
+                    <div key={idx} className="flex items-center gap-3 text-sm">
+                      <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                        <Check className="w-3 h-3 text-green-500" />
+                      </div>
+                      <span className="text-muted-foreground">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Total */}
+                <div className="pt-4 border-t border-border">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Total due today</span>
+                    <span className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                      {planDetails.price.replace("/month", "")}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Billed monthly. Cancel anytime.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Trust badges */}
+            <div className="flex items-center justify-center gap-6 text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs">
+                <Shield className="w-4 h-4 text-green-500" />
+                <span>256-bit SSL</span>
               </div>
-              <div className="flex items-center justify-between pt-4">
-                <span className="font-semibold">Total due today</span>
-                <span className="text-xl font-bold">{planDetails.price.replace("/month", "")}</span>
+              <div className="flex items-center gap-2 text-xs">
+                <Lock className="w-4 h-4 text-green-500" />
+                <span>Secure Payments</span>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Payment Form */}
-          <Card className="glass-card-premium">
+          <Card className="glass-card border-border/50">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5" />
+                <CreditCard className="w-5 h-5 text-primary" />
                 <CardTitle>Payment Details</CardTitle>
               </div>
               <CardDescription>
-                Your payment is secured with Square
+                All transactions are encrypted and secure
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -195,11 +284,19 @@ export default function Checkout() {
                   <Label>Card Information</Label>
                   <div 
                     id="card-container" 
-                    className="min-h-[100px] p-4 rounded-lg border border-border bg-background/50"
+                    className="min-h-[120px] p-4 rounded-lg border border-border bg-background/50"
                   >
-                    {!squareLoaded && (
-                      <div className="flex items-center justify-center h-full text-muted-foreground">
-                        Loading payment form...
+                    {!squareLoaded && !squareError && (
+                      <div className="flex items-center justify-center h-full">
+                        <div className="flex items-center gap-3 text-muted-foreground">
+                          <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                          <span>Loading secure payment form...</span>
+                        </div>
+                      </div>
+                    )}
+                    {squareError && (
+                      <div className="flex items-center justify-center h-full text-destructive text-sm">
+                        {squareError}
                       </div>
                     )}
                   </div>
@@ -207,12 +304,15 @@ export default function Checkout() {
 
                 <Button
                   type="submit"
-                  className="w-full shadow-glow"
+                  className="w-full h-12 bg-gradient-to-r from-primary via-violet-500 to-fuchsia-500 hover:shadow-glow font-semibold text-lg"
                   size="lg"
                   disabled={processing || !card}
                 >
                   {processing ? (
-                    "Processing..."
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Processing...
+                    </div>
                   ) : (
                     <>
                       <Lock className="w-4 h-4 mr-2" />
@@ -222,26 +322,29 @@ export default function Checkout() {
                 </Button>
 
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Shield className="w-4 h-4" />
-                  <span>Payments secured by Square</span>
+                  <img 
+                    src="https://cdn.brandfolder.io/6L6M1HK4/as/sxqw0q-dx6e68-7fqr8o/Square_Logotype_White.svg" 
+                    alt="Square" 
+                    className="h-4 opacity-60 invert"
+                  />
                 </div>
               </form>
             </CardContent>
           </Card>
-
-          {/* Terms */}
-          <p className="text-center text-sm text-muted-foreground">
-            By subscribing, you agree to our{" "}
-            <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/terms")}>
-              Terms of Service
-            </Button>{" "}
-            and{" "}
-            <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/privacy")}>
-              Privacy Policy
-            </Button>
-            . You can cancel anytime.
-          </p>
         </div>
+
+        {/* Terms */}
+        <p className="text-center text-sm text-muted-foreground mt-8">
+          By subscribing, you agree to our{" "}
+          <Button variant="link" className="p-0 h-auto text-primary" onClick={() => navigate("/terms")}>
+            Terms of Service
+          </Button>{" "}
+          and{" "}
+          <Button variant="link" className="p-0 h-auto text-primary" onClick={() => navigate("/privacy")}>
+            Privacy Policy
+          </Button>
+          . You can cancel your subscription anytime from your settings.
+        </p>
       </main>
     </div>
   );
