@@ -20,6 +20,7 @@ import {
 import { ExecAgentPanel } from "@/components/ExecAgentPanel";
 import { PaymentFlowDashboard } from "@/components/PaymentFlowDashboard";
 import { CEOArtistMessaging } from "@/components/CEOArtistMessaging";
+import { SystemDiagnosticsPanel } from "@/components/SystemDiagnosticsPanel";
 
 type DashboardMetrics = {
   totalUsers: number;
@@ -825,6 +826,7 @@ export default function CEODashboard() {
 
           {/* System Health Tab */}
           <TabsContent value="health" className="space-y-6">
+            <SystemDiagnosticsPanel />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="glass-card p-6">
                 <div className="flex items-center gap-3 mb-4">

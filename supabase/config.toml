@@ -95,3 +95,9 @@ verify_jwt = true
 
 [functions.validate-track-upload]
 verify_jwt = true
+
+[functions.system-diagnostics]
+verify_jwt = true
+
+[functions.record-stream]
+verify_jwt = false
