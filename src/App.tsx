@@ -27,6 +27,7 @@ import Support from "./pages/Support";
 import Pricing from "./pages/Pricing";
 import Checkout from "./pages/Checkout";
 import SquareOAuthCallback from "./pages/SquareOAuthCallback";
+import Browse from "./pages/Browse";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/role-selection" element={<RoleSelection />} />
             <Route path="/studio" element={<Studio />} />
             <Route path="/discover" element={<Discover />} />
+            <Route path="/browse" element={<Browse />} />
             <Route path="/artist/:artistId" element={<ArtistProfile />} />
             <Route path="/profile" element={<ListenerProfile />} />
             <Route path="/track/:trackId" element={<TrackDetail />} />
