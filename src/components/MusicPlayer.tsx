@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { 
   Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Heart, 
   Shuffle, Repeat, List, Mic, MoreHorizontal, Share2, Download,
-  Cast, Radio, Clock, Sliders, Award, Maximize2
+  Cast, Radio, Clock, Sliders, Award, Maximize2, AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -13,6 +13,8 @@ import { LyricsPanel } from "./LyricsPanel";
 import { AudioVisualizer3D } from "./3D/AudioVisualizer3D";
 import { EqualizerPanel } from "./EqualizerPanel";
 import { CreditsPanel } from "./CreditsPanel";
+import { useFocusTracking } from "@/hooks/useFocusTracking";
+import { useMultiSourceAudio } from "@/hooks/useMultiSourceAudio";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,28 +89,80 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
   const sleepTimerRef = useRef<NodeJS.Timeout>();
   const { toast } = useToast();
 
+  // Focus tracking for fraud-resistant stream counting
+  const { 
+    isFocused, 
+    startTracking, 
+    stopTracking, 
+    getFocusStats,
+    resetTracking 
+  } = useFocusTracking();
+
+  // Multi-source audio fallback
+  const {
+    audioUrl,
+    isLoading: isSourceLoading,
+    error: sourceError,
+    sourceInfo,
+    initializeSources,
+    handleSourceError,
+    refreshCurrentSource,
+  } = useMultiSourceAudio({
+    filePath: currentTrack?.file_path || '',
+    fileBucket: 'track-files',
+    trackId: currentTrack?.id || '',
+    enableFallback: true,
+  });
+
+  // Initialize audio sources when track changes
   useEffect(() => {
-    if (currentTrack && audioRef.current) {
-      const audioUrl = supabase.storage.from('track-files').getPublicUrl(currentTrack.file_path).data.publicUrl;
+    if (currentTrack) {
+      initializeSources();
+      setStreamRecorded(false);
+      resetTracking();
+      checkIfLiked();
+      loadMotionCover();
+    }
+  }, [currentTrack?.id]);
+
+  // Load audio URL when source is ready
+  useEffect(() => {
+    if (audioUrl && audioRef.current && currentTrack) {
       audioRef.current.src = audioUrl;
       audioRef.current.playbackRate = playbackRate;
-      // Reset stream recorded state for new track
-      setStreamRecorded(false);
+      
+      // Start focus tracking when playback begins
+      startTracking();
+      
       // Auto-play when new track is loaded
       audioRef.current.play().catch(err => {
         console.error('Playback failed:', err);
-        toast({
-          title: "Playback Error",
-          description: "Failed to play track. File may be corrupted or unavailable.",
-          variant: "destructive"
+        // Try next source on playback failure
+        handleSourceError().then(hasNext => {
+          if (!hasNext) {
+            toast({
+              title: "Playback Error",
+              description: "Failed to play track. Please try again.",
+              variant: "destructive"
+            });
+          }
         });
       });
       setIsPlaying(true);
       recordPlay();
-      checkIfLiked();
-      loadMotionCover();
     }
-  }, [currentTrack]);
+  }, [audioUrl]);
+
+  // Show source error toast
+  useEffect(() => {
+    if (sourceError) {
+      toast({
+        title: "Audio Source Error",
+        description: sourceError,
+        variant: "destructive"
+      });
+    }
+  }, [sourceError]);
 
   const loadMotionCover = async () => {
     // Check for motion cover path first
@@ -216,8 +270,20 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
   };
 
   // Record stream via edge function when conditions are met
-  const recordStream = async (duration: number, completionPercentage: number) => {
+  // Uses focus tracking to ensure user is actively listening (fraud prevention)
+  const recordStream = useCallback(async (duration: number, completionPercentage: number) => {
     if (!currentTrack || streamRecorded) return;
+    
+    // Get focus stats for fraud detection
+    const focusStats = getFocusStats();
+    
+    // Require at least 50% focused time for stream to count
+    // This prevents counting streams from background tabs or bots
+    const MIN_FOCUS_PERCENTAGE = 50;
+    if (focusStats.focusPercentage < MIN_FOCUS_PERCENTAGE) {
+      console.log(`Stream not counted: Focus percentage ${focusStats.focusPercentage.toFixed(1)}% below threshold`);
+      return;
+    }
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -232,13 +298,19 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
           trackId: currentTrack.id,
           duration,
           completionPercentage,
+          // Include focus metrics for enhanced fraud detection
+          focusMetrics: {
+            focusedDuration: focusStats.focusedDuration,
+            totalDuration: focusStats.totalDuration,
+            focusPercentage: focusStats.focusPercentage,
+          },
         }),
       });
 
       const result = await response.json();
       if (result.recorded) {
         setStreamRecorded(true);
-        console.log(`Stream recorded: Artist earned $${result.artistEarned}`);
+        console.log(`Stream recorded: Artist earned $${result.artistEarned} (${focusStats.focusPercentage.toFixed(1)}% focused)`);
         
         // Track listener demographics
         try {
@@ -261,7 +333,7 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
     } catch (error) {
       console.error('Error recording stream:', error);
     }
-  };
+  }, [currentTrack, streamRecorded, getFocusStats]);
 
   const handleTimeUpdate = () => {
     if (audioRef.current && currentTrack) {
@@ -383,13 +455,31 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
   };
 
   const handleEnded = () => {
+    // Stop focus tracking for this track
+    const finalStats = stopTracking();
+    console.log(`Track ended: ${finalStats.focusPercentage.toFixed(1)}% focused listening`);
+    
     if (repeat === 'one' && audioRef.current) {
       audioRef.current.currentTime = 0;
+      startTracking(); // Restart tracking for repeat
       audioRef.current.play();
     } else {
       onTrackEnd();
     }
   };
+
+  // Handle audio element errors with multi-source fallback
+  const handleAudioError = useCallback(async (e: React.SyntheticEvent<HTMLAudioElement>) => {
+    console.warn('Audio element error:', e);
+    const hasNext = await handleSourceError();
+    if (!hasNext) {
+      toast({
+        title: "Playback Failed",
+        description: "Unable to load audio. Please try a different track.",
+        variant: "destructive"
+      });
+    }
+  }, [handleSourceError, toast]);
 
   // Get cover URL - prioritize direct album_cover_path, then nested album.cover_art_path
   const getCoverUrl = () => {
@@ -414,8 +504,24 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
           ref={audioRef}
           onTimeUpdate={handleTimeUpdate}
           onEnded={handleEnded}
+          onError={handleAudioError}
           crossOrigin="anonymous"
         />
+        
+        {/* Source loading indicator */}
+        {isSourceLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/50">
+            <div className="animate-pulse text-sm text-muted-foreground">Loading audio...</div>
+          </div>
+        )}
+        
+        {/* Focus indicator for debugging (only in dev) */}
+        {import.meta.env.DEV && !isFocused && isPlaying && (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-destructive/80 text-destructive-foreground px-2 py-0.5 text-xs rounded-b flex items-center gap-1">
+            <AlertCircle className="h-3 w-3" />
+            Tab unfocused - stream may not count
+          </div>
+        )}
         
         {/* 3D Visualizer Section */}
         {showVisualizer && (
