@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { 
   Plus, ListMusic, MoreVertical, Pencil, Trash2, 
-  Globe, Lock, Play, Music, Sparkles
+  Globe, Lock, Play, Music, Sparkles, Upload, Video, Image as ImageIcon
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -41,6 +41,10 @@ interface Playlist {
   play_count: number;
   created_at: string;
   track_count?: number;
+  motion_cover?: {
+    media_path: string;
+    media_type: string;
+  } | null;
 }
 
 interface PlaylistManagerProps {
@@ -67,6 +71,12 @@ export function PlaylistManager({ userId, onPlaylistSelect, onRefresh }: Playlis
     is_public: true
   });
   const [saving, setSaving] = useState(false);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [motionCoverFile, setMotionCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [motionCoverPreview, setMotionCoverPreview] = useState<string | null>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const motionInputRef = useRef<HTMLInputElement>(null);
   
   // Artists always have playlist access, fans need subscription
   const isArtist = role === 'artist' || role === 'verified_artist' || role === 'manager';
@@ -86,7 +96,8 @@ export function PlaylistManager({ userId, onPlaylistSelect, onRefresh }: Playlis
       .from("playlists")
       .select(`
         *,
-        playlist_tracks(count)
+        playlist_tracks(count),
+        playlist_motion_covers(media_path, media_type)
       `)
       .eq("user_id", userId)
       .order("updated_at", { ascending: false });
@@ -97,11 +108,84 @@ export function PlaylistManager({ userId, onPlaylistSelect, onRefresh }: Playlis
     } else {
       const playlistsWithCount = (data || []).map(p => ({
         ...p,
-        track_count: p.playlist_tracks?.[0]?.count || 0
+        track_count: p.playlist_tracks?.[0]?.count || 0,
+        motion_cover: p.playlist_motion_covers?.[0] || null
       }));
       setPlaylists(playlistsWithCount);
     }
     setLoading(false);
+  };
+
+  const handleCoverSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please select an image file");
+      return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+    
+    setCoverFile(file);
+    setCoverPreview(URL.createObjectURL(file));
+  };
+
+  const handleMotionCoverSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('video/')) {
+      toast.error("Please select a video file");
+      return;
+    }
+    
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("Video must be less than 50MB");
+      return;
+    }
+    
+    setMotionCoverFile(file);
+    setMotionCoverPreview(URL.createObjectURL(file));
+  };
+
+  const uploadCoverImage = async (playlistId: string): Promise<string | null> => {
+    if (!coverFile) return null;
+    
+    const ext = coverFile.name.split('.').pop();
+    const filePath = `${playlistId}/cover.${ext}`;
+    
+    const { error } = await supabase.storage
+      .from('playlist-covers')
+      .upload(filePath, coverFile, { upsert: true });
+    
+    if (error) {
+      console.error('Cover upload error:', error);
+      return null;
+    }
+    
+    return filePath;
+  };
+
+  const uploadMotionCover = async (playlistId: string): Promise<{ path: string; type: string } | null> => {
+    if (!motionCoverFile) return null;
+    
+    const ext = motionCoverFile.name.split('.').pop();
+    const filePath = `${playlistId}/motion-cover.${ext}`;
+    
+    const { error } = await supabase.storage
+      .from('motion-covers')
+      .upload(filePath, motionCoverFile, { upsert: true });
+    
+    if (error) {
+      console.error('Motion cover upload error:', error);
+      return null;
+    }
+    
+    return { path: filePath, type: motionCoverFile.type };
   };
 
   const handleCreate = async () => {
@@ -131,14 +215,44 @@ export function PlaylistManager({ userId, onPlaylistSelect, onRefresh }: Playlis
 
     if (error) {
       toast.error("Failed to create playlist");
-    } else {
-      toast.success(`Created "${formData.name}"`);
-      setShowCreateDialog(false);
-      setFormData({ name: "", description: "", is_public: true });
-      loadPlaylists();
-      onRefresh?.();
+      setSaving(false);
+      return;
     }
+    
+    // Upload cover image if provided
+    if (coverFile) {
+      const coverPath = await uploadCoverImage(data.id);
+      if (coverPath) {
+        await supabase.from("playlists").update({ cover_image_path: coverPath }).eq("id", data.id);
+      }
+    }
+    
+    // Upload motion cover if provided
+    if (motionCoverFile) {
+      const motionData = await uploadMotionCover(data.id);
+      if (motionData) {
+        await supabase.from("playlist_motion_covers").insert({
+          playlist_id: data.id,
+          media_path: motionData.path,
+          media_type: motionData.type
+        });
+      }
+    }
+    
+    toast.success(`Created "${formData.name}"`);
+    resetForm();
+    setShowCreateDialog(false);
+    loadPlaylists();
+    onRefresh?.();
     setSaving(false);
+  };
+  
+  const resetForm = () => {
+    setFormData({ name: "", description: "", is_public: true });
+    setCoverFile(null);
+    setMotionCoverFile(null);
+    setCoverPreview(null);
+    setMotionCoverPreview(null);
   };
   
   const handleCreateClick = () => {
@@ -151,7 +265,7 @@ export function PlaylistManager({ userId, onPlaylistSelect, onRefresh }: Playlis
       });
       return;
     }
-    setFormData({ name: "", description: "", is_public: true });
+    resetForm();
     setShowCreateDialog(true);
   };
 
@@ -299,7 +413,16 @@ export function PlaylistManager({ userId, onPlaylistSelect, onRefresh }: Playlis
             >
               <div className="relative">
                 <div className="aspect-square rounded-lg bg-gradient-to-br from-primary/30 to-secondary/30 mb-3 flex items-center justify-center overflow-hidden">
-                  {playlist.cover_image_path ? (
+                  {playlist.motion_cover?.media_path ? (
+                    <video
+                      src={supabase.storage.from("motion-covers").getPublicUrl(playlist.motion_cover.media_path).data.publicUrl}
+                      className="w-full h-full object-cover"
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                    />
+                  ) : playlist.cover_image_path ? (
                     <img 
                       src={supabase.storage.from("playlist-covers").getPublicUrl(playlist.cover_image_path).data.publicUrl}
                       alt={playlist.name}
@@ -397,6 +520,57 @@ export function PlaylistManager({ userId, onPlaylistSelect, onRefresh }: Playlis
                 rows={3}
               />
             </div>
+            
+            {/* Cover Image Upload */}
+            <div>
+              <Label>Cover Image</Label>
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleCoverSelect}
+                className="hidden"
+              />
+              <div 
+                onClick={() => coverInputRef.current?.click()}
+                className="mt-2 border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors"
+              >
+                {coverPreview ? (
+                  <img src={coverPreview} alt="Cover preview" className="w-24 h-24 mx-auto rounded-lg object-cover" />
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <ImageIcon className="w-8 h-8" />
+                    <span className="text-sm">Click to upload cover image</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Motion Cover Upload */}
+            <div>
+              <Label>Motion Cover (Video)</Label>
+              <input
+                ref={motionInputRef}
+                type="file"
+                accept="video/*"
+                onChange={handleMotionCoverSelect}
+                className="hidden"
+              />
+              <div 
+                onClick={() => motionInputRef.current?.click()}
+                className="mt-2 border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors"
+              >
+                {motionCoverPreview ? (
+                  <video src={motionCoverPreview} className="w-24 h-24 mx-auto rounded-lg object-cover" autoPlay loop muted />
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <Video className="w-8 h-8" />
+                    <span className="text-sm">Click to upload motion cover</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
             <div className="flex items-center justify-between">
               <div>
                 <Label>Public Playlist</Label>
