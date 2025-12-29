@@ -65,6 +65,52 @@ const Studio = () => {
     }
   }, [role, roleLoading, navigate]);
 
+  // Load artist profile once access is verified (must be declared before conditional returns)
+  useEffect(() => {
+    if (!user) return;
+    if (roleLoading) return;
+    if (role === "listener" || !role) return;
+
+    let cancelled = false;
+
+    const fetchArtistProfile = async () => {
+      const { data, error } = await supabase
+        .from("artist_profiles")
+        .select("artist_name, profile_image_path")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (error) {
+        console.error("Error fetching artist profile:", error);
+        return;
+      }
+
+      if (!data) {
+        toast.error("Profile incomplete", {
+          description: "Please complete your artist profile setup",
+        });
+        navigate("/role-selection");
+        return;
+      }
+
+      setArtistName(data.artist_name || "Artist");
+      if (data.profile_image_path) {
+        const url = supabase.storage
+          .from("artist-images")
+          .getPublicUrl(data.profile_image_path).data.publicUrl;
+        setProfileImage(url);
+      }
+    };
+
+    fetchArtistProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, role, roleLoading, navigate]);
+
   // SECURITY: Return loading until we CONFIRM user is NOT a listener
   // This is the key fix - we don't render ANY Studio UI until role is verified
   if (loading || roleLoading) {
