@@ -104,3 +104,6 @@ verify_jwt = false
 
 [functions.youtube-search]
 verify_jwt = false
+
+[functions.discogs-api]
+verify_jwt = false

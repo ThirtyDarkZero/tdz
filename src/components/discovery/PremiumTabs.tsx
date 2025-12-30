@@ -1,5 +1,5 @@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Flame, TrendingUp, Music, ListMusic, ShoppingBag } from "lucide-react";
+import { Flame, TrendingUp, Music, ListMusic, ShoppingBag, Library } from "lucide-react";
 import { ReactNode } from "react";
 
 interface PremiumTabsProps {
@@ -9,6 +9,7 @@ interface PremiumTabsProps {
   artistsContent: ReactNode;
   playlistsContent: ReactNode;
   merchContent: ReactNode;
+  libraryContent?: ReactNode;
 }
 
 export function PremiumTabs({
@@ -17,7 +18,8 @@ export function PremiumTabs({
   trendingContent,
   artistsContent,
   playlistsContent,
-  merchContent
+  merchContent,
+  libraryContent
 }: PremiumTabsProps) {
   return (
     <Tabs defaultValue={defaultValue} className="space-y-8">
@@ -29,6 +31,7 @@ export function PremiumTabs({
           
           <TabsList className="relative glass-ultra p-2 gap-1 md:gap-2 h-auto shadow-3d inline-flex min-w-max border border-white/10">
             <TabItem value="discover" icon={Flame} label="Discover" />
+            <TabItem value="library" icon={Library} label="Library" />
             <TabItem value="trending" icon={TrendingUp} label="Trending" />
             <TabItem value="artists" icon={Music} label="Artists" />
             <TabItem value="playlists" icon={ListMusic} label="Playlists" />
@@ -39,6 +42,10 @@ export function PremiumTabs({
 
       <TabsContent value="discover" className="space-y-10 animate-fade-in">
         {discoverContent}
+      </TabsContent>
+
+      <TabsContent value="library" className="space-y-10 animate-fade-in">
+        {libraryContent}
       </TabsContent>
 
       <TabsContent value="trending" className="space-y-10 animate-fade-in">

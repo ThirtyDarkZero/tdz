@@ -27,6 +27,7 @@ import { UnifiedMusicStream } from "@/components/discovery/UnifiedMusicStream";
 import { GenrePlaylists } from "@/components/discovery/GenrePlaylists";
 import { YouTubeVideo } from "@/hooks/useYouTubePlayer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { DiscogsLibrary } from "@/components/discovery/DiscogsLibrary";
 
 export default function Discover() {
   const navigate = useNavigate();
@@ -176,6 +177,23 @@ export default function Discover() {
     toast.success(`Now playing: ${video.title}`);
   };
 
+  // Handle Discogs/YouTube playback
+  const handlePlayDiscogsYouTube = (videoId: string, title: string, artist: string, thumbnail: string) => {
+    const youtubeTrack = {
+      id: `yt-${videoId}`,
+      title: title,
+      artist_name: artist,
+      duration: 0,
+      file_path: '',
+      play_count: 0,
+      source: 'youtube' as const,
+      youtubeId: videoId,
+      thumbnail: thumbnail,
+    };
+    playTrack(youtubeTrack);
+    toast.success(`Now playing: ${title}`);
+  };
+
   // Helper to parse YouTube duration string to seconds
   function parseDurationToSeconds(duration?: string): number {
     if (!duration) return 0;
@@ -265,6 +283,11 @@ export default function Discover() {
             </ErrorBoundary>
           )}
         </div>
+      }
+      libraryContent={
+        <ErrorBoundary fallback={<div className="h-40 bg-muted/20 rounded-lg flex items-center justify-center text-muted-foreground">Library unavailable</div>}>
+          <DiscogsLibrary onPlayYouTube={handlePlayDiscogsYouTube} />
+        </ErrorBoundary>
       }
       trendingContent={
         <EnhancedTrendingSection
