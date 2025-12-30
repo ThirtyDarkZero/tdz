@@ -235,10 +235,10 @@ const Studio = () => {
           onCollapsedChange={setSidebarCollapsed}
         />
 
-        {/* Main Content */}
-        <main className={`${sidebarCollapsed ? 'ml-[72px]' : 'ml-[72px] md:ml-[240px]'} transition-all duration-300 min-h-screen pb-32`}>
+        {/* Main Content - Adjusted for PHP admin-style dual sidebar */}
+        <main className="ml-[110px] md:ml-[350px] transition-all duration-300 min-h-screen pb-32">
           {/* Background Effects */}
-          <div className={`fixed inset-0 pointer-events-none z-0 ${sidebarCollapsed ? 'ml-[72px]' : 'ml-[72px] md:ml-[240px]'}`}>
+          <div className="fixed inset-0 pointer-events-none z-0 ml-[110px] md:ml-[350px]">
             <div className="absolute top-0 right-0 w-[600px] h-[400px] bg-primary/5 rounded-full blur-[120px]" />
             <div className="absolute bottom-1/3 left-1/4 w-[400px] h-[400px] bg-primary/3 rounded-full blur-[100px]" />
           </div>
