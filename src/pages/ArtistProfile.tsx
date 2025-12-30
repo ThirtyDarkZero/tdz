@@ -9,8 +9,8 @@ import {
   Play, Bell, BellOff, ArrowLeft, MoreHorizontal, 
   Music, ChevronLeft, ChevronRight, MessageCircle, Share2, UserPlus, UserCheck
 } from "lucide-react";
-import { DirectMessagePanel } from "@/components/DirectMessagePanel";
 import { usePlayer } from "@/contexts/PlayerContext";
+import { DirectMessagePanel } from "@/components/DirectMessagePanel";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -385,28 +385,69 @@ export default function ArtistProfile() {
         </section>
       )}
 
-      {/* Studio Albums Section */}
+      {/* Albums Section - RKHM/Spotify Style Grid */}
       {albums.length > 0 && (
         <section className="px-4 sm:px-6 lg:px-8 py-6">
+          <h2 className="text-2xl sm:text-3xl font-black mb-6 tracking-tight">Albums</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {albums.filter(a => !a.title?.toLowerCase().includes('single') && !a.title?.toLowerCase().includes('ep')).map((album) => (
+              <div 
+                key={album.id}
+                onClick={() => navigate(`/album/${album.id}`)}
+                className="cursor-pointer group"
+              >
+                <div className="aspect-square rounded-lg overflow-hidden bg-white/5 mb-3 relative shadow-lg">
+                  {album.cover_art_path ? (
+                    <img
+                      src={getAlbumCover(album)}
+                      alt={album.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Music className="w-12 h-12 text-white/20" />
+                    </div>
+                  )}
+                  {/* Play overlay on hover */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
+                      <Play className="w-5 h-5 text-black ml-0.5" fill="currentColor" />
+                    </div>
+                  </div>
+                </div>
+                <p className="font-semibold text-white truncate">{album.title}</p>
+                <p className="text-sm text-white/50 flex items-center gap-1">
+                  <span className="text-xs bg-white/10 px-1.5 py-0.5 rounded">E</span>
+                  {album.release_date ? new Date(album.release_date).getFullYear() : '—'}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Singles & EPs Section */}
+      {tracks.length > 0 && (
+        <section className="px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <h2 className="text-2xl sm:text-3xl font-black tracking-tight">STUDIO ALBUMS</h2>
-              <button className="text-white/40 hover:text-white text-sm">MORE</button>
-            </div>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Singles & EPs</h2>
             <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="rounded-full border-white/20 text-white/60 hover:text-white">
+                More
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => scrollAlbums('left')}
-                className="h-10 w-10 rounded-full border border-white/20 hover:bg-white/10"
+                className="h-8 w-8 rounded-full border border-white/20 hover:bg-white/10"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => scrollAlbums('right')}
-                className="h-10 w-10 rounded-full border border-white/20 hover:bg-white/10"
+                className="h-8 w-8 rounded-full border border-white/20 hover:bg-white/10"
               >
                 <ChevronRight className="w-5 h-5" />
               </Button>
@@ -418,13 +459,14 @@ export default function ArtistProfile() {
             className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {albums.map((album) => (
+            {/* Show singles/EPs from albums or standalone tracks */}
+            {albums.filter(a => a.title?.toLowerCase().includes('single') || a.title?.toLowerCase().includes('ep') || a.total_tracks === 1).map((album) => (
               <div 
                 key={album.id}
                 onClick={() => navigate(`/album/${album.id}`)}
                 className="flex-shrink-0 w-40 sm:w-48 cursor-pointer group"
               >
-                <div className="aspect-square rounded-lg overflow-hidden bg-white/5 mb-3 relative">
+                <div className="aspect-square rounded-lg overflow-hidden bg-white/5 mb-3 relative shadow-lg">
                   {album.cover_art_path ? (
                     <img
                       src={getAlbumCover(album)}
@@ -437,9 +479,10 @@ export default function ArtistProfile() {
                     </div>
                   )}
                 </div>
-                <p className="font-medium text-white truncate">{album.title}</p>
-                <p className="text-sm text-white/50">
-                  {album.release_date ? new Date(album.release_date).getFullYear() : '—'}
+                <p className="font-semibold text-white truncate">{album.title}</p>
+                <p className="text-sm text-white/50 flex items-center gap-1">
+                  <span className="text-xs bg-white/10 px-1.5 py-0.5 rounded">E</span>
+                  Single • {album.release_date ? new Date(album.release_date).getFullYear() : '—'}
                 </p>
               </div>
             ))}
