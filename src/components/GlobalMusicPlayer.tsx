@@ -1,6 +1,6 @@
 import { usePlayer, Track as PlayerTrack } from "@/contexts/PlayerContext";
 import { MusicPlayer } from "@/components/MusicPlayer";
-import { YouTubePlayerInline } from "@/components/youtube/YouTubePlayerInline";
+import { YouTubePlayerEnhanced } from "@/components/youtube/YouTubePlayerEnhanced";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -43,8 +43,9 @@ export function GlobalMusicPlayer() {
       <>
         <div className="fixed bottom-0 left-0 right-0 z-50">
           <div className="glass-ultra border-t border-white/5 shadow-3d-lg">
-            <YouTubePlayerInline
+            <YouTubePlayerEnhanced
               track={currentTrack}
+              queue={queue}
               onNext={nextTrack}
               onPrevious={previousTrack}
               onTrackEnd={handleTrackEnd}
