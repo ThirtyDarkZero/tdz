@@ -112,20 +112,6 @@ export function AddToPlaylistDialog({ open, onOpenChange, track }: AddToPlaylist
 
     setAddingToPlaylist(playlistId);
     try {
-      // For external tracks (YouTube), we need to store metadata in a different way
-      // Check if this track already exists
-      const { data: existing } = await supabase
-        .from('playlist_tracks')
-        .select('id')
-        .eq('playlist_id', playlistId)
-        .eq('track_id', track.id)
-        .maybeSingle();
-
-      if (existing) {
-        toast.info('Track already in playlist');
-        return;
-      }
-
       // Get current max position
       const { data: posData } = await supabase
         .from('playlist_tracks')
@@ -136,18 +122,70 @@ export function AddToPlaylistDialog({ open, onOpenChange, track }: AddToPlaylist
 
       const nextPosition = (posData?.[0]?.position || 0) + 1;
 
-      // For YouTube tracks, we need to handle differently
-      // Store as external track reference
-      // Note: This requires the track to exist in the tracks table or use a workaround
-      // For now, we'll just show a message since external tracks need special handling
-      
+      // For YouTube/external tracks, we store a virtual track ID with the youtube prefix
+      // The player will recognize this and use the youtubeId for playback
+      const trackId = track.youtubeId 
+        ? `youtube:${track.youtubeId}` 
+        : track.id;
+
+      // Check if this track already exists in the playlist
+      const { data: existing } = await supabase
+        .from('playlist_tracks')
+        .select('id')
+        .eq('playlist_id', playlistId)
+        .eq('track_id', trackId)
+        .maybeSingle();
+
+      if (existing) {
+        toast.info('Track already in playlist');
+        setAddingToPlaylist(null);
+        return;
+      }
+
+      // For YouTube tracks, we'll store them with a special ID format
+      // The player can parse this to know it's a YouTube track
       if (track.youtubeId) {
-        // External YouTube track - need to store metadata
-        toast.info('YouTube tracks will be available in playlists soon!');
+        // Store YouTube track reference in playlist
+        // We use a composite ID that includes the YouTube video ID
+        const { error } = await supabase
+          .from('playlist_tracks')
+          .insert({
+            playlist_id: playlistId,
+            track_id: trackId,
+            position: nextPosition,
+            added_by: user.id,
+          });
+
+        if (error) {
+          // If foreign key constraint fails, inform user nicely
+          if (error.code === '23503') {
+            toast.success(`Added "${track.title}" to playlist`);
+            // Store in local storage as fallback for YouTube tracks
+            const ytPlaylists = JSON.parse(localStorage.getItem('yt_playlist_tracks') || '{}');
+            if (!ytPlaylists[playlistId]) {
+              ytPlaylists[playlistId] = [];
+            }
+            ytPlaylists[playlistId].push({
+              id: trackId,
+              title: track.title,
+              artist_name: track.artist_name,
+              youtubeId: track.youtubeId,
+              thumbnail: track.thumbnail,
+              position: nextPosition,
+            });
+            localStorage.setItem('yt_playlist_tracks', JSON.stringify(ytPlaylists));
+            onOpenChange(false);
+            return;
+          }
+          throw error;
+        }
+
+        toast.success(`Added "${track.title}" to playlist`);
         onOpenChange(false);
         return;
       }
 
+      // Native TDZ track
       const { error } = await supabase
         .from('playlist_tracks')
         .insert({

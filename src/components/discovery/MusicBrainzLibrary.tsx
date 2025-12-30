@@ -178,6 +178,22 @@ export function MusicBrainzLibrary({ onPlayYouTube }: MusicBrainzLibraryProps) {
                   <Button
                     size="sm"
                     variant="ghost"
+                    onClick={() => {
+                      setPlaylistTrack({
+                        id: `mb-${track.id || track.position}`,
+                        title: track.title,
+                        artist_name: selectedRelease.artistName,
+                        thumbnail: selectedRelease.coverArt,
+                      });
+                    }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <ListPlus className="w-4 h-4" />
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="ghost"
                     disabled={loadingTrack === track.title}
                     onClick={() => handlePlayTrack(track.title, selectedRelease.artistName, selectedRelease.coverArt)}
                     className="opacity-0 group-hover:opacity-100 transition-opacity"
