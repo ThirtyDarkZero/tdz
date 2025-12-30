@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { MultiTrackUploader } from "@/components/MultiTrackUploader";
 import { PendingInvitesPanel } from "@/components/PendingInvitesPanel";
@@ -41,7 +42,10 @@ function StudioContent() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [artistName, setArtistName] = useState<string>("Artist");
   const [profileImage, setProfileImage] = useState<string | undefined>();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Default to collapsed on mobile so content is visible
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    typeof window !== 'undefined' && window.innerWidth < 768
+  );
 
   // Load artist profile
   useEffect(() => {
@@ -158,15 +162,23 @@ function StudioContent() {
           onCollapsedChange={setSidebarCollapsed}
         />
 
-        {/* Main Content */}
-        <main className="ml-[110px] md:ml-[350px] transition-all duration-300 min-h-screen pb-32">
+        {/* Main Content - No margin on mobile when sidebar is collapsed */}
+        <main className={cn(
+          "transition-all duration-300 min-h-screen pb-32",
+          // Mobile: no margin when collapsed, full sidebar when open handled by overlay
+          sidebarCollapsed ? "ml-0" : "ml-0",
+          // Desktop: always show sidebar margin
+          "md:ml-[110px]",
+          // Desktop with highlights panel
+          !sidebarCollapsed && "md:ml-[350px]"
+        )}>
           {/* Background Effects */}
-          <div className="fixed inset-0 pointer-events-none z-0 ml-[110px] md:ml-[350px]">
+          <div className="fixed inset-0 pointer-events-none z-0">
             <div className="absolute top-0 right-0 w-[600px] h-[400px] bg-primary/5 rounded-full blur-[120px]" />
             <div className="absolute bottom-1/3 left-1/4 w-[400px] h-[400px] bg-primary/3 rounded-full blur-[100px]" />
           </div>
 
-          <div className="relative z-10 p-6 md:p-8 lg:p-10 max-w-7xl">
+          <div className="relative z-10 p-4 pt-16 md:pt-6 md:p-8 lg:p-10 max-w-7xl mx-auto">
             <PendingInvitesPanel />
             {renderContent()}
           </div>
