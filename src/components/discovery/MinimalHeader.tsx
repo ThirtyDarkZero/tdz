@@ -9,6 +9,7 @@ import tdzLogo from "@/assets/tdz-logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { supabase } from "@/integrations/supabase/client";
+import { hardSignOut } from "@/lib/auth";
 import { toast } from "sonner";
 import { YouTubeVideo } from "@/hooks/useYouTubePlayer";
 import {
@@ -167,8 +168,7 @@ export function MinimalHeader({ onMenuClick, searchQuery, onSearchChange }: Mini
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    window.location.href = '/';
+    await hardSignOut({ redirectTo: "/" });
   };
 
   return (

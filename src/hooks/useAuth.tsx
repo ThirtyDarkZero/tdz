@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
+import { hardSignOut } from "@/lib/auth";
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -63,18 +64,15 @@ export const useAuth = () => {
   };
 
   const signOut = async () => {
-    // Complete session invalidation
-    try {
-      await supabase.auth.signOut();
-      // Clear any local storage data
-      localStorage.removeItem('supabase.auth.token');
-      sessionStorage.clear();
-      // Force reload to ensure clean state
-      window.location.href = '/';
-    } catch (error) {
-      console.error('Sign out error:', error);
-    }
-    return { error: null };
+    const { error } = await hardSignOut();
+
+    // Ensure React state immediately reflects the signed-out status,
+    // even if onAuthStateChange is delayed.
+    setSession(null);
+    setUser(null);
+    setLoading(false);
+
+    return { error: (error as any) ?? null };
   };
 
   return {
