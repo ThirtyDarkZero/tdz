@@ -1,4 +1,4 @@
-import { useState, useLayoutEffect } from "react";
+import { useState, useLayoutEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 
@@ -16,19 +16,23 @@ export type UserRole =
 export const useUserRole = (user: User | null) => {
   const [role, setRole] = useState<UserRole>(null);
   const [loading, setLoading] = useState(true);
+  const loadingRef = useRef(false);
+  const lastUserIdRef = useRef<string | null>(null);
 
-  const loadRole = async () => {
-    if (!user) {
-      setRole(null);
-      setLoading(false);
+  const loadRole = useCallback(async (userId: string) => {
+    // Prevent concurrent loads for the same user
+    if (loadingRef.current && lastUserIdRef.current === userId) {
       return;
     }
+    
+    loadingRef.current = true;
+    lastUserIdRef.current = userId;
 
     try {
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .order("granted_at", { ascending: false, nullsFirst: false })
         .limit(1)
         .maybeSingle();
@@ -43,24 +47,33 @@ export const useUserRole = (user: User | null) => {
       console.error("Error loading role:", error);
       setRole(null);
     } finally {
+      loadingRef.current = false;
       setLoading(false);
     }
-  };
+  }, []);
 
   useLayoutEffect(() => {
-    // Prevent Studio redirect races: set loading=true synchronously before any
-    // route-guard effects run when user transitions null -> user.
+    // No user - clear state immediately
     if (!user) {
       setRole(null);
       setLoading(false);
+      lastUserIdRef.current = null;
+      loadingRef.current = false;
       return;
     }
 
+    // User exists - set loading and fetch role
     setLoading(true);
-    loadRole();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+    loadRole(user.id);
+  }, [user, loadRole]);
 
-  return { role, loading, refetch: loadRole };
+  const refetch = useCallback(() => {
+    if (user) {
+      setLoading(true);
+      loadRole(user.id);
+    }
+  }, [user, loadRole]);
+
+  return { role, loading, refetch };
 };
 
