@@ -10,6 +10,7 @@ import { GlobalErrorTrap } from "@/components/GlobalErrorTrap";
 import { CommandPalette } from "@/components/CommandPalette";
 import { SmartFAB } from "@/components/SmartFAB";
 import { PlayerProvider } from "@/contexts/PlayerContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { GlobalMusicPlayer } from "@/components/GlobalMusicPlayer";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
@@ -38,58 +39,58 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <PlayerProvider>
-        <Toaster />
-        <Sonner />
-        <GlobalErrorTrap />
-        <BrowserRouter>
-          <CommandPalette />
-          <SmartFAB />
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/role-selection" element={<RoleSelection />} />
-            <Route
-              path="/studio"
-              element={
-                <ErrorBoundary fallback={<AppErrorFallback title="Studio failed to load" />}>
-                  <Studio />
-                </ErrorBoundary>
-              }
-            />
-            <Route
-              path="/discover"
-              element={
-                <ErrorBoundary fallback={<AppErrorFallback title="Discover failed to load" />}>
-                  <Discover />
-                </ErrorBoundary>
-              }
-            />
-            <Route path="/browse" element={<Browse />} />
-            <Route path="/artist/:artistId" element={<ArtistProfile />} />
-            <Route path="/artist/youtube/:artistId" element={<UnifiedArtistProfile />} />
-            <Route path="/profile" element={<ListenerProfile />} />
-            <Route path="/track/:trackId" element={<TrackDetail />} />
-            <Route path="/album/:albumId" element={<AlbumDetail />} />
-            <Route path="/playlist/:playlistId" element={<PlaylistDetail />} />
-            <Route path="/investors" element={<Investors />} />
-            <Route path="/ceo" element={<CEODashboard />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/support" element={<Support />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/square-callback" element={<SquareOAuthCallback />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          {/* Global persistent music player */}
-          <GlobalMusicPlayer />
-        </BrowserRouter>
-      </PlayerProvider>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <PlayerProvider>
+          <Toaster />
+          <Sonner />
+          <GlobalErrorTrap />
+          <BrowserRouter>
+            <CommandPalette />
+            <SmartFAB />
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/role-selection" element={<RoleSelection />} />
+              <Route
+                path="/studio"
+                element={
+                  <ErrorBoundary fallback={<AppErrorFallback title="Studio failed to load" />}>
+                    <Studio />
+                  </ErrorBoundary>
+                }
+              />
+              <Route
+                path="/discover"
+                element={
+                  <ErrorBoundary fallback={<AppErrorFallback title="Discover failed to load" />}>
+                    <Discover />
+                  </ErrorBoundary>
+                }
+              />
+              <Route path="/browse" element={<Browse />} />
+              <Route path="/artist/:artistId" element={<ArtistProfile />} />
+              <Route path="/artist/youtube/:artistId" element={<UnifiedArtistProfile />} />
+              <Route path="/profile" element={<ListenerProfile />} />
+              <Route path="/track/:trackId" element={<TrackDetail />} />
+              <Route path="/album/:albumId" element={<AlbumDetail />} />
+              <Route path="/playlist/:playlistId" element={<PlaylistDetail />} />
+              <Route path="/investors" element={<Investors />} />
+              <Route path="/ceo" element={<CEODashboard />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/support" element={<Support />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/square-callback" element={<SquareOAuthCallback />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <GlobalMusicPlayer />
+          </BrowserRouter>
+        </PlayerProvider>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
