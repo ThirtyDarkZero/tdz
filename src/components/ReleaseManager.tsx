@@ -9,10 +9,12 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import { CalendarIcon, Upload, Globe, CheckCircle2, AlertCircle, Loader2, Disc3, Zap, Music, Album } from "lucide-react";
+import { CalendarIcon, Upload, Globe, CheckCircle2, AlertCircle, Loader2, Disc3, Zap, Music, Album, Brain, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { QuantumDistributionPanel } from "./QuantumDistributionPanel";
 
 export const ReleaseManager = () => {
   const [releaseType, setReleaseType] = useState<"track" | "project">("track");
@@ -26,6 +28,7 @@ export const ReleaseManager = () => {
   const [genre, setGenre] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const [showQuantumPanel, setShowQuantumPanel] = useState(false);
 
   useEffect(() => {
     loadTracks();
@@ -376,6 +379,35 @@ export const ReleaseManager = () => {
                               {track.artist_name}
                             </p>
                           </div>
+                          <Dialog open={showQuantumPanel && selectedTrack?.id === track.id} onOpenChange={(open) => {
+                            if (!open) setShowQuantumPanel(false);
+                          }}>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-primary"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedTrack(track);
+                                  setShowQuantumPanel(true);
+                                }}
+                              >
+                                <Brain className="w-4 h-4 mr-1" />
+                                <Sparkles className="w-3 h-3" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle className="sr-only">Quantum Distribution Analysis</DialogTitle>
+                              </DialogHeader>
+                              <QuantumDistributionPanel 
+                                trackId={track.id} 
+                                trackTitle={track.title}
+                                onComplete={() => loadTracks()}
+                              />
+                            </DialogContent>
+                          </Dialog>
                           {selectedTrack?.id === track.id && (
                             <CheckCircle2 className="w-5 h-5 text-primary" />
                           )}
