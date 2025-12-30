@@ -90,7 +90,7 @@ interface Track {
   motion_cover_bucket: string | null;
 }
 
-// Ferrari-inspired Interactive Feature Card
+// PHP-Admin Box Pattern Feature Card
 function InteractiveFeatureCard({ 
   feature, 
   index, 
@@ -111,94 +111,76 @@ function InteractiveFeatureCard({
       onClick={() => setIsRevealed(!isRevealed)}
       style={{ 
         animationDelay: `${index * 0.1}s`,
-        transform: isHovered ? 'translateY(-8px) scale(1.02)' : 'translateY(0) scale(1)',
-        transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+        transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
       }}
     >
+      {/* PHP Admin Box Pattern */}
       <div className={`
-        relative overflow-hidden rounded-2xl border border-border/50
-        bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl
-        transition-all duration-500
-        ${isHovered ? 'border-primary/60 shadow-2xl shadow-primary/20' : ''}
+        relative overflow-hidden rounded-xl border border-border/50
+        bg-card/90 backdrop-blur-xl
+        transition-all duration-300
+        ${isHovered ? 'border-primary/60 shadow-lg shadow-primary/10' : ''}
       `}>
-        {/* Animated background glow */}
+        {/* PHP-style Title Bar */}
         <div className={`
-          absolute inset-0 bg-gradient-to-br ${feature.color} opacity-0 
-          transition-opacity duration-700
-          ${isHovered ? 'opacity-10' : ''}
-        `} />
-        
-        {/* Subtle scan line effect on hover */}
-        <div className={`
-          absolute inset-0 overflow-hidden pointer-events-none
-          ${isHovered ? 'opacity-100' : 'opacity-0'}
-          transition-opacity duration-300
+          px-4 py-3 border-b border-border/50 
+          bg-gradient-to-r ${feature.color} bg-opacity-10
+          flex items-center justify-between
         `}>
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent 
-            animate-[scan_2s_ease-in-out_infinite]" 
-            style={{ transform: 'translateY(-100%)' }}
-          />
-        </div>
-
-        <div className="relative z-10 p-6 md:p-8 space-y-4">
-          {/* Icon with floating animation */}
-          <div className={`
-            w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} 
-            flex items-center justify-center transition-all duration-500
-            ${isHovered ? 'scale-110 rotate-6' : ''}
-          `}
-            style={{
-              boxShadow: isHovered ? `0 8px 32px hsl(var(--primary) / 0.4)` : 'none'
-            }}
-          >
-            <feature.icon className="w-7 h-7 text-background" />
-          </div>
-          
-          <div>
+          <div className="flex items-center gap-3">
+            <div className={`
+              w-10 h-10 rounded-lg bg-gradient-to-br ${feature.color} 
+              flex items-center justify-center transition-transform duration-300
+              ${isHovered ? 'scale-110 rotate-3' : ''}
+            `}>
+              <feature.icon className="w-5 h-5 text-background" />
+            </div>
             <h3 className={`
-              text-xl font-display font-bold mb-2 transition-colors duration-300
+              font-display font-bold transition-colors duration-300
               ${isHovered ? 'text-primary' : 'text-foreground'}
             `}>
               {feature.title}
             </h3>
-            <p className="text-muted-foreground">{feature.description}</p>
           </div>
+          <Sparkles className={`w-4 h-4 transition-opacity ${isHovered ? 'opacity-100 text-primary' : 'opacity-0'}`} />
+        </div>
+        
+        {/* Content Area */}
+        <div className="p-4 space-y-3">
+          <p className="text-muted-foreground text-sm leading-relaxed">{feature.description}</p>
 
-          {/* Expandable info section - Ferrari style reveal */}
+          {/* Expandable info section */}
           <div className={`
             overflow-hidden transition-all duration-500 ease-out
-            ${isRevealed || isHovered ? 'max-h-32 opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}
+            ${isRevealed || isHovered ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0'}
           `}>
-            <div className="pt-4 border-t border-primary/20">
-              <p className="text-sm text-foreground/80 leading-relaxed">
+            <div className="pt-3 border-t border-border/50">
+              <p className="text-xs text-foreground/80 leading-relaxed">
                 {feature.expandedInfo}
               </p>
             </div>
           </div>
 
-          {/* Hover indicator */}
-          <div className={`
-            flex items-center gap-2 text-xs text-primary transition-all duration-300
-            ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}
-          `}>
-            <Sparkles className="w-3 h-3" />
-            <span>Click to learn more</span>
+          {/* Status indicator bar */}
+          <div className="flex items-center justify-between pt-2">
+            <div className={`h-1 flex-1 bg-muted rounded-full overflow-hidden mr-3`}>
+              <div 
+                className={`h-full bg-gradient-to-r ${feature.color} rounded-full transition-all duration-700`}
+                style={{ width: isHovered ? '100%' : '60%' }}
+              />
+            </div>
+            <span className={`text-xs transition-colors ${isHovered ? 'text-primary' : 'text-muted-foreground'}`}>
+              Learn more
+            </span>
           </div>
-        </div>
-
-        {/* Corner accent */}
-        <div className={`
-          absolute top-0 right-0 w-20 h-20 transition-opacity duration-500
-          ${isHovered ? 'opacity-100' : 'opacity-0'}
-        `}>
-          <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-primary/20 to-transparent" />
         </div>
       </div>
     </div>
   );
 }
 
-// Ferrari-style Section Divider with scroll indicator
+// PHP-Admin Section Divider with box styling
 function SectionDivider({ label, scrollTo }: { label: string; scrollTo?: string }) {
   const handleClick = () => {
     if (scrollTo) {
@@ -208,45 +190,45 @@ function SectionDivider({ label, scrollTo }: { label: string; scrollTo?: string 
 
   return (
     <div 
-      className="flex flex-col items-center py-12 cursor-pointer group"
+      className="flex flex-col items-center py-8 cursor-pointer group"
       onClick={handleClick}
     >
-      <div className="w-px h-16 bg-gradient-to-b from-transparent via-primary/50 to-primary/20" />
-      <div className="my-4 px-6 py-2 rounded-full border border-primary/30 backdrop-blur-xl
-        bg-card/50 group-hover:bg-primary/10 group-hover:border-primary/50 transition-all duration-300">
-        <span className="text-xs uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
+      <div className="w-px h-12 bg-gradient-to-b from-transparent via-border to-border/50" />
+      <div className="my-3 px-5 py-2 rounded-lg border border-border/50 backdrop-blur-xl
+        bg-card/80 group-hover:bg-primary/10 group-hover:border-primary/50 transition-all duration-300
+        shadow-sm">
+        <span className="text-xs uppercase tracking-widest font-semibold text-muted-foreground group-hover:text-primary transition-colors">
           {label}
         </span>
       </div>
-      <ChevronDown className="w-5 h-5 text-primary/50 animate-bounce group-hover:text-primary transition-colors" />
+      <ChevronDown className="w-4 h-4 text-muted-foreground animate-bounce group-hover:text-primary transition-colors" />
     </div>
   );
 }
 
-// Interactive Stat Card with hover animation
+// PHP-Admin Stat Card with box pattern
 function StatCard({ value, label, index }: { value: string; label: string; index: number }) {
   const [isHovered, setIsHovered] = useState(false);
   
   return (
     <div 
-      className="text-center cursor-default group"
+      className={`
+        text-center cursor-default group p-4 rounded-lg border border-border/30
+        bg-card/50 backdrop-blur-sm transition-all duration-300
+        ${isHovered ? 'border-primary/50 bg-primary/5 shadow-md' : ''}
+      `}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      style={{
-        transform: isHovered ? 'scale(1.1)' : 'scale(1)',
-        transition: 'transform 0.3s ease-out'
-      }}
     >
       <div className={`
-        text-2xl md:text-4xl font-display font-black 
+        text-xl md:text-3xl font-display font-black 
         bg-gradient-to-r from-green-500 via-emerald-500 to-primary bg-clip-text text-transparent
         transition-all duration-300
-        ${isHovered ? 'drop-shadow-[0_0_20px_hsl(var(--primary)/0.5)]' : ''}
       `}>
         {value}
       </div>
       <div className={`
-        text-xs md:text-sm mt-1 transition-colors duration-300
+        text-xs md:text-sm mt-1 font-medium transition-colors duration-300
         ${isHovered ? 'text-foreground' : 'text-muted-foreground'}
       `}>
         {label}

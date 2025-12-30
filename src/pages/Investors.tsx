@@ -184,188 +184,153 @@ export default function Investors() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary/5">
-      {/* Hero Section - The Crisis */}
-      <section className="relative py-20 px-4 md:px-6 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--destructive)/0.15),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,hsl(var(--primary)/0.15),transparent_50%)]" />
+      {/* Hero Section - The Crisis - PHP Admin Box Pattern */}
+      <section className="relative py-16 px-4 md:px-6 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--destructive)/0.1),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,hsl(var(--primary)/0.1),transparent_50%)]" />
         
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="flex items-center justify-between mb-12">
-            <img src={tdzLogo} alt="TDZ" className="h-12 w-auto" />
-            <Button variant="outline" onClick={() => navigate("/")}>
-              Back to Home
-            </Button>
+          {/* PHP Admin Header Bar */}
+          <div className="flex items-center justify-between mb-8 p-4 rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm">
+            <img src={tdzLogo} alt="TDZ" className="h-10 w-auto" />
+            <div className="flex items-center gap-3">
+              <Badge className="bg-green-500/10 text-green-500 border-green-500/30">
+                Investor Portal
+              </Badge>
+              <Button variant="outline" size="sm" onClick={() => navigate("/")}>
+                Back to Home
+              </Button>
+            </div>
           </div>
 
-          <div className="text-center space-y-6 mb-16">
-            <Badge className="bg-destructive/10 text-destructive border-destructive/20 px-4 py-2 text-sm animate-pulse">
-              <AlertTriangle className="w-4 h-4 mr-2 inline" />
-              THE MUSIC INDUSTRY IS BROKEN
-            </Badge>
-            <h1 className="text-5xl md:text-7xl font-display font-black leading-tight">
-              ARTISTS EARN
-              <span className="block bg-gradient-to-r from-destructive via-orange-500 to-red-600 bg-clip-text text-transparent mt-2">
-                $0.003 PER STREAM
-              </span>
-            </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
-              Artists need 250,000 streams just to earn $750. Meanwhile, platforms like Spotify profit billions. TDZ changes everything with <span className="text-green-500 font-bold">$1 per stream</span>.
-            </p>
+          {/* Hero Content Box */}
+          <div className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden mb-8">
+            {/* Title Bar */}
+            <div className="px-6 py-4 border-b border-border/50 bg-destructive/5 flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 text-destructive animate-pulse" />
+              <span className="text-sm font-semibold uppercase tracking-wide text-destructive">The Music Industry is Broken</span>
+            </div>
+            {/* Content */}
+            <div className="p-8 md:p-12 text-center space-y-6">
+              <h1 className="text-4xl md:text-6xl font-display font-black leading-tight">
+                ARTISTS EARN
+                <span className="block bg-gradient-to-r from-destructive via-orange-500 to-red-600 bg-clip-text text-transparent mt-2">
+                  $0.003 PER STREAM
+                </span>
+              </h1>
+              <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                Artists need 250,000 streams just to earn $750. Meanwhile, platforms like Spotify profit billions. TDZ changes everything with <span className="text-green-500 font-bold">$1 per stream</span>.
+              </p>
+            </div>
           </div>
 
-          {/* The Enemy - Industry Problems */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
-            <Card className="bg-destructive/5 backdrop-blur border-destructive/20 hover:border-destructive/40 transition-all">
-              <CardContent className="p-6 text-center">
-                <TrendingDown className="w-8 h-8 text-destructive mx-auto mb-3" />
-                <div className="text-3xl md:text-4xl font-black text-destructive mb-2">
-                  $0.003
+          {/* Comparison Cards - PHP Admin Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {[
+              { icon: TrendingDown, value: "$0.003", label: "Spotify Payout", sub: "Per stream average", color: "destructive", bg: "from-destructive/10 to-destructive/5" },
+              { icon: DollarSign, value: "$1.00", label: "TDZ Payout", sub: "Per stream guaranteed", color: "green-500", bg: "from-green-500/10 to-green-500/5" },
+              { icon: TrendingUp, value: "333x", label: "Higher Payout", sub: "vs industry average", color: "primary", bg: "from-primary/10 to-primary/5" },
+              { icon: Download, value: "100%", label: "Download Revenue", sub: "Goes to artist", color: "secondary", bg: "from-secondary/10 to-secondary/5" }
+            ].map((stat, idx) => (
+              <div key={idx} className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden hover:border-primary/50 transition-all group">
+                <div className={`px-4 py-3 border-b border-border/30 bg-gradient-to-r ${stat.bg}`}>
+                  <stat.icon className={`w-6 h-6 text-${stat.color}`} />
                 </div>
-                <div className="font-semibold text-sm mb-1">Spotify Payout</div>
-                <div className="text-xs text-muted-foreground">Per stream average</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-green-500/10 backdrop-blur border-green-500/30 hover:border-green-500/50 transition-all">
-              <CardContent className="p-6 text-center">
-                <DollarSign className="w-8 h-8 text-green-500 mx-auto mb-3" />
-                <div className="text-3xl md:text-4xl font-black text-green-500 mb-2">
-                  $1.00
+                <div className="p-4 text-center">
+                  <div className={`text-2xl md:text-3xl font-black text-${stat.color} mb-1`}>
+                    {stat.value}
+                  </div>
+                  <div className="font-semibold text-sm">{stat.label}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{stat.sub}</div>
                 </div>
-                <div className="font-semibold text-sm mb-1">TDZ Payout</div>
-                <div className="text-xs text-muted-foreground">Per stream guaranteed</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-primary/10 backdrop-blur border-primary/30 hover:border-primary/50 transition-all">
-              <CardContent className="p-6 text-center">
-                <TrendingUp className="w-8 h-8 text-primary mx-auto mb-3" />
-                <div className="text-3xl md:text-4xl font-black text-primary mb-2">
-                  333x
-                </div>
-                <div className="font-semibold text-sm mb-1">Higher Payout</div>
-                <div className="text-xs text-muted-foreground">vs industry average</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-secondary/10 backdrop-blur border-secondary/30 hover:border-secondary/50 transition-all">
-              <CardContent className="p-6 text-center">
-                <Download className="w-8 h-8 text-secondary mx-auto mb-3" />
-                <div className="text-3xl md:text-4xl font-black text-secondary mb-2">
-                  100%
-                </div>
-                <div className="font-semibold text-sm mb-1">Download Revenue</div>
-                <div className="text-xs text-muted-foreground">Goes to artist</div>
-              </CardContent>
-            </Card>
+              </div>
+            ))}
           </div>
 
-          {/* The Solution - TDZ as Hero */}
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 via-primary/20 to-secondary/20 blur-3xl" />
-            <Card className="relative bg-gradient-to-br from-green-500/10 via-primary/10 to-secondary/10 border-green-500/40 backdrop-blur">
-              <CardContent className="p-12 text-center">
-                <Badge className="bg-green-500 text-background px-6 py-3 text-lg mb-6">
-                  <Crown className="w-6 h-6 mr-3 inline" />
-                  THE $1 PER STREAM REVOLUTION
-                </Badge>
-                <h2 className="text-4xl md:text-6xl font-display font-black mb-6">
-                  <span className="bg-gradient-to-r from-green-500 via-emerald-500 to-primary bg-clip-text text-transparent">
-                    THIRTY DARK ZERO RECORDS
-                  </span>
-                </h2>
-                <p className="text-xl md:text-2xl text-foreground max-w-4xl mx-auto leading-relaxed mb-8">
-                  We pay artists <span className="font-black text-green-500">$1.00 per stream</span>. Artists set their own download prices and keep <span className="font-black text-secondary">100% of download revenue</span>. AI music is welcome. The future of music is here.
-                </p>
-                <div className="grid md:grid-cols-4 gap-6 mt-12">
-                  <div>
-                    <div className="text-4xl font-black text-green-500 mb-2">$1.00</div>
-                    <div className="text-sm font-semibold">Per Stream</div>
+          {/* Solution Box - PHP Admin Pattern */}
+          <div className="rounded-xl border border-green-500/40 bg-gradient-to-br from-green-500/5 via-primary/5 to-secondary/5 backdrop-blur-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-green-500/30 bg-green-500/10 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Crown className="w-5 h-5 text-green-500" />
+                <span className="font-semibold text-green-500">THE $1 PER STREAM REVOLUTION</span>
+              </div>
+              <Badge className="bg-green-500 text-background">Solution</Badge>
+            </div>
+            <div className="p-8 md:p-12 text-center">
+              <h2 className="text-3xl md:text-5xl font-display font-black mb-6">
+                <span className="bg-gradient-to-r from-green-500 via-emerald-500 to-primary bg-clip-text text-transparent">
+                  THIRTY DARK ZERO RECORDS
+                </span>
+              </h2>
+              <p className="text-lg md:text-xl text-foreground max-w-4xl mx-auto leading-relaxed mb-8">
+                We pay artists <span className="font-black text-green-500">$1.00 per stream</span>. Artists set their own download prices and keep <span className="font-black text-secondary">100% of download revenue</span>. AI music is welcome. The future of music is here.
+              </p>
+              <div className="grid md:grid-cols-4 gap-4">
+                {[
+                  { value: "$1.00", label: "Per Stream" },
+                  { value: "100%", label: "Download Revenue" },
+                  { value: "AI+Human", label: "Both Welcome" },
+                  { value: "100%", label: "Rights Retained" }
+                ].map((item, idx) => (
+                  <div key={idx} className="p-4 rounded-lg bg-card/50 border border-border/30">
+                    <div className="text-2xl md:text-3xl font-black text-green-500">{item.value}</div>
+                    <div className="text-sm font-medium text-muted-foreground">{item.label}</div>
                   </div>
-                  <div>
-                    <div className="text-4xl font-black text-secondary mb-2">100%</div>
-                    <div className="text-sm font-semibold">Download Revenue</div>
-                  </div>
-                  <div>
-                    <div className="text-4xl font-black text-accent mb-2">AI+Human</div>
-                    <div className="text-sm font-semibold">Both Welcome</div>
-                  </div>
-                  <div>
-                    <div className="text-4xl font-black text-primary mb-2">100%</div>
-                    <div className="text-sm font-semibold">Rights Retained</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* TAM / SAM / SOM Market Opportunity */}
+      {/* TAM / SAM / SOM Market Opportunity - PHP Admin Box Pattern */}
       <section className="py-16 px-4 md:px-6 bg-gradient-to-b from-primary/5 to-transparent">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20 px-4 py-2 mb-4">
-              <Globe className="w-4 h-4 mr-2 inline" />
-              MARKET OPPORTUNITY
-            </Badge>
-            <h2 className="text-4xl md:text-5xl font-display font-black mb-4">
-              $100B+ Market Opportunity
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              The global music streaming market is exploding—and independent + AI music is the fastest-growing segment.
-            </p>
+          {/* Section Header Box */}
+          <div className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden mb-8">
+            <div className="px-6 py-4 border-b border-border/50 bg-blue-500/10 flex items-center gap-3">
+              <Globe className="w-5 h-5 text-blue-500" />
+              <span className="font-semibold text-blue-500 uppercase tracking-wide">Market Opportunity</span>
+            </div>
+            <div className="p-6 text-center">
+              <h2 className="text-3xl md:text-4xl font-display font-black mb-3">
+                $100B+ Market Opportunity
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                The global music streaming market is exploding—and independent + AI music is the fastest-growing segment.
+              </p>
+            </div>
           </div>
 
-          {/* TAM / SAM / SOM Cards */}
-          <div className="grid md:grid-cols-3 gap-6 mb-12">
-            <Card className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-500/40">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-500/20 flex items-center justify-center">
-                  <Globe className="w-8 h-8 text-blue-500" />
+          {/* TAM / SAM / SOM Cards - PHP Admin Box Pattern */}
+          <div className="grid md:grid-cols-3 gap-4 mb-8">
+            {[
+              { abbr: "TAM", label: "Total Addressable Market", value: "$106B", desc: "Global Music Streaming (2029)", color: "blue", icon: Globe, stats: [{ l: "2024:", v: "$43.7B" }, { l: "2029:", v: "$106.6B" }, { l: "CAGR:", v: "19.5%" }] },
+              { abbr: "SAM", label: "Serviceable Addressable Market", value: "$38B", desc: "Independent + AI Music (2029)", color: "purple", icon: Target, stats: [{ l: "Independent:", v: "$26B (2029)" }, { l: "AI Music:", v: "$12B (2029)" }, { l: "Combined CAGR:", v: "28%" }] },
+              { abbr: "SOM", label: "Serviceable Obtainable Market", value: "$2.5B", desc: "TDZ Target (Year 5)", color: "green", icon: Rocket, stats: [{ l: "Market Share:", v: "6.5% of SAM" }, { l: "Artists:", v: "400K+ creators" }, { l: "Fans:", v: "5M+ subscribers" }] }
+            ].map((item, idx) => (
+              <div key={idx} className={`rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden hover:border-${item.color}-500/50 transition-all`}>
+                <div className={`px-4 py-3 border-b border-border/30 bg-${item.color}-500/10 flex items-center justify-between`}>
+                  <div className="flex items-center gap-2">
+                    <item.icon className={`w-5 h-5 text-${item.color}-500`} />
+                    <span className={`text-sm font-semibold text-${item.color}-500`}>{item.abbr}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{item.label}</span>
                 </div>
-                <p className="text-sm text-blue-400 font-semibold mb-2">TAM</p>
-                <p className="text-xs text-muted-foreground mb-3">Total Addressable Market</p>
-                <div className="text-4xl md:text-5xl font-black text-blue-500 mb-2">$106B</div>
-                <p className="text-sm text-muted-foreground">Global Music Streaming (2029)</p>
-                <div className="mt-4 pt-4 border-t border-blue-500/20 text-left space-y-2">
-                  <p className="text-xs"><span className="text-blue-400">2024:</span> $43.7B</p>
-                  <p className="text-xs"><span className="text-blue-400">2029:</span> $106.6B</p>
-                  <p className="text-xs"><span className="text-blue-400">CAGR:</span> 19.5%</p>
+                <div className="p-6 text-center">
+                  <div className={`text-4xl md:text-5xl font-black text-${item.color}-500 mb-2`}>{item.value}</div>
+                  <p className="text-sm text-muted-foreground mb-4">{item.desc}</p>
+                  <div className="pt-4 border-t border-border/30 text-left space-y-2">
+                    {item.stats.map((stat, sIdx) => (
+                      <p key={sIdx} className="text-xs flex justify-between">
+                        <span className={`text-${item.color}-400`}>{stat.l}</span>
+                        <span className="font-medium">{stat.v}</span>
+                      </p>
+                    ))}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-purple-500/20 to-purple-600/10 border-purple-500/40">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-500/20 flex items-center justify-center">
-                  <Target className="w-8 h-8 text-purple-500" />
-                </div>
-                <p className="text-sm text-purple-400 font-semibold mb-2">SAM</p>
-                <p className="text-xs text-muted-foreground mb-3">Serviceable Addressable Market</p>
-                <div className="text-4xl md:text-5xl font-black text-purple-500 mb-2">$38B</div>
-                <p className="text-sm text-muted-foreground">Independent + AI Music (2029)</p>
-                <div className="mt-4 pt-4 border-t border-purple-500/20 text-left space-y-2">
-                  <p className="text-xs"><span className="text-purple-400">Independent:</span> $26B (2029)</p>
-                  <p className="text-xs"><span className="text-purple-400">AI Music:</span> $12B (2029)</p>
-                  <p className="text-xs"><span className="text-purple-400">Combined CAGR:</span> 28%</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-green-500/20 to-green-600/10 border-green-500/40">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
-                  <Rocket className="w-8 h-8 text-green-500" />
-                </div>
-                <p className="text-sm text-green-400 font-semibold mb-2">SOM</p>
-                <p className="text-xs text-muted-foreground mb-3">Serviceable Obtainable Market</p>
-                <div className="text-4xl md:text-5xl font-black text-green-500 mb-2">$2.5B</div>
-                <p className="text-sm text-muted-foreground">TDZ Target (Year 5)</p>
-                <div className="mt-4 pt-4 border-t border-green-500/20 text-left space-y-2">
-                  <p className="text-xs"><span className="text-green-400">Market Share:</span> 6.5% of SAM</p>
-                  <p className="text-xs"><span className="text-green-400">Artists:</span> 400K+ creators</p>
-                  <p className="text-xs"><span className="text-green-400">Fans:</span> 5M+ subscribers</p>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+            ))}
           </div>
 
           {/* Market Growth Timeline */}

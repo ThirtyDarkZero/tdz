@@ -326,27 +326,23 @@ export default function CEODashboard() {
       {/* Admin Sidebar */}
       <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
       
-      {/* Background effects */}
+      {/* Subtle Background effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none ml-[72px]">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-secondary/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-primary/5 via-transparent to-secondary/5 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
       </div>
 
       <div className="ml-[72px] hover:ml-[220px] transition-all duration-300 p-6 relative z-10">
-        {/* Header with crown */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
+        {/* PHP Admin Header Box */}
+        <div className="mb-6 rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-border/50 bg-amber-500/10 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <Crown className="w-10 h-10 text-yellow-500" />
-                <div className="absolute inset-0 w-10 h-10 bg-yellow-500 blur-xl opacity-30" />
+                <Crown className="w-8 h-8 text-amber-500" />
               </div>
               <div>
-                <h1 className="text-4xl font-display font-bold bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent">
-                  CEO Dashboard
-                </h1>
-                <p className="text-sm text-muted-foreground">Welcome back, Chief Executive</p>
+                <h1 className="text-2xl font-display font-bold">CEO Dashboard</h1>
+                <p className="text-xs text-muted-foreground">Executive Command Center</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -354,146 +350,169 @@ export default function CEODashboard() {
                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                 Systems Online
               </Badge>
-              <Badge variant="secondary" className="gap-2 bg-primary/20 border-primary/30">
-                <Activity className="w-4 h-4 animate-pulse" />
+              <Badge variant="secondary" className="gap-2 bg-amber-500/20 border-amber-500/30 text-amber-500">
+                <Activity className="w-3 h-3" />
                 Live
               </Badge>
             </div>
           </div>
-          <p className="text-muted-foreground">Real-time platform metrics, revenue pool, and artist liability</p>
+          <div className="px-6 py-3 flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Real-time platform metrics, revenue pool, and artist liability</span>
+            <span className="text-xs text-muted-foreground">Last updated: {new Date().toLocaleTimeString()}</span>
+          </div>
         </div>
 
-        {/* Revenue Pool Overview - Enhanced */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="glass-card p-6 border-green-500/30 bg-gradient-to-br from-green-500/10 to-transparent relative overflow-hidden group hover:shadow-xl hover:shadow-green-500/10 transition-all duration-300">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl group-hover:scale-150 transition-transform" />
-            <div className="flex items-center justify-between mb-2 relative z-10">
-              <div className="p-2 rounded-xl bg-green-500/20">
-                <DollarSign className="w-8 h-8 text-green-500" />
+        {/* Revenue Pool Overview - PHP Admin Box Pattern */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {/* Artist Liability Card */}
+          <div className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden hover:border-green-500/50 transition-all group">
+            <div className="px-4 py-3 border-b border-border/30 bg-green-500/10 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-green-500" />
+                <span className="text-sm font-medium">Artist Liability</span>
               </div>
-              <Badge className="bg-green-500/20 text-green-500 border-green-500/30">$1/stream</Badge>
+              <Badge className="bg-green-500/20 text-green-500 border-green-500/30 text-xs">$1/stream</Badge>
             </div>
-            <p className="text-4xl font-black text-green-500 relative z-10">${metrics.artistLiability.toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground relative z-10">Artist Liability</p>
-            <div className="mt-2 text-xs flex items-center gap-1 relative z-10">
-              <Zap className="w-3 h-3 text-green-500" />
-              <span className="text-muted-foreground">{metrics.totalPlays.toLocaleString()} streams × $1.00</span>
-            </div>
-          </Card>
-
-          <Card className="glass-card p-6 border-primary/30 bg-gradient-to-br from-primary/10 to-transparent relative overflow-hidden group hover:shadow-xl hover:shadow-primary/10 transition-all duration-300">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl group-hover:scale-150 transition-transform" />
-            <div className="flex items-center justify-between mb-2 relative z-10">
-              <div className="p-2 rounded-xl bg-primary/20">
-                <PiggyBank className="w-8 h-8 text-primary" />
+            <div className="p-4">
+              <p className="text-3xl font-black text-green-500">${metrics.artistLiability.toLocaleString()}</p>
+              <div className="mt-2 text-xs flex items-center gap-1 text-muted-foreground">
+                <Zap className="w-3 h-3 text-green-500" />
+                <span>{metrics.totalPlays.toLocaleString()} streams × $1.00</span>
               </div>
-              <Badge variant="outline" className="border-primary/30">Revenue Pool</Badge>
             </div>
-            <p className="text-4xl font-black relative z-10">${metrics.totalPlatformRevenue.toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground relative z-10">Total Platform Revenue</p>
-            <div className="mt-2 text-xs flex items-center gap-1 relative z-10">
-              {metrics.totalPlatformRevenue >= metrics.artistLiability ? (
-                <span className="text-green-500 flex items-center gap-1">
-                  <ArrowUpRight className="w-3 h-3" />
-                  Covers liability
-                </span>
-              ) : (
-                <span className="text-destructive flex items-center gap-1">
-                  <ArrowDownRight className="w-3 h-3" />
-                  ${(metrics.artistLiability - metrics.totalPlatformRevenue).toFixed(2)} short
-                </span>
-              )}
-            </div>
-          </Card>
+          </div>
 
-          <Card className="glass-card p-6 border-secondary/30 bg-gradient-to-br from-secondary/10 to-transparent relative overflow-hidden group hover:shadow-xl hover:shadow-secondary/10 transition-all duration-300">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/10 rounded-full blur-3xl group-hover:scale-150 transition-transform" />
-            <div className="flex items-center justify-between mb-2 relative z-10">
-              <div className="p-2 rounded-xl bg-secondary/20">
-                <Download className="w-8 h-8 text-secondary" />
+          {/* Platform Revenue Card */}
+          <div className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden hover:border-primary/50 transition-all group">
+            <div className="px-4 py-3 border-b border-border/30 bg-primary/10 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <PiggyBank className="w-5 h-5 text-primary" />
+                <span className="text-sm font-medium">Revenue Pool</span>
               </div>
-              <Badge className="bg-secondary/20 text-secondary border-secondary/30">{metrics.totalDownloads}</Badge>
+              <Badge variant="outline" className="border-primary/30 text-xs">Total</Badge>
             </div>
-            <p className="text-4xl font-black relative z-10">${metrics.totalDownloadRevenue.toFixed(2)}</p>
-            <p className="text-sm text-muted-foreground relative z-10">Download Revenue</p>
-            <div className="mt-2 text-xs text-muted-foreground relative z-10">
-              Avg: ${metrics.avgDownloadPrice.toFixed(2)} per download
+            <div className="p-4">
+              <p className="text-3xl font-black">${metrics.totalPlatformRevenue.toLocaleString()}</p>
+              <div className="mt-2 text-xs">
+                {metrics.totalPlatformRevenue >= metrics.artistLiability ? (
+                  <span className="text-green-500 flex items-center gap-1">
+                    <ArrowUpRight className="w-3 h-3" />
+                    Covers liability
+                  </span>
+                ) : (
+                  <span className="text-destructive flex items-center gap-1">
+                    <ArrowDownRight className="w-3 h-3" />
+                    ${(metrics.artistLiability - metrics.totalPlatformRevenue).toFixed(2)} short
+                  </span>
+                )}
+              </div>
             </div>
-          </Card>
+          </div>
 
-          <Card className="glass-card p-6 border-accent/30 bg-gradient-to-br from-accent/10 to-transparent relative overflow-hidden group hover:shadow-xl hover:shadow-accent/10 transition-all duration-300">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full blur-3xl group-hover:scale-150 transition-transform" />
-            <div className="flex items-center justify-between mb-2 relative z-10">
-              <div className="p-2 rounded-xl bg-accent/20">
-                <CreditCard className="w-8 h-8 text-accent" />
+          {/* Download Revenue Card */}
+          <div className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden hover:border-secondary/50 transition-all group">
+            <div className="px-4 py-3 border-b border-border/30 bg-secondary/10 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Download className="w-5 h-5 text-secondary" />
+                <span className="text-sm font-medium">Downloads</span>
+              </div>
+              <Badge className="bg-secondary/20 text-secondary border-secondary/30 text-xs">{metrics.totalDownloads}</Badge>
+            </div>
+            <div className="p-4">
+              <p className="text-3xl font-black">${metrics.totalDownloadRevenue.toFixed(2)}</p>
+              <div className="mt-2 text-xs text-muted-foreground">
+                Avg: ${metrics.avgDownloadPrice.toFixed(2)} per download
+              </div>
+            </div>
+          </div>
+
+          {/* Pool Buffer Card */}
+          <div className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden hover:border-accent/50 transition-all group">
+            <div className="px-4 py-3 border-b border-border/30 bg-accent/10 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-accent" />
+                <span className="text-sm font-medium">Pool Buffer</span>
               </div>
               {metrics.revenuePoolBalance >= 0 ? (
-                <Badge className="bg-green-500/20 text-green-500 border-green-500/30">Healthy</Badge>
+                <Badge className="bg-green-500/20 text-green-500 border-green-500/30 text-xs">Healthy</Badge>
               ) : (
-                <Badge className="bg-destructive/20 text-destructive">Low</Badge>
+                <Badge className="bg-destructive/20 text-destructive text-xs">Low</Badge>
               )}
             </div>
-            <p className="text-3xl font-bold">${((metrics.artistLiability * 1.2) - metrics.artistLiability).toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground">Pool Buffer</p>
-            <div className="mt-2 text-xs text-muted-foreground">
-              Break-even: {Math.ceil(metrics.totalPlays / 10).toLocaleString()} subscribers needed
+            <div className="p-4">
+              <p className="text-3xl font-black">${((metrics.artistLiability * 1.2) - metrics.artistLiability).toLocaleString()}</p>
+              <div className="mt-2 text-xs text-muted-foreground">
+                Break-even: {Math.ceil(metrics.totalPlays / 10).toLocaleString()} subs
+              </div>
             </div>
-          </Card>
+          </div>
         </div>
 
-        {/* Key Metrics Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="glass-card p-6">
-            <div className="flex items-center justify-between mb-2">
-              <Users className="w-8 h-8 text-primary" />
-              <Badge variant="outline">{metrics.newUsersToday > 0 ? `+${metrics.newUsersToday}` : '0'} today</Badge>
+        {/* Key Metrics Overview - PHP Admin Box Pattern */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {/* Total Users */}
+          <div className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden hover:border-primary/50 transition-all">
+            <div className="px-4 py-3 border-b border-border/30 bg-primary/5 flex items-center justify-between">
+              <Users className="w-5 h-5 text-primary" />
+              <Badge variant="outline" className="text-xs">{metrics.newUsersToday > 0 ? `+${metrics.newUsersToday}` : '0'} today</Badge>
             </div>
-            <p className="text-3xl font-bold">{metrics.totalUsers.toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground">Total Users</p>
-            <div className="mt-2 text-xs">
-              <span className="text-purple-400">{metrics.totalArtists} Artists</span>
-              <span className="mx-2">•</span>
-              <span className="text-pink-400">{metrics.totalListeners} Listeners</span>
+            <div className="p-4">
+              <p className="text-2xl font-bold">{metrics.totalUsers.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">Total Users</p>
+              <div className="mt-2 text-xs">
+                <span className="text-purple-400">{metrics.totalArtists} Artists</span>
+                <span className="mx-2 text-border">•</span>
+                <span className="text-pink-400">{metrics.totalListeners} Listeners</span>
+              </div>
             </div>
-          </Card>
+          </div>
 
-          <Card className="glass-card p-6">
-            <div className="flex items-center justify-between mb-2">
-              <Music className="w-8 h-8 text-primary" />
-              <Badge variant="outline">{metrics.activeUsersToday} active</Badge>
+          {/* Total Tracks */}
+          <div className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden hover:border-primary/50 transition-all">
+            <div className="px-4 py-3 border-b border-border/30 bg-primary/5 flex items-center justify-between">
+              <Music className="w-5 h-5 text-primary" />
+              <Badge variant="outline" className="text-xs">{metrics.activeUsersToday} active</Badge>
             </div>
-            <p className="text-3xl font-bold">{metrics.totalTracks.toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground">Total Tracks</p>
-            <div className="mt-2 text-xs text-muted-foreground">
-              Across {metrics.genreDistribution.length} genres
+            <div className="p-4">
+              <p className="text-2xl font-bold">{metrics.totalTracks.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">Total Tracks</p>
+              <div className="mt-2 text-xs text-muted-foreground">
+                Across {metrics.genreDistribution.length} genres
+              </div>
             </div>
-          </Card>
+          </div>
 
-          <Card className="glass-card p-6">
-            <div className="flex items-center justify-between mb-2">
-              <Play className="w-8 h-8 text-primary" />
-              <TrendingUp className="w-4 h-4 text-green-400" />
+          {/* Total Plays */}
+          <div className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden hover:border-green-500/50 transition-all">
+            <div className="px-4 py-3 border-b border-border/30 bg-green-500/5 flex items-center justify-between">
+              <Play className="w-5 h-5 text-green-500" />
+              <TrendingUp className="w-4 h-4 text-green-500" />
             </div>
-            <p className="text-3xl font-bold">{metrics.totalPlays.toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground">Total Plays</p>
-            <div className="mt-2 text-xs text-green-500">
-              = ${metrics.totalPlays.toLocaleString()} artist payout
+            <div className="p-4">
+              <p className="text-2xl font-bold">{metrics.totalPlays.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">Total Plays</p>
+              <div className="mt-2 text-xs text-green-500">
+                = ${metrics.totalPlays.toLocaleString()} artist payout
+              </div>
             </div>
-          </Card>
+          </div>
 
-          <Card className="glass-card p-6">
-            <div className="flex items-center justify-between mb-2">
-              <Heart className="w-8 h-8 text-primary" />
-              <Badge variant="outline">
+          {/* Total Likes */}
+          <div className="rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden hover:border-pink-500/50 transition-all">
+            <div className="px-4 py-3 border-b border-border/30 bg-pink-500/5 flex items-center justify-between">
+              <Heart className="w-5 h-5 text-pink-500" />
+              <Badge variant="outline" className="text-xs">
                 {((metrics.totalLikes / Math.max(metrics.totalPlays, 1)) * 100).toFixed(1)}% rate
               </Badge>
             </div>
-            <p className="text-3xl font-bold">{metrics.totalLikes.toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground">Total Likes</p>
-            <div className="mt-2 text-xs text-muted-foreground">
-              Engagement trending up
+            <div className="p-4">
+              <p className="text-2xl font-bold">{metrics.totalLikes.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">Total Likes</p>
+              <div className="mt-2 text-xs text-muted-foreground">
+                Engagement trending up
+              </div>
             </div>
-          </Card>
+          </div>
         </div>
 
         {/* Detailed Analytics - Sidebar-controlled */}
