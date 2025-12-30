@@ -39,24 +39,30 @@ export const ReleaseManager = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    // Load ALL unpublished tracks - both singles and those with albums
+    // Include all metadata fields that were saved during upload
     const { data, error } = await supabase
       .from("tracks")
       .select(`
         *,
         albums (
+          id,
           title,
-          cover_art_path
+          cover_art_path,
+          scheduled_release_date,
+          release_date
         )
       `)
       .eq("user_id", user.id)
       .eq("is_published", false)
-      .is("album_id", null)
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error loading tracks:", error);
     } else {
-      setTracks(data || []);
+      // Separate singles from album tracks for display
+      const singlesOnly = (data || []).filter(t => !t.album_id);
+      setTracks(singlesOnly);
     }
   };
 
@@ -367,17 +373,46 @@ export const ReleaseManager = () => {
                             ? "border-primary bg-primary/10"
                             : "hover:border-primary/50"
                         }`}
-                        onClick={() => setSelectedTrack(track)}
+                        onClick={() => {
+                          setSelectedTrack(track);
+                          // Pre-fill form with saved metadata
+                          setReleaseTitle(track.title || "");
+                          setGenre(track.genre || "");
+                          setReleaseDescription(track.description || "");
+                          if (track.release_date || track.scheduled_release_date) {
+                            setReleaseDate(new Date(track.release_date || track.scheduled_release_date));
+                          }
+                        }}
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 rounded bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
                             <Music className="w-5 h-5 text-primary" />
                           </div>
-                          <div className="flex-1">
-                            <p className="font-semibold">{track.title}</p>
-                            <p className="text-sm text-muted-foreground">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold truncate">{track.title}</p>
+                            <p className="text-sm text-muted-foreground truncate">
                               {track.artist_name}
                             </p>
+                            {/* Show saved metadata status */}
+                            <div className="flex items-center gap-2 mt-1">
+                              {track.metadata_complete && (
+                                <Badge variant="outline" className="text-xs bg-green-500/10 text-green-500 border-green-500/20">
+                                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                                  Ready
+                                </Badge>
+                              )}
+                              {track.scheduled_release_date && (
+                                <Badge variant="outline" className="text-xs">
+                                  <CalendarIcon className="w-3 h-3 mr-1" />
+                                  {format(new Date(track.scheduled_release_date), "MMM d")}
+                                </Badge>
+                              )}
+                              {track.label && (
+                                <Badge variant="secondary" className="text-xs truncate max-w-[80px]">
+                                  {track.label}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                           <Dialog open={showQuantumPanel && selectedTrack?.id === track.id} onOpenChange={(open) => {
                             if (!open) setShowQuantumPanel(false);

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Upload, Music, Disc, Album as AlbumIcon, GripVertical, Edit, Sparkles, AlertTriangle, Lock, Shield, ChevronDown, ChevronUp } from "lucide-react";
+import { Upload, Music, Disc, Album as AlbumIcon, GripVertical, Edit, Sparkles, AlertTriangle, Lock, Shield, ChevronDown, ChevronUp, CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,9 @@ import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { useUploadLimits } from "@/hooks/useUploadLimits";
 import { useNavigate } from "react-router-dom";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
 import {
   DndContext,
   closestCenter,
@@ -79,6 +82,7 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
   const [metadataOpen, setMetadataOpen] = useState(true);
   const [metadata, setMetadata] = useState<TrackMetadata | null>(null);
   const [metadataComplete, setMetadataComplete] = useState(false);
+  const [scheduledReleaseDate, setScheduledReleaseDate] = useState<Date | null>(null);
   const { toast } = useToast();
   
   const {
@@ -401,7 +405,10 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
               preorder_date: metadata!.preorderDate?.toISOString().split('T')[0] || null,
               credits: metadata!.credits || null,
               publishing_info: metadata!.publishingInfo || null,
-              metadata_complete: true
+              metadata_complete: true,
+              // Scheduled release date - saves release date set during upload
+              scheduled_release_date: scheduledReleaseDate?.toISOString().split('T')[0] || null,
+              release_date: scheduledReleaseDate?.toISOString().split('T')[0] || null,
             } as any;
             
             const { data: trackData, error: dbError } = await supabase
@@ -732,6 +739,45 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
             placeholder={`Your ${releaseType} name`}
             disabled={uploading}
           />
+        </div>
+      )}
+
+      {/* Scheduled Release Date */}
+      {tracks.length > 0 && (
+        <div className="space-y-2">
+          <Label>Schedule Release Date (Optional)</Label>
+          <p className="text-xs text-muted-foreground">
+            Set a future date to schedule release. Leave empty to save as draft.
+          </p>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full justify-start text-left font-normal">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {scheduledReleaseDate ? format(scheduledReleaseDate, "PPP") : "No scheduled date - Save as draft"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={scheduledReleaseDate || undefined}
+                onSelect={(date) => setScheduledReleaseDate(date || null)}
+                disabled={(date) => date < new Date()}
+                initialFocus
+              />
+              {scheduledReleaseDate && (
+                <div className="p-2 border-t">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full" 
+                    onClick={() => setScheduledReleaseDate(null)}
+                  >
+                    Clear date (save as draft)
+                  </Button>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
         </div>
       )}
 
