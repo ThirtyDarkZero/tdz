@@ -8,6 +8,7 @@ const corsHeaders = {
 const YOUTUBE_API_KEY = Deno.env.get('YOUTUBE_API_KEY');
 const DISCOGS_TOKEN = Deno.env.get('DISCOGS_TOKEN');
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+const FIRECRAWL_API_KEY = Deno.env.get('FIRECRAWL_API_KEY');
 const MUSICBRAINZ_BASE = 'https://musicbrainz.org/ws/2';
 const ACOUSTICBRAINZ_BASE = 'https://acousticbrainz.org/api/v1';
 const LASTFM_BASE = 'https://ws.audioscrobbler.com/2.0';
@@ -21,7 +22,7 @@ interface UnifiedResult {
   artist: string;
   year?: string;
   thumbnail?: string;
-  source: 'musicbrainz' | 'discogs' | 'youtube' | 'billboard';
+  source: 'musicbrainz' | 'discogs' | 'youtube' | 'billboard' | 'allmusic';
   sourceId: string;
   youtubeId?: string;
   genres?: string[];
@@ -31,6 +32,9 @@ interface UnifiedResult {
   // Enhanced metadata from beets-style sources
   acousticData?: AcousticData;
   chartPosition?: ChartPosition;
+  // AllMusic enhanced data
+  allMusicImage?: string;
+  biography?: string;
 }
 
 interface AcousticData {
@@ -63,15 +67,15 @@ serve(async (req) => {
   }
 
   try {
-    const { query, type = 'all', limit = 20, aiEnrich = false, includeCharts = false, includeAcoustic = false } = await req.json();
+    const { query, type = 'all', limit = 20, aiEnrich = false, includeCharts = false, includeAcoustic = false, includeAllMusic = true } = await req.json();
 
     if (!query) {
       throw new Error('Query is required');
     }
 
-    console.log(`Unified search: "${query}" type=${type} aiEnrich=${aiEnrich} includeCharts=${includeCharts}`);
+    console.log(`Unified search: "${query}" type=${type} aiEnrich=${aiEnrich} includeCharts=${includeCharts} includeAllMusic=${includeAllMusic}`);
 
-    // Parallel fetch from all sources including Billboard charts
+    // Parallel fetch from all sources including Billboard charts and AllMusic
     const searchPromises: Promise<UnifiedResult[]>[] = [
       searchMusicBrainz(query, type, limit),
       searchDiscogs(query, type, limit),
@@ -81,6 +85,11 @@ serve(async (req) => {
     // Add Billboard chart search if requested
     if (includeCharts) {
       searchPromises.push(searchBillboardCharts(query));
+    }
+
+    // Add AllMusic search for artists (best source for images)
+    if (includeAllMusic && (type === 'all' || type === 'artist')) {
+      searchPromises.push(searchAllMusic(query));
     }
 
     const results = await Promise.allSettled(searchPromises);
@@ -159,6 +168,7 @@ serve(async (req) => {
         discogs: results[1].status === 'fulfilled',
         youtube: results[2].status === 'fulfilled',
         billboard: includeCharts && results[3]?.status === 'fulfilled',
+        allmusic: includeAllMusic && results[includeCharts ? 4 : 3]?.status === 'fulfilled',
       },
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -739,4 +749,265 @@ async function enrichWithAcousticData(results: UnifiedResult[]): Promise<Unified
   }
 
   return enrichedResults;
+}
+
+// AllMusic search using Firecrawl for reliable artist images
+async function searchAllMusic(query: string): Promise<UnifiedResult[]> {
+  if (!FIRECRAWL_API_KEY) {
+    console.log('Firecrawl not configured, skipping AllMusic');
+    return [];
+  }
+
+  const results: UnifiedResult[] = [];
+  
+  try {
+    const searchUrl = `https://www.allmusic.com/search/artists/${encodeURIComponent(query)}`;
+    
+    console.log('AllMusic search:', searchUrl);
+
+    const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: searchUrl,
+        formats: ['html', 'links'],
+        waitFor: 2000,
+      }),
+    });
+
+    if (!response.ok) {
+      console.log('AllMusic scrape failed:', response.status);
+      return results;
+    }
+
+    const data = await response.json();
+    const html = data.data?.html || data.html || '';
+    
+    // Parse artist results from AllMusic search
+    const artistMatches = html.matchAll(/<div[^>]*class="[^"]*artist[^"]*"[^>]*>[\s\S]*?<img[^>]*src="([^"]+)"[\s\S]*?<a[^>]*href="([^"]+)"[^>]*>([^<]+)<\/a>[\s\S]*?(?:class="[^"]*genre[^"]*"[^>]*>([^<]+)<)?/gi);
+    
+    let id = 0;
+    for (const match of artistMatches) {
+      const imageUrl = match[1];
+      const profileUrl = match[2];
+      const name = match[3]?.trim();
+      const genre = match[4]?.trim();
+      
+      if (name && name.toLowerCase().includes(query.toLowerCase())) {
+        results.push({
+          id: `am-artist-${id++}`,
+          type: 'artist',
+          title: name,
+          artist: name,
+          thumbnail: imageUrl && !imageUrl.includes('placeholder') ? imageUrl : undefined,
+          source: 'allmusic',
+          sourceId: profileUrl || `allmusic-${id}`,
+          genres: genre ? [genre] : [],
+          popularity: 100 - id,
+          allMusicImage: imageUrl && !imageUrl.includes('placeholder') ? imageUrl : undefined,
+        });
+      }
+      
+      if (id >= 5) break; // Limit results
+    }
+    
+    // Alternative parsing if first method fails
+    if (results.length === 0) {
+      // Look for artist names in any format
+      const nameMatches = html.matchAll(/<a[^>]*href="[^"]*\/artist\/[^"]*"[^>]*class="[^"]*name[^"]*"[^>]*>([^<]+)<\/a>/gi);
+      const imageMatches = [...html.matchAll(/<img[^>]*class="[^"]*artist[^"]*"[^>]*src="([^"]+)"/gi)];
+      
+      let idx = 0;
+      for (const match of nameMatches) {
+        const name = match[1]?.trim();
+        if (name && name.toLowerCase().includes(query.toLowerCase())) {
+          const imageUrl = imageMatches[idx]?.[1];
+          results.push({
+            id: `am-artist-${idx}`,
+            type: 'artist',
+            title: name,
+            artist: name,
+            thumbnail: imageUrl && !imageUrl.includes('placeholder') ? imageUrl : undefined,
+            source: 'allmusic',
+            sourceId: `allmusic-${idx}`,
+            genres: [],
+            popularity: 100 - idx,
+            allMusicImage: imageUrl && !imageUrl.includes('placeholder') ? imageUrl : undefined,
+          });
+          idx++;
+        }
+        if (idx >= 5) break;
+      }
+    }
+
+    console.log(`AllMusic search found ${results.length} artists for "${query}"`);
+  } catch (error) {
+    console.error('AllMusic search error:', error);
+  }
+
+  return results;
+}
+
+// Get reliable artist image from multiple sources with fallbacks
+async function getReliableArtistImage(artistName: string): Promise<string | null> {
+  // Try sources in order of quality
+  const imageSources = await Promise.allSettled([
+    getAllMusicArtistImage(artistName),
+    getDiscogsArtistImage(artistName),
+    getMusicBrainzArtistImage(artistName),
+    getYouTubeChannelImage(artistName),
+  ]);
+
+  for (const source of imageSources) {
+    if (source.status === 'fulfilled' && source.value) {
+      return source.value;
+    }
+  }
+
+  return null;
+}
+
+async function getAllMusicArtistImage(artistName: string): Promise<string | null> {
+  if (!FIRECRAWL_API_KEY) return null;
+
+  try {
+    const searchUrl = `https://www.allmusic.com/search/artists/${encodeURIComponent(artistName)}`;
+    
+    const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: searchUrl,
+        formats: ['html'],
+        waitFor: 2000,
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const html = data.data?.html || data.html || '';
+      
+      // Extract first artist image
+      const imagePatterns = [
+        /<img[^>]*class="[^"]*artist[^"]*"[^>]*src="([^"]+)"/i,
+        /<img[^>]*src="(https:\/\/[^"]*allmusic[^"]*\/cmsimg\/[^"]+)"/i,
+        /<img[^>]*src="(https:\/\/rovimusic[^"]+)"/i,
+      ];
+
+      for (const pattern of imagePatterns) {
+        const match = html.match(pattern);
+        if (match && match[1] && !match[1].includes('placeholder')) {
+          return match[1];
+        }
+      }
+    }
+  } catch (error) {
+    console.error('AllMusic image fetch error:', error);
+  }
+
+  return null;
+}
+
+async function getDiscogsArtistImage(artistName: string): Promise<string | null> {
+  if (!DISCOGS_TOKEN) return null;
+
+  try {
+    const url = `https://api.discogs.com/database/search?q=${encodeURIComponent(artistName)}&type=artist&per_page=1`;
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Discogs token=${DISCOGS_TOKEN}`,
+        'User-Agent': USER_AGENT,
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const coverImage = data.results?.[0]?.cover_image;
+      if (coverImage && !coverImage.includes('spacer')) {
+        return coverImage;
+      }
+    }
+  } catch (error) {
+    console.error('Discogs image fetch error:', error);
+  }
+
+  return null;
+}
+
+async function getMusicBrainzArtistImage(artistName: string): Promise<string | null> {
+  try {
+    // Search for artist
+    const searchUrl = `${MUSICBRAINZ_BASE}/artist?query=${encodeURIComponent(artistName)}&limit=1&fmt=json`;
+    const searchResponse = await fetch(searchUrl, {
+      headers: { 'User-Agent': USER_AGENT },
+    });
+
+    if (!searchResponse.ok) return null;
+
+    const searchData = await searchResponse.json();
+    const artistId = searchData.artists?.[0]?.id;
+    if (!artistId) return null;
+
+    // Get Wikipedia/Wikidata image via relations
+    await new Promise(r => setTimeout(r, 1100));
+    
+    const artistUrl = `${MUSICBRAINZ_BASE}/artist/${artistId}?inc=url-rels&fmt=json`;
+    const artistResponse = await fetch(artistUrl, {
+      headers: { 'User-Agent': USER_AGENT },
+    });
+
+    if (!artistResponse.ok) return null;
+
+    const artistData = await artistResponse.json();
+    const relations = artistData.relations || [];
+
+    for (const rel of relations) {
+      if (rel.type === 'image' && rel.url?.resource) {
+        const commonsUrl = rel.url.resource;
+        if (commonsUrl.includes('commons.wikimedia.org')) {
+          return commonsUrl.replace('/wiki/File:', '/wiki/Special:FilePath/');
+        }
+        return commonsUrl;
+      }
+    }
+  } catch (error) {
+    console.error('MusicBrainz image fetch error:', error);
+  }
+
+  return null;
+}
+
+async function getYouTubeChannelImage(artistName: string): Promise<string | null> {
+  if (!YOUTUBE_API_KEY) return null;
+
+  try {
+    // Search for artist topic channel first
+    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(artistName + ' - Topic')}&type=channel&maxResults=1&key=${YOUTUBE_API_KEY}`;
+    const response = await fetch(searchUrl);
+
+    if (response.ok) {
+      const data = await response.json();
+      const thumbnail = data.items?.[0]?.snippet?.thumbnails?.high?.url;
+      if (thumbnail) return thumbnail;
+    }
+
+    // Fallback to VEVO/official channel
+    const vevoUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(artistName + ' VEVO')}&type=channel&maxResults=1&key=${YOUTUBE_API_KEY}`;
+    const vevoResponse = await fetch(vevoUrl);
+
+    if (vevoResponse.ok) {
+      const data = await vevoResponse.json();
+      return data.items?.[0]?.snippet?.thumbnails?.high?.url || null;
+    }
+  } catch (error) {
+    console.error('YouTube channel image fetch error:', error);
+  }
+
+  return null;
 }

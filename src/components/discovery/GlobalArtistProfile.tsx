@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { 
   Play, Bell, MoreHorizontal, ChevronLeft, ChevronRight, 
-  Disc, Clock, ListPlus, Youtube, Loader2
+  Disc, Clock, ListPlus, Youtube, Loader2, Music
 } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { useMusicBrainz } from "@/hooks/useMusicBrainz";
@@ -16,7 +16,7 @@ import { GlobalAlbumDetail } from "./GlobalAlbumDetail";
 interface GlobalArtistProfileProps {
   artistName: string;
   artistId?: string;
-  source: 'discogs' | 'musicbrainz';
+  source: 'discogs' | 'musicbrainz' | 'allmusic';
   onClose: () => void;
   onAddToPlaylist?: (track: any) => void;
 }
@@ -40,6 +40,9 @@ interface GlobalAlbum {
   genres?: string[];
 }
 
+// Multiple image source fallback for reliable artist images
+const IMAGE_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiMxYTFhMWEiLz48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjgwIiBmaWxsPSIjMmEyYTJhIi8+PHBhdGggZD0iTTEwMCA2MEMxMjcuNjE0IDYwIDE1MCA4Mi4zODU4IDE1MCAxMTBDMTUwIDEzNy42MTQgMTI3LjYxNCAxNjAgMTAwIDE2MEM3Mi4zODU4IDE2MCA1MCAxMzcuNjE0IDUwIDExMEM1MCA4Mi4zODU4IDcyLjM4NTggNjAgMTAwIDYwWiIgZmlsbD0iIzNhM2EzYSIvPjwvc3ZnPg==';
+
 export function GlobalArtistProfile({ 
   artistName, 
   artistId, 
@@ -62,6 +65,69 @@ export function GlobalArtistProfile({
   const [relatedScrollPosition, setRelatedScrollPosition] = useState(0);
   const [selectedAlbum, setSelectedAlbum] = useState<GlobalAlbum | null>(null);
   const [artistImage, setArtistImage] = useState<string | null>(null);
+  const [imageLoadFailed, setImageLoadFailed] = useState(false);
+
+  // Fetch artist image from multiple sources with fallbacks
+  const fetchReliableArtistImage = useCallback(async (name: string): Promise<string | null> => {
+    console.log('Fetching reliable artist image for:', name);
+    
+    // 1. Try AllMusic via edge function (highest quality)
+    try {
+      const { data: allMusicData } = await supabase.functions.invoke('allmusic-artist', {
+        body: { artistName: name, includeDiscography: false }
+      });
+      if (allMusicData?.artist?.imageUrl) {
+        console.log('Got AllMusic image:', allMusicData.artist.imageUrl);
+        return allMusicData.artist.imageUrl;
+      }
+    } catch (e) {
+      console.log('AllMusic fetch failed:', e);
+    }
+
+    // 2. Try YouTube Topic channel
+    try {
+      const { data: ytData } = await supabase.functions.invoke('youtube-search', {
+        body: { query: `${name} - Topic`, maxResults: 1, type: 'channel' }
+      });
+      if (ytData?.results?.[0]?.thumbnail) {
+        console.log('Got YouTube Topic image');
+        return ytData.results[0].thumbnail;
+      }
+    } catch (e) {
+      console.log('YouTube Topic fetch failed:', e);
+    }
+
+    // 3. Try YouTube artist search
+    try {
+      const { data: ytData } = await supabase.functions.invoke('youtube-search', {
+        body: { query: `${name} official artist`, maxResults: 1 }
+      });
+      if (ytData?.results?.[0]?.thumbnail) {
+        console.log('Got YouTube artist image');
+        return ytData.results[0].thumbnail;
+      }
+    } catch (e) {
+      console.log('YouTube artist fetch failed:', e);
+    }
+
+    // 4. Try unified music search for AllMusic/Discogs results
+    try {
+      const { data: unifiedData } = await supabase.functions.invoke('unified-music-search', {
+        body: { query: name, type: 'artist', limit: 5, includeAllMusic: true }
+      });
+      const artistResult = unifiedData?.results?.find((r: any) => 
+        r.type === 'artist' && (r.allMusicImage || r.thumbnail)
+      );
+      if (artistResult?.allMusicImage || artistResult?.thumbnail) {
+        console.log('Got unified search image');
+        return artistResult.allMusicImage || artistResult.thumbnail;
+      }
+    } catch (e) {
+      console.log('Unified search fetch failed:', e);
+    }
+
+    return null;
+  }, []);
 
   useEffect(() => {
     loadArtistData();
@@ -69,14 +135,51 @@ export function GlobalArtistProfile({
 
   const loadArtistData = async () => {
     setLoading(true);
+    setImageLoadFailed(false);
     
     try {
-      // First, try to get artist image from YouTube/Google
-      const { data: artistImageData } = await supabase.functions.invoke('youtube-search', {
-        body: { query: `${artistName} artist`, maxResults: 1 }
-      });
-      if (artistImageData?.results?.[0]?.thumbnail) {
-        setArtistImage(artistImageData.results[0].thumbnail);
+      // Fetch artist image from reliable multi-source function
+      const reliableImage = await fetchReliableArtistImage(artistName);
+      if (reliableImage) {
+        setArtistImage(reliableImage);
+      }
+
+      // Also try AllMusic for full artist data including discography
+      if (source === 'allmusic' || !artistId) {
+        try {
+          const { data: allMusicData } = await supabase.functions.invoke('allmusic-artist', {
+            body: { artistName, includeDiscography: true }
+          });
+          
+          if (allMusicData?.artist) {
+            setArtist({
+              name: allMusicData.artist.name || artistName,
+              image: allMusicData.artist.imageUrl,
+              bio: allMusicData.artist.biography,
+              genres: allMusicData.artist.genres || [],
+              styles: allMusicData.artist.styles || [],
+            });
+            
+            // Use AllMusic image if we don't have one yet
+            if (!reliableImage && allMusicData.artist.imageUrl) {
+              setArtistImage(allMusicData.artist.imageUrl);
+            }
+            
+            // Use AllMusic discography if available
+            if (allMusicData.artist.discography?.length > 0) {
+              setAlbums(allMusicData.artist.discography.map((album: any) => ({
+                id: album.id,
+                title: album.title,
+                year: album.year,
+                coverArt: album.coverArt,
+                type: album.type,
+                genres: allMusicData.artist.genres,
+              })));
+            }
+          }
+        } catch (e) {
+          console.log('AllMusic full data fetch failed:', e);
+        }
       }
 
       if (source === 'musicbrainz' && artistId) {
@@ -84,15 +187,14 @@ export function GlobalArtistProfile({
         if (data) {
           setArtist({
             name: data.name,
-            image: null, // Will use artistImage from YouTube
+            image: null,
             genres: data.genres?.map((g: any) => g.name) || [],
             type: data.type,
             country: data.country,
             beginDate: data.beginDate,
           });
           
-          // Get release groups as albums
-          if (data.releaseGroups) {
+          if (data.releaseGroups && albums.length === 0) {
             setAlbums(data.releaseGroups.map((rg: any) => ({
               id: rg.id,
               title: rg.title,
@@ -112,15 +214,16 @@ export function GlobalArtistProfile({
             profile: data.profile,
             genres: [],
           });
-          // Use Discogs image if available
-          if (data.cover_art_url) {
+          
+          // Use Discogs image as fallback
+          if (!artistImage && data.cover_art_url) {
             setArtistImage(data.cover_art_url);
           }
         }
         
         // Get releases
         const releases = await getArtistReleases(artistId);
-        if (releases?.releases) {
+        if (releases?.releases && albums.length === 0) {
           setAlbums(releases.releases.slice(0, 20).map((r: any) => ({
             id: r.id,
             title: r.title,
@@ -130,7 +233,7 @@ export function GlobalArtistProfile({
             genres: r.genres || [],
           })));
         }
-      } else {
+      } else if (!artist) {
         // Search by name
         const mbResults = await searchMB(artistName, 'artist');
         if (mbResults?.artists?.[0]) {
@@ -144,16 +247,20 @@ export function GlobalArtistProfile({
         }
       }
 
-      // Get popular tracks via YouTube search
+      // Get popular tracks via YouTube Music search (official only)
       const { data: ytData } = await supabase.functions.invoke('youtube-search', {
-        body: { query: `${artistName} official audio`, maxResults: 10 }
+        body: { 
+          query: `${artistName} official audio`, 
+          maxResults: 15,
+          officialOnly: true 
+        }
       });
 
       if (ytData?.results) {
         setTracks(ytData.results.map((video: any, idx: number) => ({
           id: `yt-${video.id}`,
-          title: video.title.replace(artistName, '').replace(/[-|]/g, '').trim(),
-          album: 'YouTube',
+          title: video.title.replace(new RegExp(artistName, 'gi'), '').replace(/[-|]/g, '').replace(/\(official.*?\)/gi, '').trim(),
+          album: 'YouTube Music',
           duration: video.duration,
           position: String(idx + 1),
           youtubeId: video.id,
@@ -163,19 +270,19 @@ export function GlobalArtistProfile({
 
       // Get related artists
       const { data: relatedData } = await supabase.functions.invoke('youtube-search', {
-        body: { query: `${artistName} similar artists hip hop rap`, maxResults: 8 }
+        body: { query: `${artistName} similar artists`, maxResults: 10 }
       });
 
       if (relatedData?.results) {
         const uniqueArtists = new Map();
-        relatedData.results.forEach((video: any) => {
-          if (!uniqueArtists.has(video.channel) && video.channel !== artistName) {
+        for (const video of relatedData.results) {
+          if (!uniqueArtists.has(video.channel) && video.channel.toLowerCase() !== artistName.toLowerCase()) {
             uniqueArtists.set(video.channel, {
               name: video.channel,
               thumbnail: video.thumbnail,
             });
           }
-        });
+        }
         setRelatedArtists(Array.from(uniqueArtists.values()).slice(0, 6));
       }
 
