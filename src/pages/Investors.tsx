@@ -31,7 +31,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import tdzLogo from "@/assets/tdz-logo.png";
-import { StudioPhoneMockups, MusicPlayerPhoneMockups } from "@/components/StudioPhoneMockup";
+import { StudioPhoneMockups, MusicPlayerPhoneMockups, DiscoveryPhoneMockups } from "@/components/StudioPhoneMockup";
 import { LineChart as RechartsLine, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 export default function Investors() {
@@ -729,8 +729,11 @@ export default function Investors() {
       {/* Interactive Studio Preview */}
       <StudioPhoneMockups />
 
-      {/* Music Player Demo */}
+      {/* Fan Discovery Demo */}
       <MusicPlayerPhoneMockups />
+      
+      {/* Global Library Demo */}
+      <DiscoveryPhoneMockups />
 
       {/* Competitive Advantages */}
       <section className="py-16 px-4 md:px-6">
