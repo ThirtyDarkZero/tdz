@@ -78,20 +78,19 @@ export function YouTubePlayerEnhanced({
 
   const videoId = track.youtubeId || track.id.replace('yt-', '');
   
-  // Check if track is liked
+  // Check if track is liked (from liked_youtube_tracks table)
   useEffect(() => {
     const checkLiked = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !track.id) return;
       
-      // For YouTube tracks, check by ID pattern
+      // Check the liked_youtube_tracks table for YouTube tracks
       const { data } = await supabase
-        .from('user_library')
+        .from('liked_youtube_tracks')
         .select('id')
         .eq('user_id', user.id)
         .eq('track_id', track.id)
-        .eq('library_type', 'liked_track')
-        .single();
+        .maybeSingle();
       
       setIsLiked(!!data);
     };
@@ -283,21 +282,24 @@ export function YouTubePlayerEnhanced({
       return;
     }
 
-    // For YouTube tracks, we store with their prefixed ID
+    // For YouTube tracks, use the dedicated liked_youtube_tracks table
     if (isLiked) {
       await supabase
-        .from('user_library')
+        .from('liked_youtube_tracks')
         .delete()
         .eq('user_id', user.id)
-        .eq('track_id', track.id)
-        .eq('library_type', 'liked_track');
+        .eq('track_id', track.id);
       toast({ title: "Removed from Liked Songs" });
     } else {
-      await supabase.from('user_library').insert({
+      await supabase.from('liked_youtube_tracks').upsert({
         user_id: user.id,
         track_id: track.id,
-        library_type: 'liked_track'
-      });
+        title: track.title,
+        artist_name: track.artist_name,
+        youtube_id: videoId,
+        thumbnail: track.thumbnail,
+        source: 'youtube'
+      }, { onConflict: 'user_id,track_id' });
       toast({ title: "Added to Liked Songs", description: track.title });
     }
     setIsLiked(!isLiked);

@@ -50,7 +50,7 @@ export function GlobalArtistProfile({
   onClose,
   onAddToPlaylist 
 }: GlobalArtistProfileProps) {
-  const { playTrack } = usePlayer();
+  const { playTrack, addToQueue } = usePlayer();
   const { getArtist: getMBArtist, search: searchMB, findYouTubeMatch } = useMusicBrainz();
   const { getArtist: getDiscogsArtist, getArtistReleases } = useDiscogsLibrary();
   
@@ -294,7 +294,7 @@ export function GlobalArtistProfile({
     }
   };
 
-  const handlePlayTrack = async (track: GlobalTrack) => {
+  const handlePlayTrack = async (track: GlobalTrack, index?: number) => {
     if (track.youtubeId) {
       const youtubeTrack = {
         id: track.id,
@@ -308,7 +308,25 @@ export function GlobalArtistProfile({
         thumbnail: track.thumbnail,
       };
       playTrack(youtubeTrack);
-      toast.success(`Now playing: ${track.title}`);
+      
+      // Add remaining tracks to queue for continuous playback
+      if (typeof index === 'number') {
+        tracks.slice(index + 1).forEach(t => {
+          if (t.youtubeId) {
+            addToQueue({
+              id: t.id,
+              title: t.title,
+              artist_name: artist?.name || artistName,
+              duration: 0,
+              file_path: '',
+              play_count: 0,
+              source: 'youtube' as const,
+              youtubeId: t.youtubeId,
+              thumbnail: t.thumbnail,
+            });
+          }
+        });
+      }
     } else {
       // Find YouTube match
       setLoadingTrack(track.id);
@@ -327,7 +345,6 @@ export function GlobalArtistProfile({
             thumbnail: track.thumbnail,
           };
           playTrack(youtubeTrack);
-          toast.success(`Now playing: ${track.title}`);
         }
       } finally {
         setLoadingTrack(null);

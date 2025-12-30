@@ -164,15 +164,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [currentTrack, youtubePlayer, isPlaying]);
 
   const playTrack = useCallback((track: Track, newQueue?: Track[]) => {
-    setCurrentTrack(track);
-    setIsPlaying(true);
-    setCurrentTime(0);
+    // Force stop any existing playback first
+    setIsPlaying(false);
     
-    if (newQueue) {
-      setQueue(newQueue);
-      const index = newQueue.findIndex(t => t.id === track.id);
-      setCurrentIndex(index >= 0 ? index : 0);
-    }
+    // Small delay then start new track
+    setTimeout(() => {
+      setCurrentTrack(track);
+      setCurrentTime(0);
+      setIsPlaying(true);
+      
+      if (newQueue) {
+        setQueue(newQueue);
+        const index = newQueue.findIndex(t => t.id === track.id);
+        setCurrentIndex(index >= 0 ? index : 0);
+      }
+    }, 50);
   }, []);
 
   const pauseTrack = useCallback(() => {

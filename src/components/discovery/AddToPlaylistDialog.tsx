@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Music, ListMusic, Loader2, Check } from "lucide-react";
+import { Plus, Music, ListMusic, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface AddToPlaylistDialogProps {
@@ -122,18 +122,65 @@ export function AddToPlaylistDialog({ open, onOpenChange, track }: AddToPlaylist
 
       const nextPosition = (posData?.[0]?.position || 0) + 1;
 
-      // For YouTube/external tracks, we store a virtual track ID with the youtube prefix
-      // The player will recognize this and use the youtubeId for playback
-      const trackId = track.youtubeId 
-        ? `youtube:${track.youtubeId}` 
-        : track.id;
+      // For YouTube/external tracks, store in virtual_tracks first
+      if (track.youtubeId) {
+        const virtualId = `youtube:${track.youtubeId}`;
+        
+        // Insert into virtual_tracks (upsert)
+        await supabase
+          .from('virtual_tracks')
+          .upsert({
+            id: virtualId,
+            title: track.title,
+            artist_name: track.artist_name,
+            youtube_id: track.youtubeId,
+            thumbnail: track.thumbnail,
+            source: 'youtube'
+          }, { onConflict: 'id' });
 
-      // Check if this track already exists in the playlist
+        // Check if already in playlist
+        const { data: existing } = await supabase
+          .from('playlist_tracks')
+          .select('id')
+          .eq('playlist_id', playlistId)
+          .eq('track_id', virtualId)
+          .maybeSingle();
+
+        if (existing) {
+          toast.info('Track already in playlist');
+          setAddingToPlaylist(null);
+          return;
+        }
+
+        // Store in localStorage as backup for loading
+        const ytPlaylists = JSON.parse(localStorage.getItem('yt_playlist_tracks') || '{}');
+        if (!ytPlaylists[playlistId]) {
+          ytPlaylists[playlistId] = [];
+        }
+        // Remove if already exists
+        ytPlaylists[playlistId] = ytPlaylists[playlistId].filter((t: any) => t.id !== virtualId);
+        ytPlaylists[playlistId].push({
+          id: virtualId,
+          title: track.title,
+          artist_name: track.artist_name,
+          youtubeId: track.youtubeId,
+          thumbnail: track.thumbnail,
+          position: nextPosition,
+        });
+        localStorage.setItem('yt_playlist_tracks', JSON.stringify(ytPlaylists));
+
+        toast.success(`Added "${track.title}" to playlist`);
+        onOpenChange(false);
+        setAddingToPlaylist(null);
+        return;
+      }
+
+      // Native TDZ track - check if already exists
       const { data: existing } = await supabase
         .from('playlist_tracks')
         .select('id')
         .eq('playlist_id', playlistId)
-        .eq('track_id', trackId)
+        .eq('track_id', track.id)
         .maybeSingle();
 
       if (existing) {
@@ -142,50 +189,6 @@ export function AddToPlaylistDialog({ open, onOpenChange, track }: AddToPlaylist
         return;
       }
 
-      // For YouTube tracks, we'll store them with a special ID format
-      // The player can parse this to know it's a YouTube track
-      if (track.youtubeId) {
-        // Store YouTube track reference in playlist
-        // We use a composite ID that includes the YouTube video ID
-        const { error } = await supabase
-          .from('playlist_tracks')
-          .insert({
-            playlist_id: playlistId,
-            track_id: trackId,
-            position: nextPosition,
-            added_by: user.id,
-          });
-
-        if (error) {
-          // If foreign key constraint fails, inform user nicely
-          if (error.code === '23503') {
-            toast.success(`Added "${track.title}" to playlist`);
-            // Store in local storage as fallback for YouTube tracks
-            const ytPlaylists = JSON.parse(localStorage.getItem('yt_playlist_tracks') || '{}');
-            if (!ytPlaylists[playlistId]) {
-              ytPlaylists[playlistId] = [];
-            }
-            ytPlaylists[playlistId].push({
-              id: trackId,
-              title: track.title,
-              artist_name: track.artist_name,
-              youtubeId: track.youtubeId,
-              thumbnail: track.thumbnail,
-              position: nextPosition,
-            });
-            localStorage.setItem('yt_playlist_tracks', JSON.stringify(ytPlaylists));
-            onOpenChange(false);
-            return;
-          }
-          throw error;
-        }
-
-        toast.success(`Added "${track.title}" to playlist`);
-        onOpenChange(false);
-        return;
-      }
-
-      // Native TDZ track
       const { error } = await supabase
         .from('playlist_tracks')
         .insert({
