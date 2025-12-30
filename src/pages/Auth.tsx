@@ -73,22 +73,25 @@ export default function Auth() {
 
   // Redirect if user is already logged in
   useEffect(() => {
+    // Wait for all loading states to complete
     if (!user || roleLoading) return;
     
-    if (justAuthenticated || user) {
-      if (!role) {
-        navigate("/role-selection");
-        return;
-      }
-
-      // Redirect based on role - artists go to Studio, listeners go to Discover
-      if (role === "artist" || role === "verified_artist" || role === "manager") {
-        navigate("/studio");
+    // User has a role - redirect to appropriate page
+    if (role) {
+      if (role === "artist" || role === "verified_artist" || role === "manager" || role === "ceo" || role === "admin") {
+        navigate("/studio", { replace: true });
       } else if (role === "listener") {
-        navigate("/discover");
+        navigate("/discover", { replace: true });
       } else {
-        navigate("/discover");
+        navigate("/discover", { replace: true });
       }
+      return;
+    }
+    
+    // User has no role - they need to complete setup
+    // Only redirect if we just authenticated (prevents redirect on page refresh during setup)
+    if (justAuthenticated) {
+      navigate("/role-selection", { replace: true });
     }
   }, [user, role, roleLoading, justAuthenticated, navigate]);
 
