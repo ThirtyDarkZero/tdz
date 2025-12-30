@@ -14,10 +14,18 @@ const SquareOAuthCallback = () => {
 
   useEffect(() => {
     const handleCallback = async () => {
+      // Get parameters from URL query string (how OAuth returns them)
       const code = searchParams.get('code');
       const state = searchParams.get('state');
       const error = searchParams.get('error');
       const errorDescription = searchParams.get('error_description');
+
+      console.log('Square OAuth callback received:', { 
+        hasCode: !!code, 
+        hasState: !!state, 
+        error,
+        fullUrl: window.location.href 
+      });
 
       if (error) {
         setStatus('error');
@@ -28,17 +36,21 @@ const SquareOAuthCallback = () => {
 
       if (!code || !state) {
         setStatus('error');
-        setMessage('Invalid callback - missing authorization code');
+        setMessage('Invalid callback - missing authorization code or state');
+        console.error('Missing code or state in callback URL');
         return;
       }
 
       try {
+        // Send code and state to edge function for token exchange
         const response = await supabase.functions.invoke('square-oauth-callback', {
           body: { code, state },
         });
 
+        console.log('Square callback response:', response);
+
         if (response.error) {
-          throw new Error(response.error.message);
+          throw new Error(response.error.message || 'Callback processing failed');
         }
 
         const data = response.data;
@@ -80,8 +92,14 @@ const SquareOAuthCallback = () => {
               onClick={() => navigate('/studio')} 
               variant={status === 'success' ? 'default' : 'outline'}
             >
-              {status === 'success' ? 'Go to Payouts' : 'Back to Studio'}
+              {status === 'success' ? 'Go to Studio' : 'Back to Studio'}
             </Button>
+          )}
+
+          {status === 'error' && (
+            <p className="text-xs text-muted-foreground">
+              If this issue persists, please contact support.
+            </p>
           )}
         </CardContent>
       </Card>
