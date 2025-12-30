@@ -18,7 +18,9 @@ export default defineConfig(({ mode }) => ({
       includeAssets: ["favicon.ico", "robots.txt", "icons/*.png"],
       manifest: false, // Use our custom manifest.json
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB limit
+        globPatterns: ["**/*.{js,css,html,ico,svg,woff,woff2}"],
+        globIgnores: ["**/tdz-logo*.png", "**/hero-background*.jpg", "**/studio-background*.jpg"],
         runtimeCaching: [
           {
             // Cache API responses
