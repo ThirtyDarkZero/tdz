@@ -316,24 +316,22 @@ serve(async (req) => {
       .maybeSingle();
 
     if (existingEarnings) {
-      // Update existing period
+      // Update existing period - don't update total_earnings (it's a generated column)
       const newStreamingRevenue = (existingEarnings.streaming_revenue || 0) + STREAM_PAYOUT_RATE;
       const newTotalStreams = (existingEarnings.total_streams || 0) + 1;
-      const newTotalEarnings = (existingEarnings.total_earnings || 0) + STREAM_PAYOUT_RATE;
 
       await supabase
         .from('artist_earnings')
         .update({
           streaming_revenue: newStreamingRevenue,
           total_streams: newTotalStreams,
-          total_earnings: newTotalEarnings,
           updated_at: new Date().toISOString(),
         })
         .eq('id', existingEarnings.id);
 
-      console.log(`Updated artist ${track.user_id} earnings: +$${STREAM_PAYOUT_RATE} (total: $${newTotalEarnings})`);
+      console.log(`Updated artist ${track.user_id} earnings: +$${STREAM_PAYOUT_RATE} (total: $${newStreamingRevenue})`);
     } else {
-      // Create new earnings period
+      // Create new earnings period - don't include total_earnings (it's a generated column)
       await supabase
         .from('artist_earnings')
         .insert({
@@ -342,7 +340,8 @@ serve(async (req) => {
           period_end: periodEnd,
           streaming_revenue: STREAM_PAYOUT_RATE,
           total_streams: 1,
-          total_earnings: STREAM_PAYOUT_RATE,
+          download_revenue: 0,
+          total_downloads: 0,
           payout_status: 'pending',
         });
 
