@@ -11,6 +11,7 @@ import {
 import { usePlayer } from "@/contexts/PlayerContext";
 import { useMusicBrainz } from "@/hooks/useMusicBrainz";
 import { useDiscogsLibrary } from "@/hooks/useDiscogsLibrary";
+import { GlobalAlbumDetail } from "./GlobalAlbumDetail";
 
 interface GlobalArtistProfileProps {
   artistName: string;
@@ -36,6 +37,7 @@ interface GlobalAlbum {
   year?: string;
   coverArt?: string;
   type?: string;
+  genres?: string[];
 }
 
 export function GlobalArtistProfile({ 
@@ -58,6 +60,8 @@ export function GlobalArtistProfile({
   const [albumScrollPosition, setAlbumScrollPosition] = useState(0);
   const [featuredScrollPosition, setFeaturedScrollPosition] = useState(0);
   const [relatedScrollPosition, setRelatedScrollPosition] = useState(0);
+  const [selectedAlbum, setSelectedAlbum] = useState<GlobalAlbum | null>(null);
+  const [artistImage, setArtistImage] = useState<string | null>(null);
 
   useEffect(() => {
     loadArtistData();
@@ -67,12 +71,20 @@ export function GlobalArtistProfile({
     setLoading(true);
     
     try {
+      // First, try to get artist image from YouTube/Google
+      const { data: artistImageData } = await supabase.functions.invoke('youtube-search', {
+        body: { query: `${artistName} artist`, maxResults: 1 }
+      });
+      if (artistImageData?.results?.[0]?.thumbnail) {
+        setArtistImage(artistImageData.results[0].thumbnail);
+      }
+
       if (source === 'musicbrainz' && artistId) {
         const data = await getMBArtist(artistId);
         if (data) {
           setArtist({
             name: data.name,
-            image: null, // MusicBrainz doesn't provide images
+            image: null, // Will use artistImage from YouTube
             genres: data.genres?.map((g: any) => g.name) || [],
             type: data.type,
             country: data.country,
@@ -87,6 +99,7 @@ export function GlobalArtistProfile({
               year: rg.firstReleaseDate?.split('-')[0],
               coverArt: rg.coverArt,
               type: rg.primaryType,
+              genres: data.genres?.map((g: any) => g.name) || [],
             })));
           }
         }
@@ -99,6 +112,10 @@ export function GlobalArtistProfile({
             profile: data.profile,
             genres: [],
           });
+          // Use Discogs image if available
+          if (data.cover_art_url) {
+            setArtistImage(data.cover_art_url);
+          }
         }
         
         // Get releases
@@ -110,6 +127,7 @@ export function GlobalArtistProfile({
             year: r.year,
             coverArt: r.cover_art_url,
             type: r.type,
+            genres: r.genres || [],
           })));
         }
       } else {
@@ -230,6 +248,32 @@ export function GlobalArtistProfile({
     }
   };
 
+  // Handle album click - open album detail
+  const handleAlbumClick = (album: GlobalAlbum) => {
+    setSelectedAlbum(album);
+  };
+
+  // If showing album detail
+  if (selectedAlbum) {
+    return (
+      <GlobalAlbumDetail
+        album={{
+          id: selectedAlbum.id,
+          title: selectedAlbum.title,
+          artist: artist?.name || artistName,
+          year: selectedAlbum.year,
+          coverArt: selectedAlbum.coverArt,
+          type: selectedAlbum.type,
+          genres: selectedAlbum.genres || artist?.genres,
+          source: source,
+        }}
+        onClose={() => setSelectedAlbum(null)}
+        onAddToPlaylist={onAddToPlaylist}
+        onOpenArtist={() => setSelectedAlbum(null)}
+      />
+    );
+  }
+
   if (loading) {
     return (
       <div className="fixed inset-0 z-50 bg-[#0a0a0a] flex items-center justify-center">
@@ -273,15 +317,17 @@ export function GlobalArtistProfile({
           {/* Circular Artist Image */}
           <div className="relative flex-shrink-0">
             <div className="w-48 h-48 md:w-56 md:h-56 rounded-full overflow-hidden border-4 border-white/10 shadow-2xl bg-gradient-to-br from-white/10 to-white/5">
-              {artist?.image ? (
+              {(artistImage || artist?.image) ? (
                 <img
-                  src={artist.image}
-                  alt={artist.name}
+                  src={artistImage || artist?.image}
+                  alt={artist?.name || artistName}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Disc className="w-20 h-20 text-white/20" />
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-cyan-600/30 to-purple-600/30">
+                  <span className="text-5xl font-black text-white/40">
+                    {(artist?.name || artistName).charAt(0).toUpperCase()}
+                  </span>
                 </div>
               )}
             </div>
@@ -439,6 +485,7 @@ export function GlobalArtistProfile({
                   <div 
                     key={album.id}
                     className="flex-shrink-0 w-40 md:w-48 group cursor-pointer"
+                    onClick={() => handleAlbumClick(album)}
                   >
                     <div className="aspect-square rounded-lg overflow-hidden bg-white/5 mb-3 relative">
                       {album.coverArt ? (
@@ -456,6 +503,10 @@ export function GlobalArtistProfile({
                         <Button
                           size="icon"
                           className="rounded-full bg-cyan-500 hover:bg-cyan-400 text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAlbumClick(album);
+                          }}
                         >
                           <Play className="w-5 h-5" fill="white" />
                         </Button>
