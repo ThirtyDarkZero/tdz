@@ -52,7 +52,13 @@ export function CommandPalette() {
 
   useEffect(() => {
     loadUser();
-    
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
     // Listen for Cmd+K / Ctrl+K
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
@@ -62,7 +68,10 @@ export function CommandPalette() {
     };
 
     document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
+    return () => {
+      subscription.unsubscribe();
+      document.removeEventListener("keydown", down);
+    };
   }, []);
 
   const loadUser = async () => {
