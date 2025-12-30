@@ -33,6 +33,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { hardSignOut } from "@/lib/auth";
 import { toast } from "sonner";
 
 interface Command {
@@ -190,9 +191,16 @@ export function CommandPalette() {
       label: "Sign Out",
       icon: LogOut,
       action: async () => {
-        await supabase.auth.signOut();
-        navigate("/auth");
+        const { error } = await hardSignOut();
+        setUser(null);
+
+        if (error) {
+          toast.error("Failed to sign out. Please try again.");
+          return;
+        }
+
         toast.success("Signed out successfully");
+        navigate("/auth");
       },
       category: "Account",
       keywords: ["logout", "sign out", "exit"],

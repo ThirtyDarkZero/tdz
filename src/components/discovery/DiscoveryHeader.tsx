@@ -14,6 +14,7 @@ import {
 import { NotificationsPanel } from "@/components/NotificationsPanel";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { hardSignOut } from "@/lib/auth";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -201,21 +202,15 @@ export function DiscoveryHeader({
 
   // Proper sign out that clears all session data
   const handleSignOut = async () => {
-    try {
-      localStorage.removeItem('supabase.auth.token');
-      sessionStorage.clear();
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Sign out error:', error);
-        toast.error('Failed to sign out. Please try again.');
-        return;
-      }
-      toast.success('Signed out successfully');
-      window.location.href = '/';
-    } catch (error) {
-      console.error('Sign out error:', error);
-      toast.error('Failed to sign out. Please try again.');
+    const { error } = await hardSignOut();
+    if (error) {
+      console.error("Sign out error:", error);
+      toast.error("Failed to sign out. Please try again.");
+      return;
     }
+
+    toast.success("Signed out successfully");
+    window.location.assign("/");
   };
 
   return (
