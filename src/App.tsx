@@ -8,7 +8,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppErrorFallback } from "@/components/AppErrorFallback";
 import { GlobalErrorTrap } from "@/components/GlobalErrorTrap";
 import { CommandPalette } from "@/components/CommandPalette";
-import { SmartFAB } from "@/components/SmartFAB";
+// SmartFAB removed - Command K is the primary navigation method
 import { PlayerProvider } from "@/contexts/PlayerContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { GlobalMusicPlayer } from "@/components/GlobalMusicPlayer";
@@ -47,7 +47,6 @@ const App = () => (
           <GlobalErrorTrap />
           <BrowserRouter>
             <CommandPalette />
-            <SmartFAB />
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />

@@ -85,7 +85,10 @@ export function CommandPalette() {
       id: "home",
       label: "Go to Home",
       icon: Home,
-      action: () => navigate("/"),
+      action: () => {
+        navigate("/");
+        toast.success("Navigating to Home");
+      },
       category: "Navigation",
       keywords: ["home", "landing", "start"],
     },
@@ -93,7 +96,10 @@ export function CommandPalette() {
       id: "discover",
       label: "Discover Music",
       icon: Search,
-      action: () => navigate("/discover"),
+      action: () => {
+        navigate("/discover");
+        toast.success("Navigating to Discover");
+      },
       category: "Navigation",
       keywords: ["discover", "explore", "browse", "find"],
     },
@@ -102,11 +108,12 @@ export function CommandPalette() {
       label: "Go to Studio",
       icon: Music,
       action: () => {
-        // Check if user has artist/manager role before navigating
         if (user) {
           navigate("/studio");
+          toast.success("Navigating to Studio");
         } else {
           toast.error("Please sign in first");
+          navigate("/auth");
         }
       },
       category: "Navigation",
@@ -117,11 +124,27 @@ export function CommandPalette() {
       label: "My Profile",
       icon: User,
       action: () => {
-        if (user) navigate(`/artist/${user.id}`);
-        else toast.error("Please sign in first");
+        if (user) {
+          navigate(`/artist/${user.id}`);
+          toast.success("Navigating to Profile");
+        } else {
+          toast.error("Please sign in first");
+          navigate("/auth");
+        }
       },
       category: "Navigation",
       keywords: ["profile", "me", "account"],
+    },
+    {
+      id: "pricing",
+      label: "View Pricing",
+      icon: TrendingUp,
+      action: () => {
+        navigate("/pricing");
+        toast.success("Navigating to Pricing");
+      },
+      category: "Navigation",
+      keywords: ["pricing", "plans", "subscription"],
     },
 
     // Quick Actions
@@ -132,8 +155,10 @@ export function CommandPalette() {
       action: () => {
         if (user) {
           navigate("/studio");
+          toast.success("Go to Music tab to upload");
         } else {
           toast.error("Please sign in to upload tracks");
+          navigate("/auth");
         }
       },
       category: "Quick Actions",
@@ -146,9 +171,10 @@ export function CommandPalette() {
       action: () => {
         if (user) {
           navigate("/studio");
-          toast.info("Click 'New Album' button in Studio");
+          toast.success("Go to Music tab to create album");
         } else {
           toast.error("Please sign in to create albums");
+          navigate("/auth");
         }
       },
       category: "Quick Actions",
@@ -161,14 +187,10 @@ export function CommandPalette() {
       action: () => {
         if (user) {
           navigate("/studio");
-          // Trigger the collaborators tab and invite dialog
-          setTimeout(() => {
-            const collabTab = document.querySelector('[value="collaborators"]') as HTMLElement;
-            collabTab?.click();
-          }, 100);
-          toast.info("Opening collaborator invite");
+          toast.success("Go to Settings to invite collaborators");
         } else {
           toast.error("Please sign in to invite collaborators");
+          navigate("/auth");
         }
       },
       category: "Quick Actions",
@@ -180,7 +202,7 @@ export function CommandPalette() {
       icon: Heart,
       action: () => {
         navigate("/discover");
-        toast.info("Liked songs feature coming soon");
+        toast.success("Liked songs in your library");
       },
       category: "Quick Actions",
       keywords: ["liked", "favorites", "saved"],
@@ -191,15 +213,38 @@ export function CommandPalette() {
       id: "settings",
       label: "Settings",
       icon: Settings,
-      action: () => toast.info("Settings coming soon"),
+      action: () => {
+        if (user) {
+          navigate("/studio");
+          toast.success("Opening Settings in Studio");
+        } else {
+          toast.error("Please sign in first");
+          navigate("/auth");
+        }
+      },
       category: "Account",
       keywords: ["settings", "preferences", "config"],
+    },
+    {
+      id: "login",
+      label: user ? "Switch Account" : "Sign In",
+      icon: User,
+      action: () => {
+        navigate("/auth");
+        toast.success(user ? "Switch to another account" : "Opening Sign In");
+      },
+      category: "Account",
+      keywords: ["login", "sign in", "account", "switch"],
     },
     {
       id: "logout",
       label: "Sign Out",
       icon: LogOut,
       action: async () => {
+        if (!user) {
+          toast.error("You're not signed in");
+          return;
+        }
         const { error } = await hardSignOut();
         setUser(null);
 
@@ -209,7 +254,7 @@ export function CommandPalette() {
         }
 
         toast.success("Signed out successfully");
-        navigate("/auth");
+        navigate("/");
       },
       category: "Account",
       keywords: ["logout", "sign out", "exit"],
@@ -221,8 +266,10 @@ export function CommandPalette() {
       label: "Toggle Dark Mode",
       icon: Moon,
       action: () => {
+        const isDark = document.documentElement.classList.contains("dark");
         document.documentElement.classList.toggle("dark");
-        toast.success("Theme toggled");
+        localStorage.setItem("theme", isDark ? "light" : "dark");
+        toast.success(isDark ? "Light mode enabled" : "Dark mode enabled");
       },
       category: "View",
       keywords: ["theme", "dark", "light", "mode"],
