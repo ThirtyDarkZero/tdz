@@ -68,7 +68,6 @@ const Studio = () => {
   // If a logged-in user has no role after loading completes, redirect to role selection
   // CRITICAL: Only redirect ONCE and only after role loading is truly done
   const roleRedirectedRef = useRef(false);
-  const profileCheckedRef = useRef(false);
 
   useEffect(() => {
     // Don't do anything while still loading
@@ -88,19 +87,16 @@ const Studio = () => {
     navigate("/role-selection", { replace: true });
   }, [loading, roleLoading, user, role, navigate]);
 
-  // Load artist profile once access is verified (must be declared before conditional returns)
+  // Load artist profile once access is verified - NO REDIRECTS from profile fetch
+  // Profile redirect should only happen if role is missing, not if profile is missing
   useEffect(() => {
     if (!user) return;
     if (roleLoading) return;
     if (role === "listener" || !role) return;
-    // Only check profile once to prevent redirect loops
-    if (profileCheckedRef.current) return;
 
     let cancelled = false;
 
     const fetchArtistProfile = async () => {
-      profileCheckedRef.current = true;
-
       const { data, error } = await supabase
         .from("artist_profiles")
         .select("artist_name, profile_image_path")
@@ -114,25 +110,17 @@ const Studio = () => {
         return;
       }
 
-      if (!data) {
-        // No profile found - only redirect if we haven't already
-        if (!roleRedirectedRef.current) {
-          roleRedirectedRef.current = true;
-          toast.error("Profile incomplete", {
-            description: "Please complete your artist profile setup",
-          });
-          navigate("/role-selection", { replace: true });
+      if (data) {
+        setArtistName(data.artist_name || "Artist");
+        if (data.profile_image_path) {
+          const url = supabase.storage
+            .from("artist-images")
+            .getPublicUrl(data.profile_image_path).data.publicUrl;
+          setProfileImage(url);
         }
-        return;
       }
-
-      setArtistName(data.artist_name || "Artist");
-      if (data.profile_image_path) {
-        const url = supabase.storage
-          .from("artist-images")
-          .getPublicUrl(data.profile_image_path).data.publicUrl;
-        setProfileImage(url);
-      }
+      // If no profile data, just continue with defaults - don't redirect
+      // The role-selection page will handle profile creation if needed
     };
 
     fetchArtistProfile();
@@ -140,7 +128,7 @@ const Studio = () => {
     return () => {
       cancelled = true;
     };
-  }, [user, role, roleLoading, navigate]);
+  }, [user, role, roleLoading]);
 
   // SECURITY: Return loading until we CONFIRM user is NOT a listener
   // This is the key fix - we don't render ANY Studio UI until role is verified
