@@ -84,44 +84,77 @@ export const ReleaseManager = () => {
   };
 
   const handlePublishTrack = async () => {
-    if (!selectedTrack || !releaseDate) {
-      toast.error("Please select a track and release date");
+    if (!selectedTrack) {
+      toast.error("Please select a track to release");
+      return;
+    }
+    
+    if (!releaseDate) {
+      toast.error("Please select a release date");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
+      // Verify authentication first
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error("Authentication required. Please sign in again.");
+      }
+
       const releaseDateStr = format(releaseDate, "yyyy-MM-dd");
       const today = format(new Date(), "yyyy-MM-dd");
       const shouldPublishNow = releaseDateStr <= today;
 
-      const { error: updateError } = await supabase
-        .from("tracks")
-        .update({
-          is_published: shouldPublishNow,
-          release_date: releaseDateStr,
-        })
-        .eq("id", selectedTrack.id);
+      // Update track with retry logic
+      let retries = 3;
+      let updateSuccess = false;
+      let lastError: any = null;
 
-      if (updateError) throw updateError;
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user && releaseTitle) {
-        const { error: albumError } = await supabase
-          .from("albums")
-          .insert({
-            user_id: user.id,
-            title: releaseTitle,
-            artist_name: selectedTrack.artist_name,
-            description: releaseDescription,
-            genre: genre,
-            release_date: releaseDateStr,
-            scheduled_release_date: releaseDateStr,
+      while (retries > 0 && !updateSuccess) {
+        const { error: updateError } = await supabase
+          .from("tracks")
+          .update({
             is_published: shouldPublishNow,
-          });
+            release_date: releaseDateStr,
+          })
+          .eq("id", selectedTrack.id)
+          .eq("user_id", user.id); // Security: ensure user owns the track
 
-        if (albumError) console.error("Album creation error:", albumError);
+        if (!updateError) {
+          updateSuccess = true;
+        } else {
+          lastError = updateError;
+          retries--;
+          if (retries > 0) {
+            await new Promise(r => setTimeout(r, 1000));
+          }
+        }
+      }
+
+      if (!updateSuccess) {
+        throw lastError || new Error("Failed to update track");
+      }
+
+      // Optionally create a release album (non-blocking)
+      if (releaseTitle?.trim()) {
+        try {
+          await supabase
+            .from("albums")
+            .insert({
+              user_id: user.id,
+              title: releaseTitle.trim(),
+              artist_name: selectedTrack.artist_name,
+              description: releaseDescription?.trim() || null,
+              genre: genre || null,
+              release_date: releaseDateStr,
+              scheduled_release_date: releaseDateStr,
+              is_published: shouldPublishNow,
+            });
+        } catch (albumErr) {
+          console.warn("Optional album creation failed:", albumErr);
+        }
       }
 
       toast.success(shouldPublishNow ? "Released on TDZ!" : "Release scheduled!", {
@@ -139,7 +172,7 @@ export const ReleaseManager = () => {
     } catch (error: any) {
       console.error("Error publishing track:", error);
       toast.error("Failed to schedule release", {
-        description: error.message,
+        description: error.message || "An unexpected error occurred",
       });
     } finally {
       setIsSubmitting(false);
@@ -147,40 +180,88 @@ export const ReleaseManager = () => {
   };
 
   const handlePublishAlbum = async () => {
-    if (!selectedAlbum || !releaseDate) {
-      toast.error("Please select an album/EP and release date");
+    if (!selectedAlbum) {
+      toast.error("Please select an album/EP to release");
+      return;
+    }
+    
+    if (!releaseDate) {
+      toast.error("Please select a release date");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
+      // Verify authentication first
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error("Authentication required. Please sign in again.");
+      }
+
       const releaseDateStr = format(releaseDate, "yyyy-MM-dd");
       const today = format(new Date(), "yyyy-MM-dd");
       const shouldPublishNow = releaseDateStr <= today;
 
-      // Update album
-      const { error: albumError } = await supabase
-        .from("albums")
-        .update({
-          is_published: shouldPublishNow,
-          release_date: releaseDateStr,
-          scheduled_release_date: releaseDateStr,
-        })
-        .eq("id", selectedAlbum.id);
+      // Update album with retry logic
+      let albumRetries = 3;
+      let albumSuccess = false;
 
-      if (albumError) throw albumError;
+      while (albumRetries > 0 && !albumSuccess) {
+        const { error: albumError } = await supabase
+          .from("albums")
+          .update({
+            is_published: shouldPublishNow,
+            release_date: releaseDateStr,
+            scheduled_release_date: releaseDateStr,
+          })
+          .eq("id", selectedAlbum.id)
+          .eq("user_id", user.id); // Security: ensure user owns the album
 
-      // Update all tracks in the album
-      const { error: tracksError } = await supabase
-        .from("tracks")
-        .update({
-          is_published: shouldPublishNow,
-          release_date: releaseDateStr,
-        })
-        .eq("album_id", selectedAlbum.id);
+        if (!albumError) {
+          albumSuccess = true;
+        } else {
+          albumRetries--;
+          if (albumRetries === 0) {
+            throw albumError;
+          }
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
 
-      if (tracksError) throw tracksError;
+      // Update all tracks in the album with retry logic
+      let tracksRetries = 3;
+      let tracksSuccess = false;
+
+      while (tracksRetries > 0 && !tracksSuccess) {
+        const { error: tracksError } = await supabase
+          .from("tracks")
+          .update({
+            is_published: shouldPublishNow,
+            release_date: releaseDateStr,
+          })
+          .eq("album_id", selectedAlbum.id)
+          .eq("user_id", user.id); // Security: ensure user owns the tracks
+
+        if (!tracksError) {
+          tracksSuccess = true;
+        } else {
+          tracksRetries--;
+          if (tracksRetries === 0) {
+            // Album was updated but tracks failed - try to rollback album
+            await supabase
+              .from("albums")
+              .update({
+                is_published: false,
+                release_date: null,
+                scheduled_release_date: null,
+              })
+              .eq("id", selectedAlbum.id);
+            throw tracksError;
+          }
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
 
       const trackCount = selectedAlbum.tracks?.length || 0;
       toast.success(shouldPublishNow ? "Project Released on TDZ!" : "Project Release Scheduled!", {
@@ -196,7 +277,7 @@ export const ReleaseManager = () => {
     } catch (error: any) {
       console.error("Error publishing album:", error);
       toast.error("Failed to schedule release", {
-        description: error.message,
+        description: error.message || "An unexpected error occurred",
       });
     } finally {
       setIsSubmitting(false);
