@@ -32,7 +32,21 @@ export function SmartFAB() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+
     loadUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (cancelled) return;
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const loadUser = async () => {

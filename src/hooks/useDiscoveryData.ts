@@ -15,8 +15,42 @@ export function useDiscoveryData() {
   const [user, setUser] = useState<any>(null);
   const [userLoaded, setUserLoaded] = useState(false);
 
+  // Keep auth state in sync so Discovery/Studio gating never uses stale sessions.
   useEffect(() => {
-    loadUser();
+    let cancelled = false;
+
+    const init = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (cancelled) return;
+      setUser(user);
+      setUserLoaded(true);
+    };
+
+    init();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUser = session?.user ?? null;
+      setUser(nextUser);
+      setUserLoaded(true);
+
+      // Clear user-scoped caches immediately on sign-out so UI can't "stick" as signed-in.
+      if (!nextUser) {
+        setLikedTracks(new Set());
+        setLikedTracksList([]);
+        setFollowedArtists(new Set());
+        setPlaylists([]);
+        setRecentlyPlayed([]);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Load public data immediately, then load user-specific data when user is available
@@ -25,12 +59,6 @@ export function useDiscoveryData() {
       loadAllData();
     }
   }, [userLoaded, user]);
-
-  const loadUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setUser(user);
-    setUserLoaded(true);
-  };
 
   const loadAllData = async () => {
     // Always load public data
