@@ -51,91 +51,128 @@ export function YouTubePlayerInline({
 
   // Initialize YouTube player
   useEffect(() => {
-    // Prevent duplicate initialization
+    // Skip if already playing this video
+    if (lastVideoIdRef.current === videoId && playerRef.current && isReady) {
+      // Just ensure it's playing
+      try {
+        playerRef.current.playVideo?.();
+        onPlayingChange(true);
+      } catch (e) {
+        // Ignore
+      }
+      return;
+    }
+    
+    // Prevent duplicate initialization for same video
     if (initializingRef.current && lastVideoIdRef.current === videoId) return;
-    if (lastVideoIdRef.current === videoId && playerRef.current && isReady) return;
     
     initializingRef.current = true;
     lastVideoIdRef.current = videoId;
     
-    if (!window.YT || !window.YT.Player) {
-      // Wait for API to load
-      const checkApi = setInterval(() => {
-        if (window.YT && window.YT.Player) {
-          clearInterval(checkApi);
-          initPlayer();
-        }
-      }, 100);
-      return () => clearInterval(checkApi);
-    } else {
-      initPlayer();
-    }
-    
-    function initPlayer() {
-      // Destroy existing player
+    const initPlayer = () => {
+      // Clean up existing player
       if (playerRef.current) {
         try {
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
           playerRef.current.destroy();
+          playerRef.current = null;
         } catch (e) {
           // Ignore destroy errors
         }
       }
 
-      playerRef.current = new window.YT.Player('yt-inline-player', {
-        height: '0',
-        width: '0',
-        videoId: videoId,
-        playerVars: {
-          autoplay: 1,
-          controls: 0,
-          disablekb: 1,
-          fs: 0,
-          iv_load_policy: 3,
-          modestbranding: 1,
-          playsinline: 1,
-          rel: 0,
-        },
-        events: {
-          onReady: (event: any) => {
-            initializingRef.current = false;
-            setIsReady(true);
-            const dur = event.target.getDuration();
-            setDuration(dur);
-            setYoutubePlayer(event.target);
-            
-            // Always auto-play when ready
-            event.target.playVideo();
-            onPlayingChange(true);
-            
-            // Start time tracking
-            if (intervalRef.current) {
-              clearInterval(intervalRef.current);
-            }
-            intervalRef.current = window.setInterval(() => {
-              if (playerRef.current?.getCurrentTime) {
-                const time = playerRef.current.getCurrentTime();
-                setCurrentTime(time);
-                setContextTime(time);
-              }
-            }, 500);
+      // Ensure the container exists
+      const container = document.getElementById('yt-inline-player');
+      if (!container) {
+        initializingRef.current = false;
+        return;
+      }
+
+      try {
+        playerRef.current = new window.YT.Player('yt-inline-player', {
+          height: '0',
+          width: '0',
+          videoId: videoId,
+          playerVars: {
+            autoplay: 1,
+            controls: 0,
+            disablekb: 1,
+            fs: 0,
+            iv_load_policy: 3,
+            modestbranding: 1,
+            playsinline: 1,
+            rel: 0,
+            origin: window.location.origin,
           },
-          onStateChange: (event: any) => {
-            const playing = event.data === window.YT.PlayerState.PLAYING;
-            onPlayingChange(playing);
-            
-            if (event.data === window.YT.PlayerState.ENDED) {
+          events: {
+            onReady: (event: any) => {
+              initializingRef.current = false;
+              setIsReady(true);
+              const dur = event.target.getDuration();
+              setDuration(dur);
+              setYoutubePlayer(event.target);
+              
+              // Auto-play immediately
+              event.target.playVideo();
+              onPlayingChange(true);
+              
+              // Start time tracking
               if (intervalRef.current) {
                 clearInterval(intervalRef.current);
               }
-              onTrackEnd();
-            }
+              intervalRef.current = window.setInterval(() => {
+                if (playerRef.current?.getCurrentTime) {
+                  const time = playerRef.current.getCurrentTime();
+                  setCurrentTime(time);
+                  setContextTime(time);
+                }
+              }, 500);
+            },
+            onStateChange: (event: any) => {
+              const playing = event.data === window.YT.PlayerState.PLAYING;
+              onPlayingChange(playing);
+              
+              if (event.data === window.YT.PlayerState.ENDED) {
+                if (intervalRef.current) {
+                  clearInterval(intervalRef.current);
+                }
+                onTrackEnd();
+              }
+            },
+            onError: (event: any) => {
+              console.error('YouTube player error:', event.data);
+              initializingRef.current = false;
+            },
           },
-          onError: (event: any) => {
-            console.error('YouTube player error:', event.data);
-            initializingRef.current = false;
-          },
-        },
-      });
+        });
+      } catch (e) {
+        console.error('Failed to create YouTube player:', e);
+        initializingRef.current = false;
+      }
+    };
+    
+    // Check if API is ready
+    if (window.YT && window.YT.Player) {
+      initPlayer();
+    } else {
+      // Wait for API to load with timeout
+      let attempts = 0;
+      const maxAttempts = 50; // 5 seconds max
+      const checkApi = setInterval(() => {
+        attempts++;
+        if (window.YT && window.YT.Player) {
+          clearInterval(checkApi);
+          initPlayer();
+        } else if (attempts >= maxAttempts) {
+          clearInterval(checkApi);
+          console.error('YouTube API failed to load');
+          initializingRef.current = false;
+        }
+      }, 100);
+      return () => clearInterval(checkApi);
     }
 
     return () => {
@@ -143,7 +180,7 @@ export function YouTubePlayerInline({
         clearInterval(intervalRef.current);
       }
     };
-  }, [videoId]);
+  }, [videoId, onPlayingChange, onTrackEnd, setYoutubePlayer, setContextTime]);
 
   // Handle play/pause changes
   useEffect(() => {
