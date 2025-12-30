@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ListMusic, Plus, Lock, Sparkles, Search, Loader2, Youtube, Crown, Mic2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -340,6 +341,7 @@ export default function Discover() {
             <PlaylistsSection
               playlists={playlists}
               canCreate={canCreatePlaylists}
+              userId={user?.id || null}
             />
           </div>
         );
@@ -455,14 +457,19 @@ export default function Discover() {
 // Playlists Section
 function PlaylistsSection({ 
   playlists, 
-  canCreate
+  canCreate,
+  userId
 }: {
   playlists: any[];
   canCreate: boolean;
+  userId: string | null;
 }) {
   const navigate = useNavigate();
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState("");
+  const [creating, setCreating] = useState(false);
   
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!canCreate) {
       toast.error("Subscribe to create playlists ($12/mo)", {
         action: {
@@ -472,7 +479,32 @@ function PlaylistsSection({
       });
       return;
     }
-    toast.info("Playlist creation coming soon");
+    setShowCreateDialog(true);
+  };
+
+  const handleCreatePlaylist = async () => {
+    if (!newPlaylistName.trim() || !userId) return;
+    
+    setCreating(true);
+    const { data, error } = await supabase
+      .from("playlists")
+      .insert({
+        user_id: userId,
+        name: newPlaylistName.trim(),
+        is_public: true
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast.error("Failed to create playlist");
+    } else {
+      toast.success(`Created "${newPlaylistName}"`);
+      setNewPlaylistName("");
+      setShowCreateDialog(false);
+      navigate(`/playlist/${data.id}`);
+    }
+    setCreating(false);
   };
   
   return (
@@ -529,6 +561,41 @@ function PlaylistsSection({
           ))}
         </div>
       )}
+
+      {/* Create Playlist Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="bg-[#1a1a1a] border-white/10">
+          <DialogHeader>
+            <DialogTitle className="text-white">Create New Playlist</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Input
+              placeholder="Playlist name"
+              value={newPlaylistName}
+              onChange={(e) => setNewPlaylistName(e.target.value)}
+              className="bg-white/5 border-white/10 text-white"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="ghost" 
+              onClick={() => setShowCreateDialog(false)}
+              className="text-white/70 hover:text-white"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreatePlaylist}
+              disabled={!newPlaylistName.trim() || creating}
+              className="bg-cyan-500 hover:bg-cyan-600 text-white"
+            >
+              {creating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
