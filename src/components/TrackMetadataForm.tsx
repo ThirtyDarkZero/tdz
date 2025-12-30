@@ -360,6 +360,10 @@ export const TrackMetadataForm = ({
                     <SelectItem value="blues">Blues</SelectItem>
                     <SelectItem value="soul">Soul</SelectItem>
                     <SelectItem value="dance">Dance</SelectItem>
+                    <SelectItem value="spoken-word">Spoken Word</SelectItem>
+                    <SelectItem value="ambient">Ambient</SelectItem>
+                    <SelectItem value="gospel">Gospel</SelectItem>
+                    <SelectItem value="world">World</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
