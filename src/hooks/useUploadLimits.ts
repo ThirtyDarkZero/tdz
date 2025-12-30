@@ -14,12 +14,12 @@ interface UploadLimits {
   albumsRemaining: number;
 }
 
-const PLAN_LIMITS: Record<SubscriptionPlan, { maxTracks: number; maxAlbums: number }> = {
-  free: { maxTracks: 3, maxAlbums: 1 },
-  starter: { maxTracks: 50, maxAlbums: 5 },
-  pro: { maxTracks: -1, maxAlbums: -1 }, // unlimited
-  enterprise: { maxTracks: -1, maxAlbums: -1 }, // unlimited
-  fan: { maxTracks: 0, maxAlbums: 0 }, // fans can't upload
+const PLAN_LIMITS: Record<SubscriptionPlan, { maxTracks: number; maxAlbums: number; maxTracksPerAlbum: number }> = {
+  free: { maxTracks: 3, maxAlbums: 1, maxTracksPerAlbum: 10 },
+  starter: { maxTracks: 50, maxAlbums: 5, maxTracksPerAlbum: 25 },
+  pro: { maxTracks: -1, maxAlbums: -1, maxTracksPerAlbum: 25 }, // unlimited tracks/albums
+  enterprise: { maxTracks: -1, maxAlbums: -1, maxTracksPerAlbum: 25 }, // unlimited
+  fan: { maxTracks: 0, maxAlbums: 0, maxTracksPerAlbum: 0 }, // fans can't upload
 };
 
 export function useUploadLimits() {
@@ -71,6 +71,7 @@ export function useUploadLimits() {
   const limits = PLAN_LIMITS[plan];
   const maxTracks = limits.maxTracks;
   const maxAlbums = limits.maxAlbums;
+  const maxTracksPerAlbum = limits.maxTracksPerAlbum;
 
   // -1 means unlimited
   const canUploadTrack = maxTracks === -1 || currentTracks < maxTracks;
@@ -82,6 +83,7 @@ export function useUploadLimits() {
     loading: loading || subLoading,
     maxTracks,
     maxAlbums,
+    maxTracksPerAlbum,
     currentTracks,
     currentAlbums,
     canUploadTrack,

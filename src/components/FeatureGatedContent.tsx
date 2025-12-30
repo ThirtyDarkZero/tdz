@@ -44,7 +44,7 @@ export function FeatureGatedContent({
       navigate("/auth");
       return;
     }
-    navigate("/auth?upgrade=true");
+    navigate("/pricing");
     toast.info(`Upgrade to ${planName} to unlock this feature`);
   };
 
@@ -99,7 +99,7 @@ export function useFeatureCheck() {
     toast.error(message || `This feature requires ${planName}`, {
       action: {
         label: "Upgrade",
-        onClick: () => navigate("/auth?upgrade=true"),
+        onClick: () => navigate("/pricing"),
       },
     });
     

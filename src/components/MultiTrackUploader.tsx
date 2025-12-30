@@ -581,7 +581,7 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
               </div>
             </div>
             {!canUploadTrack && (
-              <Button size="sm" onClick={() => navigate("/auth?upgrade=true")} className="bg-gradient-to-r from-primary to-secondary">
+              <Button size="sm" onClick={() => navigate("/pricing")} className="bg-gradient-to-r from-primary to-secondary">
                 <Sparkles className="h-4 w-4 mr-1" />
                 Upgrade
               </Button>
