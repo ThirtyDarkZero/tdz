@@ -20,10 +20,10 @@ serve(async (req) => {
 
     const { action, query, type, genre, style, year, page, per_page, artist_id, release_id, master_id } = await req.json();
     
+    // Use personal access token format (not OAuth)
     const headers = {
       "Authorization": `Discogs token=${discogsToken}`,
-      "User-Agent": "ThirtyDarkZero/1.0 +https://thirtydarkzero.com",
-      "Accept": "application/vnd.discogs.v2.discogs+json",
+      "User-Agent": "ThirtyDarkZeroApp/1.0 +https://thirtydarkzero.com",
     };
 
     let endpoint = "";
