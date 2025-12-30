@@ -55,7 +55,7 @@ export default function RoleSelection() {
           .from("user_roles")
           .select("role")
           .eq("user_id", user.id)
-          .order("granted_at", { ascending: false })
+          .order("granted_at", { ascending: false, nullsFirst: false })
           .limit(1)
           .maybeSingle();
 
@@ -156,13 +156,13 @@ export default function RoleSelection() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Assign role (using upsert to handle duplicates gracefully)
-      const { error: roleError } = await supabase
-        .from("user_roles")
-        .upsert(
-          { user_id: user.id, role: selectedRole },
-          { onConflict: 'user_id,role', ignoreDuplicates: true }
-        );
+        // Assign role (using upsert to handle duplicates gracefully)
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .upsert(
+            { user_id: user.id, role: selectedRole, granted_at: new Date().toISOString() },
+            { onConflict: 'user_id,role', ignoreDuplicates: true }
+          );
 
       if (roleError) throw roleError;
 

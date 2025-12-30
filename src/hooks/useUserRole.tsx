@@ -29,7 +29,7 @@ export const useUserRole = (user: User | null) => {
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id)
-        .order("granted_at", { ascending: false })
+        .order("granted_at", { ascending: false, nullsFirst: false })
         .limit(1)
         .maybeSingle();
 
