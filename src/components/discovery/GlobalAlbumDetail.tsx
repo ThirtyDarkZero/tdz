@@ -57,37 +57,99 @@ export function GlobalAlbumDetail({
     setLoading(true);
     
     try {
-      // Search YouTube for the full album
-      const { data: ytData } = await supabase.functions.invoke('youtube-search', {
-        body: { 
-          query: `${album.artist} "${album.title}" full album`, 
-          maxResults: 1 
-        }
-      });
+      // First, search for official album playlist from YouTube Music
+      // Format: "Artist Album topic" - YouTube Music uses "topic" channels for official audio
+      const albumSearchQueries = [
+        `${album.artist} ${album.title} album`,
+        `${album.artist} - Topic ${album.title}`,
+        `${album.artist} "${album.title}" official audio`,
+      ];
 
-      // Also search for individual tracks
-      const { data: tracksData } = await supabase.functions.invoke('youtube-search', {
-        body: { 
-          query: `${album.artist} ${album.title}`, 
-          maxResults: 15 
-        }
-      });
+      let allTracks: AlbumTrack[] = [];
+      let albumThumbnail: string | undefined;
 
-      if (tracksData?.results) {
-        const albumTracks = tracksData.results.map((video: any, idx: number) => ({
-          id: `yt-${video.id}`,
-          title: cleanTrackTitle(video.title, album.artist, album.title),
-          position: idx + 1,
-          duration: video.duration,
-          youtubeId: video.id,
-          thumbnail: video.thumbnail,
-        }));
-        setTracks(albumTracks);
+      // Try to get tracks from multiple search strategies
+      for (const query of albumSearchQueries) {
+        const { data: tracksData } = await supabase.functions.invoke('youtube-search', {
+          body: { 
+            query, 
+            maxResults: 20 
+          }
+        });
+
+        if (tracksData?.results?.length > 0) {
+          // Filter to only include tracks that match the artist
+          const artistNameLower = album.artist.toLowerCase();
+          const albumNameLower = album.title.toLowerCase();
+          
+          const relevantTracks = tracksData.results.filter((video: any) => {
+            const titleLower = video.title.toLowerCase();
+            const channelLower = (video.channelTitle || '').toLowerCase();
+            
+            // Check if it's from the artist's topic channel or mentions the artist
+            const isFromArtist = channelLower.includes(artistNameLower) || 
+                                 channelLower.includes('topic') ||
+                                 titleLower.includes(artistNameLower);
+            
+            // Exclude covers, remixes, and live versions unless that's the album type
+            const isOriginal = !titleLower.includes('cover') && 
+                              !titleLower.includes('remix') &&
+                              !titleLower.includes('karaoke');
+            
+            return isFromArtist && isOriginal;
+          });
+
+          if (relevantTracks.length > allTracks.length) {
+            allTracks = relevantTracks.map((video: any, idx: number) => ({
+              id: `yt-${video.id}`,
+              title: cleanTrackTitle(video.title, album.artist, album.title),
+              position: idx + 1,
+              duration: video.duration,
+              youtubeId: video.id,
+              thumbnail: video.thumbnail,
+            }));
+            
+            // Get album art from first high-quality result
+            if (!albumThumbnail && relevantTracks[0]?.thumbnail) {
+              albumThumbnail = relevantTracks[0].thumbnail;
+            }
+          }
+        }
         
-        // Use first video thumbnail as cover if none
-        if (!coverArt && albumTracks[0]?.thumbnail) {
-          setCoverArt(albumTracks[0].thumbnail);
+        // If we found good results, stop searching
+        if (allTracks.length >= 5) break;
+      }
+
+      // If we still don't have enough tracks, do a broader search
+      if (allTracks.length < 3) {
+        const { data: broadData } = await supabase.functions.invoke('youtube-search', {
+          body: { 
+            query: `${album.artist} ${album.title}`, 
+            maxResults: 15 
+          }
+        });
+        
+        if (broadData?.results) {
+          allTracks = broadData.results.map((video: any, idx: number) => ({
+            id: `yt-${video.id}`,
+            title: cleanTrackTitle(video.title, album.artist, album.title),
+            position: idx + 1,
+            duration: video.duration,
+            youtubeId: video.id,
+            thumbnail: video.thumbnail,
+          }));
+          
+          if (!albumThumbnail && broadData.results[0]?.thumbnail) {
+            albumThumbnail = broadData.results[0].thumbnail;
+          }
         }
+      }
+
+      setTracks(allTracks);
+      
+      // Use best available cover art
+      if (!coverArt && albumThumbnail) {
+        setCoverArt(albumThumbnail);
       }
     } catch (error) {
       console.error('Error loading album tracks:', error);
