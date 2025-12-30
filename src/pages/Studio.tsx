@@ -162,15 +162,13 @@ function StudioContent() {
           onCollapsedChange={setSidebarCollapsed}
         />
 
-        {/* Main Content - No margin on mobile when sidebar is collapsed */}
+        {/* Main Content - Dynamic margin based on sidebar state */}
         <main className={cn(
           "transition-all duration-300 min-h-screen pb-32",
-          // Mobile: no margin when collapsed, full sidebar when open handled by overlay
-          sidebarCollapsed ? "ml-0" : "ml-0",
-          // Desktop: always show sidebar margin
-          "md:ml-[110px]",
-          // Desktop with highlights panel
-          !sidebarCollapsed && "md:ml-[350px]"
+          // Mobile: no margin, sidebar overlays
+          "ml-0",
+          // Desktop: dynamic margin based on collapsed state
+          sidebarCollapsed ? "md:ml-16" : "md:ml-[350px]"
         )}>
           {/* Background Effects */}
           <div className="fixed inset-0 pointer-events-none z-0">
