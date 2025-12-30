@@ -265,10 +265,10 @@ serve(async (req) => {
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Demographics tracking error:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Unknown error' }),
+      JSON.stringify({ error: 'Failed to track demographics' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

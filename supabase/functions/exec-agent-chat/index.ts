@@ -140,8 +140,16 @@ serve(async (req) => {
       );
     }
 
-    // SECURITY: Only CEO can access executive agents
-    if (user.email !== 'info@thirtydarkzero.com') {
+    // SECURITY: Only CEO can access executive agents (role-based check)
+    const { data: ceoRole } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'ceo')
+      .maybeSingle();
+    
+    if (!ceoRole) {
+      console.log('Access denied: user lacks ceo role', { userId: user.id });
       return new Response(
         JSON.stringify({ error: "Access denied. Executive agents are CEO-only." }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -313,7 +321,7 @@ Be proactive in identifying risks and opportunities.`;
   } catch (error) {
     console.error("Exec agent error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "An internal error occurred. Please try again." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
