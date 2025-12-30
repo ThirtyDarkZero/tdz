@@ -1,5 +1,8 @@
 project_id = "rcjzvfskkoqygnlolrcs"
 
+[functions.get-square-config]
+verify_jwt = false
+
 [functions.create-square-subscription]
 verify_jwt = true
 
