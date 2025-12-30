@@ -72,23 +72,24 @@ export default function Auth() {
 
   // Redirect if user is already logged in
   useEffect(() => {
-    // Wait for all loading states to complete
-    if (!user || roleLoading) return;
+    // Must wait for role loading to complete before making any decisions
+    if (roleLoading) return;
+    
+    // No user - stay on auth page
+    if (!user) return;
     
     // User has a role - redirect immediately to appropriate page
     if (role) {
-      if (role === "artist" || role === "verified_artist" || role === "manager" || role === "ceo" || role === "admin") {
+      const studioRoles = ["artist", "verified_artist", "manager", "ceo", "admin"];
+      if (studioRoles.includes(role)) {
         navigate("/studio", { replace: true });
-      } else if (role === "listener") {
-        navigate("/discover", { replace: true });
       } else {
         navigate("/discover", { replace: true });
       }
       return;
     }
     
-    // User has no role - redirect to role selection
-    // This handles both new sign-ups and returning users without a profile
+    // User exists but has no role - redirect to role selection
     navigate("/role-selection", { replace: true });
   }, [user, role, roleLoading, navigate]);
 
