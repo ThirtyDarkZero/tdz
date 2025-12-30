@@ -25,6 +25,7 @@ import { usePlayer } from "@/contexts/PlayerContext";
 import { GenreHeroSection } from "@/components/discovery/GenreHeroSection";
 import { UnifiedMusicStream } from "@/components/discovery/UnifiedMusicStream";
 import { GenrePlaylists } from "@/components/discovery/GenrePlaylists";
+import { EditorialPlaylists } from "@/components/discovery/EditorialPlaylists";
 import { YouTubeVideo } from "@/hooks/useYouTubePlayer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { DiscogsLibrary } from "@/components/discovery/DiscogsLibrary";
@@ -249,12 +250,12 @@ export default function Discover() {
             <GenreHeroSection onGenreSelect={handleGenreSelect} />
           </ErrorBoundary>
           
-          {/* Genre Playlists */}
+          {/* Editorial Playlists - Genres, Activities & Moods */}
           <ErrorBoundary fallback={<div className="h-40 bg-muted/20 rounded-lg flex items-center justify-center text-muted-foreground">Playlists section unavailable</div>}>
-            <GenrePlaylists
+            <EditorialPlaylists
               tracks={tracks}
-              onPlayGenre={handlePlayGenre}
-              onGenreClick={handleGenreSelect}
+              onPlayPlaylist={handlePlayGenre}
+              onPlaylistClick={(id) => handleGenreSelect(id.replace(/^(genre|activity|mood)-/, ''))}
             />
           </ErrorBoundary>
           
