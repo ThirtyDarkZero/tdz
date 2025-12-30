@@ -64,12 +64,19 @@ export default function Checkout() {
 
   const planDetails = PLAN_DETAILS[plan];
 
+  const [squareConfig, setSquareConfig] = useState<{
+    applicationId: string;
+    locationId: string;
+    environment: string;
+  } | null>(null);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate(`/auth?plan=${plan}`);
     }
   }, [user, authLoading, navigate, plan]);
 
+  // Fetch Square config from edge function
   useEffect(() => {
     if (!planDetails) {
       toast.error("Invalid plan selected");
@@ -77,38 +84,55 @@ export default function Checkout() {
       return;
     }
 
-    // Load Square Web Payments SDK - use production in production environment
-    const isProduction = window.location.hostname !== 'localhost';
-    const scriptUrl = isProduction 
-      ? "https://web.squarecdn.com/v1/square.js"
-      : "https://sandbox.web.squarecdn.com/v1/square.js";
-    
-    const script = document.createElement("script");
-    script.src = scriptUrl;
-    script.async = true;
-    script.onload = () => setSquareLoaded(true);
-    script.onerror = () => setSquareError("Failed to load payment system");
-    document.body.appendChild(script);
+    const fetchSquareConfig = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("get-square-config");
+        
+        if (error || !data) {
+          console.error("Failed to fetch Square config:", error);
+          setSquareError("Payment system configuration unavailable");
+          return;
+        }
 
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
+        setSquareConfig(data);
+        
+        // Load Square SDK based on environment
+        const scriptUrl = data.environment === 'production'
+          ? "https://web.squarecdn.com/v1/square.js"
+          : "https://sandbox.web.squarecdn.com/v1/square.js";
+        
+        const script = document.createElement("script");
+        script.src = scriptUrl;
+        script.async = true;
+        script.onload = () => setSquareLoaded(true);
+        script.onerror = () => setSquareError("Failed to load payment system");
+        document.body.appendChild(script);
+
+        return () => {
+          if (document.body.contains(script)) {
+            document.body.removeChild(script);
+          }
+        };
+      } catch (err) {
+        console.error("Error fetching Square config:", err);
+        setSquareError("Failed to initialize payment system");
       }
     };
+
+    fetchSquareConfig();
   }, [planDetails, navigate]);
 
   useEffect(() => {
-    if (!squareLoaded || card) return;
+    if (!squareLoaded || card || !squareConfig) return;
 
     const initializeSquare = async () => {
       try {
-        // These are publishable keys, safe to use on frontend
-        // For production, you'd fetch these from a config endpoint
-        const appId = "sandbox-sq0idb-_lhZ6x2qK3ixELPD9wjsaQ"; // Replace with actual production app ID
-        const locationId = "LNYJ1DGJX7V6A"; // Replace with actual production location ID
-
         // @ts-ignore - Square is loaded via script
-        const payments = window.Square?.payments(appId, locationId);
+        const payments = window.Square?.payments(
+          squareConfig.applicationId, 
+          squareConfig.locationId
+        );
+        
         if (!payments) {
           setSquareError("Payment system not available");
           return;
@@ -117,6 +141,7 @@ export default function Checkout() {
         const cardInstance = await payments.card();
         await cardInstance.attach("#card-container");
         setCard(cardInstance);
+        console.log("Square card initialized successfully");
       } catch (error: any) {
         console.error("Error initializing Square:", error);
         setSquareError(error.message || "Failed to initialize payment form");
@@ -124,7 +149,7 @@ export default function Checkout() {
     };
 
     initializeSquare();
-  }, [squareLoaded, card]);
+  }, [squareLoaded, card, squareConfig]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
