@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { Upload, Music, Disc, Album as AlbumIcon, GripVertical, Edit, Sparkles, AlertTriangle, Lock } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { Upload, Music, Disc, Album as AlbumIcon, GripVertical, Edit, Sparkles, AlertTriangle, Lock, Shield, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +28,8 @@ import {
 } from '@dnd-kit/sortable';
 import { SortableTrackItem } from './SortableTrackItem';
 import { BulkEditDialog, BulkMetadata } from './BulkEditDialog';
+import { TrackMetadataForm, TrackMetadata } from './TrackMetadataForm';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 // Helper function to detect audio quality from file
 const detectAudioQuality = (file: File): 'standard' | 'hd' | 'dolby_atmos' | 'hi_res' => {
@@ -74,6 +76,9 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
   const [description, setDescription] = useState("");
   const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
   const [showBulkEdit, setShowBulkEdit] = useState(false);
+  const [metadataOpen, setMetadataOpen] = useState(true);
+  const [metadata, setMetadata] = useState<TrackMetadata | null>(null);
+  const [metadataComplete, setMetadataComplete] = useState(false);
   const { toast } = useToast();
   
   const {
@@ -91,6 +96,21 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
   } = useUploadLimits();
 
   const isUnlimited = maxTracks === -1;
+
+  const handleMetadataChange = useCallback((newMetadata: TrackMetadata, isComplete: boolean) => {
+    setMetadata(newMetadata);
+    setMetadataComplete(isComplete);
+    // Sync basic fields
+    if (newMetadata.artistName && newMetadata.artistName !== artistName) {
+      setArtistName(newMetadata.artistName);
+    }
+    if (newMetadata.genre && newMetadata.genre !== genre) {
+      setGenre(newMetadata.genre);
+    }
+    if (newMetadata.releaseType !== releaseType) {
+      setReleaseType(newMetadata.releaseType);
+    }
+  }, [artistName, genre, releaseType]);
 
   const handleFileSelect = async (files: FileList) => {
     // Check upload limits first
@@ -192,7 +212,18 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
       return;
     }
 
-    if (!artistName.trim()) {
+    // CRITICAL: Require complete metadata before upload
+    if (!metadataComplete || !metadata) {
+      toast({ 
+        title: "Metadata required", 
+        description: "Please complete all required distribution metadata before uploading.",
+        variant: "destructive" 
+      });
+      setMetadataOpen(true);
+      return;
+    }
+
+    if (!metadata.artistName.trim()) {
       toast({ title: "Artist name required", variant: "destructive" });
       return;
     }
@@ -338,13 +369,14 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
           let trackCreated = false;
           
           while (dbRetries > 0 && !trackCreated) {
-            const { data: trackData, error: dbError } = await supabase.from('tracks').insert({
+            // Use type assertion for new columns until types are regenerated
+            const trackInsertData = {
               user_id: user.id,
               title: track.title.trim().slice(0, 200),
-              artist_name: artistName.trim().slice(0, 100),
+              artist_name: metadata!.artistName.trim().slice(0, 100),
               duration: track.duration || 0,
               file_path: filePath,
-              genre: genre?.trim() || null,
+              genre: metadata!.genre || null,
               is_published: false,
               audio_quality: audioQuality,
               album_id: albumId,
@@ -352,8 +384,31 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
               ai_tags: aiData?.tags || null,
               bpm: aiData?.bpm || null,
               key: aiData?.key || null,
-              mood: aiData?.mood || null
-            }).select('id').single();
+              mood: aiData?.mood || null,
+              // Distribution metadata (new columns)
+              isrc: metadata!.isrc || null,
+              upc: metadata!.upc || null,
+              label: metadata!.label || null,
+              copyright_owner: metadata!.copyrightOwner || null,
+              copyright_year: metadata!.copyrightYear || null,
+              p_line: metadata!.pLine || null,
+              c_line: metadata!.cLine || null,
+              explicit: metadata!.explicit || false,
+              language: metadata!.language || 'English',
+              release_type: metadata!.releaseType || 'single',
+              release_version: metadata!.releaseVersion || 'Original',
+              original_release_date: metadata!.originalReleaseDate?.toISOString().split('T')[0] || null,
+              preorder_date: metadata!.preorderDate?.toISOString().split('T')[0] || null,
+              credits: metadata!.credits || null,
+              publishing_info: metadata!.publishingInfo || null,
+              metadata_complete: true
+            } as any;
+            
+            const { data: trackData, error: dbError } = await supabase
+              .from('tracks')
+              .insert(trackInsertData)
+              .select('id')
+              .single();
 
             if (!dbError && trackData) {
               trackCreated = true;
@@ -631,78 +686,54 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
         </div>
       )}
 
-      {/* Release Info */}
-      <div className="grid gap-4">
-        {releaseType !== 'single' && (
-          <div>
-            <Label htmlFor="releaseTitle">
-              {releaseType === 'ep' ? 'EP' : 'Album'} Title *
-            </Label>
-            <Input 
-              id="releaseTitle" 
-              value={releaseTitle}
-              onChange={(e) => setReleaseTitle(e.target.value)}
-              placeholder={`Your ${releaseType} name`}
-              disabled={uploading}
+      {/* Distribution Metadata Form - REQUIRED */}
+      {tracks.length > 0 && (
+        <Collapsible open={metadataOpen} onOpenChange={setMetadataOpen}>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" className="w-full justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                <span>Distribution Metadata</span>
+                {!metadataComplete && (
+                  <Badge variant="destructive" className="text-xs">Required</Badge>
+                )}
+                {metadataComplete && (
+                  <Badge variant="default" className="text-xs bg-green-600">Complete</Badge>
+                )}
+              </div>
+              {metadataOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-4">
+            <TrackMetadataForm
+              initialData={{
+                title: tracks[0]?.title || '',
+                artistName,
+                genre,
+                releaseType
+              }}
+              onMetadataChange={handleMetadataChange}
+              showValidation={true}
             />
-          </div>
-        )}
+          </CollapsibleContent>
+        </Collapsible>
+      )}
 
+      {/* Release Title for EP/Album */}
+      {releaseType !== 'single' && tracks.length > 0 && (
         <div>
-          <Label htmlFor="artistName">Artist Name *</Label>
+          <Label htmlFor="releaseTitle">
+            {releaseType === 'ep' ? 'EP' : 'Album'} Title *
+          </Label>
           <Input 
-            id="artistName" 
-            value={artistName}
-            onChange={(e) => setArtistName(e.target.value)}
-            placeholder="Your artist name"
+            id="releaseTitle" 
+            value={releaseTitle}
+            onChange={(e) => setReleaseTitle(e.target.value)}
+            placeholder={`Your ${releaseType} name`}
             disabled={uploading}
           />
         </div>
-
-        <div>
-          <Label htmlFor="genre">Genre</Label>
-          <Select value={genre} onValueChange={setGenre} disabled={uploading}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select genre" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pop">Pop</SelectItem>
-              <SelectItem value="rock">Rock</SelectItem>
-              <SelectItem value="hip-hop">Hip Hop</SelectItem>
-              <SelectItem value="electronic">Electronic</SelectItem>
-              <SelectItem value="jazz">Jazz</SelectItem>
-              <SelectItem value="classical">Classical</SelectItem>
-              <SelectItem value="country">Country</SelectItem>
-              <SelectItem value="r&b">R&B</SelectItem>
-              <SelectItem value="indie">Indie</SelectItem>
-              <SelectItem value="spoken-word">Spoken Word</SelectItem>
-              <SelectItem value="podcast">Podcast</SelectItem>
-              <SelectItem value="ambient">Ambient</SelectItem>
-              <SelectItem value="metal">Metal</SelectItem>
-              <SelectItem value="folk">Folk</SelectItem>
-              <SelectItem value="soul">Soul</SelectItem>
-              <SelectItem value="reggae">Reggae</SelectItem>
-              <SelectItem value="latin">Latin</SelectItem>
-              <SelectItem value="world">World</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {releaseType !== 'single' && (
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Tell fans about this release..."
-              rows={3}
-              disabled={uploading}
-            />
-          </div>
-        )}
-      </div>
+      )}
 
       {uploading && (
         <div className="space-y-2">
@@ -715,10 +746,10 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
 
       <Button 
         onClick={handleUpload} 
-        disabled={uploading || tracks.length === 0} 
+        disabled={uploading || tracks.length === 0 || !metadataComplete} 
         className="w-full"
       >
-        {uploading ? "Uploading..." : `Upload ${releaseType === 'single' ? 'Track' : tracks.length + ' Tracks'}`}
+        {uploading ? "Uploading..." : !metadataComplete && tracks.length > 0 ? "Complete Metadata to Upload" : `Upload ${releaseType === 'single' ? 'Track' : tracks.length + ' Tracks'}`}
       </Button>
 
       <BulkEditDialog
