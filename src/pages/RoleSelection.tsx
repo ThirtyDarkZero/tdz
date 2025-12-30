@@ -20,67 +20,107 @@ export default function RoleSelection() {
 
   const [existingRole, setExistingRole] = useState<string | null>(null);
 
-  // Check if user already has a role/profile - but DON'T auto-redirect
-  // This prevents infinite redirect loops with Studio
+  // Check if user already has a role AND the required profile exists.
+  // If the profile is missing, keep the user here to finish setup (prevents Studio <-> RoleSelection loops).
   const [checkingRole, setCheckingRole] = useState(true);
-  
+
   useEffect(() => {
     let cancelled = false;
-    
+
+    const normalizeRoleForSetup = (
+      dbRole: string
+    ): "artist" | "listener" | "manager" | null => {
+      if (dbRole === "listener") return "listener";
+      if (dbRole === "manager") return "manager";
+      if (dbRole === "artist" || dbRole === "verified_artist") return "artist";
+      return null;
+    };
+
     const checkExistingProfile = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user || cancelled) {
-          setCheckingRole(false);
-          return;
-        }
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-        // Check for existing role
-        const { data: roleData, error } = await supabase
+        if (!user || cancelled) return;
+
+        // Get the latest role (matches Studio's role resolution)
+        const { data: roleData, error: roleError } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", user.id)
+          .order("granted_at", { ascending: false })
+          .limit(1)
           .maybeSingle();
 
         if (cancelled) return;
 
-        if (roleData && !error) {
-          setExistingRole(roleData.role);
-          // Only redirect if we're NOT already in a redirect loop
-          // Check if user came from Studio (via referrer or state)
-          const cameFromStudio = document.referrer.includes('/studio') || 
-                                  sessionStorage.getItem('studio_redirect') === 'true';
-          
-          if (!cameFromStudio) {
-            if (roleData.role === "listener") {
-              navigate("/discover", { replace: true });
-            } else {
-              navigate("/studio", { replace: true });
-            }
-          } else {
-            // Clear the flag and show the user they already have a profile
-            sessionStorage.removeItem('studio_redirect');
-            toast.info("You already have a profile", {
-              description: `Signed in as ${roleData.role}`,
-            });
-            if (roleData.role === "listener") {
-              navigate("/discover", { replace: true });
-            } else {
-              navigate("/studio", { replace: true });
-            }
+        if (roleError) {
+          console.error("Error loading existing role:", roleError);
+          return;
+        }
+
+        const dbRole = roleData?.role;
+        if (!dbRole) return;
+
+        setExistingRole(dbRole);
+
+        // Verify profile exists for this role before redirecting away
+        if (dbRole === "listener") {
+          const { data: listenerProfile, error: profileError } = await supabase
+            .from("listener_profiles")
+            .select("id")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (cancelled) return;
+          if (profileError) console.error("Error checking listener profile:", profileError);
+
+          if (listenerProfile) {
+            navigate("/discover", { replace: true });
+            return;
           }
+
+          // Missing profile → let them finish setup here
+          setSelectedRole("listener");
+          toast.info("Finish setup", {
+            description: "Complete your fan profile to continue.",
+          });
+          return;
+        }
+
+        // Artist / Manager / Verified Artist all use artist_profiles in this app
+        const { data: artistProfile, error: profileError } = await supabase
+          .from("artist_profiles")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (cancelled) return;
+        if (profileError) console.error("Error checking artist profile:", profileError);
+
+        if (artistProfile) {
+          navigate("/studio", { replace: true });
+          return;
+        }
+
+        // Missing profile → let them finish setup here
+        const normalized = normalizeRoleForSetup(dbRole);
+        if (normalized) {
+          setSelectedRole(normalized);
+          toast.info("Finish setup", {
+            description: "Complete your profile to access Studio.",
+          });
         }
       } catch (error) {
         console.log("No existing profile found");
       } finally {
-        if (!cancelled) {
-          setCheckingRole(false);
-        }
+        if (!cancelled) setCheckingRole(false);
       }
     };
 
     checkExistingProfile();
-    
+
     return () => {
       cancelled = true;
     };
