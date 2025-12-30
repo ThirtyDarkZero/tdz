@@ -1,34 +1,37 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { 
-  Play, Heart, UserPlus, UserCheck, Share2, 
-  Music, Image as ImageIcon, Bell, BellOff, ArrowLeft, Home, MessageCircle
+  Play, Bell, BellOff, ArrowLeft, MoreHorizontal, 
+  Music, ChevronLeft, ChevronRight, MessageCircle, Share2, UserPlus, UserCheck
 } from "lucide-react";
 import { DirectMessagePanel } from "@/components/DirectMessagePanel";
 import { usePlayer } from "@/contexts/PlayerContext";
-import tdzLogo from "@/assets/tdz-logo.png";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function ArtistProfile() {
   const { artistId } = useParams();
   const navigate = useNavigate();
   const [artist, setArtist] = useState<any>(null);
   const [tracks, setTracks] = useState<any[]>([]);
-  const [gallery, setGallery] = useState<any[]>([]);
+  const [albums, setAlbums] = useState<any[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [presavedTracks, setPresavedTracks] = useState<Set<string>>(new Set());
   const [user, setUser] = useState<any>(null);
   const [showMessages, setShowMessages] = useState(false);
+  const albumScrollRef = useRef<HTMLDivElement>(null);
   
-  // Use global player for persistent playback
   const { playTrack, currentTrack } = usePlayer();
 
-  // Validate artistId is a valid UUID
   useEffect(() => {
     if (!artistId || artistId === ":artistId" || !isValidUUID(artistId)) {
       toast.error("Invalid artist profile");
@@ -41,7 +44,7 @@ export default function ArtistProfile() {
       loadUser();
       loadArtist();
       loadTracks();
-      loadGallery();
+      loadAlbums();
     }
   }, [artistId]);
 
@@ -66,20 +69,11 @@ export default function ArtistProfile() {
       .eq("user_id", artistId)
       .maybeSingle();
 
-    if (error) {
-      console.error("Error loading artist:", error);
-      toast.error("Failed to load artist profile");
-      navigate("/discover");
-      return;
-    }
-    
-    if (!data) {
-      // No profile found for this artist
+    if (error || !data) {
       toast.error("Artist profile not found");
       navigate("/discover");
       return;
     }
-    
     setArtist(data);
   };
 
@@ -92,7 +86,6 @@ export default function ArtistProfile() {
       .order("created_at", { ascending: false });
 
     if (!error && data) {
-      // Filter out tracks from unpublished albums
       const publishedTracks = data.filter(track => 
         !track.albums || track.albums.is_published !== false
       );
@@ -100,19 +93,16 @@ export default function ArtistProfile() {
     }
   };
 
-  const loadGallery = async () => {
+  const loadAlbums = async () => {
     const { data, error } = await supabase
-      .from("artist_gallery")
+      .from("albums")
       .select("*")
-      .eq("artist_id", artistId)
-      .order("display_order", { ascending: true });
+      .eq("user_id", artistId)
+      .eq("is_published", true)
+      .order("release_date", { ascending: false });
 
     if (!error && data) {
-      const galleryWithUrls = data.map(item => ({
-        ...item,
-        imageUrl: supabase.storage.from("artist-gallery").getPublicUrl(item.image_path).data.publicUrl
-      }));
-      setGallery(galleryWithUrls);
+      setAlbums(data);
     }
   };
 
@@ -123,7 +113,6 @@ export default function ArtistProfile() {
       .eq("follower_id", userId)
       .eq("artist_id", artistId)
       .maybeSingle();
-
     setIsFollowing(!!data);
   };
 
@@ -132,7 +121,6 @@ export default function ArtistProfile() {
       .from("track_presaves")
       .select("track_id")
       .eq("user_id", userId);
-
     if (data) {
       setPresavedTracks(new Set(data.map(p => p.track_id)));
     }
@@ -143,18 +131,12 @@ export default function ArtistProfile() {
       toast.error("Please sign in to follow artists");
       return;
     }
-
     if (isFollowing) {
-      await supabase
-        .from("artist_follows")
-        .delete()
-        .eq("follower_id", user.id)
-        .eq("artist_id", artistId);
+      await supabase.from("artist_follows").delete()
+        .eq("follower_id", user.id).eq("artist_id", artistId);
       toast.success("Unfollowed artist");
     } else {
-      await supabase
-        .from("artist_follows")
-        .insert({ follower_id: user.id, artist_id: artistId });
+      await supabase.from("artist_follows").insert({ follower_id: user.id, artist_id: artistId });
       toast.success("Following artist");
     }
     setIsFollowing(!isFollowing);
@@ -165,331 +147,321 @@ export default function ArtistProfile() {
       toast.error("Please sign in to presave tracks");
       return;
     }
-
     const isPresaved = presavedTracks.has(trackId);
-
     if (isPresaved) {
-      await supabase
-        .from("track_presaves")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("track_id", trackId);
-
-      setPresavedTracks(prev => {
-        const next = new Set(prev);
-        next.delete(trackId);
-        return next;
-      });
+      await supabase.from("track_presaves").delete()
+        .eq("user_id", user.id).eq("track_id", trackId);
+      setPresavedTracks(prev => { const next = new Set(prev); next.delete(trackId); return next; });
       toast.success("Presave removed");
     } else {
-      await supabase
-        .from("track_presaves")
-        .insert({
-          user_id: user.id,
-          track_id: trackId,
-          artist_id: artistId
-        });
-
+      await supabase.from("track_presaves").insert({ user_id: user.id, track_id: trackId, artist_id: artistId });
       setPresavedTracks(prev => new Set(prev).add(trackId));
-      toast.success("Track presaved! You'll be notified on release");
+      toast.success("Track presaved!");
     }
   };
 
-  // Use global player for playback - persists across navigation
-  const handlePlayTrack = (track: any) => {
-    const normalizedTrack = {
-      ...track,
-      duration: track.duration || 0,
-      file_path: track.file_path || '',
-      play_count: track.play_count || 0,
-    };
-    const normalizedQueue = tracks.map(t => ({
-      ...t,
-      duration: t.duration || 0,
-      file_path: t.file_path || '',
-      play_count: t.play_count || 0,
+  const handlePlayAll = () => {
+    if (tracks.length === 0) return;
+    const normalizedTracks = tracks.map(t => ({
+      ...t, duration: t.duration || 0, file_path: t.file_path || '', play_count: t.play_count || 0,
     }));
+    playTrack(normalizedTracks[0], normalizedTracks);
+  };
+
+  const handlePlayTrack = (track: any) => {
+    const normalizedTrack = { ...track, duration: track.duration || 0, file_path: track.file_path || '', play_count: track.play_count || 0 };
+    const normalizedQueue = tracks.map(t => ({ ...t, duration: t.duration || 0, file_path: t.file_path || '', play_count: t.play_count || 0 }));
     playTrack(normalizedTrack, normalizedQueue);
   };
 
-  // Helper function to get image URL with fallback bucket strategy
-  const getImageUrl = (path: string, type: 'profile' | 'banner'): string => {
+  const getImageUrl = (path: string): string => {
     if (!path) return '';
-    
-    // Check if it's already a full URL
     if (path.startsWith('http')) return path;
-    
-    // Try the appropriate bucket based on type, then fallback to artist-images
-    const fallbackBucket = 'artist-images';
-    
-    // Return fallback URL as it's more commonly used based on the codebase
-    const fallbackUrl = supabase.storage.from(fallbackBucket).getPublicUrl(path).data.publicUrl;
-    return fallbackUrl;
+    return supabase.storage.from('artist-images').getPublicUrl(path).data.publicUrl;
   };
 
+  const getAlbumCover = (album: any): string => {
+    if (!album.cover_art_path) return '';
+    return supabase.storage.from('album-covers').getPublicUrl(album.cover_art_path).data.publicUrl;
+  };
+
+  const scrollAlbums = (direction: 'left' | 'right') => {
+    if (albumScrollRef.current) {
+      const scrollAmount = direction === 'left' ? -300 : 300;
+      albumScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  // Extract genres from tracks
+  const genres = [...new Set(tracks.map(t => t.genre).filter(Boolean))].slice(0, 3);
+  const lastRelease = tracks[0]?.created_at ? new Date(tracks[0].created_at) : null;
+  const isRecent = lastRelease && (Date.now() - lastRelease.getTime()) < 30 * 24 * 60 * 60 * 1000;
+
   if (!artist) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top Navigation */}
-      <div className="sticky top-0 z-50 glass-card border-b border-border/50">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => navigate("/discover")}
-              className="h-9 px-2 sm:px-4"
-            >
-              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Back</span>
-            </Button>
-            <button 
-              onClick={() => navigate("/discover")}
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-            >
-              <img src={tdzLogo} alt="TDZ" className="h-6 sm:h-8 w-auto" style={{ mixBlendMode: 'screen' }} />
-            </button>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => navigate("/discover")}
-            className="h-9 px-2 sm:px-4"
+    <div className="min-h-screen bg-[#0a0a0a] text-white pb-32">
+      {/* Top Bar */}
+      <header className="sticky top-0 z-50 bg-[#0a0a0a]/95 backdrop-blur-sm border-b border-white/5">
+        <div className="flex items-center gap-4 px-4 sm:px-6 py-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="h-10 w-10 rounded-full bg-white/5 hover:bg-white/10 text-white"
           >
-            <Home className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-            <span className="hidden sm:inline">Discover</span>
+            <ArrowLeft className="w-5 h-5" />
           </Button>
+          <Button
+            size="icon"
+            onClick={handlePlayAll}
+            disabled={tracks.length === 0}
+            className="h-10 w-10 rounded-full bg-cyan-500 hover:bg-cyan-400 text-black"
+          >
+            <Play className="w-5 h-5" fill="currentColor" />
+          </Button>
+          <span className="font-bold text-lg truncate">{artist.artist_name}</span>
         </div>
-      </div>
+      </header>
 
-      {/* Hero Section */}
-      <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden">
-        {artist.banner_image_path ? (
-          <img
-            src={getImageUrl(artist.banner_image_path, 'banner')}
-            alt="Banner"
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-primary/30 via-primary-glow/20 to-secondary/30" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-        
-        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-end gap-4 sm:gap-6">
-            <div className="relative flex-shrink-0">
-              <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-2 sm:border-4 border-background shadow-glow">
-                {artist.profile_image_path ? (
-                  <img
-                    src={getImageUrl(artist.profile_image_path, 'profile')}
-                    alt={artist.artist_name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center">
-                    <Music className="w-8 h-8 sm:w-12 sm:h-12 md:w-16 md:h-16 text-primary-foreground" />
-                  </div>
-                )}
-              </div>
-              {artist.verified && (
-                <Badge className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-primary shadow-glow text-xs">
-                  ✓ Verified
-                </Badge>
+      {/* Profile Section */}
+      <section className="px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8">
+          {/* Circular Avatar */}
+          <div className="relative flex-shrink-0">
+            <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full overflow-hidden bg-gradient-to-br from-indigo-600 to-purple-700 flex items-center justify-center ring-4 ring-white/10">
+              {artist.profile_image_path ? (
+                <img
+                  src={getImageUrl(artist.profile_image_path)}
+                  alt={artist.artist_name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-6xl sm:text-7xl font-bold text-white/80">
+                  {artist.artist_name?.charAt(0)?.toUpperCase() || 'A'}
+                </span>
               )}
             </div>
+          </div>
 
-            <div className="flex-1 min-w-0">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-2 glow-text truncate">{artist.artist_name}</h1>
-              <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4 flex-wrap">
-                <span>{(artist.monthly_listeners || 0).toLocaleString()} monthly listeners</span>
-                <span className="hidden sm:inline">•</span>
-                <span>{(artist.total_plays || 0).toLocaleString()} total plays</span>
-                <span className="hidden sm:inline">•</span>
-                <span>{tracks.length} releases</span>
-                {artist.verified && (
+          {/* Info */}
+          <div className="flex-1 text-center sm:text-left">
+            {/* Type + Genre Tags */}
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-3">
+              <span className="text-white/60 text-sm">Artist</span>
+              {genres.map((genre: string) => (
+                <Badge 
+                  key={genre} 
+                  variant="outline" 
+                  className="bg-white/5 border-white/20 text-white/80 text-xs px-3 py-1 rounded-full"
+                >
+                  {genre}
+                </Badge>
+              ))}
+            </div>
+
+            {/* Name */}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black mb-3 tracking-tight">
+              {artist.artist_name}
+            </h1>
+
+            {/* Stats */}
+            <div className="flex items-center justify-center sm:justify-start gap-1 text-sm text-white/60 mb-6">
+              <span>Last release:</span>
+              <span className={isRecent ? "text-cyan-400" : "text-white/80"}>
+                {isRecent ? "Recently" : lastRelease ? new Date(lastRelease).getFullYear() : "—"}
+              </span>
+              <span className="mx-2">•</span>
+              <span>Albums: <strong className="text-white">{albums.length}</strong></span>
+              <span className="mx-2">•</span>
+              <span>Tracks: <strong className="text-white">{tracks.length}</strong></span>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-center sm:justify-start gap-3">
+              <Button 
+                onClick={handlePlayAll}
+                disabled={tracks.length === 0}
+                className="bg-white text-black hover:bg-white/90 font-semibold px-6 h-11 rounded-full gap-2"
+              >
+                <Play className="w-5 h-5" fill="currentColor" />
+                PLAY
+              </Button>
+              <Button
+                variant="outline"
+                onClick={toggleFollow}
+                className="border-white/30 text-white hover:bg-white/10 font-semibold px-6 h-11 rounded-full gap-2"
+              >
+                {isFollowing ? (
                   <>
-                    <span className="hidden sm:inline">•</span>
-                    <span className="text-primary">Verified Artist</span>
+                    <UserCheck className="w-5 h-5" />
+                    Following
+                  </>
+                ) : (
+                  <>
+                    <Bell className="w-5 h-5" />
+                    Subscribe
                   </>
                 )}
-              </div>
-              
-              <div className="flex flex-wrap gap-2 sm:gap-3">
-                <Button onClick={toggleFollow} size="sm" className="shadow-glow sm:size-lg">
-                  {isFollowing ? (
-                    <>
-                      <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
-                      <span className="text-xs sm:text-base">Following</span>
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
-                      <span className="text-xs sm:text-base">Follow</span>
-                    </>
-                  )}
-                </Button>
-                {user && user.id !== artist.user_id && (
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="sm:size-lg"
-                    onClick={() => setShowMessages(true)}
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-11 w-11 rounded-full border border-white/20 hover:bg-white/10"
                   >
-                    <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
-                    <span className="text-xs sm:text-base">Message</span>
+                    <MoreHorizontal className="w-5 h-5" />
                   </Button>
-                )}
-                <Button variant="outline" size="sm" className="sm:size-lg">
-                  <Share2 className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
-                  <span className="text-xs sm:text-base">Share</span>
-                </Button>
-              </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-[#1a1a1a] border-white/10">
+                  <DropdownMenuItem onClick={() => setShowMessages(true)} className="text-white hover:bg-white/10">
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Message
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-white hover:bg-white/10">
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Share
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-8 py-6 sm:py-8 md:py-12">
-        <Tabs defaultValue="music" className="space-y-6 md:space-y-8">
-          <TabsList className="glass-card-premium p-1.5 md:p-2 w-full sm:w-auto">
-            <TabsTrigger value="music" className="gap-1.5 md:gap-2 flex-1 sm:flex-none text-xs sm:text-sm">
-              <Music className="w-3 h-3 sm:w-4 sm:h-4" />
-              Music
-            </TabsTrigger>
-            <TabsTrigger value="about" className="gap-1.5 md:gap-2 flex-1 sm:flex-none text-xs sm:text-sm">
-              About
-            </TabsTrigger>
-            <TabsTrigger value="gallery" className="gap-1.5 md:gap-2 flex-1 sm:flex-none text-xs sm:text-sm">
-              <ImageIcon className="w-3 h-3 sm:w-4 sm:h-4" />
-              Gallery
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="music" className="space-y-4">
-            <h2 className="text-2xl sm:text-3xl font-black glow-text mb-4 sm:mb-6">Releases</h2>
-            <div className="grid gap-4">
-              {tracks.map(track => (
-                <Card key={track.id} className="glass-card-premium p-6 hover-lift">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      {/* Album Cover */}
-                      <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                        {track.album_cover_path ? (
-                          <img 
-                            src={supabase.storage.from(track.album_cover_bucket || 'album-covers').getPublicUrl(track.album_cover_path).data.publicUrl}
-                            alt={track.title}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
-                            <Music className="w-6 h-6 text-muted-foreground" />
-                          </div>
-                        )}
-                      </div>
-                      
-                      <Button 
-                        size="icon" 
-                        variant="outline" 
-                        className="h-12 w-12 rounded-full"
-                        onClick={() => handlePlayTrack(track)}
-                      >
-                        <Play className="w-5 h-5" fill="currentColor" />
-                      </Button>
-                      <div>
-                        <h3 className="font-bold text-lg">{track.title}</h3>
-                        <p className="text-sm text-muted-foreground">{track.artist_name}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      {track.release_date && new Date(track.release_date) > new Date() ? (
-                        <Button
-                          variant={presavedTracks.has(track.id) ? "default" : "outline"}
-                          onClick={() => togglePresave(track.id)}
-                          className="gap-2"
-                        >
-                          {presavedTracks.has(track.id) ? (
-                            <>
-                              <BellOff className="w-4 h-4" />
-                              Presaved
-                            </>
-                          ) : (
-                            <>
-                              <Bell className="w-4 h-4" />
-                              Presave
-                            </>
-                          )}
-                        </Button>
-                      ) : (
-                        <Badge variant="outline">
-                          {track.genre || "Single"}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="about">
-            <Card className="glass-card-premium p-8">
-              <h2 className="text-3xl font-black glow-text mb-4">About</h2>
-              <p className="text-lg leading-relaxed">{artist.bio || "No bio available yet."}</p>
-              
-              {artist.social_links && (
-                <div className="mt-8">
-                  <h3 className="text-xl font-bold mb-4">Connect</h3>
-                  <div className="flex gap-3">
-                    {/* Social links would go here */}
-                  </div>
-                </div>
-              )}
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="gallery" className="space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              {gallery.map(photo => (
-                <Card key={photo.id} className="glass-card-premium overflow-hidden group relative hover-lift">
-                  <img
-                    src={photo.imageUrl}
-                    alt={photo.caption || "Gallery photo"}
-                    className="w-full aspect-square object-cover transition-transform duration-300 group-hover:scale-110"
-                  />
-                  {photo.caption && (
-                    <div className="p-3 bg-gradient-to-t from-background/90 to-transparent">
-                      <p className="text-sm">{photo.caption}</p>
+      {/* Tracks Section */}
+      {tracks.length > 0 && (
+        <section className="px-4 sm:px-6 lg:px-8 py-6">
+          <h2 className="text-2xl sm:text-3xl font-black mb-6 tracking-tight">TRACKS</h2>
+          <div className="space-y-2">
+            {tracks.slice(0, 10).map((track, idx) => (
+              <div 
+                key={track.id}
+                onClick={() => handlePlayTrack(track)}
+                className={`flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-colors ${
+                  currentTrack?.id === track.id ? 'bg-cyan-500/10' : 'hover:bg-white/5'
+                }`}
+              >
+                <span className="w-6 text-center text-white/40 text-sm">{idx + 1}</span>
+                <div className="w-12 h-12 rounded-lg overflow-hidden bg-white/5 flex-shrink-0">
+                  {track.album_cover_path ? (
+                    <img 
+                      src={supabase.storage.from(track.album_cover_bucket || 'album-covers').getPublicUrl(track.album_cover_path).data.publicUrl}
+                      alt={track.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Music className="w-5 h-5 text-white/30" />
                     </div>
                   )}
-                </Card>
-              ))}
-            </div>
-
-            {gallery.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground">
-                <ImageIcon className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p>No photos in gallery yet</p>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`font-medium truncate ${currentTrack?.id === track.id ? 'text-cyan-400' : 'text-white'}`}>
+                    {track.title}
+                  </p>
+                  <p className="text-sm text-white/50 truncate">{track.artist_name}</p>
+                </div>
+                {track.release_date && new Date(track.release_date) > new Date() && (
+                  <Button
+                    size="sm"
+                    variant={presavedTracks.has(track.id) ? "default" : "outline"}
+                    onClick={(e) => { e.stopPropagation(); togglePresave(track.id); }}
+                    className="rounded-full"
+                  >
+                    {presavedTracks.has(track.id) ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                  </Button>
+                )}
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
+            ))}
+          </div>
+        </section>
+      )}
 
-      {/* Global player is now rendered at App level */}
+      {/* Studio Albums Section */}
+      {albums.length > 0 && (
+        <section className="px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight">STUDIO ALBUMS</h2>
+              <button className="text-white/40 hover:text-white text-sm">MORE</button>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => scrollAlbums('left')}
+                className="h-10 w-10 rounded-full border border-white/20 hover:bg-white/10"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => scrollAlbums('right')}
+                className="h-10 w-10 rounded-full border border-white/20 hover:bg-white/10"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+          
+          <div 
+            ref={albumScrollRef}
+            className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {albums.map((album) => (
+              <div 
+                key={album.id}
+                onClick={() => navigate(`/album/${album.id}`)}
+                className="flex-shrink-0 w-40 sm:w-48 cursor-pointer group"
+              >
+                <div className="aspect-square rounded-lg overflow-hidden bg-white/5 mb-3 relative">
+                  {album.cover_art_path ? (
+                    <img
+                      src={getAlbumCover(album)}
+                      alt={album.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Music className="w-12 h-12 text-white/20" />
+                    </div>
+                  )}
+                </div>
+                <p className="font-medium text-white truncate">{album.title}</p>
+                <p className="text-sm text-white/50">
+                  {album.release_date ? new Date(album.release_date).getFullYear() : '—'}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* About Section */}
+      {artist.bio && (
+        <section className="px-4 sm:px-6 lg:px-8 py-6">
+          <h2 className="text-2xl sm:text-3xl font-black mb-4 tracking-tight">ABOUT</h2>
+          <p className="text-white/70 leading-relaxed max-w-3xl">{artist.bio}</p>
+        </section>
+      )}
+
       {/* Direct Message Panel */}
       <DirectMessagePanel
         open={showMessages}
         onClose={() => setShowMessages(false)}
         recipientId={artist.user_id}
         recipientName={artist.artist_name}
-        recipientAvatar={artist.profile_image_path ? 
-          supabase.storage.from("artist-profiles").getPublicUrl(artist.profile_image_path).data.publicUrl : undefined
-        }
+        recipientAvatar={artist.profile_image_path ? getImageUrl(artist.profile_image_path) : undefined}
       />
     </div>
   );
