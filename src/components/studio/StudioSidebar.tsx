@@ -208,11 +208,13 @@ export const StudioSidebar = ({
         className={cn(
           "fixed left-0 top-0 h-screen z-50 flex flex-col transition-all duration-300 ease-out",
           "bg-card/95 backdrop-blur-xl border-r border-border/30",
-          // Desktop: collapse on hover
-          "md:w-[110px]",
+          // Mobile: slide in/out, narrower width
+          "w-[200px] md:w-[110px]",
           collapsed && !isHovering && "md:w-[72px]",
-          // Mobile: show/hide completely
-          collapsed ? "-translate-x-full md:translate-x-0" : "translate-x-0"
+          // Mobile: hide completely when collapsed
+          collapsed ? "-translate-x-full" : "translate-x-0",
+          // Desktop: always visible
+          "md:translate-x-0"
         )}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -354,15 +356,14 @@ export const StudioSidebar = ({
         </div>
       </div>
 
-      {/* Highlights Panel - PHP Admin Style Secondary Sidebar */}
+      {/* Highlights Panel - PHP Admin Style Secondary Sidebar - Desktop Only */}
       <div 
         className={cn(
           "fixed top-0 h-screen z-40 transition-all duration-300 ease-out",
           "bg-muted/50 backdrop-blur-xl border-r border-border/20",
-          // Desktop
+          // Desktop only - hidden on mobile
           "hidden md:block",
-          showHighlights && shouldExpand ? "left-[110px] w-[240px] opacity-100" : "left-[72px] w-0 opacity-0 overflow-hidden",
-          // Mobile - show inline in main sidebar
+          showHighlights && shouldExpand ? "left-[110px] w-[240px] opacity-100" : "left-[72px] w-0 opacity-0 overflow-hidden"
         )}
       >
         <div className="p-6 h-full flex flex-col">
