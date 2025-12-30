@@ -20,11 +20,11 @@ interface GlobalAlbumDetailProps {
     coverArt?: string;
     type?: string;
     genres?: string[];
-    source: 'discogs' | 'musicbrainz';
+    source: 'discogs' | 'musicbrainz' | 'youtube' | 'billboard';
     releaseId?: string;
   };
   onClose: () => void;
-  onAddToPlaylist?: (track: any) => void;
+  onAddToPlaylist?: (track: { id: string; title: string; artist_name: string; youtubeId?: string; thumbnail?: string; album_title?: string }) => void;
   onOpenArtist?: (artistName: string) => void;
 }
 

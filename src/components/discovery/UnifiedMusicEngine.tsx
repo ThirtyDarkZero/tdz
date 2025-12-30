@@ -5,16 +5,36 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { 
   Search, Play, Disc, User, Music, Loader2, Sparkles, 
-  Youtube, Database, Globe, Plus, ChevronRight, Shuffle,
-  TrendingUp, Clock, Heart
+  Youtube, Database, Globe, Plus, ChevronRight,
+  TrendingUp, Heart, BarChart3, Zap
 } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { GlobalArtistProfile } from "./GlobalArtistProfile";
 import { GlobalAlbumDetail } from "./GlobalAlbumDetail";
 import { AddToPlaylistDialog } from "./AddToPlaylistDialog";
+
+interface AcousticData {
+  bpm?: number;
+  key?: string;
+  mood?: string[];
+  danceability?: number;
+  energy?: number;
+  acousticness?: number;
+}
+
+interface ChartPosition {
+  chart: string;
+  rank: number;
+  peakPosition?: number;
+  weeksOnChart?: number;
+  isNew?: boolean;
+  lastPosition?: number;
+}
 
 interface UnifiedResult {
   id: string;
@@ -23,7 +43,7 @@ interface UnifiedResult {
   artist: string;
   year?: string;
   thumbnail?: string;
-  source: 'musicbrainz' | 'discogs' | 'youtube';
+  source: 'musicbrainz' | 'discogs' | 'youtube' | 'billboard';
   sourceId: string;
   youtubeId?: string;
   genres?: string[];
@@ -32,7 +52,9 @@ interface UnifiedResult {
   aiSummary?: string;
   relatedGenres?: string[];
   moodTags?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
+  acousticData?: AcousticData;
+  chartPosition?: ChartPosition;
 }
 
 interface UnifiedMusicEngineProps {
@@ -40,16 +62,32 @@ interface UnifiedMusicEngineProps {
 }
 
 export function UnifiedMusicEngine({ onPlayYouTube }: UnifiedMusicEngineProps) {
-  const { playTrack, addToQueue } = usePlayer();
+  const { addToQueue } = usePlayer();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<UnifiedResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchType, setSearchType] = useState<'all' | 'artist' | 'album' | 'track'>('all');
   const [aiEnrich, setAiEnrich] = useState(true);
+  const [includeCharts, setIncludeCharts] = useState(true);
+  const [includeAcoustic, setIncludeAcoustic] = useState(false);
   const [selectedArtist, setSelectedArtist] = useState<string | null>(null);
-  const [selectedAlbum, setSelectedAlbum] = useState<any | null>(null);
-  const [playlistTrack, setPlaylistTrack] = useState<any | null>(null);
-  const [sources, setSources] = useState({ musicbrainz: false, discogs: false, youtube: false });
+  const [selectedAlbum, setSelectedAlbum] = useState<{ 
+    id: string; 
+    title: string; 
+    artist: string; 
+    year?: string; 
+    coverArt?: string; 
+    genres?: string[]; 
+    source: 'discogs' | 'musicbrainz' | 'youtube' | 'billboard'; 
+  } | null>(null);
+  const [playlistTrack, setPlaylistTrack] = useState<{
+    id: string;
+    title: string;
+    artist_name: string;
+    youtubeId?: string;
+    thumbnail?: string;
+  } | null>(null);
+  const [sources, setSources] = useState({ musicbrainz: false, discogs: false, youtube: false, billboard: false });
 
   const handleSearch = useCallback(async () => {
     if (!query.trim()) return;
@@ -63,7 +101,9 @@ export function UnifiedMusicEngine({ onPlayYouTube }: UnifiedMusicEngineProps) {
           query: query.trim(), 
           type: searchType,
           limit: 30,
-          aiEnrich 
+          aiEnrich,
+          includeCharts,
+          includeAcoustic,
         }
       });
 
@@ -75,7 +115,8 @@ export function UnifiedMusicEngine({ onPlayYouTube }: UnifiedMusicEngineProps) {
       if (data.results?.length === 0) {
         toast.info('No results found');
       } else {
-        toast.success(`Found ${data.results.length} results from ${Object.values(data.sources).filter(Boolean).length} sources`);
+        const sourcesCount = Object.values(data.sources).filter(Boolean).length;
+        toast.success(`Found ${data.results.length} results from ${sourcesCount} sources`);
       }
     } catch (error) {
       console.error('Search error:', error);
@@ -83,7 +124,7 @@ export function UnifiedMusicEngine({ onPlayYouTube }: UnifiedMusicEngineProps) {
     } finally {
       setLoading(false);
     }
-  }, [query, searchType, aiEnrich]);
+  }, [query, searchType, aiEnrich, includeCharts, includeAcoustic]);
 
   const handlePlay = async (result: UnifiedResult) => {
     if (result.youtubeId) {
@@ -114,7 +155,12 @@ export function UnifiedMusicEngine({ onPlayYouTube }: UnifiedMusicEngineProps) {
         toast.error('Failed to find playable version');
       }
     } else if (result.type === 'album') {
-      // Open album detail
+      // Open album detail - only for compatible sources
+      const validSources = ['discogs', 'musicbrainz', 'youtube', 'billboard'] as const;
+      const source = validSources.includes(result.source as typeof validSources[number]) 
+        ? result.source as 'discogs' | 'musicbrainz' | 'youtube' | 'billboard'
+        : 'musicbrainz';
+      
       setSelectedAlbum({
         id: result.sourceId,
         title: result.title,
@@ -122,7 +168,7 @@ export function UnifiedMusicEngine({ onPlayYouTube }: UnifiedMusicEngineProps) {
         year: result.year,
         coverArt: result.thumbnail,
         genres: result.genres,
-        source: result.source,
+        source,
       });
     } else if (result.type === 'artist') {
       setSelectedArtist(result.artist);
@@ -144,6 +190,7 @@ export function UnifiedMusicEngine({ onPlayYouTube }: UnifiedMusicEngineProps) {
       case 'youtube': return <Youtube className="w-3 h-3" />;
       case 'discogs': return <Database className="w-3 h-3" />;
       case 'musicbrainz': return <Globe className="w-3 h-3" />;
+      case 'billboard': return <TrendingUp className="w-3 h-3" />;
       default: return <Music className="w-3 h-3" />;
     }
   };
@@ -198,7 +245,7 @@ export function UnifiedMusicEngine({ onPlayYouTube }: UnifiedMusicEngineProps) {
         </div>
         
         {/* Source status */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Badge 
             variant="outline" 
             className={`text-xs ${sources.youtube ? 'border-red-500/50 text-red-400' : 'border-white/10 text-white/30'}`}
@@ -219,6 +266,13 @@ export function UnifiedMusicEngine({ onPlayYouTube }: UnifiedMusicEngineProps) {
           >
             <Globe className="w-3 h-3 mr-1" />
             MusicBrainz
+          </Badge>
+          <Badge 
+            variant="outline" 
+            className={`text-xs ${sources.billboard ? 'border-yellow-500/50 text-yellow-400' : 'border-white/10 text-white/30'}`}
+          >
+            <TrendingUp className="w-3 h-3 mr-1" />
+            Billboard
           </Badge>
         </div>
       </div>
