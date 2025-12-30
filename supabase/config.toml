@@ -122,3 +122,6 @@ verify_jwt = true
 
 [functions.unified-music-search]
 verify_jwt = false
+
+[functions.allmusic-artist]
+verify_jwt = false

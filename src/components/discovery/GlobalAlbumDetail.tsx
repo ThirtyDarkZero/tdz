@@ -20,7 +20,7 @@ interface GlobalAlbumDetailProps {
     coverArt?: string;
     type?: string;
     genres?: string[];
-    source: 'discogs' | 'musicbrainz' | 'youtube' | 'billboard';
+    source: 'discogs' | 'musicbrainz' | 'youtube' | 'billboard' | 'allmusic';
     releaseId?: string;
   };
   onClose: () => void;
