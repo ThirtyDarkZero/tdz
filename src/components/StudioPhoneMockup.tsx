@@ -28,8 +28,10 @@ import {
   Shuffle,
   Repeat,
   Mic,
+  Mic2,
   Sliders,
-  Headphones
+  Headphones,
+  MessageCircle
 } from "lucide-react";
 
 interface PhoneMockupProps {
@@ -840,9 +842,213 @@ export function StudioPhoneMockup({ title, color }: PhoneMockupProps) {
                 </button>
               ))}
             </div>
-...
+            {activeView === 0 ? (
+              <div className="space-y-1">
+                {["Summer Nights", "Electric Dreams", "Midnight Drive", "Neon Lights"].map((track, idx) => (
+                  <div key={idx} className={`flex items-center gap-2 p-1.5 rounded-lg ${idx === 0 ? 'bg-primary/20' : 'hover:bg-muted/50'}`}>
+                    <span className="text-[8px] text-muted-foreground w-4">{idx + 1}</span>
+                    <div className="w-8 h-8 rounded bg-gradient-to-br from-primary/30 to-accent/30" />
+                    <div className="flex-1">
+                      <p className="text-[9px] font-semibold">{track}</p>
+                      <p className="text-[7px] text-muted-foreground">Your Name</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2 text-center">
+                {["♪ Feel the rhythm in the night", "♪ Stars are shining so bright", "♪ Dancing under moonlight", "♪ Everything feels so right"].map((line, idx) => (
+                  <p key={idx} className={`text-[10px] transition-all ${idx === 1 ? 'text-primary font-bold scale-105' : 'text-muted-foreground'}`}>{line}</p>
+                ))}
+              </div>
+            )}
           </div>
         );
+      
+      // NEW: Discovery mockup for fan experience
+      case "Discovery":
+        return (
+          <div className="space-y-2">
+            {/* Search bar */}
+            <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-2 py-1.5">
+              <Search className="w-3 h-3 text-muted-foreground" />
+              <span className="text-[9px] text-muted-foreground">Search artists, tracks...</span>
+            </div>
+            
+            {/* Genre Pills */}
+            <div className="flex gap-1 overflow-x-auto pb-1">
+              {["Trending", "Hip-Hop", "Electronic", "R&B"].map((genre, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveView(idx)}
+                  className={`px-2 py-1 rounded-full text-[7px] font-medium whitespace-nowrap transition-all ${
+                    activeView === idx 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-muted/50 hover:bg-muted'
+                  }`}
+                >
+                  {genre}
+                </button>
+              ))}
+            </div>
+
+            {/* Featured Artists */}
+            <div className="glass-card p-2 rounded-lg">
+              <p className="text-[8px] font-semibold mb-1.5 text-muted-foreground">TRENDING ON TDZ</p>
+              <div className="grid grid-cols-3 gap-1.5">
+                {["Artist 1", "Artist 2", "Artist 3"].map((artist, idx) => (
+                  <button key={idx} className="text-center hover:scale-105 transition-transform">
+                    <div className="w-full aspect-square rounded-lg bg-gradient-to-br from-primary/30 to-accent/30 mb-1" />
+                    <p className="text-[7px] font-medium truncate">{artist}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Track List */}
+            <div className="space-y-1">
+              {[
+                { title: "New Release", plays: "45K", artist: "TDZ Artist" },
+                { title: "Viral Hit", plays: "128K", artist: "Rising Star" },
+                { title: "Album Drop", plays: "89K", artist: "Indie Voice" }
+              ].map((track, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setPlayingTrack(playingTrack === idx ? null : idx)}
+                  className={`w-full flex items-center gap-2 p-1.5 rounded-lg transition-all ${
+                    playingTrack === idx ? 'bg-primary/20' : 'hover:bg-muted/50'
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded bg-gradient-to-br from-accent/40 to-secondary/40 flex items-center justify-center">
+                    {playingTrack === idx ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-[9px] font-semibold">{track.title}</p>
+                    <p className="text-[7px] text-muted-foreground">{track.artist}</p>
+                  </div>
+                  <Badge className="text-[6px] px-1 py-0 bg-green-500/20 text-green-500">{track.plays}</Badge>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+
+      // NEW: Fan Engagement mockup
+      case "Fan Engagement":
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="w-4 h-4 text-primary" />
+              <div>
+                <h3 className="text-[10px] font-bold">Community Hub</h3>
+                <p className="text-[8px] text-muted-foreground">Your invested participants</p>
+              </div>
+            </div>
+
+            {/* Stats Row */}
+            <div className="grid grid-cols-3 gap-1.5">
+              {[
+                { label: "Followers", value: "2,847", icon: Users },
+                { label: "Messages", value: "156", icon: MessageCircle },
+                { label: "Engagement", value: "89%", icon: Heart }
+              ].map((stat, idx) => (
+                <div key={idx} className="glass-card p-2 rounded-lg text-center">
+                  <stat.icon className="w-3 h-3 mx-auto mb-1 text-primary" />
+                  <p className="text-xs font-black">{stat.value}</p>
+                  <p className="text-[6px] text-muted-foreground">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Recent Activity */}
+            <div className="glass-card p-2 rounded-lg">
+              <p className="text-[8px] font-semibold mb-1.5">Recent Activity</p>
+              <div className="space-y-1.5">
+                {[
+                  { action: "New follower", name: "Sarah J.", time: "2m ago" },
+                  { action: "Track saved", name: "Mike D.", time: "15m ago" },
+                  { action: "Comment", name: "Alex K.", time: "1h ago" }
+                ].map((activity, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-primary/20" />
+                    <div className="flex-1">
+                      <p className="text-[8px] font-medium">{activity.name}</p>
+                      <p className="text-[6px] text-muted-foreground">{activity.action}</p>
+                    </div>
+                    <span className="text-[6px] text-muted-foreground">{activity.time}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Action Button */}
+            <button className="w-full py-2 bg-primary/20 hover:bg-primary/30 rounded-lg text-[9px] font-semibold text-primary transition-colors">
+              + Create Campaign
+            </button>
+          </div>
+        );
+
+      // NEW: Artist Profile mockup
+      case "Artist Profile":
+        return (
+          <div className="space-y-2">
+            {/* Artist Header */}
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-primary/40 to-accent/40 mb-2 flex items-center justify-center">
+                <Mic2 className="w-8 h-8 text-primary/60" />
+              </div>
+              <h3 className="text-sm font-bold">Artist Name</h3>
+              <p className="text-[9px] text-muted-foreground">Hip-Hop • 89K monthly listeners</p>
+              <div className="flex justify-center gap-2 mt-2">
+                <button 
+                  onClick={() => setIsLiked(!isLiked)}
+                  className={`px-3 py-1 rounded-full text-[8px] font-semibold transition-all ${
+                    isLiked ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
+                  }`}
+                >
+                  {isLiked ? '✓ Following' : 'Follow'}
+                </button>
+                <button className="px-3 py-1 rounded-full bg-muted hover:bg-muted/80 text-[8px] font-semibold">
+                  Share
+                </button>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-1 text-center">
+              {[
+                { label: "Tracks", value: "24" },
+                { label: "Albums", value: "3" },
+                { label: "Earnings", value: "$12.7K" }
+              ].map((stat, idx) => (
+                <div key={idx} className="p-1.5">
+                  <p className="text-sm font-black text-primary">{stat.value}</p>
+                  <p className="text-[7px] text-muted-foreground">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Popular Tracks */}
+            <div className="glass-card p-2 rounded-lg">
+              <p className="text-[8px] font-semibold mb-1.5 text-muted-foreground">POPULAR</p>
+              <div className="space-y-1">
+                {["Hit Single", "Fan Favorite", "New Release"].map((track, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setPlayingTrack(idx)}
+                    className={`w-full flex items-center gap-2 p-1 rounded ${playingTrack === idx ? 'bg-primary/20' : 'hover:bg-muted/50'}`}
+                  >
+                    <span className="text-[8px] text-muted-foreground w-3">{idx + 1}</span>
+                    <div className="w-6 h-6 rounded bg-gradient-to-br from-primary/30 to-accent/30" />
+                    <p className="text-[8px] font-medium flex-1 text-left">{track}</p>
+                    <span className="text-[7px] text-green-500">$1.00</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -924,13 +1130,13 @@ export function StudioPhoneMockups() {
         <div className="text-center mb-12">
           <Badge className="bg-accent/10 text-accent border-accent/20 px-4 py-2 mb-4">
             <LayoutDashboard className="w-4 h-4 mr-2 inline" />
-            Live Platform Preview
+            Artist Studio Preview
           </Badge>
           <h2 className="text-4xl md:text-5xl font-display font-black mb-4">
-            Experience the Studio
+            Your Creative Command Center
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Interactive demos of our revolutionary platform. Click and explore the features that are transforming the music industry.
+            Upload, distribute, and monetize your music. Track $1/stream earnings in real-time. All from one powerful dashboard.
           </p>
         </div>
 
@@ -941,9 +1147,9 @@ export function StudioPhoneMockups() {
               color="from-primary/50 to-accent/50"
             />
             <div className="text-center space-y-2 px-4">
-              <h3 className="font-bold text-lg">Real-Time Analytics</h3>
+              <h3 className="font-bold text-lg">$1/Stream Earnings</h3>
               <p className="text-sm text-muted-foreground">
-                Track streams, revenue, and fan engagement across 150+ platforms with AI-powered insights
+                Watch your earnings grow in real-time. 333x more than Spotify. Every stream = $1.00 in your pocket.
               </p>
             </div>
           </div>
@@ -954,22 +1160,22 @@ export function StudioPhoneMockups() {
               color="from-accent/50 to-secondary/50"
             />
             <div className="text-center space-y-2 px-4">
-              <h3 className="font-bold text-lg">Smart Music Library</h3>
+              <h3 className="font-bold text-lg">Release Manager</h3>
               <p className="text-sm text-muted-foreground">
-                Manage your entire catalog with AI-powered organization and instant distribution capabilities
+                Upload tracks, set download prices, add motion covers. Your music, your rules, 100% revenue.
               </p>
             </div>
           </div>
 
           <div className="space-y-4">
             <StudioPhoneMockup 
-              title="Canvas Manager" 
+              title="Fan Engagement" 
               color="from-secondary/50 to-primary/50"
             />
             <div className="text-center space-y-2 px-4">
-              <h3 className="font-bold text-lg">Visual Canvas</h3>
+              <h3 className="font-bold text-lg">Community Hub</h3>
               <p className="text-sm text-muted-foreground">
-                Add looping visual art to tracks like Spotify Canvas. Professional motion covers in seconds
+                Import contacts, send broadcasts, run campaigns. Connect directly with your invested participants.
               </p>
             </div>
           </div>
@@ -978,7 +1184,7 @@ export function StudioPhoneMockups() {
         {/* Call to action */}
         <div className="mt-16 text-center">
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/10 px-6 py-3 rounded-full border border-primary/20">
-            <span className="text-sm font-semibold">Try it yourself</span>
+            <span className="text-sm font-semibold">Start earning $1/stream</span>
             <ChevronRight className="w-4 h-4 text-primary" />
           </div>
         </div>
@@ -998,52 +1204,52 @@ export function MusicPlayerPhoneMockups() {
         <div className="text-center mb-12">
           <Badge className="bg-primary/10 text-primary border-primary/20 px-4 py-2 mb-4">
             <Headphones className="w-4 h-4 mr-2 inline" />
-            TDZ Distribution
+            Fan Discovery Experience
           </Badge>
           <h2 className="text-4xl md:text-5xl font-display font-black mb-4">
-            Immersive Music Experience
+            Discover & Support Artists
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Next-generation music player with advanced features. Experience studio-quality sound with interactive visualizations and smart controls.
+            Stream music that pays artists $1 per play. Access the global catalog, create playlists, and directly support the artists you love.
           </p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
           <div className="space-y-4">
             <StudioPhoneMockup 
-              title="Now Playing" 
+              title="Discovery" 
               color="from-primary/50 to-accent/50"
             />
             <div className="text-center space-y-2 px-4">
-              <h3 className="font-bold text-lg">Immersive Now Playing</h3>
+              <h3 className="font-bold text-lg">AI Music Engine</h3>
               <p className="text-sm text-muted-foreground">
-                Experience your music with motion covers, advanced playback controls, and real-time interactions
+                Discover music from TDZ artists plus the global catalog. AI-powered recommendations and curated playlists.
               </p>
             </div>
           </div>
 
           <div className="space-y-4">
             <StudioPhoneMockup 
-              title="Audio Visualizer" 
+              title="Now Playing" 
               color="from-accent/50 to-secondary/50"
             />
             <div className="text-center space-y-2 px-4">
-              <h3 className="font-bold text-lg">Live Audio Visualizer</h3>
+              <h3 className="font-bold text-lg">Premium Player</h3>
               <p className="text-sm text-muted-foreground">
-                Real-time waveform visualization, custom equalizer presets, and dynamic playback speed control
+                Hi-fi audio, 3D visualizers, motion covers, and lyrics. Every stream directly supports the artist.
               </p>
             </div>
           </div>
 
           <div className="space-y-4">
             <StudioPhoneMockup 
-              title="Queue & Lyrics" 
+              title="Artist Profile" 
               color="from-secondary/50 to-primary/50"
             />
             <div className="text-center space-y-2 px-4">
-              <h3 className="font-bold text-lg">Smart Queue & Lyrics</h3>
+              <h3 className="font-bold text-lg">Artist Profiles</h3>
               <p className="text-sm text-muted-foreground">
-                Manage your queue effortlessly and follow along with time-synced, interactive lyrics
+                Follow artists, buy downloads, browse discographies. Direct connection with no middlemen.
               </p>
             </div>
           </div>
@@ -1052,8 +1258,73 @@ export function MusicPlayerPhoneMockups() {
         {/* Call to action */}
         <div className="mt-16 text-center">
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/10 px-6 py-3 rounded-full border border-primary/20">
-            <span className="text-sm font-semibold">Start listening now</span>
+            <span className="text-sm font-semibold">Start discovering music</span>
             <ChevronRight className="w-4 h-4 text-primary" />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// NEW: Discovery/Fan Experience Mockups
+export function DiscoveryPhoneMockups() {
+  return (
+    <section className="py-16 px-4 md:px-6 bg-gradient-to-b from-background via-secondary/5 to-background relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--secondary)/0.1),transparent_50%)]" />
+      
+      <div className="max-w-7xl mx-auto relative z-10">
+        <div className="text-center mb-12">
+          <Badge className="bg-secondary/10 text-secondary border-secondary/20 px-4 py-2 mb-4">
+            <Globe className="w-4 h-4 mr-2 inline" />
+            Global Music Library
+          </Badge>
+          <h2 className="text-4xl md:text-5xl font-display font-black mb-4">
+            Every Artist. One Platform.
+          </h2>
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            Access TDZ originals plus millions of songs from the global catalog. AI-powered discovery finds your next favorite artist.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
+          <div className="space-y-4">
+            <StudioPhoneMockup 
+              title="Discovery" 
+              color="from-secondary/50 to-primary/50"
+            />
+            <div className="text-center space-y-2 px-4">
+              <h3 className="font-bold text-lg">Unified Discovery</h3>
+              <p className="text-sm text-muted-foreground">
+                Browse trending, genre playlists, and AI recommendations. TDZ + global catalog in one seamless experience.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <StudioPhoneMockup 
+              title="Audio Visualizer" 
+              color="from-accent/50 to-primary/50"
+            />
+            <div className="text-center space-y-2 px-4">
+              <h3 className="font-bold text-lg">3D Visualizers</h3>
+              <p className="text-sm text-muted-foreground">
+                Five stunning visualizer modes: Aurora, Waves, Sphere, Terrain, Pulse. Premium listening experience.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <StudioPhoneMockup 
+              title="Queue & Lyrics" 
+              color="from-primary/50 to-secondary/50"
+            />
+            <div className="text-center space-y-2 px-4">
+              <h3 className="font-bold text-lg">Smart Playlists</h3>
+              <p className="text-sm text-muted-foreground">
+                Create playlists, save liked songs, manage queue. Your personal music library synced everywhere.
+              </p>
+            </div>
           </div>
         </div>
       </div>

@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MotionCover } from "@/components/MotionCover";
 import { Hero3D } from "@/components/Hero3D";
 import { EnhancedCard } from "@/components/EnhancedCard";
-import { StudioPhoneMockups, MusicPlayerPhoneMockups } from "@/components/StudioPhoneMockup";
+import { StudioPhoneMockups, MusicPlayerPhoneMockups, DiscoveryPhoneMockups } from "@/components/StudioPhoneMockup";
 import { MerchStore } from "@/components/MerchStore";
 import { ScrollRevealText } from "@/components/ScrollRevealText";
 import { HeroScrollText } from "@/components/HeroScrollText";
@@ -844,6 +844,8 @@ export default function Landing() {
           )}
 
           <MusicPlayerPhoneMockups />
+          
+          <DiscoveryPhoneMockups />
         </div>
       </section>
 
