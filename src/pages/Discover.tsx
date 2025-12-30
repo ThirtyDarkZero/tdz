@@ -15,6 +15,7 @@ import { usePlayer } from "@/contexts/PlayerContext";
 import { YouTubeVideo } from "@/hooks/useYouTubePlayer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { UnifiedLibrary } from "@/components/discovery/UnifiedLibrary";
+import { LikedSongsPlaylist } from "@/components/discovery/LikedSongsPlaylist";
 
 // New minimal components
 import { PersistentLayout } from "@/components/discovery/PersistentLayout";
@@ -348,6 +349,13 @@ export default function Discover() {
           <div className="px-4 sm:px-6 lg:px-8 py-6">
             <h1 className="text-3xl font-bold text-white mb-6">Merch Store</h1>
             <MerchStore variant="full" />
+          </div>
+        );
+
+      case 'liked':
+        return (
+          <div className="px-4 sm:px-6 lg:px-8 py-6">
+            <LikedSongsPlaylist />
           </div>
         );
 

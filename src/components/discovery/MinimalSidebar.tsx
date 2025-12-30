@@ -91,12 +91,8 @@ export function MinimalSidebar({ open, onClose, activeTab, onTabChange }: Minima
                   <button
                     key={item.id}
                     onClick={() => {
-                      if (item.id === 'liked') {
-                        navigate('/profile');
-                        onClose();
-                      } else {
-                        onTabChange(item.id);
-                      }
+                      onTabChange(item.id);
+                      onClose();
                     }}
                     className={`
                       w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium

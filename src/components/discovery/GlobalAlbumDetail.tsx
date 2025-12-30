@@ -60,23 +60,23 @@ export function GlobalAlbumDetail({
     setLoading(true);
     
     try {
-      // Search for official YouTube Music content using the officialOnly flag
-      const { data: officialData } = await supabase.functions.invoke('youtube-search', {
+      let allTracks: AlbumTrack[] = [];
+      let albumThumbnail: string | undefined;
+
+      // Strategy 1: Try to find the official album playlist on YouTube Music
+      const { data: albumPlaylistData } = await supabase.functions.invoke('youtube-search', {
         body: { 
-          query: `${album.artist} ${album.title}`,
-          maxResults: 20,
+          query: `${album.artist} ${album.title} album full`,
+          maxResults: 25,
           officialOnly: true
         }
       });
 
-      let allTracks: AlbumTrack[] = [];
-      let albumThumbnail: string | undefined;
-
-      if (officialData?.results?.length > 0) {
+      if (albumPlaylistData?.results?.length > 0) {
         const artistNameLower = album.artist.toLowerCase();
         
-        // Filter and prioritize official audio from topic channels
-        const relevantTracks = officialData.results.filter((video: any) => {
+        // Filter for official content from the artist
+        const relevantTracks = albumPlaylistData.results.filter((video: any) => {
           const channelLower = (video.channel || '').toLowerCase();
           const titleLower = video.title.toLowerCase();
           
@@ -84,13 +84,15 @@ export function GlobalAlbumDetail({
           const isFromArtist = channelLower.includes(artistNameLower) || 
                                video.isOfficialAudio ||
                                video.isOfficialMusicVideo ||
-                               channelLower.includes('topic');
+                               channelLower.includes('topic') ||
+                               channelLower.includes('vevo');
           
-          // Exclude covers, remixes, karaoke
+          // Exclude covers, remixes, karaoke, reactions
           const isOriginal = !titleLower.includes('cover') && 
                             !titleLower.includes('remix') &&
                             !titleLower.includes('karaoke') &&
-                            !titleLower.includes('reaction');
+                            !titleLower.includes('reaction') &&
+                            !titleLower.includes('live');
           
           return isFromArtist && isOriginal;
         });
@@ -107,51 +109,65 @@ export function GlobalAlbumDetail({
           description: video.description,
         }));
         
-        // Get best thumbnail from official content
         const officialTrack = relevantTracks.find((t: any) => t.isOfficialAudio);
         albumThumbnail = officialTrack?.thumbnail || relevantTracks[0]?.thumbnail;
       }
 
-      // Fallback: try artist topic channel search
-      if (allTracks.length < 3) {
-        const { data: topicData } = await supabase.functions.invoke('youtube-search', {
+      // Strategy 2: Search for individual tracks from the album
+      if (allTracks.length < 5) {
+        const { data: trackData } = await supabase.functions.invoke('youtube-search', {
           body: { 
-            query: `${album.artist} - Topic ${album.title}`,
-            maxResults: 15,
+            query: `${album.artist} - Topic`,
+            maxResults: 30,
             officialOnly: true
           }
         });
         
-        if (topicData?.results?.length > allTracks.length) {
-          allTracks = topicData.results.map((video: any, idx: number) => ({
-            id: `yt-${video.id}`,
-            title: cleanTrackTitle(video.title, album.artist, album.title),
-            position: idx + 1,
-            duration: video.duration,
-            youtubeId: video.id,
-            thumbnail: video.thumbnail,
-            isOfficialAudio: video.isOfficialAudio,
-            viewCount: video.viewCount,
-            description: video.description,
-          }));
-          
-          if (!albumThumbnail && topicData.results[0]?.thumbnail) {
-            albumThumbnail = topicData.results[0].thumbnail;
+        if (trackData?.results?.length > 0) {
+          // Filter to tracks likely from this album based on timing/title
+          const topicTracks = trackData.results.filter((video: any) => {
+            const channelLower = (video.channel || '').toLowerCase();
+            return channelLower.includes('topic') || video.isOfficialAudio;
+          });
+
+          if (topicTracks.length > allTracks.length) {
+            allTracks = topicTracks.slice(0, 20).map((video: any, idx: number) => ({
+              id: `yt-${video.id}`,
+              title: cleanTrackTitle(video.title, album.artist, album.title),
+              position: idx + 1,
+              duration: video.duration,
+              youtubeId: video.id,
+              thumbnail: video.thumbnail,
+              isOfficialAudio: video.isOfficialAudio || true,
+              viewCount: video.viewCount,
+              description: video.description,
+            }));
+            
+            if (!albumThumbnail && topicTracks[0]?.thumbnail) {
+              albumThumbnail = topicTracks[0].thumbnail;
+            }
           }
         }
       }
 
-      // Last resort: broader search without officialOnly
+      // Strategy 3: Broader search as fallback
       if (allTracks.length < 3) {
         const { data: broadData } = await supabase.functions.invoke('youtube-search', {
           body: { 
-            query: `${album.artist} ${album.title} official`,
-            maxResults: 15
+            query: `${album.artist} ${album.title} official audio`,
+            maxResults: 20
           }
         });
         
         if (broadData?.results) {
-          allTracks = broadData.results.map((video: any, idx: number) => ({
+          const filteredResults = broadData.results.filter((video: any) => {
+            const titleLower = video.title.toLowerCase();
+            return !titleLower.includes('cover') && 
+                   !titleLower.includes('remix') &&
+                   !titleLower.includes('karaoke');
+          });
+
+          allTracks = filteredResults.map((video: any, idx: number) => ({
             id: `yt-${video.id}`,
             title: cleanTrackTitle(video.title, album.artist, album.title),
             position: idx + 1,
@@ -162,8 +178,8 @@ export function GlobalAlbumDetail({
             viewCount: video.viewCount,
           }));
           
-          if (!albumThumbnail && broadData.results[0]?.thumbnail) {
-            albumThumbnail = broadData.results[0].thumbnail;
+          if (!albumThumbnail && filteredResults[0]?.thumbnail) {
+            albumThumbnail = filteredResults[0].thumbnail;
           }
         }
       }

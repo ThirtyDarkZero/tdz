@@ -1321,6 +1321,42 @@ export type Database = {
           },
         ]
       }
+      liked_youtube_tracks: {
+        Row: {
+          artist_name: string
+          created_at: string
+          id: string
+          source: string | null
+          thumbnail: string | null
+          title: string
+          track_id: string
+          user_id: string
+          youtube_id: string | null
+        }
+        Insert: {
+          artist_name: string
+          created_at?: string
+          id?: string
+          source?: string | null
+          thumbnail?: string | null
+          title: string
+          track_id: string
+          user_id: string
+          youtube_id?: string | null
+        }
+        Update: {
+          artist_name?: string
+          created_at?: string
+          id?: string
+          source?: string | null
+          thumbnail?: string | null
+          title?: string
+          track_id?: string
+          user_id?: string
+          youtube_id?: string | null
+        }
+        Relationships: []
+      }
       listener_demographics: {
         Row: {
           artist_id: string
@@ -3111,6 +3147,39 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      virtual_tracks: {
+        Row: {
+          artist_name: string
+          created_at: string
+          duration: number | null
+          id: string
+          source: string | null
+          thumbnail: string | null
+          title: string
+          youtube_id: string | null
+        }
+        Insert: {
+          artist_name: string
+          created_at?: string
+          duration?: number | null
+          id: string
+          source?: string | null
+          thumbnail?: string | null
+          title: string
+          youtube_id?: string | null
+        }
+        Update: {
+          artist_name?: string
+          created_at?: string
+          duration?: number | null
+          id?: string
+          source?: string | null
+          thumbnail?: string | null
+          title?: string
+          youtube_id?: string | null
         }
         Relationships: []
       }
