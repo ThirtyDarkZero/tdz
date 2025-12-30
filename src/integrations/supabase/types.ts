@@ -49,59 +49,98 @@ export type Database = {
       }
       albums: {
         Row: {
+          apple_motion_art_1x1: string | null
+          apple_motion_art_3x4: string | null
           artist_name: string
+          c_line: string | null
+          copyright_owner: string | null
+          copyright_year: number | null
           cover_art_path: string | null
           created_at: string
           description: string | null
+          explicit: boolean | null
           genre: string | null
           id: string
           is_published: boolean | null
+          label: string | null
+          language: string | null
+          metadata_complete: boolean | null
           motion_cover_bucket: string | null
           motion_cover_path: string | null
+          original_release_date: string | null
+          p_line: string | null
           play_count: number | null
+          preorder_date: string | null
           release_date: string | null
           scheduled_release_date: string | null
           title: string
           total_duration: number | null
           total_tracks: number | null
+          upc: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          apple_motion_art_1x1?: string | null
+          apple_motion_art_3x4?: string | null
           artist_name: string
+          c_line?: string | null
+          copyright_owner?: string | null
+          copyright_year?: number | null
           cover_art_path?: string | null
           created_at?: string
           description?: string | null
+          explicit?: boolean | null
           genre?: string | null
           id?: string
           is_published?: boolean | null
+          label?: string | null
+          language?: string | null
+          metadata_complete?: boolean | null
           motion_cover_bucket?: string | null
           motion_cover_path?: string | null
+          original_release_date?: string | null
+          p_line?: string | null
           play_count?: number | null
+          preorder_date?: string | null
           release_date?: string | null
           scheduled_release_date?: string | null
           title: string
           total_duration?: number | null
           total_tracks?: number | null
+          upc?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          apple_motion_art_1x1?: string | null
+          apple_motion_art_3x4?: string | null
           artist_name?: string
+          c_line?: string | null
+          copyright_owner?: string | null
+          copyright_year?: number | null
           cover_art_path?: string | null
           created_at?: string
           description?: string | null
+          explicit?: boolean | null
           genre?: string | null
           id?: string
           is_published?: boolean | null
+          label?: string | null
+          language?: string | null
+          metadata_complete?: boolean | null
           motion_cover_bucket?: string | null
           motion_cover_path?: string | null
+          original_release_date?: string | null
+          p_line?: string | null
           play_count?: number | null
+          preorder_date?: string | null
           release_date?: string | null
           scheduled_release_date?: string | null
           title?: string
           total_duration?: number | null
           total_tracks?: number | null
+          upc?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -2594,25 +2633,43 @@ export type Database = {
           album_cover_bucket: string | null
           album_cover_path: string | null
           album_id: string | null
+          apple_motion_art_1x1: string | null
+          apple_motion_art_3x4: string | null
           artist_name: string
           audio_quality: string | null
           bpm: number | null
+          c_line: string | null
+          copyright_owner: string | null
+          copyright_year: number | null
           created_at: string
+          credits: Json | null
           download_price: number | null
           duration: number
+          explicit: boolean | null
           file_path: string
           genre: string | null
           id: string
           is_published: boolean | null
+          isrc: string | null
           key: string | null
+          label: string | null
+          language: string | null
           like_count: number | null
+          metadata_complete: boolean | null
           mood: string | null
           motion_cover_bucket: string | null
           motion_cover_path: string | null
+          original_release_date: string | null
+          p_line: string | null
           play_count: number | null
+          preorder_date: string | null
+          publishing_info: Json | null
           release_date: string | null
+          release_type: string | null
+          release_version: string | null
           title: string
           track_number: number | null
+          upc: string | null
           updated_at: string
           user_id: string
           waveform_data: Json | null
@@ -2622,25 +2679,43 @@ export type Database = {
           album_cover_bucket?: string | null
           album_cover_path?: string | null
           album_id?: string | null
+          apple_motion_art_1x1?: string | null
+          apple_motion_art_3x4?: string | null
           artist_name: string
           audio_quality?: string | null
           bpm?: number | null
+          c_line?: string | null
+          copyright_owner?: string | null
+          copyright_year?: number | null
           created_at?: string
+          credits?: Json | null
           download_price?: number | null
           duration: number
+          explicit?: boolean | null
           file_path: string
           genre?: string | null
           id?: string
           is_published?: boolean | null
+          isrc?: string | null
           key?: string | null
+          label?: string | null
+          language?: string | null
           like_count?: number | null
+          metadata_complete?: boolean | null
           mood?: string | null
           motion_cover_bucket?: string | null
           motion_cover_path?: string | null
+          original_release_date?: string | null
+          p_line?: string | null
           play_count?: number | null
+          preorder_date?: string | null
+          publishing_info?: Json | null
           release_date?: string | null
+          release_type?: string | null
+          release_version?: string | null
           title: string
           track_number?: number | null
+          upc?: string | null
           updated_at?: string
           user_id: string
           waveform_data?: Json | null
@@ -2650,25 +2725,43 @@ export type Database = {
           album_cover_bucket?: string | null
           album_cover_path?: string | null
           album_id?: string | null
+          apple_motion_art_1x1?: string | null
+          apple_motion_art_3x4?: string | null
           artist_name?: string
           audio_quality?: string | null
           bpm?: number | null
+          c_line?: string | null
+          copyright_owner?: string | null
+          copyright_year?: number | null
           created_at?: string
+          credits?: Json | null
           download_price?: number | null
           duration?: number
+          explicit?: boolean | null
           file_path?: string
           genre?: string | null
           id?: string
           is_published?: boolean | null
+          isrc?: string | null
           key?: string | null
+          label?: string | null
+          language?: string | null
           like_count?: number | null
+          metadata_complete?: boolean | null
           mood?: string | null
           motion_cover_bucket?: string | null
           motion_cover_path?: string | null
+          original_release_date?: string | null
+          p_line?: string | null
           play_count?: number | null
+          preorder_date?: string | null
+          publishing_info?: Json | null
           release_date?: string | null
+          release_type?: string | null
+          release_version?: string | null
           title?: string
           track_number?: number | null
+          upc?: string | null
           updated_at?: string
           user_id?: string
           waveform_data?: Json | null
@@ -3109,6 +3202,8 @@ export type Database = {
             }
             Returns: number
           }
+      generate_isrc: { Args: never; Returns: string }
+      generate_upc: { Args: never; Returns: string }
       get_user_plan: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["subscription_plan"]
