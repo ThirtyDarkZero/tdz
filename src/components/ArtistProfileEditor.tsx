@@ -134,42 +134,77 @@ export const ArtistProfileEditor = () => {
     return publicUrl;
   };
 
-  // Fetch external discography from YouTube Music / AllMusic
+  // Fetch external discography from YouTube Music channel URL or artist name
   const fetchExternalDiscography = async () => {
-    if (!artistName) {
-      toast.error("Please enter your artist name first");
-      return;
-    }
+    const youtubeUrl = socialLinks.youtube_music?.trim();
     
     setLoadingDiscography(true);
     try {
-      const { data, error } = await supabase.functions.invoke('allmusic-artist', {
+      // First try to fetch from YouTube Music channel URL if provided
+      if (youtubeUrl && youtubeUrl.includes('youtube.com')) {
+        console.log('Fetching from YouTube Music URL:', youtubeUrl);
+        
+        const { data: ytData, error: ytError } = await supabase.functions.invoke('youtube-search', {
+          body: { 
+            type: 'channel',
+            channelUrl: youtubeUrl,
+            maxResults: 50
+          }
+        });
+        
+        if (ytError) {
+          console.error('YouTube channel fetch error:', ytError);
+        } else if (ytData?.results?.length > 0) {
+          setExternalDiscography(ytData.results);
+          setDiscographyLinked(true);
+          toast.success(`Found ${ytData.results.length} tracks from ${ytData.channelInfo?.title || 'YouTube Music'}!`);
+          return;
+        } else if (ytData?.channelInfo) {
+          // Channel found but no videos
+          toast.info(`Channel "${ytData.channelInfo.title}" found but no public videos available.`);
+        } else if (ytData?.error === 'Channel not found') {
+          toast.error("Could not find YouTube channel. Please check the URL format.");
+        }
+      }
+      
+      // Fallback: Search by artist name if no URL or URL failed
+      if (!artistName) {
+        toast.error("Please enter your artist name or YouTube Music channel URL");
+        return;
+      }
+      
+      // Try AllMusic first for professional catalog
+      const { data: amData, error: amError } = await supabase.functions.invoke('allmusic-artist', {
         body: { artistName, includeDiscography: true }
       });
       
-      if (error) throw error;
-      
-      if (data?.artist?.discography?.length > 0) {
-        setExternalDiscography(data.artist.discography);
+      if (!amError && amData?.artist?.discography?.length > 0) {
+        setExternalDiscography(amData.artist.discography);
         setDiscographyLinked(true);
-        toast.success(`Found ${data.artist.discography.length} albums/releases!`);
-      } else {
-        // Try YouTube Music as fallback
-        const { data: ytData } = await supabase.functions.invoke('youtube-search', {
-          body: { query: `${artistName} - Topic`, maxResults: 10, type: 'video' }
-        });
-        
-        if (ytData?.results?.length > 0) {
-          setExternalDiscography(ytData.results.slice(0, 10));
-          setDiscographyLinked(true);
-          toast.success(`Found ${ytData.results.length} tracks from YouTube Music!`);
-        } else {
-          toast.info("No external discography found. Your music will still appear on your profile.");
+        toast.success(`Found ${amData.artist.discography.length} albums/releases from AllMusic!`);
+        return;
+      }
+      
+      // Final fallback: YouTube search with artist name
+      const { data: ytSearchData } = await supabase.functions.invoke('youtube-search', {
+        body: { 
+          query: `${artistName} - Topic`,
+          maxResults: 20,
+          type: 'search',
+          officialOnly: true
         }
+      });
+      
+      if (ytSearchData?.results?.length > 0) {
+        setExternalDiscography(ytSearchData.results);
+        setDiscographyLinked(true);
+        toast.success(`Found ${ytSearchData.results.length} tracks for "${artistName}"!`);
+      } else {
+        toast.info("No external discography found. Your TDZ music will still appear on your profile.");
       }
     } catch (error: any) {
       console.error("Error fetching discography:", error);
-      toast.error("Failed to fetch external discography");
+      toast.error("Failed to fetch external discography. Please try again.");
     } finally {
       setLoadingDiscography(false);
     }

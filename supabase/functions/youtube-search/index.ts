@@ -28,10 +28,141 @@ serve(async (req) => {
   }
 
   try {
-    const { query, type = 'search', videoId, maxResults = 20, pageToken, officialOnly = false } = await req.json();
+    const { query, type = 'search', videoId, channelId, channelUrl, maxResults = 20, pageToken, officialOnly = false } = await req.json();
 
     if (!YOUTUBE_API_KEY) {
       throw new Error('YouTube API key not configured');
+    }
+
+    // Handle channel URL parsing - extract channel ID from various formats
+    let resolvedChannelId = channelId;
+    if (channelUrl && !resolvedChannelId) {
+      // Parse different YouTube Music URL formats:
+      // https://music.youtube.com/channel/UCROfm3osAKDZXB9KccNMBsA?si=...
+      // https://www.youtube.com/channel/UCROfm3osAKDZXB9KccNMBsA
+      // https://youtube.com/c/ChannelName
+      // https://youtube.com/@handle
+      const urlPatterns = [
+        /youtube\.com\/channel\/([a-zA-Z0-9_-]+)/,
+        /music\.youtube\.com\/channel\/([a-zA-Z0-9_-]+)/,
+      ];
+      
+      for (const pattern of urlPatterns) {
+        const match = channelUrl.match(pattern);
+        if (match) {
+          resolvedChannelId = match[1];
+          console.log(`Extracted channel ID: ${resolvedChannelId} from URL: ${channelUrl}`);
+          break;
+        }
+      }
+    }
+
+    // Handle channel video fetching
+    if (type === 'channel' && resolvedChannelId) {
+      console.log(`Fetching videos for channel: ${resolvedChannelId}`);
+      
+      // First, get channel details to get the uploads playlist
+      const channelUrl = new URL('https://www.googleapis.com/youtube/v3/channels');
+      channelUrl.searchParams.set('part', 'snippet,contentDetails');
+      channelUrl.searchParams.set('id', resolvedChannelId);
+      channelUrl.searchParams.set('key', YOUTUBE_API_KEY);
+      
+      const channelResponse = await fetch(channelUrl.toString());
+      if (!channelResponse.ok) {
+        console.error('Channel fetch failed:', await channelResponse.text());
+        throw new Error('Failed to fetch channel details');
+      }
+      
+      const channelData = await channelResponse.json();
+      const channel = channelData.items?.[0];
+      
+      if (!channel) {
+        console.log('No channel found for ID:', resolvedChannelId);
+        return new Response(JSON.stringify({ 
+          results: [], 
+          error: 'Channel not found',
+          channelId: resolvedChannelId 
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      const uploadsPlaylistId = channel.contentDetails?.relatedPlaylists?.uploads;
+      const channelTitle = channel.snippet?.title;
+      const channelThumbnail = channel.snippet?.thumbnails?.high?.url;
+      
+      console.log(`Channel: ${channelTitle}, Uploads Playlist: ${uploadsPlaylistId}`);
+      
+      if (uploadsPlaylistId) {
+        // Fetch videos from uploads playlist
+        const playlistUrl = new URL('https://www.googleapis.com/youtube/v3/playlistItems');
+        playlistUrl.searchParams.set('part', 'snippet,contentDetails');
+        playlistUrl.searchParams.set('playlistId', uploadsPlaylistId);
+        playlistUrl.searchParams.set('maxResults', String(Math.min(maxResults, 50)));
+        playlistUrl.searchParams.set('key', YOUTUBE_API_KEY);
+        if (pageToken) {
+          playlistUrl.searchParams.set('pageToken', pageToken);
+        }
+        
+        const playlistResponse = await fetch(playlistUrl.toString());
+        const playlistData = await playlistResponse.json();
+        
+        // Get video details for duration and view counts
+        const videoIds = playlistData.items?.map((item: any) => item.contentDetails.videoId).join(',');
+        let videoDetailsMap = new Map();
+        
+        if (videoIds) {
+          const detailsUrl = new URL('https://www.googleapis.com/youtube/v3/videos');
+          detailsUrl.searchParams.set('part', 'contentDetails,statistics');
+          detailsUrl.searchParams.set('id', videoIds);
+          detailsUrl.searchParams.set('key', YOUTUBE_API_KEY);
+          
+          const detailsResponse = await fetch(detailsUrl.toString());
+          const detailsData = await detailsResponse.json();
+          
+          detailsData.items?.forEach((item: any) => {
+            videoDetailsMap.set(item.id, {
+              duration: item.contentDetails?.duration,
+              viewCount: item.statistics?.viewCount,
+            });
+          });
+        }
+        
+        const results = playlistData.items?.map((item: any) => {
+          const videoId = item.contentDetails.videoId;
+          const details = videoDetailsMap.get(videoId) || {};
+          
+          return {
+            id: videoId,
+            title: item.snippet.title,
+            channel: channelTitle,
+            channelId: resolvedChannelId,
+            thumbnail: item.snippet.thumbnails?.high?.url || item.snippet.thumbnails?.default?.url,
+            duration: parseDuration(details.duration),
+            viewCount: formatViewCount(details.viewCount),
+            publishedAt: item.snippet.publishedAt,
+            isOfficialAudio: true, // From artist's channel
+            isOfficialMusicVideo: true,
+          };
+        }) || [];
+        
+        return new Response(JSON.stringify({
+          results,
+          channelInfo: {
+            id: resolvedChannelId,
+            title: channelTitle,
+            thumbnail: channelThumbnail,
+          },
+          nextPageToken: playlistData.nextPageToken,
+          totalResults: playlistData.pageInfo?.totalResults,
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      return new Response(JSON.stringify({ results: [], channelInfo: { id: resolvedChannelId, title: channelTitle } }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Different endpoints based on type
