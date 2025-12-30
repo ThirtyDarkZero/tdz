@@ -65,15 +65,18 @@ export function MinimalSidebar({ open, onClose, activeTab, onTabChange }: Minima
       />
       
       {/* Sidebar Panel */}
-      <div className="fixed top-0 left-0 bottom-0 w-72 bg-[#0a0a0a] border-r border-white/5 z-50 animate-slide-in-right">
+      <div 
+        className="fixed top-0 left-0 bottom-0 w-72 bg-[hsl(var(--card))] border-r border-border/10 z-50 animate-slide-in-right"
+        onMouseLeave={onClose}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-white/5">
-          <span className="font-bold text-lg text-white">Menu</span>
+        <div className="flex items-center justify-between p-4 border-b border-border/10">
+          <span className="font-bold text-lg text-foreground">Menu</span>
           <Button
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="text-white/70 hover:text-white hover:bg-white/5"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted/50"
           >
             <X className="w-5 h-5" />
           </Button>
@@ -83,7 +86,7 @@ export function MinimalSidebar({ open, onClose, activeTab, onTabChange }: Minima
         <div className="p-4 space-y-6">
           {NAV_SECTIONS.map((section) => (
             <div key={section.title}>
-              <p className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2 px-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 px-3">
                 {section.title}
               </p>
               <div className="space-y-1">
@@ -98,8 +101,8 @@ export function MinimalSidebar({ open, onClose, activeTab, onTabChange }: Minima
                       w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
                       transition-colors
                       ${activeTab === item.id 
-                        ? 'bg-cyan-500/10 text-cyan-400' 
-                        : 'text-white/70 hover:text-white hover:bg-white/5'
+                        ? 'bg-primary/10 text-primary' 
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                       }
                     `}
                   >
@@ -114,7 +117,7 @@ export function MinimalSidebar({ open, onClose, activeTab, onTabChange }: Minima
           {/* Artist Studio Link */}
           {isArtist && (
             <div>
-              <p className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2 px-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 px-3">
                 Creator
               </p>
               <button
@@ -122,7 +125,7 @@ export function MinimalSidebar({ open, onClose, activeTab, onTabChange }: Minima
                   navigate('/studio');
                   onClose();
                 }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 transition-colors"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
               >
                 <Mic2 className="w-5 h-5" />
                 Artist Studio
@@ -131,13 +134,13 @@ export function MinimalSidebar({ open, onClose, activeTab, onTabChange }: Minima
           )}
 
           {/* Bottom Links */}
-          <div className="pt-4 border-t border-white/5">
+          <div className="pt-4 border-t border-border/10">
             <button
               onClick={() => {
                 navigate('/');
                 onClose();
               }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/50 hover:text-white hover:bg-white/5 transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
             >
               <Home className="w-5 h-5" />
               Home
@@ -147,7 +150,7 @@ export function MinimalSidebar({ open, onClose, activeTab, onTabChange }: Minima
                 navigate('/profile');
                 onClose();
               }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/50 hover:text-white hover:bg-white/5 transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
             >
               <Settings className="w-5 h-5" />
               Settings
