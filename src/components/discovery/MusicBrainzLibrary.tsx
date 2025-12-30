@@ -7,9 +7,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { 
   Search, Play, Loader2, Music2, User, Disc3, 
-  Calendar, MapPin, Tag, ExternalLink, ChevronLeft
+  Calendar, MapPin, Tag, ExternalLink, ChevronLeft, ListPlus
 } from "lucide-react";
 import { useMusicBrainz, MBReleaseGroup, MBRelease, MBArtist } from "@/hooks/useMusicBrainz";
+import { GlobalArtistProfile } from "./GlobalArtistProfile";
+import { AddToPlaylistDialog } from "./AddToPlaylistDialog";
 
 interface MusicBrainzLibraryProps {
   onPlayYouTube: (videoId: string, title: string, artist: string, thumbnail: string) => void;
@@ -22,6 +24,8 @@ export function MusicBrainzLibrary({ onPlayYouTube }: MusicBrainzLibraryProps) {
   const [selectedRelease, setSelectedRelease] = useState<MBRelease | null>(null);
   const [selectedArtist, setSelectedArtist] = useState<MBArtist | null>(null);
   const [loadingTrack, setLoadingTrack] = useState<string | null>(null);
+  const [globalArtist, setGlobalArtist] = useState<{ name: string; id: string } | null>(null);
+  const [playlistTrack, setPlaylistTrack] = useState<any>(null);
 
   const {
     loading,
@@ -57,13 +61,9 @@ export function MusicBrainzLibrary({ onPlayYouTube }: MusicBrainzLibraryProps) {
     }
   };
 
-  // Handle artist click
+  // Handle artist click - open global artist profile
   const handleArtistClick = async (artist: MBArtist) => {
-    const artistData = await getArtist(artist.id);
-    if (artistData) {
-      setSelectedArtist(artistData);
-      setSelectedRelease(null);
-    }
+    setGlobalArtist({ name: artist.name, id: artist.id });
   };
 
   // Play track via YouTube
@@ -479,6 +479,24 @@ export function MusicBrainzLibrary({ onPlayYouTube }: MusicBrainzLibraryProps) {
       ) : (
         renderResults()
       )}
+
+      {/* Global Artist Profile */}
+      {globalArtist && (
+        <GlobalArtistProfile
+          artistName={globalArtist.name}
+          artistId={globalArtist.id}
+          source="musicbrainz"
+          onClose={() => setGlobalArtist(null)}
+          onAddToPlaylist={(track) => setPlaylistTrack(track)}
+        />
+      )}
+
+      {/* Add to Playlist Dialog */}
+      <AddToPlaylistDialog
+        open={!!playlistTrack}
+        onOpenChange={(open) => !open && setPlaylistTrack(null)}
+        track={playlistTrack}
+      />
     </div>
   );
 }
