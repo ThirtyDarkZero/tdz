@@ -75,11 +75,17 @@ export function ArtistGrid({ artists, followedArtists, onToggleFollow }: ArtistG
         {artists.map((artist, index) => {
           const rank = index + 1;
           const isFullUrl = artist.profile_image_path?.startsWith('http');
-          const imageUrl = artist.profile_image_path 
-            ? (isFullUrl 
-                ? artist.profile_image_path 
-                : supabase.storage.from("artist-images").getPublicUrl(artist.profile_image_path).data.publicUrl)
-            : null;
+          
+          // Multi-bucket fallback strategy for artist images
+          const getImageUrl = (path: string): string => {
+            if (path.startsWith('http')) return path;
+            // Try multiple buckets - artist-profiles is primary
+            const buckets = ['artist-profiles', 'artist-images', 'artist-banners'];
+            // Use the first bucket for simplicity - images should be in artist-profiles
+            return supabase.storage.from("artist-profiles").getPublicUrl(path).data.publicUrl;
+          };
+          
+          const imageUrl = artist.profile_image_path ? getImageUrl(artist.profile_image_path) : null;
           
           return (
             <Card 

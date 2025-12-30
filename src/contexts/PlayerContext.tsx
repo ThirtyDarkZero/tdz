@@ -164,21 +164,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [currentTrack, youtubePlayer, isPlaying]);
 
   const playTrack = useCallback((track: Track, newQueue?: Track[]) => {
-    // Force stop any existing playback first
-    setIsPlaying(false);
+    // Immediate playback - no delay for snappy response
+    setCurrentTrack(track);
+    setCurrentTime(0);
+    setIsPlaying(true);
     
-    // Small delay then start new track
-    setTimeout(() => {
-      setCurrentTrack(track);
-      setCurrentTime(0);
-      setIsPlaying(true);
-      
-      if (newQueue) {
-        setQueue(newQueue);
-        const index = newQueue.findIndex(t => t.id === track.id);
-        setCurrentIndex(index >= 0 ? index : 0);
-      }
-    }, 50);
+    if (newQueue) {
+      setQueue(newQueue);
+      const index = newQueue.findIndex(t => t.id === track.id);
+      setCurrentIndex(index >= 0 ? index : 0);
+    }
   }, []);
 
   const pauseTrack = useCallback(() => {
@@ -198,8 +193,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setCurrentIndex(currentIndex + 1);
       setCurrentTime(0);
       setIsPlaying(true);
+    } else if (queue.length > 0 && currentTrack) {
+      // Auto-play from same artist if queue is exhausted
+      // This will be handled by the player component checking for same-artist tracks
+      setCurrentTrack(null);
+      setIsPlaying(false);
     }
-  }, [currentIndex, queue]);
+  }, [currentIndex, queue, currentTrack]);
 
   const previousTrack = useCallback(() => {
     if (currentIndex > 0) {

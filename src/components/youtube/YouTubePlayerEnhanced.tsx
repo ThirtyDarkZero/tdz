@@ -97,11 +97,21 @@ export function YouTubePlayerEnhanced({
     checkLiked();
   }, [track.id]);
   
-  // Force immediate playback state sync on mount
+  // Force immediate playback state sync on mount - CRITICAL for single-click playback
   useEffect(() => {
-    // Immediately set playing state - no delay
-    onPlayingChange(true);
-  }, [onPlayingChange]);
+    // Immediately set playing state with no delay
+    if (!isPlaying) {
+      onPlayingChange(true);
+    }
+    // Also try to play the video immediately if player is ready
+    if (playerRef.current && isReady) {
+      try {
+        playerRef.current.playVideo?.();
+      } catch (e) {
+        // Ignore
+      }
+    }
+  }, [onPlayingChange, isReady]);
 
   // Initialize YouTube player
   useEffect(() => {
@@ -246,6 +256,12 @@ export function YouTubePlayerEnhanced({
   }, [isPlaying, isReady]);
 
   const togglePlay = useCallback(() => {
+    // Direct control for instant response
+    if (isPlaying) {
+      playerRef.current?.pauseVideo?.();
+    } else {
+      playerRef.current?.playVideo?.();
+    }
     onPlayingChange(!isPlaying);
   }, [isPlaying, onPlayingChange]);
 
