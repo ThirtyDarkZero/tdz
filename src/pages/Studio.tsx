@@ -112,7 +112,7 @@ const Studio = () => {
         toast.error("Profile incomplete", {
           description: "Please complete your artist profile setup",
         });
-        navigate("/role-selection");
+        navigate("/role-selection", { replace: true });
         return;
       }
 
