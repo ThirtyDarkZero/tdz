@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,7 +6,6 @@ import { MusicPlayer } from "@/components/MusicPlayer";
 import { MultiTrackUploader } from "@/components/MultiTrackUploader";
 import { PendingInvitesPanel } from "@/components/PendingInvitesPanel";
 import { ManagerDashboard } from "@/components/ManagerDashboard";
-import { ArtistDashboard } from "@/components/ArtistDashboard";
 import { StudioSidebar } from "@/components/studio/StudioSidebar";
 import { StudioHome } from "@/components/studio/StudioHome";
 import { StudioMusic } from "@/components/studio/StudioMusic";
@@ -14,11 +13,9 @@ import { StudioInsights } from "@/components/studio/StudioInsights";
 import { StudioPromote } from "@/components/studio/StudioPromote";
 import { StudioLearn } from "@/components/studio/StudioLearn";
 import { StudioSettings } from "@/components/studio/StudioSettings";
-import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { StudioGuard } from "@/components/auth/AuthGuard";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 interface Track {
   id: string;
@@ -33,10 +30,8 @@ interface Track {
   };
 }
 
-const Studio = () => {
-  const { user, loading } = useAuth();
-  const { role, loading: roleLoading } = useUserRole(user);
-  const { loading: subLoading } = useSubscription(user);
+function StudioContent() {
+  const { user, role, isManager } = useAuthContext();
   const navigate = useNavigate();
   
   const [activeSection, setActiveSection] = useState("home");
@@ -48,51 +43,9 @@ const Studio = () => {
   const [profileImage, setProfileImage] = useState<string | undefined>();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // CRITICAL: Block render completely until auth AND role are verified
-  // This prevents fans from ever seeing Studio UI even briefly
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate("/auth", { replace: true });
-      return;
-    }
-  }, [user, loading, navigate]);
-
-  // Redirect listeners BEFORE any UI render
-  useEffect(() => {
-    if (!roleLoading && role === "listener") {
-      toast.error("Studio access is only available for artists and managers");
-      navigate("/discover", { replace: true });
-    }
-  }, [role, roleLoading, navigate]);
-
-  // If a logged-in user has no role after loading completes, redirect to role selection
-  // CRITICAL: Only redirect ONCE and only after role loading is truly done
-  const roleRedirectedRef = useRef(false);
-
-  useEffect(() => {
-    // Don't do anything while still loading
-    if (loading || roleLoading) return;
-    // Don't redirect if no user (handled by other effect)
-    if (!user) return;
-    // User has a valid role - don't redirect
-    if (role) return;
-    // Already redirected once - prevent infinite loop
-    if (roleRedirectedRef.current) return;
-
-    // Mark as redirected BEFORE navigating to prevent loops
-    roleRedirectedRef.current = true;
-    toast.info("Finish setup", {
-      description: "Choose your role to continue to Studio.",
-    });
-    navigate("/role-selection", { replace: true });
-  }, [loading, roleLoading, user, role, navigate]);
-
-  // Load artist profile once access is verified - NO REDIRECTS from profile fetch
-  // Profile redirect should only happen if role is missing, not if profile is missing
+  // Load artist profile
   useEffect(() => {
     if (!user) return;
-    if (roleLoading) return;
-    if (role === "listener" || !role) return;
 
     let cancelled = false;
 
@@ -119,8 +72,6 @@ const Studio = () => {
           setProfileImage(url);
         }
       }
-      // If no profile data, just continue with defaults - don't redirect
-      // The role-selection page will handle profile creation if needed
     };
 
     fetchArtistProfile();
@@ -128,33 +79,7 @@ const Studio = () => {
     return () => {
       cancelled = true;
     };
-  }, [user, role, roleLoading]);
-
-  // SECURITY: Return loading until we CONFIRM user is NOT a listener
-  // This is the key fix - we don't render ANY Studio UI until role is verified
-  if (loading || roleLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-3">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-muted-foreground">Verifying access...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // SECURITY: Don't render Studio UI unless role is verified and allowed
-  if (!user || role === "listener" || !role) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-2">
-          <p className="text-muted-foreground">Redirecting…</p>
-        </div>
-      </div>
-    );
-  }
-  // This block is now handled above for security
-  // Removed duplicate loading check
+  }, [user]);
 
   const handlePlayTrack = (track: Track, trackQueue: Track[]) => {
     setCurrentTrack(track);
@@ -185,7 +110,7 @@ const Studio = () => {
 
   const renderContent = () => {
     // Manager gets their own dashboard
-    if (role === 'manager' && activeSection === 'home') {
+    if (isManager && activeSection === 'home') {
       return <ManagerDashboard />;
     }
 
@@ -233,7 +158,7 @@ const Studio = () => {
           onCollapsedChange={setSidebarCollapsed}
         />
 
-        {/* Main Content - Adjusted for PHP admin-style dual sidebar */}
+        {/* Main Content */}
         <main className="ml-[110px] md:ml-[350px] transition-all duration-300 min-h-screen pb-32">
           {/* Background Effects */}
           <div className="fixed inset-0 pointer-events-none z-0 ml-[110px] md:ml-[350px]">
@@ -270,6 +195,13 @@ const Studio = () => {
       </div>
     </TooltipProvider>
   );
-};
+}
 
-export default Studio;
+// Wrap with StudioGuard for role-based access
+export default function Studio() {
+  return (
+    <StudioGuard>
+      <StudioContent />
+    </StudioGuard>
+  );
+}

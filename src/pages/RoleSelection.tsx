@@ -1,142 +1,28 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Music, Headphones, Users, ArrowRight, Sparkles } from "lucide-react";
+import { Music, Headphones, Users, ArrowRight, ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { RequireNoRole } from "@/components/auth/AuthGuard";
 
-export default function RoleSelection() {
-  const [selectedRole, setSelectedRole] = useState<"artist" | "listener" | "manager" | null>(null);
+type SelectedRole = "artist" | "listener" | "manager";
+
+function RoleSelectionForm() {
+  const [selectedRole, setSelectedRole] = useState<SelectedRole | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [artistName, setArtistName] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  const { user, loading: authLoading } = useAuth();
-
-  const [existingRole, setExistingRole] = useState<string | null>(null);
-
-  // Check if user already has a role AND the required profile exists.
-  // If the profile is missing, keep the user here to finish setup (prevents Studio <-> RoleSelection loops).
-  const [checkingRole, setCheckingRole] = useState(true);
-
-  const finishSetupToastShownRef = useRef(false);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const normalizeRoleForSetup = (dbRole: string): "artist" | "listener" | "manager" | null => {
-      if (dbRole === "listener") return "listener";
-      if (dbRole === "manager") return "manager";
-      if (dbRole === "artist" || dbRole === "verified_artist") return "artist";
-      return null;
-    };
-
-    const checkExistingProfile = async () => {
-      try {
-        if (authLoading) return;
-
-        if (!user) {
-          // Not authenticated → route to auth and stop the loading screen
-          if (!cancelled) setCheckingRole(false);
-          navigate("/auth", { replace: true });
-          return;
-        }
-
-        // Get the latest role (matches Studio's role resolution)
-        const { data: roleData, error: roleError } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id)
-          .order("granted_at", { ascending: false, nullsFirst: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (cancelled) return;
-
-        if (roleError) {
-          console.error("Error loading existing role:", roleError);
-          return;
-        }
-
-        const dbRole = roleData?.role;
-        if (!dbRole) return;
-
-        setExistingRole(dbRole);
-
-        // Verify profile exists for this role before redirecting away
-        if (dbRole === "listener") {
-          const { data: listenerProfile, error: profileError } = await supabase
-            .from("listener_profiles")
-            .select("id")
-            .eq("user_id", user.id)
-            .maybeSingle();
-
-          if (cancelled) return;
-          if (profileError) console.error("Error checking listener profile:", profileError);
-
-          if (listenerProfile) {
-            navigate("/discover", { replace: true });
-            return;
-          }
-
-          // Missing profile → let them finish setup here
-          setSelectedRole("listener");
-          if (!finishSetupToastShownRef.current) {
-            finishSetupToastShownRef.current = true;
-            toast.info("Finish setup", {
-              description: "Complete your fan profile to continue.",
-            });
-          }
-          return;
-        }
-
-        // Artist / Manager / Verified Artist all use artist_profiles in this app
-        const { data: artistProfile, error: profileError } = await supabase
-          .from("artist_profiles")
-          .select("id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (cancelled) return;
-        if (profileError) console.error("Error checking artist profile:", profileError);
-
-        if (artistProfile) {
-          navigate("/studio", { replace: true });
-          return;
-        }
-
-        // Missing profile → let them finish setup here
-        const normalized = normalizeRoleForSetup(dbRole);
-        if (normalized) {
-          setSelectedRole(normalized);
-          if (!finishSetupToastShownRef.current) {
-            finishSetupToastShownRef.current = true;
-            toast.info("Finish setup", {
-              description: "Complete your profile to access Studio.",
-            });
-          }
-        }
-      } catch (error) {
-        console.error("RoleSelection bootstrap error:", error);
-      } finally {
-        if (!cancelled) setCheckingRole(false);
-      }
-    };
-
-    checkExistingProfile();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [navigate, user, authLoading]);
+  
+  const { user, refreshRole } = useAuthContext();
 
   const handleSubmit = async () => {
     if (!selectedRole || !displayName) {
@@ -144,48 +30,35 @@ export default function RoleSelection() {
       return;
     }
 
-    // Prevent artists/managers from creating listener accounts
-    if (existingRole && (existingRole === 'artist' || existingRole === 'verified_artist' || existingRole === 'manager') && selectedRole === 'listener') {
-      toast.error("Artists and managers cannot create fan accounts");
+    if (!user) {
+      toast.error("Not authenticated");
+      navigate("/auth");
       return;
     }
 
     setLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-        // Assign role (using upsert to handle duplicates gracefully)
-        const { error: roleError } = await supabase
-          .from("user_roles")
-          .upsert(
-            { user_id: user.id, role: selectedRole, granted_at: new Date().toISOString() },
-            { onConflict: 'user_id,role', ignoreDuplicates: true }
-          );
+      // Assign role
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .upsert(
+          { user_id: user.id, role: selectedRole, granted_at: new Date().toISOString() },
+          { onConflict: 'user_id,role', ignoreDuplicates: true }
+        );
 
       if (roleError) throw roleError;
 
-      // Create initial subscription (free plan - users must upgrade)
-      const { error: subError } = await supabase
+      // Create initial subscription (free plan)
+      await supabase
         .from("user_subscriptions")
         .upsert(
-          { 
-            user_id: user.id, 
-            plan: 'free',
-            status: 'active'
-          },
+          { user_id: user.id, plan: 'free', status: 'active' },
           { onConflict: 'user_id', ignoreDuplicates: true }
         );
 
-      if (subError) {
-        console.error("Subscription creation error:", subError);
-        // Don't block signup if subscription creation fails
-      }
-
       // Create profile based on role
       if (selectedRole === "artist" || selectedRole === "manager") {
-        // Check if artist profile already exists
         const { data: existingProfile } = await supabase
           .from("artist_profiles")
           .select("id")
@@ -204,13 +77,14 @@ export default function RoleSelection() {
           if (profileError) throw profileError;
         }
         
-        // Show upgrade prompt for artists
         toast.success("Welcome to TDZ Distribution!", {
           description: "Upgrade to Starter ($9.99/mo) to unlock all features",
         });
+        
+        // Refresh role in context before navigating
+        await refreshRole();
         navigate("/studio");
       } else {
-        // Check if listener profile already exists
         const { data: existingProfile } = await supabase
           .from("listener_profiles")
           .select("id")
@@ -229,10 +103,11 @@ export default function RoleSelection() {
           if (profileError) throw profileError;
         }
         
-        // Show upgrade prompt for fans
         toast.success("Welcome to TDZ Distribution!", {
           description: "Subscribe for $12/mo for unlimited streaming",
         });
+        
+        await refreshRole();
         navigate("/discover");
       }
     } catch (error: any) {
@@ -242,18 +117,6 @@ export default function RoleSelection() {
       setLoading(false);
     }
   };
-
-  // Show loading while checking for existing role
-  if (checkingRole) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-3">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-6">
@@ -293,14 +156,6 @@ export default function RoleSelection() {
 
         {!selectedRole ? (
           <div className="grid md:grid-cols-3 gap-6">
-            {/* Show warning if artist/manager trying to create listener account */}
-            {existingRole && (existingRole === 'artist' || existingRole === 'verified_artist' || existingRole === 'manager') && (
-              <div className="col-span-full mb-4 p-4 rounded-lg bg-destructive/10 border border-destructive/50 text-center">
-                <p className="text-sm text-destructive font-medium">
-                  You already have an artist/manager account. You cannot create a fan account.
-                </p>
-              </div>
-            )}
             {/* Artist Card */}
             <Card
               className="relative group cursor-pointer glass-card p-8 hover:border-primary transition-all duration-300 hover:scale-105"
@@ -349,18 +204,8 @@ export default function RoleSelection() {
 
             {/* Listener Card */}
             <Card
-              className={`relative group glass-card p-8 hover:border-secondary transition-all duration-300 ${
-                existingRole && (existingRole === 'artist' || existingRole === 'verified_artist' || existingRole === 'manager')
-                  ? 'opacity-50 cursor-not-allowed'
-                  : 'cursor-pointer hover:scale-105'
-              }`}
-              onClick={() => {
-                if (existingRole && (existingRole === 'artist' || existingRole === 'verified_artist' || existingRole === 'manager')) {
-                  toast.error("Artists and managers cannot create fan accounts");
-                  return;
-                }
-                setSelectedRole("listener");
-              }}
+              className="relative group cursor-pointer glass-card p-8 hover:border-secondary transition-all duration-300 hover:scale-105"
+              onClick={() => setSelectedRole("listener")}
             >
               <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-lg" />
               <div className="relative z-10 text-center space-y-6">
@@ -439,25 +284,23 @@ export default function RoleSelection() {
               </div>
             </div>
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-4 pt-4">
               <Button
                 variant="outline"
                 onClick={() => setSelectedRole(null)}
                 className="flex-1"
                 disabled={loading}
               >
+                <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
               <Button
                 onClick={handleSubmit}
+                className="flex-1 bg-gradient-to-r from-primary to-secondary"
                 disabled={loading || !displayName}
-                className="flex-1 bg-gradient-to-r from-primary via-secondary to-accent"
               >
                 {loading ? (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2 animate-spin" />
-                    Setting up...
-                  </>
+                  <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
                     Continue
@@ -470,5 +313,14 @@ export default function RoleSelection() {
         )}
       </Card>
     </div>
+  );
+}
+
+// Wrap with RequireNoRole guard
+export default function RoleSelection() {
+  return (
+    <RequireNoRole>
+      <RoleSelectionForm />
+    </RequireNoRole>
   );
 }

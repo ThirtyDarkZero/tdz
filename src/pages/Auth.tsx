@@ -1,18 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { RequireGuest } from "@/components/auth/AuthGuard";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
 import { Chrome, Loader2 } from "lucide-react";
 
-// Security: Input validation schema
+// Security: Input validation schemas
 const authSchema = z.object({
   email: z
     .string()
@@ -41,57 +40,16 @@ const signInSchema = z.object({
     .min(1, { message: "Password is required" })
 });
 
-export default function Auth() {
+function AuthForm() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{ email?: string; password?: string }>({});
-  const { signIn, signUp, signInWithGoogle, user } = useAuth();
-  const { role, loading: roleLoading } = useUserRole(user);
+  
+  const { signIn, signUp, signInWithGoogle } = useAuthContext();
   const navigate = useNavigate();
-
-  // Validate session on mount
-  useEffect(() => {
-    const validateSession = async () => {
-      if (!user) return;
-      
-      // Check if user actually exists in database
-      const { data, error } = await supabase.auth.getUser();
-      
-      if (error || !data.user) {
-        // Invalid session - clear it
-        await supabase.auth.signOut();
-        toast.error("Session expired. Please sign in again.");
-      }
-    };
-    
-    validateSession();
-  }, []);
-
-  // Redirect if user is already logged in
-  useEffect(() => {
-    // Must wait for role loading to complete before making any decisions
-    if (roleLoading) return;
-    
-    // No user - stay on auth page
-    if (!user) return;
-    
-    // User has a role - redirect immediately to appropriate page
-    if (role) {
-      const studioRoles = ["artist", "verified_artist", "manager", "ceo", "admin"];
-      if (studioRoles.includes(role)) {
-        navigate("/studio", { replace: true });
-      } else {
-        navigate("/discover", { replace: true });
-      }
-      return;
-    }
-    
-    // User exists but has no role - redirect to role selection
-    navigate("/role-selection", { replace: true });
-  }, [user, role, roleLoading, navigate]);
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
@@ -100,7 +58,7 @@ export default function Auth() {
       if (error) {
         toast.error("Failed to sign in with Google. Please try again.");
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to sign in with Google. Please try again.");
     } finally {
       setGoogleLoading(false);
@@ -143,6 +101,7 @@ export default function Auth() {
           return;
         }
         toast.success("Account created!");
+        // AuthContext will handle the redirect via RequireGuest
       } else {
         const { error } = await signIn(result.data.email, result.data.password);
         if (error) {
@@ -151,11 +110,9 @@ export default function Auth() {
           return;
         }
         toast.success("Signed in successfully!");
+        // AuthContext will handle the redirect via RequireGuest
       }
-    } catch (error: any) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Auth error:', error);
-      }
+    } catch {
       toast.error("Authentication failed. Please try again.");
       setLoading(false);
     }
@@ -294,5 +251,14 @@ export default function Auth() {
         </p>
       </Card>
     </div>
+  );
+}
+
+// Wrap with RequireGuest to handle redirects
+export default function Auth() {
+  return (
+    <RequireGuest>
+      <AuthForm />
+    </RequireGuest>
   );
 }
