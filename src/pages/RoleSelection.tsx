@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Music, Headphones, Users, ArrowRight, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function RoleSelection() {
   const [selectedRole, setSelectedRole] = useState<"artist" | "listener" | "manager" | null>(null);
@@ -18,18 +19,20 @@ export default function RoleSelection() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const { user, loading: authLoading } = useAuth();
+
   const [existingRole, setExistingRole] = useState<string | null>(null);
 
   // Check if user already has a role AND the required profile exists.
   // If the profile is missing, keep the user here to finish setup (prevents Studio <-> RoleSelection loops).
   const [checkingRole, setCheckingRole] = useState(true);
 
+  const finishSetupToastShownRef = useRef(false);
+
   useEffect(() => {
     let cancelled = false;
 
-    const normalizeRoleForSetup = (
-      dbRole: string
-    ): "artist" | "listener" | "manager" | null => {
+    const normalizeRoleForSetup = (dbRole: string): "artist" | "listener" | "manager" | null => {
       if (dbRole === "listener") return "listener";
       if (dbRole === "manager") return "manager";
       if (dbRole === "artist" || dbRole === "verified_artist") return "artist";
@@ -38,11 +41,14 @@ export default function RoleSelection() {
 
     const checkExistingProfile = async () => {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        if (authLoading) return;
 
-        if (!user || cancelled) return;
+        if (!user) {
+          // Not authenticated → route to auth and stop the loading screen
+          if (!cancelled) setCheckingRole(false);
+          navigate("/auth", { replace: true });
+          return;
+        }
 
         // Get the latest role (matches Studio's role resolution)
         const { data: roleData, error: roleError } = await supabase
@@ -83,9 +89,12 @@ export default function RoleSelection() {
 
           // Missing profile → let them finish setup here
           setSelectedRole("listener");
-          toast.info("Finish setup", {
-            description: "Complete your fan profile to continue.",
-          });
+          if (!finishSetupToastShownRef.current) {
+            finishSetupToastShownRef.current = true;
+            toast.info("Finish setup", {
+              description: "Complete your fan profile to continue.",
+            });
+          }
           return;
         }
 
@@ -108,12 +117,15 @@ export default function RoleSelection() {
         const normalized = normalizeRoleForSetup(dbRole);
         if (normalized) {
           setSelectedRole(normalized);
-          toast.info("Finish setup", {
-            description: "Complete your profile to access Studio.",
-          });
+          if (!finishSetupToastShownRef.current) {
+            finishSetupToastShownRef.current = true;
+            toast.info("Finish setup", {
+              description: "Complete your profile to access Studio.",
+            });
+          }
         }
       } catch (error) {
-        console.log("No existing profile found");
+        console.error("RoleSelection bootstrap error:", error);
       } finally {
         if (!cancelled) setCheckingRole(false);
       }
@@ -124,7 +136,7 @@ export default function RoleSelection() {
     return () => {
       cancelled = true;
     };
-  }, [navigate]);
+  }, [navigate, user, authLoading]);
 
   const handleSubmit = async () => {
     if (!selectedRole || !displayName) {
