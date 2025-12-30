@@ -48,7 +48,6 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{ email?: string; password?: string }>({});
-  const [justAuthenticated, setJustAuthenticated] = useState(false);
   const { signIn, signUp, signInWithGoogle, user } = useAuth();
   const { role, loading: roleLoading } = useUserRole(user);
   const navigate = useNavigate();
@@ -76,7 +75,7 @@ export default function Auth() {
     // Wait for all loading states to complete
     if (!user || roleLoading) return;
     
-    // User has a role - redirect to appropriate page
+    // User has a role - redirect immediately to appropriate page
     if (role) {
       if (role === "artist" || role === "verified_artist" || role === "manager" || role === "ceo" || role === "admin") {
         navigate("/studio", { replace: true });
@@ -88,12 +87,10 @@ export default function Auth() {
       return;
     }
     
-    // User has no role - they need to complete setup
-    // Only redirect if we just authenticated (prevents redirect on page refresh during setup)
-    if (justAuthenticated) {
-      navigate("/role-selection", { replace: true });
-    }
-  }, [user, role, roleLoading, justAuthenticated, navigate]);
+    // User has no role - redirect to role selection
+    // This handles both new sign-ups and returning users without a profile
+    navigate("/role-selection", { replace: true });
+  }, [user, role, roleLoading, navigate]);
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
@@ -144,8 +141,7 @@ export default function Auth() {
           setLoading(false);
           return;
         }
-        toast.success("Account created! Choose your path...");
-        setJustAuthenticated(true);
+        toast.success("Account created!");
       } else {
         const { error } = await signIn(result.data.email, result.data.password);
         if (error) {
@@ -154,7 +150,6 @@ export default function Auth() {
           return;
         }
         toast.success("Signed in successfully!");
-        setJustAuthenticated(true);
       }
     } catch (error: any) {
       if (process.env.NODE_ENV === 'development') {
