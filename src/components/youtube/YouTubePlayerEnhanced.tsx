@@ -98,12 +98,11 @@ export function YouTubePlayerEnhanced({
     checkLiked();
   }, [track.id]);
   
-  // Auto-play on mount
+  // Force immediate playback state sync on mount
   useEffect(() => {
-    if (!isPlaying) {
-      onPlayingChange(true);
-    }
-  }, []);
+    // Immediately set playing state - no delay
+    onPlayingChange(true);
+  }, [onPlayingChange]);
 
   // Initialize YouTube player
   useEffect(() => {
@@ -164,19 +163,23 @@ export function YouTubePlayerEnhanced({
               setDuration(dur);
               setYoutubePlayer(event.target);
               
+              // Immediate playback - no delay
               event.target.playVideo();
               onPlayingChange(true);
               
+              // Clear any existing interval
               if (intervalRef.current) {
                 clearInterval(intervalRef.current);
               }
+              
+              // High-frequency time tracking (250ms for smooth progress bar)
               intervalRef.current = window.setInterval(() => {
                 if (playerRef.current?.getCurrentTime) {
                   const time = playerRef.current.getCurrentTime();
                   setCurrentTime(time);
                   setContextTime(time);
                 }
-              }, 500);
+              }, 250);
             },
             onStateChange: (event: any) => {
               const playing = event.data === window.YT.PlayerState.PLAYING;

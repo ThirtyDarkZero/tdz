@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Upload, Image as ImageIcon, Loader2, Eye } from "lucide-react";
+import { Upload, Image as ImageIcon, Loader2, Eye, Youtube, Music, Link as LinkIcon, CheckCircle2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export const ArtistProfileEditor = () => {
   const navigate = useNavigate();
@@ -21,6 +22,22 @@ export const ArtistProfileEditor = () => {
   const [profilePreview, setProfilePreview] = useState<string>("");
   const [bannerPreview, setBannerPreview] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
+  
+  // Social links
+  const [socialLinks, setSocialLinks] = useState<any>({
+    youtube_music: '',
+    spotify: '',
+    apple_music: '',
+    soundcloud: '',
+    instagram: '',
+    twitter: '',
+    website: ''
+  });
+  
+  // External discography state
+  const [externalDiscography, setExternalDiscography] = useState<any[]>([]);
+  const [loadingDiscography, setLoadingDiscography] = useState(false);
+  const [discographyLinked, setDiscographyLinked] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -45,6 +62,27 @@ export const ArtistProfileEditor = () => {
       setBio(data.bio || "");
       setProfilePreview(data.profile_image_path || "");
       setBannerPreview(data.banner_image_path || "");
+      
+      // Load social links
+      if (data.social_links) {
+        const links = typeof data.social_links === 'string' 
+          ? JSON.parse(data.social_links) 
+          : data.social_links;
+        setSocialLinks({
+          youtube_music: links.youtube_music || '',
+          spotify: links.spotify || '',
+          apple_music: links.apple_music || '',
+          soundcloud: links.soundcloud || '',
+          instagram: links.instagram || '',
+          twitter: links.twitter || '',
+          website: links.website || ''
+        });
+        
+        // Check if discography is linked
+        if (links.youtube_music || links.spotify) {
+          setDiscographyLinked(true);
+        }
+      }
     }
     setLoading(false);
   };
@@ -96,6 +134,51 @@ export const ArtistProfileEditor = () => {
     return publicUrl;
   };
 
+  // Fetch external discography from YouTube Music / AllMusic
+  const fetchExternalDiscography = async () => {
+    if (!artistName) {
+      toast.error("Please enter your artist name first");
+      return;
+    }
+    
+    setLoadingDiscography(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('allmusic-artist', {
+        body: { artistName, includeDiscography: true }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.artist?.discography?.length > 0) {
+        setExternalDiscography(data.artist.discography);
+        setDiscographyLinked(true);
+        toast.success(`Found ${data.artist.discography.length} albums/releases!`);
+      } else {
+        // Try YouTube Music as fallback
+        const { data: ytData } = await supabase.functions.invoke('youtube-search', {
+          body: { query: `${artistName} - Topic`, maxResults: 10, type: 'video' }
+        });
+        
+        if (ytData?.results?.length > 0) {
+          setExternalDiscography(ytData.results.slice(0, 10));
+          setDiscographyLinked(true);
+          toast.success(`Found ${ytData.results.length} tracks from YouTube Music!`);
+        } else {
+          toast.info("No external discography found. Your music will still appear on your profile.");
+        }
+      }
+    } catch (error: any) {
+      console.error("Error fetching discography:", error);
+      toast.error("Failed to fetch external discography");
+    } finally {
+      setLoadingDiscography(false);
+    }
+  };
+
+  const handleSocialLinkChange = (key: string, value: string) => {
+    setSocialLinks((prev: any) => ({ ...prev, [key]: value }));
+  };
+
   const handleSave = async () => {
     setUploading(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -119,6 +202,7 @@ export const ArtistProfileEditor = () => {
         bio: bio,
         profile_image_path: profileImageUrl,
         banner_image_path: bannerImageUrl,
+        social_links: socialLinks,
       };
 
       // Include ID if profile exists for proper update
@@ -265,6 +349,173 @@ export const ArtistProfileEditor = () => {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Social Links & Music Platforms */}
+      <Card className="glass-card-premium">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <LinkIcon className="w-5 h-5 text-primary" />
+            Social Links & Music Platforms
+          </CardTitle>
+          <CardDescription>
+            Link your music platforms to import your discography
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* YouTube Music - Primary for discography import */}
+          <div className="space-y-2">
+            <Label htmlFor="youtube_music" className="flex items-center gap-2">
+              <Youtube className="w-4 h-4 text-red-500" />
+              YouTube Music Channel
+              {discographyLinked && (
+                <Badge variant="outline" className="ml-2 bg-green-500/10 text-green-500 border-green-500/20">
+                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                  Linked
+                </Badge>
+              )}
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                id="youtube_music"
+                value={socialLinks.youtube_music}
+                onChange={(e) => handleSocialLinkChange('youtube_music', e.target.value)}
+                placeholder="https://music.youtube.com/channel/..."
+                className="flex-1"
+              />
+              <Button 
+                variant="outline" 
+                onClick={fetchExternalDiscography}
+                disabled={loadingDiscography}
+              >
+                {loadingDiscography ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Music className="w-4 h-4 mr-2" />
+                    Import Discography
+                  </>
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Link your YouTube Music to automatically show your existing catalog on your TDZ profile
+            </p>
+          </div>
+
+          {/* Other platforms */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="spotify">Spotify</Label>
+              <Input
+                id="spotify"
+                value={socialLinks.spotify}
+                onChange={(e) => handleSocialLinkChange('spotify', e.target.value)}
+                placeholder="https://open.spotify.com/artist/..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="apple_music">Apple Music</Label>
+              <Input
+                id="apple_music"
+                value={socialLinks.apple_music}
+                onChange={(e) => handleSocialLinkChange('apple_music', e.target.value)}
+                placeholder="https://music.apple.com/artist/..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="soundcloud">SoundCloud</Label>
+              <Input
+                id="soundcloud"
+                value={socialLinks.soundcloud}
+                onChange={(e) => handleSocialLinkChange('soundcloud', e.target.value)}
+                placeholder="https://soundcloud.com/..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="instagram">Instagram</Label>
+              <Input
+                id="instagram"
+                value={socialLinks.instagram}
+                onChange={(e) => handleSocialLinkChange('instagram', e.target.value)}
+                placeholder="https://instagram.com/..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="twitter">Twitter/X</Label>
+              <Input
+                id="twitter"
+                value={socialLinks.twitter}
+                onChange={(e) => handleSocialLinkChange('twitter', e.target.value)}
+                placeholder="https://twitter.com/..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="website">Website</Label>
+              <Input
+                id="website"
+                value={socialLinks.website}
+                onChange={(e) => handleSocialLinkChange('website', e.target.value)}
+                placeholder="https://..."
+              />
+            </div>
+          </div>
+
+          <Button 
+            onClick={handleSave} 
+            disabled={uploading}
+            className="w-full"
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Social Links"
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* External Discography Preview */}
+      {externalDiscography.length > 0 && (
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Music className="w-5 h-5 text-primary" />
+              Imported Discography Preview
+            </CardTitle>
+            <CardDescription>
+              These releases will appear on your TDZ artist profile, sourced from YouTube Music
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {externalDiscography.slice(0, 10).map((item: any, idx: number) => (
+                <div key={idx} className="space-y-2">
+                  <div className="aspect-square rounded-lg overflow-hidden bg-muted">
+                    {item.coverArt || item.thumbnail ? (
+                      <img 
+                        src={item.coverArt || item.thumbnail} 
+                        alt={item.title} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Music className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-sm font-medium truncate">{item.title}</p>
+                  {item.year && (
+                    <p className="text-xs text-muted-foreground">{item.year}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
