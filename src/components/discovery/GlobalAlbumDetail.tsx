@@ -35,6 +35,9 @@ interface AlbumTrack {
   duration?: string;
   youtubeId?: string;
   thumbnail?: string;
+  isOfficialAudio?: boolean;
+  viewCount?: string;
+  description?: string;
 }
 
 export function GlobalAlbumDetail({ 
@@ -57,75 +60,93 @@ export function GlobalAlbumDetail({
     setLoading(true);
     
     try {
-      // First, search for official album playlist from YouTube Music
-      // Format: "Artist Album topic" - YouTube Music uses "topic" channels for official audio
-      const albumSearchQueries = [
-        `${album.artist} ${album.title} album`,
-        `${album.artist} - Topic ${album.title}`,
-        `${album.artist} "${album.title}" official audio`,
-      ];
+      // Search for official YouTube Music content using the officialOnly flag
+      const { data: officialData } = await supabase.functions.invoke('youtube-search', {
+        body: { 
+          query: `${album.artist} ${album.title}`,
+          maxResults: 20,
+          officialOnly: true
+        }
+      });
 
       let allTracks: AlbumTrack[] = [];
       let albumThumbnail: string | undefined;
 
-      // Try to get tracks from multiple search strategies
-      for (const query of albumSearchQueries) {
-        const { data: tracksData } = await supabase.functions.invoke('youtube-search', {
-          body: { 
-            query, 
-            maxResults: 20 
-          }
+      if (officialData?.results?.length > 0) {
+        const artistNameLower = album.artist.toLowerCase();
+        
+        // Filter and prioritize official audio from topic channels
+        const relevantTracks = officialData.results.filter((video: any) => {
+          const channelLower = (video.channel || '').toLowerCase();
+          const titleLower = video.title.toLowerCase();
+          
+          // Prioritize topic channels and official content
+          const isFromArtist = channelLower.includes(artistNameLower) || 
+                               video.isOfficialAudio ||
+                               video.isOfficialMusicVideo ||
+                               channelLower.includes('topic');
+          
+          // Exclude covers, remixes, karaoke
+          const isOriginal = !titleLower.includes('cover') && 
+                            !titleLower.includes('remix') &&
+                            !titleLower.includes('karaoke') &&
+                            !titleLower.includes('reaction');
+          
+          return isFromArtist && isOriginal;
         });
 
-        if (tracksData?.results?.length > 0) {
-          // Filter to only include tracks that match the artist
-          const artistNameLower = album.artist.toLowerCase();
-          const albumNameLower = album.title.toLowerCase();
-          
-          const relevantTracks = tracksData.results.filter((video: any) => {
-            const titleLower = video.title.toLowerCase();
-            const channelLower = (video.channelTitle || '').toLowerCase();
-            
-            // Check if it's from the artist's topic channel or mentions the artist
-            const isFromArtist = channelLower.includes(artistNameLower) || 
-                                 channelLower.includes('topic') ||
-                                 titleLower.includes(artistNameLower);
-            
-            // Exclude covers, remixes, and live versions unless that's the album type
-            const isOriginal = !titleLower.includes('cover') && 
-                              !titleLower.includes('remix') &&
-                              !titleLower.includes('karaoke');
-            
-            return isFromArtist && isOriginal;
-          });
-
-          if (relevantTracks.length > allTracks.length) {
-            allTracks = relevantTracks.map((video: any, idx: number) => ({
-              id: `yt-${video.id}`,
-              title: cleanTrackTitle(video.title, album.artist, album.title),
-              position: idx + 1,
-              duration: video.duration,
-              youtubeId: video.id,
-              thumbnail: video.thumbnail,
-            }));
-            
-            // Get album art from first high-quality result
-            if (!albumThumbnail && relevantTracks[0]?.thumbnail) {
-              albumThumbnail = relevantTracks[0].thumbnail;
-            }
-          }
-        }
+        allTracks = relevantTracks.map((video: any, idx: number) => ({
+          id: `yt-${video.id}`,
+          title: cleanTrackTitle(video.title, album.artist, album.title),
+          position: idx + 1,
+          duration: video.duration,
+          youtubeId: video.id,
+          thumbnail: video.thumbnail,
+          isOfficialAudio: video.isOfficialAudio,
+          viewCount: video.viewCount,
+          description: video.description,
+        }));
         
-        // If we found good results, stop searching
-        if (allTracks.length >= 5) break;
+        // Get best thumbnail from official content
+        const officialTrack = relevantTracks.find((t: any) => t.isOfficialAudio);
+        albumThumbnail = officialTrack?.thumbnail || relevantTracks[0]?.thumbnail;
       }
 
-      // If we still don't have enough tracks, do a broader search
+      // Fallback: try artist topic channel search
+      if (allTracks.length < 3) {
+        const { data: topicData } = await supabase.functions.invoke('youtube-search', {
+          body: { 
+            query: `${album.artist} - Topic ${album.title}`,
+            maxResults: 15,
+            officialOnly: true
+          }
+        });
+        
+        if (topicData?.results?.length > allTracks.length) {
+          allTracks = topicData.results.map((video: any, idx: number) => ({
+            id: `yt-${video.id}`,
+            title: cleanTrackTitle(video.title, album.artist, album.title),
+            position: idx + 1,
+            duration: video.duration,
+            youtubeId: video.id,
+            thumbnail: video.thumbnail,
+            isOfficialAudio: video.isOfficialAudio,
+            viewCount: video.viewCount,
+            description: video.description,
+          }));
+          
+          if (!albumThumbnail && topicData.results[0]?.thumbnail) {
+            albumThumbnail = topicData.results[0].thumbnail;
+          }
+        }
+      }
+
+      // Last resort: broader search without officialOnly
       if (allTracks.length < 3) {
         const { data: broadData } = await supabase.functions.invoke('youtube-search', {
           body: { 
-            query: `${album.artist} ${album.title}`, 
-            maxResults: 15 
+            query: `${album.artist} ${album.title} official`,
+            maxResults: 15
           }
         });
         
@@ -137,6 +158,8 @@ export function GlobalAlbumDetail({
             duration: video.duration,
             youtubeId: video.id,
             thumbnail: video.thumbnail,
+            isOfficialAudio: video.isOfficialAudio,
+            viewCount: video.viewCount,
           }));
           
           if (!albumThumbnail && broadData.results[0]?.thumbnail) {
@@ -419,8 +442,20 @@ export function GlobalAlbumDetail({
 
                     {/* Track Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-white font-medium truncate">{track.title}</p>
-                      <p className="text-sm text-white/50 truncate">{album.artist}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-white font-medium truncate">{track.title}</p>
+                        {track.isOfficialAudio && (
+                          <Badge className="bg-green-600/20 text-green-400 text-[10px] px-1 py-0 hidden sm:flex">
+                            Official
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-white/50">
+                        <span className="truncate">{album.artist}</span>
+                        {track.viewCount && (
+                          <span className="text-white/30">• {track.viewCount}</span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Duration */}
@@ -431,8 +466,9 @@ export function GlobalAlbumDetail({
                     )}
 
                     {/* YouTube Badge */}
-                    <Badge className="bg-red-600/20 text-red-400 text-xs px-1.5 py-0.5 hidden sm:flex">
+                    <Badge className="bg-red-600/20 text-red-400 text-xs px-1.5 py-0.5 hidden sm:flex items-center gap-1">
                       <Youtube className="w-3 h-3" />
+                      {track.isOfficialAudio ? 'Music' : ''}
                     </Badge>
 
                     {/* Actions */}
