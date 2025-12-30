@@ -25,7 +25,9 @@ import {
   TrendingUp,
   PlayCircle,
   DollarSign,
-  Calendar
+  Calendar,
+  X,
+  Menu
 } from "lucide-react";
 
 interface StudioSidebarProps {
@@ -156,26 +158,83 @@ export const StudioSidebar = ({
 
   const shouldExpand = !collapsed || isHovering;
 
+  // Handle hover expansion
+  const handleMouseEnter = () => {
+    if (collapsed) {
+      setIsHovering(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+  };
+
+  // Manual close handler
+  const handleClose = () => {
+    setIsHovering(false);
+    onCollapsedChange(true);
+    setShowHighlights(false);
+  };
+
+  // Manual open handler (for mobile)
+  const handleOpen = () => {
+    onCollapsedChange(false);
+    setShowHighlights(true);
+  };
+
   return (
     <>
+      {/* Mobile Menu Button - Only visible when sidebar is collapsed on mobile */}
+      <button
+        onClick={handleOpen}
+        className={cn(
+          "fixed top-4 left-4 z-[60] p-2 rounded-lg bg-card/95 backdrop-blur-xl border border-border/30 md:hidden transition-opacity",
+          !collapsed && "opacity-0 pointer-events-none"
+        )}
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
+      {/* Mobile Backdrop */}
+      {!collapsed && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={handleClose}
+        />
+      )}
+
       {/* Main Sidebar - PHP Admin Style */}
       <div 
         className={cn(
           "fixed left-0 top-0 h-screen z-50 flex flex-col transition-all duration-300 ease-out",
           "bg-card/95 backdrop-blur-xl border-r border-border/30",
-          shouldExpand ? "w-[110px]" : "w-[72px]"
+          // Desktop: collapse on hover
+          "md:w-[110px]",
+          collapsed && !isHovering && "md:w-[72px]",
+          // Mobile: show/hide completely
+          collapsed ? "-translate-x-full md:translate-x-0" : "translate-x-0"
         )}
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
-        {/* Logo */}
-        <div className="p-4 flex justify-center">
+        {/* Logo + Close Button */}
+        <div className="p-4 flex items-center justify-between">
           <img 
             src={tdzLogo} 
             alt="TDZ" 
-            className="w-16 h-16 rounded-xl object-contain cursor-pointer hover:scale-105 transition-transform"
+            className="w-12 h-12 md:w-16 md:h-16 rounded-xl object-contain cursor-pointer hover:scale-105 transition-transform"
             onClick={() => navigate("/")}
           />
+          {/* Close Button - Always visible when expanded */}
+          <button
+            onClick={handleClose}
+            className={cn(
+              "p-1.5 rounded-lg hover:bg-muted/50 transition-all text-muted-foreground hover:text-foreground",
+              shouldExpand ? "opacity-100" : "opacity-0 pointer-events-none"
+            )}
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Navigation Groups */}
@@ -300,7 +359,10 @@ export const StudioSidebar = ({
         className={cn(
           "fixed top-0 h-screen z-40 transition-all duration-300 ease-out",
           "bg-muted/50 backdrop-blur-xl border-r border-border/20",
-          showHighlights ? "left-[110px] w-[240px] opacity-100" : "left-[72px] w-0 opacity-0 overflow-hidden"
+          // Desktop
+          "hidden md:block",
+          showHighlights && shouldExpand ? "left-[110px] w-[240px] opacity-100" : "left-[72px] w-0 opacity-0 overflow-hidden",
+          // Mobile - show inline in main sidebar
         )}
       >
         <div className="p-6 h-full flex flex-col">
