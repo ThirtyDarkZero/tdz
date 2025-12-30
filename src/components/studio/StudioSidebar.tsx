@@ -20,10 +20,7 @@ import {
   Music4,
   Users,
   Wallet,
-  Palette,
-  Wrench,
   Moon,
-  Sun,
   ChevronRight,
   TrendingUp,
   PlayCircle,
@@ -39,6 +36,13 @@ interface StudioSidebarProps {
   profileImage?: string;
   collapsed: boolean;
   onCollapsedChange: (collapsed: boolean) => void;
+}
+
+interface RealStats {
+  totalPlays: number;
+  weeklyChange: number;
+  earnings: number;
+  followers: number;
 }
 
 // PHP Admin-style grouped navigation
@@ -79,15 +83,75 @@ export const StudioSidebar = ({
   const [isHovering, setIsHovering] = useState(false);
   const [isCEO, setIsCEO] = useState(false);
   const [showHighlights, setShowHighlights] = useState(true);
+  const [realStats, setRealStats] = useState<RealStats>({
+    totalPlays: 0,
+    weeklyChange: 0,
+    earnings: 0,
+    followers: 0
+  });
 
   useEffect(() => {
-    const checkCEOStatus = async () => {
+    const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user?.email === "info@thirtydarkzero.com") {
+      if (!user) return;
+      
+      // Check CEO status
+      if (user.email === "info@thirtydarkzero.com") {
         setIsCEO(true);
       }
+
+      // Load real stats from database
+      try {
+        // Get total plays from tracks
+        const { data: tracks } = await supabase
+          .from("tracks")
+          .select("id, play_count")
+          .eq("user_id", user.id);
+        
+        const totalPlays = tracks?.reduce((sum, t) => sum + (t.play_count || 0), 0) || 0;
+        const trackIds = tracks?.map(t => t.id) || [];
+
+        // Get followers count
+        const { count: followersCount } = await supabase
+          .from("artist_follows")
+          .select("*", { count: 'exact', head: true })
+          .eq("artist_id", user.id);
+
+        // Get earnings
+        const { data: earnings } = await supabase
+          .from("artist_earnings")
+          .select("total_earnings")
+          .eq("artist_id", user.id);
+        
+        const totalEarnings = earnings?.reduce((sum, e) => sum + (e.total_earnings || 0), 0) || 0;
+
+        // Calculate weekly change (simplified - compare to last week's streams)
+        let weeklyChange = 0;
+        if (trackIds.length > 0) {
+          const oneWeekAgo = new Date();
+          oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+          
+          const { count: weeklyCount } = await supabase
+            .from("listening_history")
+            .select("*", { count: 'exact', head: true })
+            .gte("played_at", oneWeekAgo.toISOString())
+            .in("track_id", trackIds);
+
+          weeklyChange = weeklyCount || 0;
+        }
+
+        setRealStats({
+          totalPlays,
+          weeklyChange,
+          earnings: totalEarnings,
+          followers: followersCount || 0
+        });
+      } catch (error) {
+        console.error("Error loading stats:", error);
+      }
     };
-    checkCEOStatus();
+
+    loadData();
   }, []);
 
   const shouldExpand = !collapsed || isHovering;
@@ -265,7 +329,7 @@ export const StudioSidebar = ({
             </Button>
           </div>
 
-          {/* Quick Stats - PHP Admin Style */}
+          {/* Quick Stats - PHP Admin Style - REAL DATA */}
           <div className="space-y-4 mb-6">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Quick Stats
@@ -275,25 +339,25 @@ export const StudioSidebar = ({
               <QuickStat 
                 icon={PlayCircle} 
                 label="Total Plays" 
-                value="12.4K" 
+                value={formatNumber(realStats.totalPlays)}
                 color="blue"
               />
               <QuickStat 
                 icon={TrendingUp} 
                 label="This Week" 
-                value="+23%" 
+                value={`+${realStats.weeklyChange}`}
                 color="green"
               />
               <QuickStat 
                 icon={DollarSign} 
                 label="Earnings" 
-                value="$847" 
+                value={`$${realStats.earnings.toFixed(0)}`}
                 color="orange"
               />
               <QuickStat 
                 icon={Users} 
                 label="Followers" 
-                value="2.1K" 
+                value={formatNumber(realStats.followers)}
                 color="purple"
               />
             </div>
@@ -338,6 +402,17 @@ export const StudioSidebar = ({
       </div>
     </>
   );
+};
+
+// Helper to format numbers like 1.2K, 12.4K, 1.2M
+const formatNumber = (num: number): string => {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M';
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'K';
+  }
+  return num.toString();
 };
 
 // Quick Stat Component - PHP Admin Style
