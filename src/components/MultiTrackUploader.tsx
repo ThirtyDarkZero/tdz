@@ -192,12 +192,12 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
       return;
     }
 
-    if (!artistName) {
+    if (!artistName.trim()) {
       toast({ title: "Artist name required", variant: "destructive" });
       return;
     }
 
-    if (releaseType !== 'single' && !releaseTitle) {
+    if (releaseType !== 'single' && !releaseTitle.trim()) {
       toast({ title: "Release title required for albums and EPs", variant: "destructive" });
       return;
     }
@@ -225,85 +225,166 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
     setUploading(true);
     setProgress(0);
 
+    let uploadedFilePaths: string[] = [];
+    let createdAlbumId: string | null = null;
+    let createdTrackIds: string[] = [];
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      // Step 1: Verify authentication
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error("Authentication required. Please sign in again.");
+      }
 
       let albumId: string | null = null;
 
-      // Create album for EP or Album
+      // Step 2: Create album for EP or Album (with retry)
       if (releaseType !== 'single') {
-        const { data: albumData, error: albumError } = await supabase
-          .from('albums')
-          .insert({
-            user_id: user.id,
-            title: releaseTitle,
-            artist_name: artistName,
-            genre: genre || null,
-            description: description || null,
-            is_published: false,
-            total_tracks: tracks.length
-          })
-          .select()
-          .single();
+        let retries = 3;
+        while (retries > 0) {
+          const { data: albumData, error: albumError } = await supabase
+            .from('albums')
+            .insert({
+              user_id: user.id,
+              title: releaseTitle.trim().slice(0, 200),
+              artist_name: artistName.trim().slice(0, 100),
+              genre: genre?.trim() || null,
+              description: description?.trim() || null,
+              is_published: false,
+              total_tracks: tracks.length
+            })
+            .select()
+            .single();
 
-        if (albumError) throw albumError;
-        albumId = albumData.id;
+          if (!albumError && albumData) {
+            albumId = albumData.id;
+            createdAlbumId = albumData.id;
+            break;
+          }
+
+          retries--;
+          if (retries === 0) {
+            throw new Error(`Failed to create album: ${albumError?.message || 'Unknown error'}`);
+          }
+          await new Promise(r => setTimeout(r, 1000)); // Wait 1s before retry
+        }
       }
 
-      // Upload tracks
+      // Step 3: Upload tracks with robust error handling
       const totalTracks = tracks.length;
+      const successfulTracks: number[] = [];
+
       for (let i = 0; i < tracks.length; i++) {
         const track = tracks[i];
         const baseProgress = (i / totalTracks) * 100;
         
-        setProgress(baseProgress + 10);
+        setProgress(baseProgress + 5);
 
-        // Upload file
-        const sanitizedFileName = track.file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const filePath = `${user.id}/${Date.now()}-${sanitizedFileName}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('track-files')
-          .upload(filePath, track.file, {
-            cacheControl: '3600',
-            upsert: false
-          });
+        try {
+          // Sanitize and create unique filename
+          const sanitizedFileName = track.file.name
+            .replace(/[^a-zA-Z0-9.-]/g, '_')
+            .slice(0, 100);
+          const uniqueId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          const filePath = `${user.id}/${uniqueId}-${sanitizedFileName}`;
+          
+          // Upload file with retry logic
+          let uploadSuccess = false;
+          let uploadRetries = 3;
+          
+          while (uploadRetries > 0 && !uploadSuccess) {
+            const { error: uploadError } = await supabase.storage
+              .from('track-files')
+              .upload(filePath, track.file, {
+                cacheControl: '3600',
+                upsert: false
+              });
 
-        if (uploadError) throw uploadError;
-        setProgress(baseProgress + 40);
+            if (!uploadError) {
+              uploadSuccess = true;
+              uploadedFilePaths.push(filePath);
+            } else {
+              uploadRetries--;
+              if (uploadRetries === 0) {
+                console.error(`Upload failed for ${track.title}:`, uploadError);
+                throw new Error(`Failed to upload ${track.title}: ${uploadError.message}`);
+              }
+              await new Promise(r => setTimeout(r, 1000));
+            }
+          }
 
-        // Analyze metadata
-        const { data: aiData } = await supabase.functions.invoke('analyze-track-metadata', {
-          body: { filePath, fileName: track.file.name }
-        });
+          setProgress(baseProgress + 30);
 
-        setProgress(baseProgress + 60);
+          // Analyze metadata (non-blocking - continue even if this fails)
+          let aiData: any = null;
+          try {
+            const { data, error: aiError } = await supabase.functions.invoke('analyze-track-metadata', {
+              body: { filePath, fileName: track.file.name }
+            });
+            if (!aiError && data) {
+              aiData = data;
+            }
+          } catch (aiErr) {
+            console.warn('AI metadata analysis skipped:', aiErr);
+          }
 
-        // Detect audio quality
-        const audioQuality = detectAudioQuality(track.file);
+          setProgress(baseProgress + 50);
 
-        // Create track record
-        const { error: dbError } = await supabase.from('tracks').insert({
-          user_id: user.id,
-          title: track.title.slice(0, 200),
-          artist_name: artistName.slice(0, 100),
-          duration: track.duration,
-          file_path: filePath,
-          genre: genre || null,
-          is_published: false,
-          audio_quality: audioQuality,
-          album_id: albumId,
-          track_number: releaseType !== 'single' ? i + 1 : null,
-          ai_tags: aiData?.tags || null,
-          bpm: aiData?.bpm || null,
-          key: aiData?.key || null,
-          mood: aiData?.mood || null
-        });
+          // Detect audio quality
+          const audioQuality = detectAudioQuality(track.file);
 
-        if (dbError) throw dbError;
-        setProgress(baseProgress + 100);
+          // Create track record with retry
+          let dbRetries = 3;
+          let trackCreated = false;
+          
+          while (dbRetries > 0 && !trackCreated) {
+            const { data: trackData, error: dbError } = await supabase.from('tracks').insert({
+              user_id: user.id,
+              title: track.title.trim().slice(0, 200),
+              artist_name: artistName.trim().slice(0, 100),
+              duration: track.duration || 0,
+              file_path: filePath,
+              genre: genre?.trim() || null,
+              is_published: false,
+              audio_quality: audioQuality,
+              album_id: albumId,
+              track_number: releaseType !== 'single' ? i + 1 : null,
+              ai_tags: aiData?.tags || null,
+              bpm: aiData?.bpm || null,
+              key: aiData?.key || null,
+              mood: aiData?.mood || null
+            }).select('id').single();
+
+            if (!dbError && trackData) {
+              trackCreated = true;
+              createdTrackIds.push(trackData.id);
+              successfulTracks.push(i);
+            } else {
+              dbRetries--;
+              if (dbRetries === 0) {
+                console.error(`DB insert failed for ${track.title}:`, dbError);
+                throw new Error(`Failed to save ${track.title}: ${dbError?.message || 'Database error'}`);
+              }
+              await new Promise(r => setTimeout(r, 1000));
+            }
+          }
+
+          setProgress(baseProgress + (100 / totalTracks));
+        } catch (trackError: any) {
+          console.error(`Error processing track ${i + 1}:`, trackError);
+          throw trackError;
+        }
       }
+
+      // Update album track count if needed
+      if (albumId && successfulTracks.length !== tracks.length) {
+        await supabase
+          .from('albums')
+          .update({ total_tracks: successfulTracks.length })
+          .eq('id', albumId);
+      }
+
+      setProgress(100);
 
       toast({ 
         title: "Upload successful!",
@@ -317,12 +398,49 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
       setGenre("");
       setDescription("");
       setReleaseType('single');
+      
+      // Refetch limits
+      refetchLimits();
+      
       onSuccess?.();
     } catch (error: any) {
       console.error('Upload error:', error);
+      
+      // Cleanup on failure: remove uploaded files and created records
+      if (uploadedFilePaths.length > 0 || createdTrackIds.length > 0 || createdAlbumId) {
+        console.log('Cleaning up partial upload...');
+        
+        // Delete uploaded files
+        for (const filePath of uploadedFilePaths) {
+          try {
+            await supabase.storage.from('track-files').remove([filePath]);
+          } catch (cleanupErr) {
+            console.error('Cleanup file error:', cleanupErr);
+          }
+        }
+        
+        // Delete created tracks
+        for (const trackId of createdTrackIds) {
+          try {
+            await supabase.from('tracks').delete().eq('id', trackId);
+          } catch (cleanupErr) {
+            console.error('Cleanup track error:', cleanupErr);
+          }
+        }
+        
+        // Delete created album
+        if (createdAlbumId) {
+          try {
+            await supabase.from('albums').delete().eq('id', createdAlbumId);
+          } catch (cleanupErr) {
+            console.error('Cleanup album error:', cleanupErr);
+          }
+        }
+      }
+
       toast({
         title: "Upload failed",
-        description: error.message,
+        description: error.message || "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
     } finally {
