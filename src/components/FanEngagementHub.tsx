@@ -612,7 +612,7 @@ export const FanEngagementHub = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Pre-Save Campaign with Link */}
-              <Card className="p-4 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
+              <Card className="p-4 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent relative z-10">
                 <h4 className="font-semibold mb-2 flex items-center gap-2">
                   <Bell className="w-4 h-4 text-amber-500" />
                   Pre-Save Campaign
@@ -640,7 +640,7 @@ export const FanEngagementHub = () => {
                       />
                     </div>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-3 flex flex-col">
                     {preSaveLink ? (
                       <div className="p-3 rounded-lg bg-muted/50 border border-green-500/30">
                         <Label className="text-xs text-green-500">Your Pre-Save Link</Label>
@@ -652,24 +652,22 @@ export const FanEngagementHub = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="h-full flex items-center justify-center">
-                        <Button 
-                          variant="outline" 
-                          onClick={generatePreSaveLink}
-                          disabled={generatingPreSaveLink || !preSaveTitle || !preSaveDate}
-                          className="w-full"
-                        >
-                          {generatingPreSaveLink ? (
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          ) : (
-                            <Link className="w-4 h-4 mr-2" />
-                          )}
-                          Generate Pre-Save Link
-                        </Button>
-                      </div>
+                      <Button 
+                        variant="outline" 
+                        onClick={generatePreSaveLink}
+                        disabled={generatingPreSaveLink || !preSaveTitle || !preSaveDate}
+                        className="w-full"
+                      >
+                        {generatingPreSaveLink ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Link className="w-4 h-4 mr-2" />
+                        )}
+                        Generate Pre-Save Link
+                      </Button>
                     )}
                     <Button 
-                      className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700" 
+                      className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 relative z-20" 
                       onClick={createPreSaveCampaign}
                       disabled={!preSaveTitle || !preSaveDate}
                     >
@@ -681,7 +679,7 @@ export const FanEngagementHub = () => {
               </Card>
 
               {/* CSV Upload */}
-              <Card className="p-4 border-dashed border-2 border-primary/30">
+              <Card className="p-4 border-dashed border-2 border-primary/30 relative z-0">
                 <div className="text-center">
                   <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
                   <h4 className="font-semibold mb-1">Import Contacts</h4>
