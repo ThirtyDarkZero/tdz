@@ -14,7 +14,15 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const squareAppId = Deno.env.get('SQUARE_APPLICATION_ID')!;
+    const squareAppId = Deno.env.get('SQUARE_APPLICATION_ID');
+
+    if (!squareAppId) {
+      console.error('SQUARE_APPLICATION_ID not configured');
+      return new Response(
+        JSON.stringify({ error: 'Square OAuth not configured. Please add SQUARE_APPLICATION_ID secret.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Get auth user
     const authHeader = req.headers.get('Authorization');
@@ -38,6 +46,13 @@ serve(async (req) => {
 
     const { redirectUri } = await req.json();
 
+    if (!redirectUri) {
+      return new Response(
+        JSON.stringify({ error: 'Missing redirectUri parameter' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Generate state token to prevent CSRF (includes user ID)
     const state = btoa(JSON.stringify({ 
       userId: user.id, 
@@ -45,8 +60,7 @@ serve(async (req) => {
       nonce: crypto.randomUUID()
     }));
 
-    // Square OAuth authorization URL
-    // Using sandbox for development - change to production URL for live
+    // Square OAuth authorization URL (production)
     const baseUrl = 'https://connect.squareup.com/oauth2/authorize';
     
     const params = new URLSearchParams({
@@ -60,6 +74,7 @@ serve(async (req) => {
     const authUrl = `${baseUrl}?${params.toString()}`;
 
     console.log(`Generated Square OAuth URL for user ${user.id}`);
+    console.log(`Redirect URI: ${redirectUri}`);
 
     return new Response(
       JSON.stringify({ 
