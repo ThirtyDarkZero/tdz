@@ -185,6 +185,12 @@ export function DiscoveryHeader({
     }
   };
 
+  const handleArtistClick = (artistName: string, isYouTube: boolean) => {
+    if (isYouTube) {
+      navigate(`/artist/youtube/${encodeURIComponent(artistName)}`);
+    }
+  };
+
   function parseDurationToSeconds(duration?: string): number {
     if (!duration) return 0;
     const parts = duration.split(':').map(Number);

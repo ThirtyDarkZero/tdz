@@ -17,6 +17,7 @@ import Studio from "./pages/Studio";
 import RoleSelection from "./pages/RoleSelection";
 import Discover from "./pages/Discover";
 import ArtistProfile from "./pages/ArtistProfile";
+import UnifiedArtistProfile from "./pages/UnifiedArtistProfile";
 import ListenerProfile from "./pages/ListenerProfile";
 import TrackDetail from "./pages/TrackDetail";
 import AlbumDetail from "./pages/AlbumDetail";
@@ -67,6 +68,7 @@ const App = () => (
             />
             <Route path="/browse" element={<Browse />} />
             <Route path="/artist/:artistId" element={<ArtistProfile />} />
+            <Route path="/artist/youtube/:artistId" element={<UnifiedArtistProfile />} />
             <Route path="/profile" element={<ListenerProfile />} />
             <Route path="/track/:trackId" element={<TrackDetail />} />
             <Route path="/album/:albumId" element={<AlbumDetail />} />

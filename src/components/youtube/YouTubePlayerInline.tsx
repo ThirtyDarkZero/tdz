@@ -28,6 +28,8 @@ export function YouTubePlayerInline({
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
   const intervalRef = useRef<number | null>(null);
+  const initializingRef = useRef(false);
+  const lastVideoIdRef = useRef<string | null>(null);
   
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -35,12 +37,27 @@ export function YouTubePlayerInline({
   const [isMuted, setIsMuted] = useState(false);
   const [isReady, setIsReady] = useState(false);
   
-  const { setYoutubePlayer, youtubeState, setCurrentTime: setContextTime } = usePlayer();
+  const { setYoutubePlayer, setCurrentTime: setContextTime } = usePlayer();
 
   const videoId = track.youtubeId || track.id.replace('yt-', '');
+  
+  // Auto-play on mount - tell parent we're playing
+  useEffect(() => {
+    // Signal that we should be playing immediately
+    if (!isPlaying) {
+      onPlayingChange(true);
+    }
+  }, []);
 
   // Initialize YouTube player
   useEffect(() => {
+    // Prevent duplicate initialization
+    if (initializingRef.current && lastVideoIdRef.current === videoId) return;
+    if (lastVideoIdRef.current === videoId && playerRef.current && isReady) return;
+    
+    initializingRef.current = true;
+    lastVideoIdRef.current = videoId;
+    
     if (!window.YT || !window.YT.Player) {
       // Wait for API to load
       const checkApi = setInterval(() => {
@@ -57,7 +74,11 @@ export function YouTubePlayerInline({
     function initPlayer() {
       // Destroy existing player
       if (playerRef.current) {
-        playerRef.current.destroy();
+        try {
+          playerRef.current.destroy();
+        } catch (e) {
+          // Ignore destroy errors
+        }
       }
 
       playerRef.current = new window.YT.Player('yt-inline-player', {
@@ -76,14 +97,15 @@ export function YouTubePlayerInline({
         },
         events: {
           onReady: (event: any) => {
+            initializingRef.current = false;
             setIsReady(true);
             const dur = event.target.getDuration();
             setDuration(dur);
             setYoutubePlayer(event.target);
             
-            if (isPlaying) {
-              event.target.playVideo();
-            }
+            // Always auto-play when ready
+            event.target.playVideo();
+            onPlayingChange(true);
             
             // Start time tracking
             if (intervalRef.current) {
@@ -110,6 +132,7 @@ export function YouTubePlayerInline({
           },
           onError: (event: any) => {
             console.error('YouTube player error:', event.data);
+            initializingRef.current = false;
           },
         },
       });
