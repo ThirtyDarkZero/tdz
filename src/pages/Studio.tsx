@@ -68,6 +68,8 @@ const Studio = () => {
   // If a logged-in user has no role after loading completes, redirect to role selection
   // CRITICAL: Only redirect ONCE and only after role loading is truly done
   const roleRedirectedRef = useRef(false);
+  const profileCheckedRef = useRef(false);
+
   useEffect(() => {
     // Don't do anything while still loading
     if (loading || roleLoading) return;
@@ -91,10 +93,14 @@ const Studio = () => {
     if (!user) return;
     if (roleLoading) return;
     if (role === "listener" || !role) return;
+    // Only check profile once to prevent redirect loops
+    if (profileCheckedRef.current) return;
 
     let cancelled = false;
 
     const fetchArtistProfile = async () => {
+      profileCheckedRef.current = true;
+
       const { data, error } = await supabase
         .from("artist_profiles")
         .select("artist_name, profile_image_path")
@@ -109,10 +115,14 @@ const Studio = () => {
       }
 
       if (!data) {
-        toast.error("Profile incomplete", {
-          description: "Please complete your artist profile setup",
-        });
-        navigate("/role-selection", { replace: true });
+        // No profile found - only redirect if we haven't already
+        if (!roleRedirectedRef.current) {
+          roleRedirectedRef.current = true;
+          toast.error("Profile incomplete", {
+            description: "Please complete your artist profile setup",
+          });
+          navigate("/role-selection", { replace: true });
+        }
         return;
       }
 
