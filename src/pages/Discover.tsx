@@ -28,7 +28,7 @@ import { GenrePlaylists } from "@/components/discovery/GenrePlaylists";
 import { EditorialPlaylists } from "@/components/discovery/EditorialPlaylists";
 import { YouTubeVideo } from "@/hooks/useYouTubePlayer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { DiscogsLibrary } from "@/components/discovery/DiscogsLibrary";
+import { UnifiedLibrary } from "@/components/discovery/UnifiedLibrary";
 
 export default function Discover() {
   const navigate = useNavigate();
@@ -287,7 +287,7 @@ export default function Discover() {
       }
       libraryContent={
         <ErrorBoundary fallback={<div className="h-40 bg-muted/20 rounded-lg flex items-center justify-center text-muted-foreground">Library unavailable</div>}>
-          <DiscogsLibrary onPlayYouTube={handlePlayDiscogsYouTube} />
+          <UnifiedLibrary onPlayYouTube={handlePlayDiscogsYouTube} />
         </ErrorBoundary>
       }
       trendingContent={

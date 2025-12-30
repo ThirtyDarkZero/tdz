@@ -107,3 +107,12 @@ verify_jwt = false
 
 [functions.discogs-api]
 verify_jwt = false
+
+[functions.musicbrainz-api]
+verify_jwt = false
+
+[functions.exec-agent-chat]
+verify_jwt = true
+
+[functions.track-listener-demographics]
+verify_jwt = true
