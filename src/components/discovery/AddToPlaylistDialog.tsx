@@ -122,12 +122,12 @@ export function AddToPlaylistDialog({ open, onOpenChange, track }: AddToPlaylist
 
       const nextPosition = (posData?.[0]?.position || 0) + 1;
 
-      // For YouTube/external tracks, store in virtual_tracks first
+      // For YouTube/external tracks, store in virtual_tracks first and use virtual_track_id
       if (track.youtubeId) {
         const virtualId = `youtube:${track.youtubeId}`;
         
-        // Insert into virtual_tracks (upsert)
-        await supabase
+        // Upsert into virtual_tracks
+        const { error: upsertError } = await supabase
           .from('virtual_tracks')
           .upsert({
             id: virtualId,
@@ -138,12 +138,17 @@ export function AddToPlaylistDialog({ open, onOpenChange, track }: AddToPlaylist
             source: 'youtube'
           }, { onConflict: 'id' });
 
+        if (upsertError) {
+          console.error('Virtual track upsert error:', upsertError);
+          throw upsertError;
+        }
+
         // Check if already in playlist
         const { data: existing } = await supabase
           .from('playlist_tracks')
           .select('id')
           .eq('playlist_id', playlistId)
-          .eq('track_id', virtualId)
+          .eq('virtual_track_id', virtualId)
           .maybeSingle();
 
         if (existing) {
@@ -152,22 +157,18 @@ export function AddToPlaylistDialog({ open, onOpenChange, track }: AddToPlaylist
           return;
         }
 
-        // Store in localStorage as backup for loading
-        const ytPlaylists = JSON.parse(localStorage.getItem('yt_playlist_tracks') || '{}');
-        if (!ytPlaylists[playlistId]) {
-          ytPlaylists[playlistId] = [];
-        }
-        // Remove if already exists
-        ytPlaylists[playlistId] = ytPlaylists[playlistId].filter((t: any) => t.id !== virtualId);
-        ytPlaylists[playlistId].push({
-          id: virtualId,
-          title: track.title,
-          artist_name: track.artist_name,
-          youtubeId: track.youtubeId,
-          thumbnail: track.thumbnail,
-          position: nextPosition,
-        });
-        localStorage.setItem('yt_playlist_tracks', JSON.stringify(ytPlaylists));
+        // Insert into playlist_tracks referencing virtual_track_id
+        const { error: insertError } = await supabase
+          .from('playlist_tracks')
+          .insert({
+            playlist_id: playlistId,
+            virtual_track_id: virtualId,
+            track_id: null,
+            position: nextPosition,
+            added_by: user.id,
+          });
+
+        if (insertError) throw insertError;
 
         toast.success(`Added "${track.title}" to playlist`);
         onOpenChange(false);
@@ -194,6 +195,7 @@ export function AddToPlaylistDialog({ open, onOpenChange, track }: AddToPlaylist
         .insert({
           playlist_id: playlistId,
           track_id: track.id,
+          virtual_track_id: null,
           position: nextPosition,
           added_by: user.id,
         });

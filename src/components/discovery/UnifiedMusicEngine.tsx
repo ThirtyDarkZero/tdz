@@ -394,7 +394,9 @@ export function UnifiedMusicEngine({ onPlayYouTube, initialTrending = false }: U
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 pb-32">
-            {results.map((result) => {
+            {results
+              .filter(r => searchType === 'all' || r.type === searchType)
+              .map((result) => {
               const thumbnail = getBestThumbnail(result);
               
               return (
