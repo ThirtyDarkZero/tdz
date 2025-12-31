@@ -1,0 +1,283 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// Spotify API endpoints (using public web API endpoints)
+const SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token';
+
+interface SpotifyTrack {
+  id: string;
+  name: string;
+  artists: { name: string }[];
+  album: {
+    name: string;
+    images: { url: string }[];
+  };
+  duration_ms: number;
+  preview_url: string | null;
+}
+
+interface SpotifyPlaylist {
+  id: string;
+  name: string;
+  description: string;
+  images: { url: string }[];
+  tracks: { total: number };
+  owner: { display_name: string };
+}
+
+async function getSpotifyToken(): Promise<string | null> {
+  const clientId = Deno.env.get('SPOTIFY_CLIENT_ID');
+  const clientSecret = Deno.env.get('SPOTIFY_CLIENT_SECRET');
+  
+  if (!clientId || !clientSecret) {
+    console.log('Spotify credentials not configured, using fallback data');
+    return null;
+  }
+  
+  try {
+    const response = await fetch(SPOTIFY_TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${btoa(`${clientId}:${clientSecret}`)}`
+      },
+      body: 'grant_type=client_credentials'
+    });
+    
+    const data = await response.json();
+    return data.access_token;
+  } catch (error) {
+    console.error('Failed to get Spotify token:', error);
+    return null;
+  }
+}
+
+async function fetchSpotifyFeaturedPlaylists(token: string): Promise<SpotifyPlaylist[]> {
+  try {
+    const response = await fetch('https://api.spotify.com/v1/browse/featured-playlists?limit=20', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await response.json();
+    return data.playlists?.items || [];
+  } catch (error) {
+    console.error('Failed to fetch featured playlists:', error);
+    return [];
+  }
+}
+
+async function fetchSpotifyNewReleases(token: string): Promise<any[]> {
+  try {
+    const response = await fetch('https://api.spotify.com/v1/browse/new-releases?limit=20', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await response.json();
+    return data.albums?.items || [];
+  } catch (error) {
+    console.error('Failed to fetch new releases:', error);
+    return [];
+  }
+}
+
+async function fetchSpotifyCategories(token: string): Promise<any[]> {
+  try {
+    const response = await fetch('https://api.spotify.com/v1/browse/categories?limit=30', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await response.json();
+    return data.categories?.items || [];
+  } catch (error) {
+    console.error('Failed to fetch categories:', error);
+    return [];
+  }
+}
+
+async function searchSpotify(token: string, query: string, type: string = 'track'): Promise<any[]> {
+  try {
+    const response = await fetch(
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${type}&limit=20`,
+      { headers: { 'Authorization': `Bearer ${token}` } }
+    );
+    const data = await response.json();
+    return data[`${type}s`]?.items || [];
+  } catch (error) {
+    console.error('Spotify search failed:', error);
+    return [];
+  }
+}
+
+// Fallback trending data when Spotify API is not configured
+function getFallbackTrendingData() {
+  return {
+    featuredPlaylists: [
+      { id: 'fp1', name: 'Today\'s Top Hits', description: 'The hottest tracks right now', image: 'https://i.scdn.co/image/ab67706f00000002724554ed6bed6f051d9b0bfc', tracks: 50, source: 'spotify' },
+      { id: 'fp2', name: 'RapCaviar', description: 'New hip hop and R&B', image: 'https://i.scdn.co/image/ab67706f00000002b10f3d1cf5b0a2da7ab47bc4', tracks: 50, source: 'spotify' },
+      { id: 'fp3', name: 'Hot Country', description: 'Country hits', image: 'https://i.scdn.co/image/ab67706f000000023e0130fcd5d106f1402b4707', tracks: 50, source: 'spotify' },
+      { id: 'fp4', name: 'Viva Latino', description: 'Latin music vibes', image: 'https://i.scdn.co/image/ab67706f000000025af3ba9a50672e98c5c8ea9c', tracks: 50, source: 'spotify' },
+      { id: 'fp5', name: 'Rock Classics', description: 'Rock legends', image: 'https://i.scdn.co/image/ab67706f00000002fe6d8d1019d5b302213e3730', tracks: 100, source: 'spotify' },
+      { id: 'fp6', name: 'Chill Hits', description: 'Relaxing vibes', image: 'https://i.scdn.co/image/ab67706f00000002b60db5d1bcdd9c4fd1ebcffe', tracks: 75, source: 'spotify' },
+    ],
+    trendingTracks: [
+      { id: 'tt1', title: 'Die With A Smile', artist: 'Lady Gaga, Bruno Mars', album: 'Die With A Smile', thumbnail: 'https://i.scdn.co/image/ab67616d0000b273b3be3b970fc89a02f301c72c', source: 'spotify' },
+      { id: 'tt2', title: 'APT.', artist: 'ROSÉ, Bruno Mars', album: 'APT.', thumbnail: 'https://i.scdn.co/image/ab67616d0000b273d573290af0c9bef0e6c99c2a', source: 'spotify' },
+      { id: 'tt3', title: 'Timeless', artist: 'The Weeknd, Playboi Carti', album: 'Hurry Up Tomorrow', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36', source: 'spotify' },
+      { id: 'tt4', title: 'Luther', artist: 'Kendrick Lamar, SZA', album: 'GNX', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2735be9e01c08e957d9e9b08426', source: 'spotify' },
+      { id: 'tt5', title: 'Squabble Up', artist: 'Kendrick Lamar', album: 'GNX', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2735be9e01c08e957d9e9b08426', source: 'spotify' },
+    ],
+    newReleases: [
+      { id: 'nr1', title: 'GNX', artist: 'Kendrick Lamar', image: 'https://i.scdn.co/image/ab67616d0000b2735be9e01c08e957d9e9b08426', source: 'spotify' },
+      { id: 'nr2', title: 'Hurry Up Tomorrow', artist: 'The Weeknd', image: 'https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36', source: 'spotify' },
+      { id: 'nr3', title: 'Wicked', artist: 'Various Artists', image: 'https://i.scdn.co/image/ab67616d0000b273e8b6c7bb4c8e4be4f893c0ca', source: 'spotify' },
+    ],
+    genres: [
+      { id: 'g1', name: 'Hip-Hop', icon: '🎤' },
+      { id: 'g2', name: 'Pop', icon: '🎵' },
+      { id: 'g3', name: 'R&B', icon: '💜' },
+      { id: 'g4', name: 'Rock', icon: '🎸' },
+      { id: 'g5', name: 'Electronic', icon: '🎧' },
+      { id: 'g6', name: 'Latin', icon: '💃' },
+      { id: 'g7', name: 'Country', icon: '🤠' },
+      { id: 'g8', name: 'Jazz', icon: '🎷' },
+    ]
+  };
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { action, query, type } = await req.json();
+    
+    const token = await getSpotifyToken();
+    
+    if (!token) {
+      // Return fallback data if no Spotify credentials
+      const fallbackData = getFallbackTrendingData();
+      return new Response(JSON.stringify({
+        success: true,
+        source: 'fallback',
+        data: fallbackData
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    let result: any = {};
+    
+    switch (action) {
+      case 'featured':
+        const playlists = await fetchSpotifyFeaturedPlaylists(token);
+        result = {
+          featuredPlaylists: playlists.map(p => ({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            image: p.images?.[0]?.url,
+            tracks: p.tracks?.total || 0,
+            owner: p.owner?.display_name,
+            source: 'spotify'
+          }))
+        };
+        break;
+        
+      case 'new-releases':
+        const releases = await fetchSpotifyNewReleases(token);
+        result = {
+          newReleases: releases.map(a => ({
+            id: a.id,
+            title: a.name,
+            artist: a.artists?.map((ar: any) => ar.name).join(', '),
+            image: a.images?.[0]?.url,
+            releaseDate: a.release_date,
+            source: 'spotify'
+          }))
+        };
+        break;
+        
+      case 'categories':
+        const categories = await fetchSpotifyCategories(token);
+        result = {
+          categories: categories.map(c => ({
+            id: c.id,
+            name: c.name,
+            icon: c.icons?.[0]?.url,
+            source: 'spotify'
+          }))
+        };
+        break;
+        
+      case 'search':
+        const searchResults = await searchSpotify(token, query, type || 'track');
+        result = {
+          results: searchResults.map((item: any) => {
+            if (type === 'track' || !type) {
+              return {
+                id: item.id,
+                title: item.name,
+                artist: item.artists?.map((a: any) => a.name).join(', '),
+                album: item.album?.name,
+                thumbnail: item.album?.images?.[0]?.url,
+                duration: item.duration_ms,
+                previewUrl: item.preview_url,
+                source: 'spotify'
+              };
+            }
+            return item;
+          })
+        };
+        break;
+        
+      case 'trending':
+      default:
+        const [featured, newAlbums] = await Promise.all([
+          fetchSpotifyFeaturedPlaylists(token),
+          fetchSpotifyNewReleases(token)
+        ]);
+        
+        result = {
+          featuredPlaylists: featured.map(p => ({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            image: p.images?.[0]?.url,
+            tracks: p.tracks?.total || 0,
+            source: 'spotify'
+          })),
+          newReleases: newAlbums.map(a => ({
+            id: a.id,
+            title: a.name,
+            artist: a.artists?.map((ar: any) => ar.name).join(', '),
+            image: a.images?.[0]?.url,
+            source: 'spotify'
+          }))
+        };
+        break;
+    }
+    
+    return new Response(JSON.stringify({
+      success: true,
+      source: 'spotify',
+      data: result
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+    
+  } catch (error) {
+    console.error('Spotify trending error:', error);
+    
+    // Return fallback on any error
+    const fallbackData = getFallbackTrendingData();
+    return new Response(JSON.stringify({
+      success: true,
+      source: 'fallback',
+      data: fallbackData
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+});

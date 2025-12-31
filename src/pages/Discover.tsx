@@ -21,6 +21,9 @@ import { MinimalAlbumGrid } from "@/components/discovery/MinimalAlbumGrid";
 import { MinimalTrackList } from "@/components/discovery/MinimalTrackList";
 import { UnifiedLibrary } from "@/components/discovery/UnifiedLibrary";
 import { CityTrendingSection } from "@/components/discovery/CityTrendingSection";
+import { SpotifyPlaylistSection } from "@/components/discovery/SpotifyPlaylistSection";
+import { UserPlaylistsSection } from "@/components/discovery/UserPlaylistsSection";
+import { PlaylistManager } from "@/components/PlaylistManager";
 
 export default function Discover() {
   const navigate = useNavigate();
@@ -252,8 +255,25 @@ export default function Discover() {
               </ErrorBoundary>
 
               <ErrorBoundary fallback={null}>
+                <div className="px-6 md:px-12 py-8 bg-[#030303]">
+                  <SpotifyPlaylistSection
+                    onViewAll={() => setActiveTab('library')}
+                  />
+                </div>
+              </ErrorBoundary>
+
+              <ErrorBoundary fallback={null}>
+                <div className="px-6 md:px-12 py-8 bg-[#0a0a0a]">
+                  <UserPlaylistsSection
+                    onPlaylistClick={(id) => navigate(`/playlist/${id}`)}
+                    onViewAll={() => setActiveTab('playlists')}
+                  />
+                </div>
+              </ErrorBoundary>
+
+              <ErrorBoundary fallback={null}>
                 <CityTrendingSection
-                  sectionNumber={5}
+                  sectionNumber={6}
                   onViewAllTrends={() => setActiveTab('library')}
                 />
               </ErrorBoundary>
@@ -297,9 +317,29 @@ export default function Discover() {
 
         case 'playlists':
           return (
-            <div className="px-4 sm:px-6 lg:px-8 py-6">
-              <h1 className="text-3xl font-bold text-white mb-6">Playlists</h1>
-              <p className="text-white/50">Create and manage your playlists</p>
+            <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+              <h1 className="text-3xl font-bold text-white mb-6">Your Library</h1>
+              
+              <ErrorBoundary fallback={null}>
+                <UserPlaylistsSection
+                  onPlaylistClick={(id) => navigate(`/playlist/${id}`)}
+                />
+              </ErrorBoundary>
+              
+              <ErrorBoundary fallback={null}>
+                <SpotifyPlaylistSection
+                  onViewAll={() => setActiveTab('library')}
+                />
+              </ErrorBoundary>
+              
+              <ErrorBoundary fallback={null}>
+                <div className="mt-8">
+                  <PlaylistManager
+                    userId={user?.id || null}
+                    onPlaylistSelect={(id) => navigate(`/playlist/${id}`)}
+                  />
+                </div>
+              </ErrorBoundary>
             </div>
           );
 
