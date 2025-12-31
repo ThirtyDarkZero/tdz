@@ -24,6 +24,7 @@ import { MinimalAlbumGrid } from "@/components/discovery/MinimalAlbumGrid";
 import { MinimalGenreSection } from "@/components/discovery/MinimalGenreSection";
 import { Genre3DCarousel } from "@/components/discovery/Genre3DCarousel";
 import { CuratedPlaylistGrid } from "@/components/discovery/CuratedPlaylistGrid";
+import { UnifiedLibrary } from "@/components/discovery/UnifiedLibrary";
 
 export default function Discover() {
   const navigate = useNavigate();
@@ -310,8 +311,23 @@ export default function Discover() {
         case 'library':
           return (
             <div className="px-4 sm:px-6 lg:px-8 py-6">
-              <h1 className="text-3xl font-bold text-white mb-6">Library</h1>
-              <p className="text-white/50">Your music library</p>
+              <ErrorBoundary fallback={<div className="text-white/50">Library unavailable</div>}>
+                <UnifiedLibrary
+                  onPlayYouTube={(videoId, title, artist, thumbnail) => {
+                    playTrack({
+                      id: videoId,
+                      title,
+                      artist_name: artist,
+                      source: 'youtube',
+                      youtubeId: videoId,
+                      album_cover_path: thumbnail,
+                      duration: 0,
+                      file_path: '',
+                      play_count: 0,
+                    });
+                  }}
+                />
+              </ErrorBoundary>
             </div>
           );
 
