@@ -6,12 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { 
   Play, Bell, MoreHorizontal, ChevronLeft, ChevronRight, 
-  Disc, Clock, ListPlus, Youtube, Loader2, Music
+  Disc, Clock, ListPlus, Youtube, Loader2, Music, Heart
 } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { useMusicBrainz } from "@/hooks/useMusicBrainz";
 import { useDiscogsLibrary } from "@/hooks/useDiscogsLibrary";
 import { GlobalAlbumDetail } from "./GlobalAlbumDetail";
+import { ArtistYouTubeCatalog } from "./ArtistYouTubeCatalog";
+import { useGlobalLibrary } from "@/hooks/useGlobalLibrary";
 
 interface GlobalArtistProfileProps {
   artistName: string;
@@ -51,6 +53,7 @@ export function GlobalArtistProfile({
   onAddToPlaylist 
 }: GlobalArtistProfileProps) {
   const { playTrack, addToQueue } = usePlayer();
+  const { toggleGlobalLike, isGlobalTrackLiked, loadLikedGlobalTracks } = useGlobalLibrary();
   const { getArtist: getMBArtist, search: searchMB, findYouTubeMatch } = useMusicBrainz();
   const { getArtist: getDiscogsArtist, getArtistReleases } = useDiscogsLibrary();
   
@@ -66,6 +69,13 @@ export function GlobalArtistProfile({
   const [selectedAlbum, setSelectedAlbum] = useState<GlobalAlbum | null>(null);
   const [artistImage, setArtistImage] = useState<string | null>(null);
   const [imageLoadFailed, setImageLoadFailed] = useState(false);
+  const [youtubeChannelId, setYoutubeChannelId] = useState<string | null>(null);
+  const [showFullCatalog, setShowFullCatalog] = useState(false);
+
+  // Load liked tracks
+  useEffect(() => {
+    loadLikedGlobalTracks();
+  }, [loadLikedGlobalTracks]);
 
   // Fetch artist image from multiple sources with fallbacks
   const fetchReliableArtistImage = useCallback(async (name: string): Promise<string | null> => {
@@ -514,66 +524,129 @@ export function GlobalArtistProfile({
       </div>
 
       <div className="px-4 md:px-8 pb-32 space-y-10">
-        {/* Tracks Section */}
+        {/* YouTube Music Catalog - Full Official Releases */}
         <section>
-          <h2 className="text-2xl md:text-3xl font-black text-white mb-6">Tracks</h2>
-          
-          <div className="space-y-1">
-            {tracks.map((track) => (
-              <div
-                key={track.id}
-                className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors group cursor-pointer"
-                onClick={() => handlePlayTrack(track)}
-              >
-                {/* Thumbnail */}
-                <div className="relative w-12 h-12 rounded-md overflow-hidden bg-white/5 flex-shrink-0">
-                  {track.thumbnail ? (
-                    <img 
-                      src={track.thumbnail} 
-                      alt={track.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Disc className="w-5 h-5 text-white/30" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    {loadingTrack === track.id ? (
-                      <Loader2 className="w-5 h-5 text-white animate-spin" />
-                    ) : (
-                      <Play className="w-5 h-5 text-white" fill="white" />
-                    )}
-                  </div>
-                </div>
-
-                {/* Track Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium truncate">{track.title}</p>
-                  <p className="text-sm text-white/50 truncate">{track.album}</p>
-                </div>
-
-                {/* Duration */}
-                {track.duration && (
-                  <span className="text-sm text-white/40">{track.duration}</span>
-                )}
-
-                {/* Actions */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-white/60 hover:text-white"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAddToPlaylist(track);
-                  }}
-                >
-                  <ListPlus className="w-5 h-5" />
-                </Button>
-              </div>
-            ))}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-3">
+              <Youtube className="w-7 h-7 text-red-500" />
+              Official Catalog
+            </h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFullCatalog(!showFullCatalog)}
+              className="border-white/20 text-white/60 hover:text-white"
+            >
+              {showFullCatalog ? 'Show Less' : 'View All'}
+            </Button>
           </div>
+          
+          <ArtistYouTubeCatalog
+            artistName={artist?.name || artistName}
+            youtubeChannelId={youtubeChannelId || undefined}
+            onAlbumClick={(album) => {
+              setSelectedAlbum({
+                id: album.id,
+                title: album.title,
+                coverArt: album.thumbnail,
+                genres: artist?.genres,
+              });
+            }}
+          />
         </section>
+
+        {/* Tracks Section */}
+        {tracks.length > 0 && (
+          <section>
+            <h2 className="text-2xl md:text-3xl font-black text-white mb-6">Popular Tracks</h2>
+            
+            <div className="space-y-1">
+              {tracks.slice(0, showFullCatalog ? tracks.length : 10).map((track, index) => {
+                const isLiked = isGlobalTrackLiked({
+                  id: track.id,
+                  title: track.title,
+                  artist_name: artist?.name || artistName,
+                  youtubeId: track.youtubeId,
+                  source: 'youtube',
+                });
+                
+                return (
+                  <div
+                    key={track.id}
+                    className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors group cursor-pointer"
+                    onClick={() => handlePlayTrack(track, index)}
+                  >
+                    {/* Thumbnail */}
+                    <div className="relative w-12 h-12 rounded-md overflow-hidden bg-white/5 flex-shrink-0">
+                      {track.thumbnail ? (
+                        <img 
+                          src={track.thumbnail} 
+                          alt={track.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Disc className="w-5 h-5 text-white/30" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        {loadingTrack === track.id ? (
+                          <Loader2 className="w-5 h-5 text-white animate-spin" />
+                        ) : (
+                          <Play className="w-5 h-5 text-white" fill="white" />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Track Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-medium truncate">{track.title}</p>
+                      <p className="text-sm text-white/50 truncate">{track.album}</p>
+                    </div>
+
+                    {/* Like Button */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={`transition-colors ${isLiked ? 'text-pink-500' : 'text-white/40 hover:text-pink-400'}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleGlobalLike({
+                          id: track.id,
+                          title: track.title,
+                          artist_name: artist?.name || artistName,
+                          youtubeId: track.youtubeId,
+                          thumbnail: track.thumbnail,
+                          source: 'youtube',
+                        });
+                      }}
+                    >
+                      <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+                    </Button>
+
+                    {/* Duration */}
+                    {track.duration && (
+                      <span className="text-sm text-white/40">{track.duration}</span>
+                    )}
+
+                    {/* Actions */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-white/60 hover:text-white"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddToPlaylist(track);
+                      }}
+                    >
+                      <ListPlus className="w-5 h-5" />
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Studio Albums Section */}
         {albums.length > 0 && (

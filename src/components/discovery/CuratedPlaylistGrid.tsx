@@ -1,8 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Play, ChevronRight, Sparkles, TrendingUp, Clock, Star,
   Music2, Mic2, Headphones, Radio, Zap, Heart, PartyPopper,
@@ -16,6 +17,10 @@ interface Track {
   genre?: string;
   mood?: string;
   bpm?: number;
+  source?: 'tdz' | 'youtube' | 'global';
+  youtubeId?: string;
+  thumbnail?: string;
+  chartPosition?: number;
   [key: string]: any;
 }
 
@@ -174,16 +179,88 @@ const CATEGORY_SECTIONS = [
 ];
 
 export function CuratedPlaylistGrid({ tracks, onPlayPlaylist, onViewAll }: CuratedPlaylistGridProps) {
-  // Generate playlists from tracks
+  const [globalTrendingTracks, setGlobalTrendingTracks] = useState<Track[]>([]);
+  const [loadingGlobal, setLoadingGlobal] = useState(true);
+
+  // Fetch trending from global library (Billboard, TheAudioDB)
+  useEffect(() => {
+    const fetchGlobalTrending = async () => {
+      try {
+        const { data } = await supabase.functions.invoke('unified-music-search', {
+          body: {
+            query: 'Billboard Hot 100 2025',
+            limit: 50,
+            sources: ['billboard', 'theaudiodb'],
+            includeAcoustic: true,
+          }
+        });
+
+        if (data?.results) {
+          const globalTracks: Track[] = data.results
+            .filter((r: any) => r.title && !r.title.includes('%'))
+            .map((r: any, idx: number) => ({
+              id: `global-${r.id || idx}`,
+              title: r.title,
+              artist_name: r.artist,
+              genre: r.genre || 'Pop',
+              mood: r.mood,
+              bpm: r.bpm,
+              source: 'global' as const,
+              youtubeId: r.youtubeId,
+              thumbnail: r.thumbnail || r.theAudioDBImage || r.allMusicImage,
+              chartPosition: r.chartPosition || idx + 1,
+            }));
+          setGlobalTrendingTracks(globalTracks);
+        }
+      } catch (error) {
+        console.error('Error fetching global trending:', error);
+      } finally {
+        setLoadingGlobal(false);
+      }
+    };
+
+    fetchGlobalTrending();
+  }, []);
+
+  // Combine TDZ tracks with global trending
+  const allTracks = useMemo(() => {
+    const combined = [...tracks];
+    
+    // Add global tracks that aren't duplicates
+    globalTrendingTracks.forEach(gt => {
+      const exists = combined.some(t => 
+        t.title.toLowerCase() === gt.title.toLowerCase() &&
+        t.artist_name.toLowerCase() === gt.artist_name.toLowerCase()
+      );
+      if (!exists) {
+        combined.push(gt);
+      }
+    });
+
+    return combined;
+  }, [tracks, globalTrendingTracks]);
+
+  // Generate playlists from combined tracks
   const generatedPlaylists = useMemo(() => {
     const result: Record<string, { tracks: Track[]; config: typeof CURATED_SETS[keyof typeof CURATED_SETS] }> = {};
     
     Object.entries(CURATED_SETS).forEach(([name, config]) => {
-      let filteredTracks = config.filter(tracks);
+      let filteredTracks = config.filter(allTracks);
+      
+      // For "Trending Now", prioritize global charting tracks
+      if (name === "Trending Now") {
+        const chartingTracks = globalTrendingTracks
+          .filter(t => t.chartPosition && t.chartPosition <= 50)
+          .sort((a, b) => (a.chartPosition || 999) - (b.chartPosition || 999));
+        
+        if (chartingTracks.length > 5) {
+          filteredTracks = [...chartingTracks, ...filteredTracks.filter(t => !chartingTracks.includes(t))].slice(0, 30);
+        }
+      }
       
       // Ensure minimum tracks
       if (filteredTracks.length < 5) {
-        filteredTracks = [...filteredTracks, ...tracks.slice(0, 10 - filteredTracks.length)];
+        filteredTracks = [...filteredTracks, ...allTracks.slice(0, 10 - filteredTracks.length)];
       }
       
       result[name] = {
@@ -193,7 +270,7 @@ export function CuratedPlaylistGrid({ tracks, onPlayPlaylist, onViewAll }: Curat
     });
     
     return result;
-  }, [tracks]);
+  }, [allTracks, globalTrendingTracks]);
 
   const renderPlaylistCard = (name: string, size: 'small' | 'large' = 'small') => {
     const playlist = generatedPlaylists[name];
