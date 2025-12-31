@@ -1854,7 +1854,8 @@ export type Database = {
           id: string
           playlist_id: string
           position: number
-          track_id: string
+          track_id: string | null
+          virtual_track_id: string | null
         }
         Insert: {
           added_at?: string
@@ -1862,7 +1863,8 @@ export type Database = {
           id?: string
           playlist_id: string
           position: number
-          track_id: string
+          track_id?: string | null
+          virtual_track_id?: string | null
         }
         Update: {
           added_at?: string
@@ -1870,7 +1872,8 @@ export type Database = {
           id?: string
           playlist_id?: string
           position?: number
-          track_id?: string
+          track_id?: string | null
+          virtual_track_id?: string | null
         }
         Relationships: [
           {
@@ -1892,6 +1895,13 @@ export type Database = {
             columns: ["track_id"]
             isOneToOne: false
             referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playlist_tracks_virtual_track_id_fkey"
+            columns: ["virtual_track_id"]
+            isOneToOne: false
+            referencedRelation: "virtual_tracks"
             referencedColumns: ["id"]
           },
         ]
