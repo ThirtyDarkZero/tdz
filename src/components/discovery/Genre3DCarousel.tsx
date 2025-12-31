@@ -42,9 +42,16 @@ export function Genre3DCarousel({
   onAlbumClick,
   onPlayAlbum,
 }: Genre3DCarouselProps) {
-  const [currentIndex, setCurrentIndex] = useState(Math.floor(albums.length / 2));
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Update current index when albums change
+  useEffect(() => {
+    if (albums.length > 0) {
+      setCurrentIndex(Math.floor(albums.length / 2));
+    }
+  }, [albums.length]);
 
   const activeGenreData = GENRE_DEFINITIONS.find(g => g.id === activeGenre) || GENRE_DEFINITIONS[0];
 
@@ -120,7 +127,10 @@ export function Genre3DCarousel({
             <div>
               <h3 className="text-2xl font-bold text-white">{activeGenreData.name}</h3>
               <p className="text-white/50 text-sm">
-                {albums[currentIndex]?.title} — {albums[currentIndex]?.artist}
+                {albums.length > 0 && currentIndex < albums.length 
+                  ? `${albums[currentIndex]?.title || 'Browse'} — ${albums[currentIndex]?.artist || 'Music'}`
+                  : 'Browse music by genre'
+                }
               </p>
             </div>
           </div>
@@ -131,6 +141,7 @@ export function Genre3DCarousel({
               variant="ghost"
               size="icon"
               onClick={handlePrev}
+              disabled={albums.length === 0}
               className="text-white/60 hover:text-white hover:bg-white/10"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -139,6 +150,7 @@ export function Genre3DCarousel({
               variant="ghost"
               size="icon"
               onClick={handleNext}
+              disabled={albums.length === 0}
               className="text-white/60 hover:text-white hover:bg-white/10"
             >
               <ChevronRight className="w-5 h-5" />

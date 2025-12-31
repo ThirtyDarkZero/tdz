@@ -48,7 +48,19 @@ export default function Discover() {
   const searchRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
   
-  const { currentTrack, playTrack, addToQueue } = usePlayer();
+  // Wrap hooks in try-catch for safety
+  let playerContext: ReturnType<typeof usePlayer> | null = null;
+  try {
+    playerContext = usePlayer();
+  } catch (e) {
+    console.error("usePlayer error:", e);
+  }
+  
+  const { currentTrack, playTrack, addToQueue } = playerContext || { 
+    currentTrack: null, 
+    playTrack: () => {}, 
+    addToQueue: () => {} 
+  };
   
   const {
     tracks,
@@ -306,7 +318,9 @@ export default function Discover() {
         return (
           <div className="space-y-10">
             {/* Hero */}
-            <MinimalHero tracks={genreFilteredTracks} />
+            <ErrorBoundary fallback={null}>
+              <MinimalHero tracks={genreFilteredTracks} />
+            </ErrorBoundary>
 
             {/* 3D Genre Carousel - BPMSupreme style */}
             <ErrorBoundary fallback={null}>
@@ -364,22 +378,26 @@ export default function Discover() {
               )}
 
               {/* Track List */}
-              <MinimalTrackList
-                tracks={genreFilteredTracks}
-                currentTrackId={currentTrack?.id}
-                likedTracks={likedTracks}
-                onPlayTrack={handlePlayTrack}
-                onToggleLike={toggleLike}
-                onAddToQueue={handleAddToQueue}
-                title={selectedGenre ? `${selectedGenre} Tracks` : "All Tracks"}
-              />
+              <ErrorBoundary fallback={null}>
+                <MinimalTrackList
+                  tracks={genreFilteredTracks}
+                  currentTrackId={currentTrack?.id}
+                  likedTracks={likedTracks}
+                  onPlayTrack={handlePlayTrack}
+                  onToggleLike={toggleLike}
+                  onAddToQueue={handleAddToQueue}
+                  title={selectedGenre ? `${selectedGenre} Tracks` : "All Tracks"}
+                />
+              </ErrorBoundary>
 
               {/* Albums */}
               {albums.length > 0 && (
-                <MinimalAlbumGrid
-                  albums={albums}
-                  title="Albums"
-                />
+                <ErrorBoundary fallback={null}>
+                  <MinimalAlbumGrid
+                    albums={albums}
+                    title="Albums"
+                  />
+                </ErrorBoundary>
               )}
             </div>
           </div>
