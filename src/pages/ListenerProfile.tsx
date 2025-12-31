@@ -858,7 +858,10 @@ export default function ListenerProfile() {
 
       {selectedConversation && (
         <DirectMessagePanel
-          receiverId={selectedConversation.user_id}
+          open={true}
+          recipientId={selectedConversation.user_id}
+          recipientName={selectedConversation.display_name || 'User'}
+          recipientAvatar={selectedConversation.profile_image_path}
           onClose={() => setSelectedConversation(null)}
         />
       )}
