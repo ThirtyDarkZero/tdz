@@ -1,12 +1,7 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ListMusic, Plus, Lock, Sparkles, Search, Loader2, Youtube, Crown, Mic2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
@@ -15,15 +10,15 @@ import { MerchStore } from "@/components/MerchStore";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
-// New minimal components
+// Premium components - BPM Supreme style
 import { PersistentLayout } from "@/components/discovery/PersistentLayout";
-import { MinimalHero } from "@/components/discovery/MinimalHero";
-import { MinimalTrackList } from "@/components/discovery/MinimalTrackList";
+import { PremiumHero } from "@/components/discovery/PremiumHero";
+import { Premium3DCarousel } from "@/components/discovery/Premium3DCarousel";
+import { PremiumPlaylistGrid } from "@/components/discovery/PremiumPlaylistGrid";
+import { PremiumTrackList } from "@/components/discovery/PremiumTrackList";
 import { MinimalArtistGrid } from "@/components/discovery/MinimalArtistGrid";
 import { MinimalAlbumGrid } from "@/components/discovery/MinimalAlbumGrid";
-import { MinimalGenreSection } from "@/components/discovery/MinimalGenreSection";
-import { Genre3DCarousel } from "@/components/discovery/Genre3DCarousel";
-import { CuratedPlaylistGrid } from "@/components/discovery/CuratedPlaylistGrid";
+import { MinimalTrackList } from "@/components/discovery/MinimalTrackList";
 import { UnifiedLibrary } from "@/components/discovery/UnifiedLibrary";
 
 export default function Discover() {
@@ -189,16 +184,29 @@ export default function Discover() {
       switch (activeTab) {
         case 'discover':
           return (
-            <div className="space-y-10">
+            <div className="space-y-0">
               <ErrorBoundary fallback={<div className="h-[400px] bg-gradient-to-br from-cyan-900/30 to-purple-900/30" />}>
-                <MinimalHero tracks={genreFilteredTracks} />
+                <PremiumHero tracks={genreFilteredTracks} />
               </ErrorBoundary>
 
               <ErrorBoundary fallback={null}>
-                <Genre3DCarousel
+                <Premium3DCarousel
+                  sectionNumber={2}
+                  title="Genres"
+                  subtitle={`${genreAlbums.length}+ Albums`}
                   albums={genreAlbums}
-                  activeGenre={selectedGenre || 'pop'}
-                  onGenreChange={handleGenreSelect}
+                  activeCategory={selectedGenre || 'pop'}
+                  categories={[
+                    { id: 'pop', name: 'Pop' },
+                    { id: 'hip-hop', name: 'Hip-Hop' },
+                    { id: 'r-b', name: 'R&B' },
+                    { id: 'electronic', name: 'Electronic' },
+                    { id: 'rock', name: 'Rock' },
+                    { id: 'latin', name: 'Latin' },
+                    { id: 'country', name: 'Country' },
+                    { id: 'jazz', name: 'Jazz' },
+                  ]}
+                  onCategoryChange={handleGenreSelect}
                   onAlbumClick={(album) => {
                     if (!album.id.startsWith('placeholder')) {
                       navigate(`/album/${album.id}`);
@@ -217,51 +225,38 @@ export default function Discover() {
                 />
               </ErrorBoundary>
 
-              <div className="px-4 sm:px-6 lg:px-8 space-y-10">
-                <ErrorBoundary fallback={null}>
-                  <CuratedPlaylistGrid
-                    tracks={tracks}
-                    onPlayPlaylist={handlePlayPlaylist}
-                    onViewAll={(category) => toast.info(`Viewing all ${category}`)}
-                  />
-                </ErrorBoundary>
+              <ErrorBoundary fallback={null}>
+                <PremiumPlaylistGrid
+                  sectionNumber={3}
+                  title="Featured Playlists"
+                  subtitle="Curated collections for every mood"
+                  onPlayPlaylist={(playlist) => toast.success(`Playing ${playlist.name}`)}
+                  onViewAll={() => setActiveTab('playlists')}
+                />
+              </ErrorBoundary>
 
-                <ErrorBoundary fallback={null}>
-                  <MinimalGenreSection onGenreSelect={handleGenreSelect} />
-                </ErrorBoundary>
+              <ErrorBoundary fallback={null}>
+                <PremiumTrackList
+                  sectionNumber={4}
+                  title={selectedGenre ? `${selectedGenre} Tracks` : "New Music"}
+                  subtitle={selectedGenre ? `Filtered by genre` : `Fresh releases`}
+                  tracks={genreFilteredTracks}
+                  currentTrackId={currentTrack?.id}
+                  likedTracks={Array.from(likedTracks)}
+                  onPlayTrack={handlePlayTrack}
+                  onToggleLike={toggleLike}
+                  onAddToQueue={handleAddToQueue}
+                  maxTracks={10}
+                />
+              </ErrorBoundary>
 
-                {selectedGenre && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-white/60 text-sm">Filtering by:</span>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setSelectedGenre(undefined)}
-                      className="bg-cyan-500/10 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
-                    >
-                      {selectedGenre} ×
-                    </Button>
-                  </div>
-                )}
-
-                <ErrorBoundary fallback={null}>
-                  <MinimalTrackList
-                    tracks={genreFilteredTracks}
-                    currentTrackId={currentTrack?.id}
-                    likedTracks={likedTracks}
-                    onPlayTrack={handlePlayTrack}
-                    onToggleLike={toggleLike}
-                    onAddToQueue={handleAddToQueue}
-                    title={selectedGenre ? `${selectedGenre} Tracks` : "All Tracks"}
-                  />
-                </ErrorBoundary>
-
-                {albums.length > 0 && (
+              {albums.length > 0 && (
+                <div className="px-6 md:px-12 py-16 bg-[#030303]">
                   <ErrorBoundary fallback={null}>
                     <MinimalAlbumGrid albums={albums} title="Albums" />
                   </ErrorBoundary>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           );
 
