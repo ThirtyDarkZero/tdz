@@ -23,16 +23,16 @@ import {
 interface PlaylistTrack {
   id: string;
   position: number;
-  track: {
-    id: string;
-    title: string;
-    artist_name: string;
-    duration: number;
-    album_cover_path: string | null;
-    album_cover_bucket: string | null;
-    motion_cover_path: string | null;
-    motion_cover_bucket: string | null;
-  };
+  track_id: string | null;
+  virtual_track_id: string | null;
+  // Resolved data
+  resolvedId: string;
+  resolvedTitle: string;
+  resolvedArtist: string;
+  resolvedDuration: number;
+  resolvedThumbnail: string | null;
+  resolvedYoutubeId?: string;
+  resolvedSource: 'tdz' | 'youtube';
 }
 
 export default function PlaylistDetail() {
@@ -67,28 +67,80 @@ export default function PlaylistDetail() {
       setPlaylist(playlistData);
       setIsOwner(user?.id === playlistData.user_id);
 
-      // Load tracks
-      const { data: tracksData, error: tracksError } = await supabase
+      // Load playlist_tracks rows (includes track_id OR virtual_track_id)
+      const { data: ptData, error: ptError } = await supabase
         .from("playlist_tracks")
-        .select(`
-          id,
-          position,
-          track:track_id (
-            id,
-            title,
-            artist_name,
-            duration,
-            album_cover_path,
-            album_cover_bucket,
-            motion_cover_path,
-            motion_cover_bucket
-          )
-        `)
+        .select("id, position, track_id, virtual_track_id")
         .eq("playlist_id", playlistId)
         .order("position", { ascending: true });
 
-      if (tracksError) throw tracksError;
-      setTracks((tracksData || []).filter(t => t.track) as PlaylistTrack[]);
+      if (ptError) throw ptError;
+
+      const rows = ptData || [];
+
+      // Gather IDs for batch fetches
+      const nativeIds = rows.filter(r => r.track_id).map(r => r.track_id!);
+      const virtualIds = rows.filter(r => r.virtual_track_id).map(r => r.virtual_track_id!);
+
+      // Fetch native tracks
+      let nativeMap: Record<string, any> = {};
+      if (nativeIds.length > 0) {
+        const { data: nativeTracks } = await supabase
+          .from("tracks")
+          .select("id, title, artist_name, duration, album_cover_path, album_cover_bucket, motion_cover_path, motion_cover_bucket, file_path")
+          .in("id", nativeIds);
+        for (const t of nativeTracks || []) {
+          nativeMap[t.id] = t;
+        }
+      }
+
+      // Fetch virtual tracks
+      let virtualMap: Record<string, any> = {};
+      if (virtualIds.length > 0) {
+        const { data: virtualTracks } = await supabase
+          .from("virtual_tracks")
+          .select("*")
+          .in("id", virtualIds);
+        for (const vt of virtualTracks || []) {
+          virtualMap[vt.id] = vt;
+        }
+      }
+
+      // Resolve each row
+      const resolved: PlaylistTrack[] = [];
+      for (const row of rows) {
+        if (row.track_id && nativeMap[row.track_id]) {
+          const t = nativeMap[row.track_id];
+          resolved.push({
+            id: row.id,
+            position: row.position,
+            track_id: row.track_id,
+            virtual_track_id: null,
+            resolvedId: t.id,
+            resolvedTitle: t.title,
+            resolvedArtist: t.artist_name,
+            resolvedDuration: t.duration || 0,
+            resolvedThumbnail: t.album_cover_path,
+            resolvedSource: 'tdz',
+          });
+        } else if (row.virtual_track_id && virtualMap[row.virtual_track_id]) {
+          const vt = virtualMap[row.virtual_track_id];
+          resolved.push({
+            id: row.id,
+            position: row.position,
+            track_id: null,
+            virtual_track_id: row.virtual_track_id,
+            resolvedId: vt.id,
+            resolvedTitle: vt.title,
+            resolvedArtist: vt.artist_name,
+            resolvedDuration: vt.duration || 0,
+            resolvedThumbnail: vt.thumbnail,
+            resolvedYoutubeId: vt.youtube_id,
+            resolvedSource: 'youtube',
+          });
+        }
+      }
+      setTracks(resolved);
 
     } catch (error: any) {
       console.error("Error loading playlist:", error);
@@ -98,14 +150,13 @@ export default function PlaylistDetail() {
     }
   };
 
-  const removeTrack = async (trackId: string) => {
+  const removeTrack = async (playlistTrackId: string) => {
     if (!playlistId || !isOwner) return;
 
     const { error } = await supabase
       .from("playlist_tracks")
       .delete()
-      .eq("playlist_id", playlistId)
-      .eq("track_id", trackId);
+      .eq("id", playlistTrackId);
 
     if (error) {
       toast.error("Failed to remove track");
@@ -121,7 +172,7 @@ export default function PlaylistDetail() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const totalDuration = tracks.reduce((acc, t) => acc + (t.track?.duration || 0), 0);
+  const totalDuration = tracks.reduce((acc, t) => acc + t.resolvedDuration, 0);
   const formatTotalDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
@@ -133,28 +184,32 @@ export default function PlaylistDetail() {
 
   const handlePlayTrack = (item: PlaylistTrack, startIndex: number) => {
     const normalizedTrack = {
-      id: item.track.id,
-      title: item.track.title,
-      artist_name: item.track.artist_name,
-      duration: item.track.duration || 0,
+      id: item.resolvedId,
+      title: item.resolvedTitle,
+      artist_name: item.resolvedArtist,
+      duration: item.resolvedDuration,
       file_path: '',
       play_count: 0,
-      album_cover_path: item.track.album_cover_path,
-      album_cover_bucket: item.track.album_cover_bucket,
+      source: item.resolvedSource,
+      youtubeId: item.resolvedYoutubeId,
+      thumbnail: item.resolvedThumbnail,
+      album_cover_path: item.resolvedThumbnail,
     };
     
     const remainingTracks = tracks.slice(startIndex + 1).map(t => ({
-      id: t.track.id,
-      title: t.track.title,
-      artist_name: t.track.artist_name,
-      duration: t.track.duration || 0,
+      id: t.resolvedId,
+      title: t.resolvedTitle,
+      artist_name: t.resolvedArtist,
+      duration: t.resolvedDuration,
       file_path: '',
       play_count: 0,
-      album_cover_path: t.track.album_cover_path,
-      album_cover_bucket: t.track.album_cover_bucket,
+      source: t.resolvedSource,
+      youtubeId: t.resolvedYoutubeId,
+      thumbnail: t.resolvedThumbnail,
+      album_cover_path: t.resolvedThumbnail,
     }));
 
-    playTrack(normalizedTrack, [normalizedTrack, ...remainingTracks]);
+    playTrack(normalizedTrack as any, [normalizedTrack, ...remainingTracks] as any);
   };
 
   const handlePlayAll = () => {
@@ -168,16 +223,18 @@ export default function PlaylistDetail() {
     if (tracks.length > 0) {
       const shuffled = [...tracks].sort(() => Math.random() - 0.5);
       const normalizedTracks = shuffled.map(t => ({
-        id: t.track.id,
-        title: t.track.title,
-        artist_name: t.track.artist_name,
-        duration: t.track.duration || 0,
+        id: t.resolvedId,
+        title: t.resolvedTitle,
+        artist_name: t.resolvedArtist,
+        duration: t.resolvedDuration,
         file_path: '',
         play_count: 0,
-        album_cover_path: t.track.album_cover_path,
-        album_cover_bucket: t.track.album_cover_bucket,
+        source: t.resolvedSource,
+        youtubeId: t.resolvedYoutubeId,
+        thumbnail: t.resolvedThumbnail,
+        album_cover_path: t.resolvedThumbnail,
       }));
-      playTrack(normalizedTracks[0], normalizedTracks);
+      playTrack(normalizedTracks[0] as any, normalizedTracks as any);
       toast.success('Shuffling playlist');
     }
   };
@@ -230,14 +287,11 @@ export default function PlaylistDetail() {
                 alt={playlist.name}
                 className="w-full h-full object-cover"
               />
-            ) : tracks[0]?.track?.album_cover_path ? (
-              <MotionCover
-                staticCoverPath={tracks[0].track.album_cover_path}
-                staticCoverBucket={tracks[0].track.album_cover_bucket || "album-covers"}
-                motionCoverPath={tracks[0].track.motion_cover_path}
-                motionCoverBucket={tracks[0].track.motion_cover_bucket || "motion-covers"}
+            ) : tracks[0]?.resolvedThumbnail ? (
+              <img
+                src={tracks[0].resolvedThumbnail}
                 alt={playlist.name}
-                className="w-full h-full"
+                className="w-full h-full object-cover"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -311,7 +365,7 @@ export default function PlaylistDetail() {
             </Card>
           ) : (
             tracks.map((item, index) => {
-              const isCurrentTrack = currentTrack?.id === item.track.id;
+              const isCurrentTrack = currentTrack?.id === item.resolvedId;
               return (
               <Card 
                 key={item.id}
@@ -328,24 +382,21 @@ export default function PlaylistDetail() {
                     <Play className="w-4 h-4 text-primary mx-auto hidden group-hover:block" fill="currentColor" />
                   </div>
                   <div className="w-12 h-12 rounded overflow-hidden bg-gradient-to-br from-primary/30 to-secondary/30 flex-shrink-0 relative">
-                    <MotionCover
-                      motionCoverPath={item.track.motion_cover_path}
-                      motionCoverBucket={item.track.motion_cover_bucket || "motion-covers"}
-                      staticCoverPath={item.track.album_cover_path}
-                      staticCoverBucket={item.track.album_cover_bucket || "album-covers"}
-                      alt={item.track.title}
-                      className="w-full h-full"
-                    />
+                    {item.resolvedThumbnail ? (
+                      <img src={item.resolvedThumbnail} alt={item.resolvedTitle} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">🎵</div>
+                    )}
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <Play className="w-5 h-5 text-white" fill="currentColor" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className={`font-semibold truncate ${isCurrentTrack ? 'text-primary' : ''}`}>{item.track.title}</h3>
-                    <p className="text-sm text-muted-foreground truncate">{item.track.artist_name}</p>
+                    <h3 className={`font-semibold truncate ${isCurrentTrack ? 'text-primary' : ''}`}>{item.resolvedTitle}</h3>
+                    <p className="text-sm text-muted-foreground truncate">{item.resolvedArtist}</p>
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {formatDuration(item.track.duration)}
+                    {formatDuration(item.resolvedDuration)}
                   </span>
                   {isOwner && (
                     <DropdownMenu>
@@ -364,7 +415,7 @@ export default function PlaylistDetail() {
                           className="text-destructive"
                           onClick={(e) => {
                             e.stopPropagation();
-                            removeTrack(item.track.id);
+                            removeTrack(item.id);
                           }}
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
