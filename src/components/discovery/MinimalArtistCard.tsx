@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { UserPlus, UserCheck, ExternalLink } from "lucide-react";
+import { UserPlus, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -17,6 +18,9 @@ interface MinimalArtistCardProps {
   index?: number;
 }
 
+// Storage buckets to try in order for artist images
+const IMAGE_BUCKETS = ['artist-profiles', 'artist-images', 'artist-banners'] as const;
+
 export function MinimalArtistCard({
   artist,
   isFollowing,
@@ -24,10 +28,25 @@ export function MinimalArtistCard({
   index = 0
 }: MinimalArtistCardProps) {
   const navigate = useNavigate();
+  const [imageError, setImageError] = useState(false);
+  const [currentBucketIndex, setCurrentBucketIndex] = useState(0);
   
-  const imageUrl = artist.profile_image_path
-    ? supabase.storage.from('artist-images').getPublicUrl(artist.profile_image_path).data.publicUrl
-    : null;
+  // Try multiple buckets for artist images
+  const getImageUrl = () => {
+    if (!artist.profile_image_path || imageError) return null;
+    const bucket = IMAGE_BUCKETS[currentBucketIndex];
+    return supabase.storage.from(bucket).getPublicUrl(artist.profile_image_path).data.publicUrl;
+  };
+  
+  const handleImageError = () => {
+    if (currentBucketIndex < IMAGE_BUCKETS.length - 1) {
+      setCurrentBucketIndex(prev => prev + 1);
+    } else {
+      setImageError(true);
+    }
+  };
+  
+  const imageUrl = getImageUrl();
 
   return (
     <div 
@@ -38,12 +57,13 @@ export function MinimalArtistCard({
       <div className="flex flex-col items-center text-center">
         {/* Avatar */}
         <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-white/5 mb-3">
-          {imageUrl ? (
+          {imageUrl && !imageError ? (
             <img 
               src={imageUrl} 
               alt={artist.artist_name}
               className="w-full h-full object-cover"
               loading="lazy"
+              onError={handleImageError}
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-cyan-500/30 to-purple-500/30 flex items-center justify-center">

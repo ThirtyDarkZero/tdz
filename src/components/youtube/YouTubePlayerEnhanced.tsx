@@ -13,6 +13,7 @@ import { QueuePanel } from '@/components/QueuePanel';
 import { LyricsPanel } from '@/components/LyricsPanel';
 import { YouTubeVisualizerPanel } from './YouTubeVisualizerPanel';
 import { YouTubeEQPanel } from './YouTubeEQPanel';
+import { useCrossfade } from '@/hooks/useCrossfade';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +30,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from '@/integrations/supabase/client';
+
+// Crossfade duration in seconds
+const CROSSFADE_DURATION = 3;
 
 interface YouTubePlayerEnhancedProps {
   track: Track;
@@ -54,6 +58,7 @@ export function YouTubePlayerEnhanced({
   const intervalRef = useRef<number | null>(null);
   const initializingRef = useRef(false);
   const lastVideoIdRef = useRef<string | null>(null);
+  const crossfadeTriggeredRef = useRef(false);
   
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -75,6 +80,11 @@ export function YouTubePlayerEnhanced({
   const sleepTimerRef = useRef<NodeJS.Timeout>();
   const { toast } = useToast();
   const { setYoutubePlayer, setCurrentTime: setContextTime } = usePlayer();
+  
+  // Crossfade hook for DJ-like transitions
+  const { isCrossfading, shouldStartCrossfade, startCrossfade, cleanup: cleanupCrossfade } = useCrossfade({
+    duration: CROSSFADE_DURATION,
+  });
 
   const videoId = track.youtubeId || track.id.replace('yt-', '');
   
@@ -181,12 +191,31 @@ export function YouTubePlayerEnhanced({
                 clearInterval(intervalRef.current);
               }
               
+              // Reset crossfade trigger for new track
+              crossfadeTriggeredRef.current = false;
+              
               // High-frequency time tracking (250ms for smooth progress bar)
               intervalRef.current = window.setInterval(() => {
                 if (playerRef.current?.getCurrentTime) {
                   const time = playerRef.current.getCurrentTime();
+                  const trackDuration = playerRef.current.getDuration() || 0;
                   setCurrentTime(time);
                   setContextTime(time);
+                  
+                  // Check if we should start crossfade (3 seconds before end)
+                  if (
+                    !crossfadeTriggeredRef.current && 
+                    trackDuration > 0 && 
+                    shouldStartCrossfade(time, trackDuration) &&
+                    repeat !== 'one'
+                  ) {
+                    crossfadeTriggeredRef.current = true;
+                    // Start fading out current track and trigger next
+                    startCrossfade(playerRef.current, () => {
+                      // Crossfade complete - advance to next track
+                      onTrackEnd();
+                    });
+                  }
                 }
               }, 250);
             },
@@ -241,8 +270,9 @@ export function YouTubePlayerEnhanced({
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
+      cleanupCrossfade();
     };
-  }, [videoId, onPlayingChange, onTrackEnd, setYoutubePlayer, setContextTime, repeat]);
+  }, [videoId, onPlayingChange, onTrackEnd, setYoutubePlayer, setContextTime, repeat, shouldStartCrossfade, startCrossfade, cleanupCrossfade]);
 
   // Handle play/pause changes
   useEffect(() => {
