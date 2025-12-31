@@ -11,6 +11,7 @@ import {
 import { toast } from "sonner";
 import { MotionCover } from "@/components/MotionCover";
 import tdzLogo from "@/assets/tdz-logo.png";
+import { usePlayer } from "@/contexts/PlayerContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +38,7 @@ interface PlaylistTrack {
 export default function PlaylistDetail() {
   const { playlistId } = useParams();
   const navigate = useNavigate();
+  const { playTrack, currentTrack, isPlaying, addToQueue } = usePlayer();
   const [playlist, setPlaylist] = useState<any>(null);
   const [tracks, setTracks] = useState<PlaylistTrack[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,6 +131,57 @@ export default function PlaylistDetail() {
     return `${mins} min`;
   };
 
+  const handlePlayTrack = (item: PlaylistTrack, startIndex: number) => {
+    const normalizedTrack = {
+      id: item.track.id,
+      title: item.track.title,
+      artist_name: item.track.artist_name,
+      duration: item.track.duration || 0,
+      file_path: '',
+      play_count: 0,
+      album_cover_path: item.track.album_cover_path,
+      album_cover_bucket: item.track.album_cover_bucket,
+    };
+    
+    const remainingTracks = tracks.slice(startIndex + 1).map(t => ({
+      id: t.track.id,
+      title: t.track.title,
+      artist_name: t.track.artist_name,
+      duration: t.track.duration || 0,
+      file_path: '',
+      play_count: 0,
+      album_cover_path: t.track.album_cover_path,
+      album_cover_bucket: t.track.album_cover_bucket,
+    }));
+
+    playTrack(normalizedTrack, [normalizedTrack, ...remainingTracks]);
+  };
+
+  const handlePlayAll = () => {
+    if (tracks.length > 0) {
+      handlePlayTrack(tracks[0], 0);
+      toast.success(`Playing "${playlist.name}"`);
+    }
+  };
+
+  const handleShuffle = () => {
+    if (tracks.length > 0) {
+      const shuffled = [...tracks].sort(() => Math.random() - 0.5);
+      const normalizedTracks = shuffled.map(t => ({
+        id: t.track.id,
+        title: t.track.title,
+        artist_name: t.track.artist_name,
+        duration: t.track.duration || 0,
+        file_path: '',
+        play_count: 0,
+        album_cover_path: t.track.album_cover_path,
+        album_cover_bucket: t.track.album_cover_bucket,
+      }));
+      playTrack(normalizedTracks[0], normalizedTracks);
+      toast.success('Shuffling playlist');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -214,11 +267,22 @@ export default function PlaylistDetail() {
 
             {/* Actions */}
             <div className="flex items-center justify-center sm:justify-start gap-3 mt-6">
-              <Button size="lg" className="gap-2 bg-gradient-to-r from-primary to-secondary shadow-glow">
+              <Button 
+                size="lg" 
+                className="gap-2 bg-gradient-to-r from-primary to-secondary shadow-glow"
+                onClick={handlePlayAll}
+                disabled={tracks.length === 0}
+              >
                 <Play className="w-5 h-5" fill="currentColor" />
                 Play All
               </Button>
-              <Button variant="outline" size="lg" className="gap-2">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="gap-2"
+                onClick={handleShuffle}
+                disabled={tracks.length === 0}
+              >
                 <Shuffle className="w-5 h-5" />
                 Shuffle
               </Button>
@@ -246,16 +310,23 @@ export default function PlaylistDetail() {
               </Button>
             </Card>
           ) : (
-            tracks.map((item, index) => (
+            tracks.map((item, index) => {
+              const isCurrentTrack = currentTrack?.id === item.track.id;
+              return (
               <Card 
                 key={item.id}
-                className="glass-card p-3 hover:border-primary/50 transition-all cursor-pointer group"
-                onClick={() => navigate(`/track/${item.track.id}`)}
+                className={`glass-card p-3 hover:border-primary/50 transition-all cursor-pointer group ${isCurrentTrack ? 'border-primary/50 bg-primary/5' : ''}`}
+                onClick={() => handlePlayTrack(item, index)}
               >
                 <div className="flex items-center gap-3">
-                  <span className="w-6 text-center text-sm text-muted-foreground">
-                    {index + 1}
-                  </span>
+                  <div className="w-6 text-center">
+                    {isCurrentTrack && isPlaying ? (
+                      <Pause className="w-4 h-4 text-primary mx-auto" />
+                    ) : (
+                      <span className="text-sm text-muted-foreground group-hover:hidden">{index + 1}</span>
+                    )}
+                    <Play className="w-4 h-4 text-primary mx-auto hidden group-hover:block" fill="currentColor" />
+                  </div>
                   <div className="w-12 h-12 rounded overflow-hidden bg-gradient-to-br from-primary/30 to-secondary/30 flex-shrink-0 relative">
                     <MotionCover
                       motionCoverPath={item.track.motion_cover_path}
@@ -270,7 +341,7 @@ export default function PlaylistDetail() {
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">{item.track.title}</h3>
+                    <h3 className={`font-semibold truncate ${isCurrentTrack ? 'text-primary' : ''}`}>{item.track.title}</h3>
                     <p className="text-sm text-muted-foreground truncate">{item.track.artist_name}</p>
                   </div>
                   <span className="text-sm text-muted-foreground">
@@ -304,7 +375,7 @@ export default function PlaylistDetail() {
                   )}
                 </div>
               </Card>
-            ))
+            );})
           )}
         </div>
       </div>

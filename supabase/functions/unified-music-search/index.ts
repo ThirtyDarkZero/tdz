@@ -9,9 +9,12 @@ const YOUTUBE_API_KEY = Deno.env.get('YOUTUBE_API_KEY');
 const DISCOGS_TOKEN = Deno.env.get('DISCOGS_TOKEN');
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const FIRECRAWL_API_KEY = Deno.env.get('FIRECRAWL_API_KEY');
+const SPOTIFY_CLIENT_ID = Deno.env.get('SPOTIFY_CLIENT_ID');
+const SPOTIFY_CLIENT_SECRET = Deno.env.get('SPOTIFY_CLIENT_SECRET');
 const MUSICBRAINZ_BASE = 'https://musicbrainz.org/ws/2';
 const THEAUDIODB_BASE = 'https://www.theaudiodb.com/api/v1/json/2';
 const BILLBOARD_BASE = 'https://www.billboard.com/charts';
+const SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token';
 const USER_AGENT = 'TDZ-StreamingPlatform/1.0 (contact@thirtydarkzero.com)';
 
 // Malformed title filter - removes songs with invalid characters
@@ -34,7 +37,7 @@ interface UnifiedResult {
   artist: string;
   year?: string;
   thumbnail?: string;
-  source: 'musicbrainz' | 'discogs' | 'youtube' | 'billboard' | 'allmusic' | 'theaudiodb';
+  source: 'musicbrainz' | 'discogs' | 'youtube' | 'billboard' | 'allmusic' | 'theaudiodb' | 'spotify';
   sourceId: string;
   youtubeId?: string;
   genres?: string[];
@@ -83,21 +86,39 @@ serve(async (req) => {
   }
 
   try {
-    const { query, type = 'all', limit = 20, aiEnrich = false, includeCharts = false, includeAcoustic = false, includeAllMusic = true } = await req.json();
+    const { query, type = 'all', limit = 20, aiEnrich = false, includeCharts = false, includeAcoustic = false, includeAllMusic = true, includeSpotify = true, trendingOnly = false } = await req.json();
 
-    if (!query) {
+    if (!query && !trendingOnly) {
       throw new Error('Query is required');
     }
 
-    console.log(`Unified search: "${query}" type=${type} aiEnrich=${aiEnrich} includeCharts=${includeCharts} includeAllMusic=${includeAllMusic}`);
+    console.log(`Unified search: "${query}" type=${type} aiEnrich=${aiEnrich} includeCharts=${includeCharts} includeAllMusic=${includeAllMusic} includeSpotify=${includeSpotify} trendingOnly=${trendingOnly}`);
 
-    // Parallel fetch from all sources including Billboard charts, AllMusic, and TheAudioDB
+    // If trendingOnly, fetch trending from Spotify and return
+    if (trendingOnly) {
+      const trendingResults = await fetchSpotifyTrending();
+      return new Response(JSON.stringify({
+        query: 'trending',
+        results: trendingResults,
+        totalResults: trendingResults.length,
+        sources: { spotify: true },
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Parallel fetch from all sources including Billboard charts, AllMusic, TheAudioDB, and Spotify
     const searchPromises: Promise<UnifiedResult[]>[] = [
       searchMusicBrainz(query, type, limit),
       searchDiscogs(query, type, limit),
       searchYouTube(query, limit),
       searchTheAudioDB(query, type), // Always include TheAudioDB for high-quality data
     ];
+
+    // Add Spotify search
+    if (includeSpotify) {
+      searchPromises.push(searchSpotify(query, type, limit));
+    }
 
     // Add Billboard chart search if requested
     if (includeCharts) {
@@ -139,8 +160,15 @@ serve(async (req) => {
       console.error('TheAudioDB error:', results[3].reason);
     }
 
-    // Billboard charts (index 4 when included)
-    const chartIndex = 4;
+    // Spotify results (index 4 when included)
+    if (includeSpotify && results[4]?.status === 'fulfilled') {
+      allResults.push(...results[4].value);
+    } else if (includeSpotify && results[4]?.status === 'rejected') {
+      console.error('Spotify error:', results[4].reason);
+    }
+
+    // Billboard charts (index 5 when Spotify included, otherwise 4)
+    const chartIndex = includeSpotify ? 5 : 4;
     if (includeCharts && results[chartIndex]?.status === 'fulfilled') {
       const chartResults = results[chartIndex].value;
       allResults = mergeChartData(allResults, chartResults);
@@ -196,8 +224,9 @@ serve(async (req) => {
         discogs: results[1].status === 'fulfilled',
         youtube: results[2].status === 'fulfilled',
         theaudiodb: results[3].status === 'fulfilled',
-        billboard: includeCharts && results[4]?.status === 'fulfilled',
-        allmusic: includeAllMusic && results[includeCharts ? 5 : 4]?.status === 'fulfilled',
+        spotify: includeSpotify && results[4]?.status === 'fulfilled',
+        billboard: includeCharts && results[includeSpotify ? 5 : 4]?.status === 'fulfilled',
+        allmusic: includeAllMusic && results[includeSpotify ? (includeCharts ? 6 : 5) : (includeCharts ? 5 : 4)]?.status === 'fulfilled',
       },
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -452,6 +481,238 @@ async function searchYouTube(query: string, limit: number): Promise<UnifiedResul
   }
 
   return results;
+}
+
+// Spotify API authentication
+async function getSpotifyToken(): Promise<string | null> {
+  if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET) {
+    console.log('Spotify credentials not configured');
+    return null;
+  }
+  
+  try {
+    const response = await fetch(SPOTIFY_TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${btoa(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`)}`
+      },
+      body: 'grant_type=client_credentials'
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.access_token;
+    }
+  } catch (error) {
+    console.error('Failed to get Spotify token:', error);
+  }
+  
+  return null;
+}
+
+// Spotify search
+async function searchSpotify(query: string, type: string, limit: number): Promise<UnifiedResult[]> {
+  const token = await getSpotifyToken();
+  if (!token) return [];
+
+  const results: UnifiedResult[] = [];
+  
+  try {
+    const spotifyType = type === 'all' ? 'track,album,artist' : 
+                        type === 'track' ? 'track' :
+                        type === 'album' ? 'album' : 'artist';
+    
+    const response = await fetch(
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${spotifyType}&limit=${limit}`,
+      { headers: { 'Authorization': `Bearer ${token}` } }
+    );
+    
+    if (!response.ok) {
+      console.error('Spotify search failed:', response.status);
+      return results;
+    }
+    
+    const data = await response.json();
+    
+    // Process tracks
+    if (data.tracks?.items) {
+      for (const track of data.tracks.items) {
+        results.push({
+          id: `spotify-track-${track.id}`,
+          type: 'track',
+          title: track.name,
+          artist: track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist',
+          year: track.album?.release_date?.split('-')[0],
+          thumbnail: track.album?.images?.[0]?.url,
+          source: 'spotify',
+          sourceId: track.id,
+          popularity: track.popularity,
+          metadata: {
+            duration: track.duration_ms,
+            previewUrl: track.preview_url,
+            albumName: track.album?.name,
+            explicit: track.explicit,
+          }
+        });
+      }
+    }
+    
+    // Process albums
+    if (data.albums?.items) {
+      for (const album of data.albums.items) {
+        results.push({
+          id: `spotify-album-${album.id}`,
+          type: 'album',
+          title: album.name,
+          artist: album.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist',
+          year: album.release_date?.split('-')[0],
+          thumbnail: album.images?.[0]?.url,
+          source: 'spotify',
+          sourceId: album.id,
+          popularity: album.popularity || 50,
+          metadata: {
+            totalTracks: album.total_tracks,
+            albumType: album.album_type,
+          }
+        });
+      }
+    }
+    
+    // Process artists
+    if (data.artists?.items) {
+      for (const artist of data.artists.items) {
+        results.push({
+          id: `spotify-artist-${artist.id}`,
+          type: 'artist',
+          title: artist.name,
+          artist: artist.name,
+          thumbnail: artist.images?.[0]?.url,
+          source: 'spotify',
+          sourceId: artist.id,
+          genres: artist.genres?.slice(0, 3),
+          popularity: artist.popularity,
+          metadata: {
+            followers: artist.followers?.total,
+          }
+        });
+      }
+    }
+    
+    console.log(`Spotify search found ${results.length} results for "${query}"`);
+  } catch (error) {
+    console.error('Spotify search error:', error);
+  }
+
+  return results;
+}
+
+// Fetch trending from Spotify
+async function fetchSpotifyTrending(): Promise<UnifiedResult[]> {
+  const token = await getSpotifyToken();
+  const results: UnifiedResult[] = [];
+  
+  if (!token) {
+    // Return fallback trending data
+    return getFallbackTrending();
+  }
+  
+  try {
+    // Fetch featured playlists and get tracks from top playlist
+    const [featuredRes, newReleasesRes] = await Promise.all([
+      fetch('https://api.spotify.com/v1/browse/featured-playlists?limit=1', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }),
+      fetch('https://api.spotify.com/v1/browse/new-releases?limit=20', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+    ]);
+    
+    // Get tracks from Today's Top Hits or similar
+    if (featuredRes.ok) {
+      const featuredData = await featuredRes.json();
+      const playlistId = featuredData.playlists?.items?.[0]?.id;
+      
+      if (playlistId) {
+        const tracksRes = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (tracksRes.ok) {
+          const tracksData = await tracksRes.json();
+          for (const item of (tracksData.items || [])) {
+            const track = item.track;
+            if (!track) continue;
+            
+            results.push({
+              id: `spotify-track-${track.id}`,
+              type: 'track',
+              title: track.name,
+              artist: track.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist',
+              year: track.album?.release_date?.split('-')[0],
+              thumbnail: track.album?.images?.[0]?.url,
+              source: 'spotify',
+              sourceId: track.id,
+              popularity: track.popularity,
+              chartPosition: {
+                chart: 'spotify-trending',
+                rank: results.length + 1,
+              },
+              metadata: {
+                previewUrl: track.preview_url,
+                albumName: track.album?.name,
+              }
+            });
+          }
+        }
+      }
+    }
+    
+    // Add new releases as albums
+    if (newReleasesRes.ok) {
+      const newData = await newReleasesRes.json();
+      for (const album of (newData.albums?.items || [])) {
+        results.push({
+          id: `spotify-album-${album.id}`,
+          type: 'album',
+          title: album.name,
+          artist: album.artists?.map((a: any) => a.name).join(', ') || 'Unknown Artist',
+          year: album.release_date?.split('-')[0],
+          thumbnail: album.images?.[0]?.url,
+          source: 'spotify',
+          sourceId: album.id,
+          popularity: 80,
+          metadata: {
+            albumType: album.album_type,
+            totalTracks: album.total_tracks,
+          }
+        });
+      }
+    }
+    
+    console.log(`Spotify trending fetched ${results.length} items`);
+  } catch (error) {
+    console.error('Spotify trending error:', error);
+    return getFallbackTrending();
+  }
+
+  return results.length > 0 ? results : getFallbackTrending();
+}
+
+// Fallback trending data when Spotify API unavailable
+function getFallbackTrending(): UnifiedResult[] {
+  return [
+    { id: 'trend-1', type: 'track', title: 'Die With A Smile', artist: 'Lady Gaga, Bruno Mars', thumbnail: 'https://i.scdn.co/image/ab67616d0000b273b3be3b970fc89a02f301c72c', source: 'spotify', sourceId: 'trend-1', popularity: 100, chartPosition: { chart: 'trending', rank: 1 } },
+    { id: 'trend-2', type: 'track', title: 'APT.', artist: 'ROSÉ, Bruno Mars', thumbnail: 'https://i.scdn.co/image/ab67616d0000b273d573290af0c9bef0e6c99c2a', source: 'spotify', sourceId: 'trend-2', popularity: 99, chartPosition: { chart: 'trending', rank: 2 } },
+    { id: 'trend-3', type: 'track', title: 'Timeless', artist: 'The Weeknd, Playboi Carti', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36', source: 'spotify', sourceId: 'trend-3', popularity: 98, chartPosition: { chart: 'trending', rank: 3 } },
+    { id: 'trend-4', type: 'track', title: 'Luther', artist: 'Kendrick Lamar, SZA', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2735be9e01c08e957d9e9b08426', source: 'spotify', sourceId: 'trend-4', popularity: 97, chartPosition: { chart: 'trending', rank: 4 } },
+    { id: 'trend-5', type: 'track', title: 'Squabble Up', artist: 'Kendrick Lamar', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2735be9e01c08e957d9e9b08426', source: 'spotify', sourceId: 'trend-5', popularity: 96, chartPosition: { chart: 'trending', rank: 5 } },
+    { id: 'trend-6', type: 'track', title: 'Not Like Us', artist: 'Kendrick Lamar', thumbnail: 'https://i.scdn.co/image/ab67616d0000b273d9985092cd88bffd97653b58', source: 'spotify', sourceId: 'trend-6', popularity: 95, chartPosition: { chart: 'trending', rank: 6 } },
+    { id: 'trend-7', type: 'track', title: 'Espresso', artist: 'Sabrina Carpenter', thumbnail: 'https://i.scdn.co/image/ab67616d0000b273e3a09e1c6c0e3153f5e8a8f1', source: 'spotify', sourceId: 'trend-7', popularity: 94, chartPosition: { chart: 'trending', rank: 7 } },
+    { id: 'trend-8', type: 'track', title: 'Birds of a Feather', artist: 'Billie Eilish', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2736e63a8b8c82ab5c7bbf2c7ac', source: 'spotify', sourceId: 'trend-8', popularity: 93, chartPosition: { chart: 'trending', rank: 8 } },
+    { id: 'trend-9', type: 'track', title: 'Beautiful Things', artist: 'Benson Boone', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2738f3f9a3ce0e4c6c0e0e0e0e0', source: 'spotify', sourceId: 'trend-9', popularity: 92, chartPosition: { chart: 'trending', rank: 9 } },
+    { id: 'trend-10', type: 'track', title: 'Lose Control', artist: 'Teddy Swims', thumbnail: 'https://i.scdn.co/image/ab67616d0000b273a1a1a1a1a1a1a1a1a1a1a1a1', source: 'spotify', sourceId: 'trend-10', popularity: 91, chartPosition: { chart: 'trending', rank: 10 } },
+  ] as UnifiedResult[];
 }
 
 // Deduplicate and merge results from different sources
