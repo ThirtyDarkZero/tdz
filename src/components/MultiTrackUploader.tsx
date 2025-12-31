@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from "react";
-import { Upload, Music, Disc, Album as AlbumIcon, GripVertical, Edit, Sparkles, AlertTriangle, Lock, Shield, ChevronDown, ChevronUp, CalendarIcon } from "lucide-react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { Upload, Music, Disc, Album as AlbumIcon, GripVertical, Edit, Sparkles, AlertTriangle, Lock, Shield, ChevronDown, ChevronUp, CalendarIcon, RefreshCw, X, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +33,8 @@ import { SortableTrackItem } from './SortableTrackItem';
 import { BulkEditDialog, BulkMetadata } from './BulkEditDialog';
 import { TrackMetadataForm, TrackMetadata } from './TrackMetadataForm';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useUploadDraft, useAutoSaveDraft, DraftTrack, UploadDraft } from "@/hooks/useUploadDraft";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Helper function to detect audio quality from file
 const detectAudioQuality = (file: File): 'standard' | 'hd' | 'dolby_atmos' | 'hi_res' => {
@@ -71,6 +73,7 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [releaseType, setReleaseType] = useState<ReleaseType>('single');
   const [tracks, setTracks] = useState<TrackFile[]>([]);
+  const [trackFiles, setTrackFiles] = useState<Map<string, File>>(new Map());
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [releaseTitle, setReleaseTitle] = useState("");
@@ -83,7 +86,121 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
   const [metadata, setMetadata] = useState<TrackMetadata | null>(null);
   const [metadataComplete, setMetadataComplete] = useState(false);
   const [scheduledReleaseDate, setScheduledReleaseDate] = useState<Date | null>(null);
+  const [draftRestored, setDraftRestored] = useState(false);
+  const [showDraftBanner, setShowDraftBanner] = useState(false);
   const { toast } = useToast();
+  
+  // Draft persistence hooks
+  const { hasDraft, draft, draftFiles, loadDraft, clearDraft, draftAge, isDraftRecoverable } = useUploadDraft();
+  
+  // Get draft data for auto-save
+  const getDraftData = useCallback(() => {
+    if (tracks.length === 0) return null;
+    
+    const draftTracks: DraftTrack[] = tracks.map(t => ({
+      id: t.id,
+      name: t.file.name,
+      title: t.title,
+      duration: t.duration,
+      size: t.file.size,
+      type: t.file.type,
+      lastModified: t.file.lastModified
+    }));
+    
+    return {
+      draft: {
+        releaseType,
+        tracks: draftTracks,
+        releaseTitle,
+        artistName,
+        genre,
+        description,
+        scheduledReleaseDate: scheduledReleaseDate?.toISOString() || null,
+        metadata: metadata as Record<string, any> | null,
+        metadataComplete,
+        uploadProgress: progress,
+        wasUploading: uploading
+      } as Omit<UploadDraft, 'savedAt'>,
+      files: trackFiles
+    };
+  }, [tracks, trackFiles, releaseType, releaseTitle, artistName, genre, description, scheduledReleaseDate, metadata, metadataComplete, progress, uploading]);
+  
+  // Auto-save draft on tab switch and periodically
+  const { clearDraft: autoClearDraft } = useAutoSaveDraft(getDraftData, uploading);
+  
+  // Show draft recovery banner if draft exists
+  useEffect(() => {
+    if (isDraftRecoverable && !draftRestored && tracks.length === 0) {
+      setShowDraftBanner(true);
+    }
+  }, [isDraftRecoverable, draftRestored, tracks.length]);
+  
+  // Function to restore draft
+  const restoreDraft = useCallback(async () => {
+    const loaded = await loadDraft();
+    if (!loaded) {
+      toast({
+        title: "Could not restore draft",
+        description: "The draft files could not be recovered.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const { draft: loadedDraft, files } = loaded;
+    
+    // Restore tracks from files
+    const restoredTracks: TrackFile[] = [];
+    for (const trackData of loadedDraft.tracks) {
+      const file = files.get(trackData.id);
+      if (file) {
+        restoredTracks.push({
+          id: trackData.id,
+          file,
+          title: trackData.title,
+          duration: trackData.duration
+        });
+      }
+    }
+    
+    if (restoredTracks.length === 0) {
+      toast({
+        title: "Could not restore draft",
+        description: "No files could be recovered.",
+        variant: "destructive"
+      });
+      await clearDraft();
+      return;
+    }
+    
+    // Restore all state
+    setTracks(restoredTracks);
+    setTrackFiles(files);
+    setReleaseType(loadedDraft.releaseType);
+    setReleaseTitle(loadedDraft.releaseTitle);
+    setArtistName(loadedDraft.artistName);
+    setGenre(loadedDraft.genre);
+    setDescription(loadedDraft.description);
+    setScheduledReleaseDate(loadedDraft.scheduledReleaseDate ? new Date(loadedDraft.scheduledReleaseDate) : null);
+    if (loadedDraft.metadata) {
+      setMetadata(loadedDraft.metadata as TrackMetadata);
+      setMetadataComplete(loadedDraft.metadataComplete);
+    }
+    
+    setDraftRestored(true);
+    setShowDraftBanner(false);
+    
+    toast({
+      title: "Draft restored!",
+      description: `${restoredTracks.length} track(s) recovered. Continue where you left off.`
+    });
+  }, [loadDraft, clearDraft, toast]);
+  
+  // Dismiss draft banner
+  const dismissDraft = useCallback(async () => {
+    await clearDraft();
+    setShowDraftBanner(false);
+  }, [clearDraft]);
   
   const {
     loading: limitsLoading,
@@ -129,6 +246,7 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
 
     const maxSize = 500 * 1024 * 1024; // Increased for Dolby Atmos & HD Audio
     const newTracks: TrackFile[] = [];
+    const newFileMap = new Map(trackFiles);
     const allowedCount = isUnlimited ? files.length : Math.min(files.length, tracksRemaining - tracks.length);
 
     if (!isUnlimited && files.length > allowedCount) {
@@ -159,15 +277,26 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
         audio.src = URL.createObjectURL(file);
       });
 
+      const trackId = `${Date.now()}-${i}`;
+      
       newTracks.push({
-        id: `${Date.now()}-${i}`,
+        id: trackId,
         file,
         title: file.name.replace(/\.[^/.]+$/, ""),
         duration
       });
+      
+      // Save file to trackFiles map for persistence
+      newFileMap.set(trackId, file);
     }
 
     setTracks([...tracks, ...newTracks]);
+    setTrackFiles(newFileMap);
+    
+    // Hide draft banner if user is adding new files
+    if (showDraftBanner) {
+      setShowDraftBanner(false);
+    }
   };
 
   const updateTrackTitle = (id: string, title: string) => {
@@ -176,6 +305,10 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
 
   const removeTrack = (id: string) => {
     setTracks(tracks.filter(t => t.id !== id));
+    // Also remove from trackFiles map
+    const newFileMap = new Map(trackFiles);
+    newFileMap.delete(id);
+    setTrackFiles(newFileMap);
   };
 
   const sensors = useSensors(
@@ -453,13 +586,20 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
         description: `${tracks.length} track(s) uploaded to your library`
       });
       
+      // Clear draft after successful upload
+      await clearDraft();
+      
       // Reset form
       setTracks([]);
+      setTrackFiles(new Map());
       setReleaseTitle("");
       setArtistName("");
       setGenre("");
       setDescription("");
       setReleaseType('single');
+      setMetadata(null);
+      setMetadataComplete(false);
+      setScheduledReleaseDate(null);
       
       // Refetch limits
       refetchLimits();
@@ -519,6 +659,41 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
 
   return (
     <div className="space-y-6">
+      {/* Draft Recovery Banner */}
+      {showDraftBanner && (
+        <Alert className="bg-amber-500/10 border-amber-500/30">
+          <RefreshCw className="h-4 w-4 text-amber-500" />
+          <AlertTitle className="text-amber-500">Resume Your Upload</AlertTitle>
+          <AlertDescription className="text-muted-foreground">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-2">
+              <span>
+                You have an unfinished upload from {draftAge}. 
+                {draft?.tracks.length && ` (${draft.tracks.length} track${draft.tracks.length === 1 ? '' : 's'})`}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={restoreDraft}
+                  className="bg-amber-500 hover:bg-amber-600 text-black"
+                >
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Resume
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={dismissDraft}
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  Discard
+                </Button>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Release Type Selection - FIRST */}
       <div className="space-y-4">
         <div className="text-center mb-6">
