@@ -109,6 +109,70 @@ async function searchSpotify(token: string, query: string, type: string = 'track
   }
 }
 
+// City to Spotify market/country code mapping
+const CITY_MARKETS: Record<string, { market: string; playlistSearch: string }> = {
+  'nyc': { market: 'US', playlistSearch: 'Top 50 USA' },
+  'los-angeles': { market: 'US', playlistSearch: 'Top 50 USA' },
+  'chicago': { market: 'US', playlistSearch: 'Top 50 USA' },
+  'miami': { market: 'US', playlistSearch: 'Top 50 USA' },
+  'atlanta': { market: 'US', playlistSearch: 'Top 50 USA' },
+  'houston': { market: 'US', playlistSearch: 'Top 50 USA' },
+  'denver': { market: 'US', playlistSearch: 'Top 50 USA' },
+  'san-francisco': { market: 'US', playlistSearch: 'Top 50 USA' },
+  'san-diego': { market: 'US', playlistSearch: 'Top 50 USA' },
+  'san-antonio': { market: 'US', playlistSearch: 'Top 50 USA' },
+  'detroit': { market: 'US', playlistSearch: 'Top 50 USA' },
+  'london': { market: 'GB', playlistSearch: 'Top 50 UK' },
+  'berlin': { market: 'DE', playlistSearch: 'Top 50 Germany' },
+  'tokyo': { market: 'JP', playlistSearch: 'Top 50 Japan' },
+  'paris': { market: 'FR', playlistSearch: 'Top 50 France' },
+  'barcelona': { market: 'ES', playlistSearch: 'Top 50 Spain' },
+  'cdmx': { market: 'MX', playlistSearch: 'Top 50 Mexico' },
+  'dubai': { market: 'AE', playlistSearch: 'Top 50 UAE' },
+  'singapore': { market: 'SG', playlistSearch: 'Top 50 Singapore' },
+};
+
+// Spotify's official Top 50 playlist IDs by country
+const SPOTIFY_TOP50_PLAYLISTS: Record<string, string> = {
+  'US': '37i9dQZEVXbLRQDuF5jeBp', // Top 50 USA
+  'GB': '37i9dQZEVXbLnolsZ8PSNw', // Top 50 UK
+  'DE': '37i9dQZEVXbJiZcmkrIHGU', // Top 50 Germany
+  'JP': '37i9dQZEVXbKXQ4mDTEBXq', // Top 50 Japan
+  'FR': '37i9dQZEVXbIPWwFssbupI', // Top 50 France
+  'ES': '37i9dQZEVXbNFJfN1Vw8d9', // Top 50 Spain
+  'MX': '37i9dQZEVXbO3qyFxbkOE1', // Top 50 Mexico
+  'AE': '37i9dQZEVXbM4UZuIrvHvA', // Top 50 UAE
+  'SG': '37i9dQZEVXbK4gjvS1FjPY', // Top 50 Singapore
+};
+
+async function fetchCityTopTracks(token: string, cityId: string): Promise<any[]> {
+  const cityConfig = CITY_MARKETS[cityId] || CITY_MARKETS['nyc'];
+  const playlistId = SPOTIFY_TOP50_PLAYLISTS[cityConfig.market] || SPOTIFY_TOP50_PLAYLISTS['US'];
+  
+  try {
+    // Fetch tracks from the country's Top 50 playlist
+    const response = await fetch(
+      `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=10&market=${cityConfig.market}`,
+      { headers: { 'Authorization': `Bearer ${token}` } }
+    );
+    
+    if (!response.ok) {
+      console.error(`Failed to fetch playlist ${playlistId}: ${response.status}`);
+      // Fallback to search
+      return await searchSpotify(token, cityConfig.playlistSearch, 'track');
+    }
+    
+    const data = await response.json();
+    console.log(`Fetched ${data.items?.length || 0} tracks for ${cityId} from playlist ${playlistId}`);
+    
+    return (data.items || []).map((item: any) => item.track).filter(Boolean);
+  } catch (error) {
+    console.error(`Failed to fetch city tracks for ${cityId}:`, error);
+    // Fallback to search
+    return await searchSpotify(token, cityConfig.playlistSearch, 'track');
+  }
+}
+
 // Fallback trending data when Spotify API is not configured
 function getFallbackTrendingData() {
   return {
@@ -151,7 +215,7 @@ serve(async (req) => {
   }
 
   try {
-    const { action, query, type } = await req.json();
+    const { action, query, type, cityId } = await req.json();
     
     const token = await getSpotifyToken();
     
@@ -230,6 +294,25 @@ serve(async (req) => {
             return item;
           })
         };
+        break;
+      
+      case 'city-trending':
+        // Fetch tracks from the city's regional Top 50 playlist
+        const cityTracks = await fetchCityTopTracks(token, cityId || 'nyc');
+        result = {
+          cityId: cityId || 'nyc',
+          tracks: cityTracks.slice(0, 10).map((track: any, index: number) => ({
+            id: track.id,
+            title: track.name,
+            artist: track.artists?.map((a: any) => a.name).join(', '),
+            album: track.album?.name,
+            thumbnail: track.album?.images?.[0]?.url,
+            duration: track.duration_ms,
+            position: index + 1,
+            source: 'spotify'
+          }))
+        };
+        console.log(`City trending for ${cityId}: ${result.tracks.length} tracks`);
         break;
         
       case 'trending':

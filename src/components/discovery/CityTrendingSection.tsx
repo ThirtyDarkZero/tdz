@@ -53,66 +53,38 @@ export function CityTrendingSection({
   const { playTrack } = usePlayer();
   const navigate = useNavigate();
 
-  // Fetch trending tracks from Spotify + other sources
+  // Fetch trending tracks from Spotify's regional Top 50 playlists
   useEffect(() => {
     const fetchTrending = async () => {
       setLoading(true);
       try {
-        const city = TRENDING_CITIES.find(c => c.id === activeCity);
-        
-        // Fetch from both Spotify and unified search for best results
-        const [spotifyResult, unifiedResult] = await Promise.allSettled([
-          supabase.functions.invoke('spotify-trending', {
-            body: { action: 'search', query: `top hits ${city?.name || 'global'}`, type: 'track' }
-          }),
-          supabase.functions.invoke('unified-music-search', {
-            body: { 
-              query: `trending ${city?.name || 'NYC'} ${city?.region === 'us' ? 'Billboard Hot 100' : 'top hits'}`,
-              limit: 10,
-              sources: ['theaudiodb', 'discogs', 'musicbrainz'],
-              includeSpotify: true,
-            }
-          })
-        ]);
+        // Use the city-trending action to get regional Top 50 tracks
+        const { data, error } = await supabase.functions.invoke('spotify-trending', {
+          body: { action: 'city-trending', cityId: activeCity }
+        });
 
-        const allTracks: TrendingTrack[] = [];
-
-        // Add Spotify results
-        if (spotifyResult.status === 'fulfilled' && spotifyResult.value.data?.data?.results) {
-          const spotifyTracks = spotifyResult.value.data.data.results;
-          spotifyTracks.slice(0, 5).forEach((item: any, index: number) => {
-            allTracks.push({
-              id: item.id || `spotify-${index}`,
-              title: item.title || item.name || 'Unknown Track',
-              artist: item.artist || 'Unknown Artist',
-              image: item.thumbnail || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80',
-              position: index + 1,
-              source: 'spotify',
-            });
-          });
-        }
-
-        // Add unified search results if we need more
-        if (allTracks.length < 5 && unifiedResult.status === 'fulfilled' && unifiedResult.value.data?.results) {
-          const unifiedTracks = unifiedResult.value.data.results;
-          unifiedTracks.slice(0, 5 - allTracks.length).forEach((item: any, index: number) => {
-            allTracks.push({
-              id: item.id || `unified-${index}`,
-              title: item.title || item.name || 'Unknown Track',
-              artist: item.artist || item.artistName || 'Unknown Artist',
-              image: item.theAudioDBImage || item.thumbnail || item.image || 
-                'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80',
-              position: allTracks.length + index + 1,
-              youtubeId: item.youtubeId,
-            });
-          });
-        }
-
-        // If no results, use fallback trending data
-        if (allTracks.length === 0) {
+        if (error) {
+          console.error('Error fetching city trending:', error);
           setTracks(getFallbackTracks(activeCity));
+          return;
+        }
+
+        const spotifyTracks = data?.data?.tracks || [];
+        
+        if (spotifyTracks.length > 0) {
+          const mappedTracks: TrendingTrack[] = spotifyTracks.slice(0, 5).map((track: any) => ({
+            id: track.id || `spotify-${track.position}`,
+            title: track.title || 'Unknown Track',
+            artist: track.artist || 'Unknown Artist',
+            image: track.thumbnail || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80',
+            position: track.position,
+            source: 'spotify',
+          }));
+          setTracks(mappedTracks);
+          console.log(`Loaded ${mappedTracks.length} Spotify tracks for ${activeCity}`);
         } else {
-          setTracks(allTracks.slice(0, 5));
+          console.log(`No Spotify tracks for ${activeCity}, using fallback`);
+          setTracks(getFallbackTracks(activeCity));
         }
       } catch (err) {
         console.error('Error fetching trending:', err);
