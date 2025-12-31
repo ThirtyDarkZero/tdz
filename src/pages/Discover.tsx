@@ -33,7 +33,7 @@ export default function Discover() {
   const [showSearch, setShowSearch] = useState(false);
 
   const { currentTrack, playTrack, addToQueue } = usePlayer();
-  
+
   const {
     tracks,
     artists,
@@ -49,21 +49,41 @@ export default function Discover() {
 
   const { role } = useUserRole(user);
   const { hasFeature } = useSubscription(user);
-  const isArtist = role === 'artist' || role === 'verified_artist' || role === 'manager';
-  const canCreatePlaylists = isArtist || hasFeature('playlists');
+  const isArtist = role === "artist" || role === "verified_artist" || role === "manager";
+  const canCreatePlaylists = isArtist || hasFeature("playlists");
 
-  // Filter tracks by search
-  const filteredTracks = tracks.filter(track =>
-    track.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    track.artist_name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    console.debug("[Discover] state", {
+      activeTab,
+      searchQuery,
+      selectedGenre,
+      loading,
+      tracks: tracks.length,
+      albums: albums.length,
+      userId: user?.id ?? null,
+    });
+  }, [activeTab, searchQuery, selectedGenre, loading, tracks.length, albums.length, user?.id]);
+
+  // Filter tracks by search (safe against null/undefined fields)
+  const filteredTracks = tracks.filter((track) => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return true;
+
+    const title = (track.title ?? "").toString().toLowerCase();
+    const artist = (track.artist_name ?? "").toString().toLowerCase();
+
+    return title.includes(q) || artist.includes(q);
+  });
 
   // Filter by selected genre
-  const genreFilteredTracks = selectedGenre 
-    ? filteredTracks.filter(t => 
-        t.genre?.toLowerCase().includes(selectedGenre.toLowerCase()) ||
-        t.mood?.toLowerCase().includes(selectedGenre.toLowerCase())
-      )
+  const genreFilteredTracks = selectedGenre
+    ? filteredTracks.filter((t) => {
+        const g = (t.genre ?? "").toString().toLowerCase();
+        const m = (t.mood ?? "").toString().toLowerCase();
+        const sel = selectedGenre.toLowerCase();
+        return g.includes(sel) || m.includes(sel);
+      })
     : filteredTracks;
 
   const handlePlayTrack = (track: any) => {
@@ -184,9 +204,10 @@ export default function Discover() {
                     }
                   }}
                   onPlayAlbum={(album) => {
-                    const albumTracks = tracks.filter(t => 
-                      t.artist_name === album.artist || 
-                      t.genre?.toLowerCase().includes(album.genre.toLowerCase())
+                    const albumGenre = (album.genre ?? "").toLowerCase();
+                    const albumTracks = tracks.filter((t) =>
+                      t.artist_name === album.artist ||
+                      (t.genre ?? "").toLowerCase().includes(albumGenre)
                     );
                     if (albumTracks.length > 0) {
                       handlePlayTrack(albumTracks[0]);

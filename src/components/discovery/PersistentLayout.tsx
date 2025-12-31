@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Menu, Search, User, X, Home, Flame, Library, TrendingUp, 
@@ -43,8 +43,19 @@ export function PersistentLayout({
   const { role } = useUserRole(user);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  
-  const isArtist = role === 'artist' || role === 'verified_artist' || role === 'manager';
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    console.debug("[PersistentLayout] render", {
+      activeTab,
+      collapsed,
+      mobileOpen,
+      userId: user?.id ?? null,
+      role,
+    });
+  }, [activeTab, collapsed, mobileOpen, user?.id, role]);
+
+  const isArtist = role === "artist" || role === "verified_artist" || role === "manager";
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex">
