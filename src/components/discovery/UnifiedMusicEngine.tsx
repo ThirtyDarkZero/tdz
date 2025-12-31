@@ -43,7 +43,7 @@ interface UnifiedResult {
   artist: string;
   year?: string;
   thumbnail?: string;
-  source: 'musicbrainz' | 'discogs' | 'youtube' | 'billboard';
+  source: 'musicbrainz' | 'discogs' | 'youtube' | 'billboard' | 'theaudiodb' | 'allmusic';
   sourceId: string;
   youtubeId?: string;
   genres?: string[];
@@ -55,6 +55,8 @@ interface UnifiedResult {
   metadata?: Record<string, unknown>;
   acousticData?: AcousticData;
   chartPosition?: ChartPosition;
+  theAudioDBImage?: string;
+  allMusicImage?: string;
 }
 
 interface UnifiedMusicEngineProps {
@@ -87,7 +89,7 @@ export function UnifiedMusicEngine({ onPlayYouTube }: UnifiedMusicEngineProps) {
     youtubeId?: string;
     thumbnail?: string;
   } | null>(null);
-  const [sources, setSources] = useState({ musicbrainz: false, discogs: false, youtube: false, billboard: false });
+  const [sources, setSources] = useState({ musicbrainz: false, discogs: false, youtube: false, billboard: false, theaudiodb: false });
 
   const handleSearch = useCallback(async () => {
     if (!query.trim()) return;
@@ -191,6 +193,8 @@ export function UnifiedMusicEngine({ onPlayYouTube }: UnifiedMusicEngineProps) {
       case 'discogs': return <Database className="w-3 h-3" />;
       case 'musicbrainz': return <Globe className="w-3 h-3" />;
       case 'billboard': return <TrendingUp className="w-3 h-3" />;
+      case 'theaudiodb': return <Music className="w-3 h-3" />;
+      case 'allmusic': return <Disc className="w-3 h-3" />;
       default: return <Music className="w-3 h-3" />;
     }
   };
@@ -202,6 +206,11 @@ export function UnifiedMusicEngine({ onPlayYouTube }: UnifiedMusicEngineProps) {
       case 'track': return <Music className="w-4 h-4" />;
       default: return <Music className="w-4 h-4" />;
     }
+  };
+
+  // Get best available image for a result (prefer TheAudioDB, AllMusic, then default)
+  const getBestThumbnail = (result: UnifiedResult): string | undefined => {
+    return result.theAudioDBImage || result.allMusicImage || result.thumbnail;
   };
 
   // Show artist profile
@@ -239,8 +248,8 @@ export function UnifiedMusicEngine({ onPlayYouTube }: UnifiedMusicEngineProps) {
               AI Music Engine
             </span>
           </h2>
-          <p className="text-sm text-white/60 mt-1">
-            Unified search across YouTube Music, Discogs & MusicBrainz
+          <p className="text-sm text-muted-foreground mt-1">
+            Unified search across YouTube Music, Discogs, MusicBrainz & TheAudioDB
           </p>
         </div>
         
@@ -269,10 +278,17 @@ export function UnifiedMusicEngine({ onPlayYouTube }: UnifiedMusicEngineProps) {
           </Badge>
           <Badge 
             variant="outline" 
-            className={`text-xs ${sources.billboard ? 'border-yellow-500/50 text-yellow-400' : 'border-white/10 text-white/30'}`}
+            className={`text-xs ${sources.billboard ? 'border-yellow-500/50 text-yellow-400' : 'border-muted text-muted-foreground'}`}
           >
             <TrendingUp className="w-3 h-3 mr-1" />
             Billboard
+          </Badge>
+          <Badge 
+            variant="outline" 
+            className={`text-xs ${sources.theaudiodb ? 'border-green-500/50 text-green-400' : 'border-muted text-muted-foreground'}`}
+          >
+            <Music className="w-3 h-3 mr-1" />
+            AudioDB
           </Badge>
         </div>
       </div>
@@ -337,8 +353,8 @@ export function UnifiedMusicEngine({ onPlayYouTube }: UnifiedMusicEngineProps) {
       <ScrollArea className="h-[calc(100vh-380px)]">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-10 h-10 animate-spin text-cyan-500 mb-4" />
-            <p className="text-white/60">Searching across all sources...</p>
+            <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Searching across all sources...</p>
             {aiEnrich && (
               <p className="text-sm text-purple-400 mt-2">
                 <Sparkles className="w-4 h-4 inline mr-1" />
@@ -347,146 +363,102 @@ export function UnifiedMusicEngine({ onPlayYouTube }: UnifiedMusicEngineProps) {
             )}
           </div>
         ) : results.length === 0 ? (
-          <div className="text-center py-20 text-white/40">
+          <div className="text-center py-20 text-muted-foreground">
             <Globe className="w-16 h-16 mx-auto mb-4 opacity-30" />
             <p className="text-lg">Search the global music library</p>
-            <p className="text-sm mt-2">Access millions of tracks from YouTube Music, Discogs & MusicBrainz</p>
+            <p className="text-sm mt-2">Access millions of tracks from YouTube Music, Discogs, MusicBrainz & TheAudioDB</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-32">
-            {results.map((result) => (
-              <div
-                key={result.id}
-                className="group bg-white/5 rounded-xl overflow-hidden border border-white/5 hover:border-cyan-500/30 transition-all hover:bg-white/[0.07] cursor-pointer"
-                onClick={() => handlePlay(result)}
-              >
-                <div className="flex gap-4 p-4">
-                  {/* Thumbnail */}
-                  <div className="relative flex-shrink-0">
-                    <div className={`w-20 h-20 ${result.type === 'artist' ? 'rounded-full' : 'rounded-lg'} overflow-hidden bg-white/10`}>
-                      {result.thumbnail ? (
-                        <img
-                          src={result.thumbnail}
-                          alt={result.title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          {getTypeIcon(result.type)}
-                        </div>
-                      )}
-                    </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 pb-32">
+            {results.map((result) => {
+              const thumbnail = getBestThumbnail(result);
+              
+              return (
+                <div
+                  key={result.id}
+                  className="group cursor-pointer"
+                  onClick={() => handlePlay(result)}
+                >
+                  {/* Discogs-style card with large artwork */}
+                  <div className="relative aspect-square rounded-lg overflow-hidden bg-muted/30 mb-2">
+                    {thumbnail ? (
+                      <img
+                        src={thumbnail}
+                        alt={result.title}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '';
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted">
+                        {result.type === 'artist' ? (
+                          <User className="w-12 h-12 text-muted-foreground/50" />
+                        ) : result.type === 'album' ? (
+                          <Disc className="w-12 h-12 text-muted-foreground/50" />
+                        ) : (
+                          <Music className="w-12 h-12 text-muted-foreground/50" />
+                        )}
+                      </div>
+                    )}
                     
                     {/* Play overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
-                      <Play className="w-8 h-8 text-white" fill="white" />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-xl transform scale-90 group-hover:scale-100 transition-transform">
+                        <Play className="w-5 h-5 text-primary-foreground ml-0.5" fill="currentColor" />
+                      </div>
                     </div>
                     
-                    {/* Official badge */}
-                    {result.isOfficial && (
-                      <Badge className="absolute -top-1 -right-1 bg-green-500 text-[10px] px-1 py-0">
-                        ✓
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-white font-semibold truncate">{result.title}</p>
-                        <p className="text-sm text-white/60 truncate">{result.artist}</p>
-                      </div>
-                      <Badge variant="outline" className="text-[10px] flex-shrink-0 border-white/20">
+                    {/* Source badge */}
+                    <div className="absolute top-2 left-2">
+                      <Badge className="bg-black/60 backdrop-blur-sm text-white text-[10px] border-0 gap-1">
                         {getSourceIcon(result.source)}
                       </Badge>
                     </div>
                     
-                    {/* Metadata */}
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <Badge variant="outline" className="text-[10px] border-white/10 text-white/50">
+                    {/* Chart position badge */}
+                    {result.chartPosition && (
+                      <Badge className="absolute top-2 right-2 bg-yellow-500 text-black text-[10px] font-bold">
+                        #{result.chartPosition.rank}
+                      </Badge>
+                    )}
+                    
+                    {/* Official/Playable badge */}
+                    {(result.isOfficial || result.youtubeId) && (
+                      <Badge className="absolute bottom-2 right-2 bg-green-500/90 text-white text-[10px] border-0">
+                        {result.youtubeId ? '▶ Play' : '✓ Official'}
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  {/* Info below artwork - Discogs style */}
+                  <div className="space-y-0.5 px-1">
+                    <p className="font-medium text-sm text-foreground truncate group-hover:text-primary transition-colors">
+                      {result.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {result.artist}
+                    </p>
+                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                      <Badge variant="outline" className="text-[9px] border-border/50 text-muted-foreground h-4 px-1.5">
                         {result.type}
                       </Badge>
                       {result.year && (
-                        <Badge variant="outline" className="text-[10px] border-white/10 text-white/50">
+                        <Badge variant="outline" className="text-[9px] border-border/50 text-muted-foreground h-4 px-1.5">
                           {result.year}
                         </Badge>
                       )}
-                      {result.youtubeId && (
-                        <Badge className="text-[10px] bg-red-600/20 text-red-400">
-                          <Youtube className="w-2.5 h-2.5 mr-0.5" />
-                          Playable
+                      {result.genres?.[0] && (
+                        <Badge variant="outline" className="text-[9px] border-primary/30 text-primary/80 h-4 px-1.5">
+                          {result.genres[0]}
                         </Badge>
                       )}
                     </div>
-
-                    {/* AI Summary */}
-                    {result.aiSummary && (
-                      <p className="text-xs text-purple-300/80 mt-2 line-clamp-2">
-                        <Sparkles className="w-3 h-3 inline mr-1" />
-                        {result.aiSummary}
-                      </p>
-                    )}
-
-                    {/* Mood/Genre tags */}
-                    {(result.moodTags?.length || result.genres?.length) && (
-                      <div className="flex gap-1 mt-2 flex-wrap">
-                        {(result.moodTags || result.genres || []).slice(0, 3).map((tag) => (
-                          <Badge 
-                            key={tag} 
-                            variant="outline" 
-                            className="text-[9px] border-cyan-500/30 text-cyan-400/80 px-1.5 py-0"
-                          >
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 </div>
-
-                {/* Actions */}
-                <div className="flex items-center justify-between px-4 py-2 bg-white/[0.02] border-t border-white/5">
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2 text-white/60 hover:text-white"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddToPlaylist(result);
-                      }}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2 text-white/60 hover:text-white"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Heart className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-cyan-400"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handlePlay(result);
-                    }}
-                  >
-                    {result.type === 'artist' ? 'View' : 'Play'}
-                    <ChevronRight className="w-4 h-4 ml-1" />
-                  </Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </ScrollArea>

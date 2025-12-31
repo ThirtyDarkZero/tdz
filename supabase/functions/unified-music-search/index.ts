@@ -10,10 +10,22 @@ const DISCOGS_TOKEN = Deno.env.get('DISCOGS_TOKEN');
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const FIRECRAWL_API_KEY = Deno.env.get('FIRECRAWL_API_KEY');
 const MUSICBRAINZ_BASE = 'https://musicbrainz.org/ws/2';
-const ACOUSTICBRAINZ_BASE = 'https://acousticbrainz.org/api/v1';
-const LASTFM_BASE = 'https://ws.audioscrobbler.com/2.0';
+const THEAUDIODB_BASE = 'https://www.theaudiodb.com/api/v1/json/2';
 const BILLBOARD_BASE = 'https://www.billboard.com/charts';
 const USER_AGENT = 'TDZ-StreamingPlatform/1.0 (contact@thirtydarkzero.com)';
+
+// Malformed title filter - removes songs with invalid characters
+function isValidTitle(title: string): boolean {
+  if (!title || title.trim().length === 0) return false;
+  // Filter out titles with excessive special chars, encoding issues
+  const badPatterns = [
+    /%[0-9A-Fa-f]{2}/, // URL encoded chars
+    /[^\x00-\x7F]{5,}/, // Too many non-ASCII chars in a row
+    /^[^a-zA-Z0-9]+$/, // Only special chars
+    /\?{2,}/, // Multiple question marks (encoding issues)
+  ];
+  return !badPatterns.some(pattern => pattern.test(title));
+}
 
 interface UnifiedResult {
   id: string;
@@ -22,7 +34,7 @@ interface UnifiedResult {
   artist: string;
   year?: string;
   thumbnail?: string;
-  source: 'musicbrainz' | 'discogs' | 'youtube' | 'billboard' | 'allmusic';
+  source: 'musicbrainz' | 'discogs' | 'youtube' | 'billboard' | 'allmusic' | 'theaudiodb';
   sourceId: string;
   youtubeId?: string;
   genres?: string[];
@@ -35,6 +47,10 @@ interface UnifiedResult {
   // AllMusic enhanced data
   allMusicImage?: string;
   biography?: string;
+  // TheAudioDB enhanced data
+  theAudioDBImage?: string;
+  fanart?: string;
+  description?: string;
 }
 
 interface AcousticData {
@@ -75,11 +91,12 @@ serve(async (req) => {
 
     console.log(`Unified search: "${query}" type=${type} aiEnrich=${aiEnrich} includeCharts=${includeCharts} includeAllMusic=${includeAllMusic}`);
 
-    // Parallel fetch from all sources including Billboard charts and AllMusic
+    // Parallel fetch from all sources including Billboard charts, AllMusic, and TheAudioDB
     const searchPromises: Promise<UnifiedResult[]>[] = [
       searchMusicBrainz(query, type, limit),
       searchDiscogs(query, type, limit),
       searchYouTube(query, limit),
+      searchTheAudioDB(query, type), // Always include TheAudioDB for high-quality data
     ];
 
     // Add Billboard chart search if requested
@@ -115,11 +132,22 @@ serve(async (req) => {
       console.error('YouTube error:', results[2].reason);
     }
 
-    if (includeCharts && results[3]?.status === 'fulfilled') {
-      // Merge chart positions into matching results
-      const chartResults = results[3].value;
+    // TheAudioDB results (index 3)
+    if (results[3].status === 'fulfilled') {
+      allResults.push(...results[3].value);
+    } else {
+      console.error('TheAudioDB error:', results[3].reason);
+    }
+
+    // Billboard charts (index 4 when included)
+    const chartIndex = 4;
+    if (includeCharts && results[chartIndex]?.status === 'fulfilled') {
+      const chartResults = results[chartIndex].value;
       allResults = mergeChartData(allResults, chartResults);
     }
+
+    // Filter out malformed titles
+    allResults = allResults.filter(r => isValidTitle(r.title) && isValidTitle(r.artist));
 
     // Deduplicate and merge results using fuzzy matching
     const mergedResults = deduplicateAndMerge(allResults);
@@ -167,8 +195,9 @@ serve(async (req) => {
         musicbrainz: results[0].status === 'fulfilled',
         discogs: results[1].status === 'fulfilled',
         youtube: results[2].status === 'fulfilled',
-        billboard: includeCharts && results[3]?.status === 'fulfilled',
-        allmusic: includeAllMusic && results[includeCharts ? 4 : 3]?.status === 'fulfilled',
+        theaudiodb: results[3].status === 'fulfilled',
+        billboard: includeCharts && results[4]?.status === 'fulfilled',
+        allmusic: includeAllMusic && results[includeCharts ? 5 : 4]?.status === 'fulfilled',
       },
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -749,6 +778,91 @@ async function enrichWithAcousticData(results: UnifiedResult[]): Promise<Unified
   }
 
   return enrichedResults;
+}
+
+// TheAudioDB search - high quality artist images and metadata
+async function searchTheAudioDB(query: string, type: string): Promise<UnifiedResult[]> {
+  const results: UnifiedResult[] = [];
+  
+  try {
+    // Search for artists
+    if (type === 'all' || type === 'artist') {
+      const artistUrl = `${THEAUDIODB_BASE}/search.php?s=${encodeURIComponent(query)}`;
+      const artistResponse = await fetch(artistUrl, {
+        headers: { 'User-Agent': USER_AGENT }
+      });
+      
+      if (artistResponse.ok) {
+        const data = await artistResponse.json();
+        const artists = data.artists || [];
+        
+        for (const artist of artists.slice(0, 5)) {
+          results.push({
+            id: `tadb-artist-${artist.idArtist}`,
+            type: 'artist',
+            title: artist.strArtist,
+            artist: artist.strArtist,
+            thumbnail: artist.strArtistThumb || artist.strArtistFanart || artist.strArtistLogo,
+            source: 'theaudiodb',
+            sourceId: artist.idArtist,
+            genres: artist.strGenre ? [artist.strGenre] : [],
+            popularity: parseInt(artist.intFans || '0'),
+            theAudioDBImage: artist.strArtistThumb,
+            fanart: artist.strArtistFanart,
+            description: artist.strBiographyEN?.substring(0, 200),
+            metadata: {
+              country: artist.strCountry,
+              formed: artist.intFormedYear,
+              website: artist.strWebsite,
+              style: artist.strStyle,
+            }
+          });
+        }
+      }
+    }
+
+    // Search for albums
+    if (type === 'all' || type === 'album') {
+      const albumUrl = `${THEAUDIODB_BASE}/searchalbum.php?s=${encodeURIComponent(query)}`;
+      const albumResponse = await fetch(albumUrl, {
+        headers: { 'User-Agent': USER_AGENT }
+      });
+      
+      if (albumResponse.ok) {
+        const data = await albumResponse.json();
+        const albums = data.album || [];
+        
+        for (const album of albums.slice(0, 10)) {
+          // Filter out invalid titles
+          if (!isValidTitle(album.strAlbum)) continue;
+          
+          results.push({
+            id: `tadb-album-${album.idAlbum}`,
+            type: 'album',
+            title: album.strAlbum,
+            artist: album.strArtist,
+            year: album.intYearReleased?.toString(),
+            thumbnail: album.strAlbumThumb || album.strAlbumCDart,
+            source: 'theaudiodb',
+            sourceId: album.idAlbum,
+            genres: album.strGenre ? [album.strGenre] : [],
+            popularity: parseInt(album.intScore || '0'),
+            metadata: {
+              style: album.strStyle,
+              description: album.strDescriptionEN?.substring(0, 200),
+              label: album.strLabel,
+            }
+          });
+        }
+      }
+    }
+
+    console.log(`TheAudioDB search found ${results.length} results for "${query}"`);
+  } catch (error) {
+    console.error('TheAudioDB search error:', error);
+  }
+
+  return results;
 }
 
 // AllMusic search using Firecrawl for reliable artist images
