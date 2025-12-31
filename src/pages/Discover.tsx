@@ -20,6 +20,7 @@ import { MinimalArtistGrid } from "@/components/discovery/MinimalArtistGrid";
 import { MinimalAlbumGrid } from "@/components/discovery/MinimalAlbumGrid";
 import { MinimalTrackList } from "@/components/discovery/MinimalTrackList";
 import { UnifiedLibrary } from "@/components/discovery/UnifiedLibrary";
+import { CityTrendingSection } from "@/components/discovery/CityTrendingSection";
 
 export default function Discover() {
   const navigate = useNavigate();
@@ -247,6 +248,13 @@ export default function Discover() {
                   onToggleLike={toggleLike}
                   onAddToQueue={handleAddToQueue}
                   maxTracks={10}
+                />
+              </ErrorBoundary>
+
+              <ErrorBoundary fallback={null}>
+                <CityTrendingSection
+                  sectionNumber={5}
+                  onViewAllTrends={() => setActiveTab('library')}
                 />
               </ErrorBoundary>
 
