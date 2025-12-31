@@ -11,19 +11,30 @@ interface MinimalHeroProps {
 export function MinimalHero({ tracks, featuredTrack }: MinimalHeroProps) {
   const navigate = useNavigate();
   const { playTrack } = usePlayer();
-  
+
   const heroTrack = featuredTrack || tracks[0];
   const hasContent = tracks.length > 0;
 
+  const normalizeTrack = (t: any) => ({
+    ...t,
+    duration: t?.duration || 0,
+    file_path: t?.file_path || "",
+    play_count: t?.play_count || 0,
+  });
+
   const handlePlayAll = () => {
     if (tracks.length > 0) {
-      playTrack(tracks[0], tracks);
+      const normalized = tracks.map(normalizeTrack);
+      if (import.meta.env.DEV) console.debug("[MinimalHero] Play All", { count: normalized.length });
+      playTrack(normalized[0], normalized);
     }
   };
 
   const handleShuffle = () => {
     if (tracks.length > 0) {
-      const shuffled = [...tracks].sort(() => Math.random() - 0.5);
+      const normalized = tracks.map(normalizeTrack);
+      const shuffled = [...normalized].sort(() => Math.random() - 0.5);
+      if (import.meta.env.DEV) console.debug("[MinimalHero] Shuffle", { count: shuffled.length });
       playTrack(shuffled[0], shuffled);
     }
   };
