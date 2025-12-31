@@ -71,6 +71,7 @@ const App = () => (
               <Route path="/artist/:artistId" element={<ArtistProfile />} />
               <Route path="/artist/youtube/:artistId" element={<UnifiedArtistProfile />} />
               <Route path="/profile" element={<ListenerProfile />} />
+              <Route path="/fan/:fanId" element={<ListenerProfile />} />
               <Route path="/track/:trackId" element={<TrackDetail />} />
               <Route path="/album/:albumId" element={<AlbumDetail />} />
               <Route path="/playlist/:playlistId" element={<PlaylistDetail />} />
