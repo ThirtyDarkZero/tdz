@@ -277,7 +277,30 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 export function usePlayer() {
   const context = useContext(PlayerContext);
   if (!context) {
-    throw new Error('usePlayer must be used within a PlayerProvider');
+    // Return safe defaults instead of throwing
+    // This allows components to render even if PlayerProvider is temporarily unavailable
+    console.warn('usePlayer called outside PlayerProvider, returning defaults');
+    return {
+      currentTrack: null,
+      queue: [],
+      currentIndex: 0,
+      isPlaying: false,
+      playTrack: () => {},
+      pauseTrack: () => {},
+      resumeTrack: () => {},
+      nextTrack: () => {},
+      previousTrack: () => {},
+      addToQueue: () => {},
+      removeFromQueue: () => {},
+      clearQueue: () => {},
+      reorderQueue: () => {},
+      setIsPlaying: () => {},
+      setCurrentTime: () => {},
+      currentTime: 0,
+      youtubeState: { isReady: false, currentTime: 0, duration: 0, volume: 100, isMuted: false },
+      youtubePlayer: null,
+      setYoutubePlayer: () => {},
+    } as PlayerContextType;
   }
   return context;
 }
