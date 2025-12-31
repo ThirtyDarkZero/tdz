@@ -1,21 +1,28 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   ArrowLeft, Edit, Save, X, Music, Heart, Clock, 
   Camera, Users, ListMusic, Share2, Settings, Play,
   Trophy, Flame, Star, Zap, ChevronLeft, ChevronRight,
-  MoreHorizontal, Bell
+  MoreHorizontal, Bell, MessageCircle, UserPlus, UserCheck,
+  Sparkles, Grid3X3, Activity
 } from "lucide-react";
 import { toast } from "sonner";
-import { PlaylistManager } from "@/components/PlaylistManager";
 import { MotionCover } from "@/components/MotionCover";
 import { ShareProfileModal } from "@/components/ShareProfileModal";
 import { DirectMessagePanel } from "@/components/DirectMessagePanel";
+import { ProfileActivityFeed } from "@/components/social/ProfileActivityFeed";
+import { ProfileStats } from "@/components/social/ProfileStats";
+import { FollowersGrid } from "@/components/social/FollowersGrid";
+import { MusicTasteCard } from "@/components/social/MusicTasteCard";
+import { FanBadges, FanLevel } from "@/components/social/FanBadges";
+import { SocialFeed } from "@/components/social/SocialFeed";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,18 +32,26 @@ import {
 
 export default function ListenerProfile() {
   const navigate = useNavigate();
+  const { fanId } = useParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const playlistScrollRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("activity");
   const [user, setUser] = useState<any>(null);
+  const [viewingUserId, setViewingUserId] = useState<string | null>(null);
+  const [isOwnProfile, setIsOwnProfile] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [likedTracks, setLikedTracks] = useState<any[]>([]);
   const [recentlyPlayed, setRecentlyPlayed] = useState<any[]>([]);
   const [playlists, setPlaylists] = useState<any[]>([]);
   const [followingCount, setFollowingCount] = useState(0);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [badges, setBadges] = useState<string[]>([]);
+  const [engagement, setEngagement] = useState<any>(null);
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
   
   const [formData, setFormData] = useState({
@@ -48,21 +63,29 @@ export default function ListenerProfile() {
 
   useEffect(() => {
     loadUserData();
-  }, []);
+  }, [fanId]);
 
   const loadUserData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      setUser(currentUser);
+
+      // Determine which profile to view
+      let targetUserId = fanId || currentUser?.id;
+      
+      if (!targetUserId) {
         navigate("/auth");
         return;
       }
-      setUser(user);
 
+      setViewingUserId(targetUserId);
+      setIsOwnProfile(!fanId || fanId === currentUser?.id);
+
+      // Load the target user's profile
       const { data: profileData, error: profileError } = await supabase
         .from("listener_profiles")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", targetUserId)
         .maybeSingle();
 
       if (profileError) throw profileError;
@@ -77,12 +100,13 @@ export default function ListenerProfile() {
             ? (profileData.favorite_genres as string[])
             : [],
         });
-      } else {
+      } else if (isOwnProfile && currentUser) {
+        // Create profile if own profile and doesn't exist
         const { data: newProfile } = await supabase
           .from("listener_profiles")
           .insert({
-            user_id: user.id,
-            display_name: user.email?.split('@')[0] || "Music Explorer"
+            user_id: currentUser.id,
+            display_name: currentUser.email?.split('@')[0] || "Music Explorer"
           })
           .select()
           .single();
@@ -98,10 +122,11 @@ export default function ListenerProfile() {
         }
       }
 
+      // Load likes
       const { data: likesData } = await supabase
         .from("track_likes")
         .select(`track_id, created_at, tracks:track_id (id, title, artist_name, duration, album_cover_path, album_cover_bucket, motion_cover_path, motion_cover_bucket)`)
-        .eq("user_id", user.id)
+        .eq("user_id", targetUserId)
         .order("created_at", { ascending: false })
         .limit(20);
 
@@ -109,10 +134,11 @@ export default function ListenerProfile() {
         setLikedTracks(likesData.filter(item => item.tracks).map(item => item.tracks));
       }
 
+      // Load listening history
       const { data: historyData } = await supabase
         .from("listening_history")
         .select(`played_at, track_id, tracks:track_id (id, title, artist_name, duration, album_cover_path, album_cover_bucket)`)
-        .eq("user_id", user.id)
+        .eq("user_id", targetUserId)
         .order("played_at", { ascending: false })
         .limit(20);
 
@@ -126,20 +152,64 @@ export default function ListenerProfile() {
         setRecentlyPlayed(unique.map(item => ({ ...item.tracks, played_at: item.played_at })));
       }
 
-      const { data: playlistsData } = await supabase
+      // Load playlists (only public ones if not own profile)
+      const playlistQuery = supabase
         .from("playlists")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", targetUserId)
         .order("updated_at", { ascending: false });
       
+      if (!isOwnProfile) {
+        playlistQuery.eq("is_public", true);
+      }
+      
+      const { data: playlistsData } = await playlistQuery;
       setPlaylists(playlistsData || []);
 
+      // Load following count (artists)
       const { count: followingCountData } = await supabase
         .from("artist_follows")
         .select("*", { count: "exact", head: true })
-        .eq("follower_id", user.id);
+        .eq("follower_id", targetUserId);
       
       setFollowingCount(followingCountData || 0);
+
+      // Load followers count (fans)
+      const { count: fanFollowersCount } = await supabase
+        .from("fan_follows")
+        .select("*", { count: "exact", head: true })
+        .eq("following_id", targetUserId);
+      
+      setFollowersCount(fanFollowersCount || 0);
+
+      // Check if current user follows this profile
+      if (currentUser && !isOwnProfile) {
+        const { data: followCheck } = await supabase
+          .from("fan_follows")
+          .select("id")
+          .eq("follower_id", currentUser.id)
+          .eq("following_id", targetUserId)
+          .maybeSingle();
+        
+        setIsFollowing(!!followCheck);
+      }
+
+      // Load badges
+      const { data: badgesData } = await supabase
+        .from("fan_badges")
+        .select("badge_type")
+        .eq("user_id", targetUserId);
+      
+      setBadges(badgesData?.map(b => b.badge_type) || []);
+
+      // Load engagement data
+      const { data: engagementData } = await supabase
+        .from("fan_engagement")
+        .select("*")
+        .eq("user_id", targetUserId)
+        .maybeSingle();
+      
+      setEngagement(engagementData);
 
     } catch (error: any) {
       console.error("Error loading profile:", error);
@@ -151,7 +221,7 @@ export default function ListenerProfile() {
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file || !user || !isOwnProfile) return;
 
     if (!file.type.startsWith('image/')) {
       toast.error("Please select an image file");
@@ -193,7 +263,7 @@ export default function ListenerProfile() {
 
   const handleSave = async () => {
     try {
-      if (!user || !profile) return;
+      if (!user || !profile || !isOwnProfile) return;
 
       const { error } = await supabase
         .from("listener_profiles")
@@ -214,6 +284,33 @@ export default function ListenerProfile() {
     } catch (error: any) {
       console.error("Error updating profile:", error);
       toast.error("Failed to update profile");
+    }
+  };
+
+  const toggleFollow = async () => {
+    if (!user || !viewingUserId || isOwnProfile) return;
+
+    try {
+      if (isFollowing) {
+        await supabase
+          .from("fan_follows")
+          .delete()
+          .eq("follower_id", user.id)
+          .eq("following_id", viewingUserId);
+        setIsFollowing(false);
+        setFollowersCount(prev => prev - 1);
+        toast.success("Unfollowed");
+      } else {
+        await supabase
+          .from("fan_follows")
+          .insert({ follower_id: user.id, following_id: viewingUserId });
+        setIsFollowing(true);
+        setFollowersCount(prev => prev + 1);
+        toast.success("Now following!");
+      }
+    } catch (error) {
+      console.error("Error toggling follow:", error);
+      toast.error("Failed to update follow");
     }
   };
 
@@ -261,17 +358,10 @@ export default function ListenerProfile() {
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <Button
-              size="icon"
-              className="h-10 w-10 rounded-full bg-cyan-500 hover:bg-cyan-400 text-black"
-              onClick={() => likedTracks.length > 0 && navigate(`/track/${likedTracks[0].id}`)}
-            >
-              <Play className="w-5 h-5" fill="currentColor" />
-            </Button>
             <span className="font-bold text-lg truncate">{formData.display_name || "Fan"}</span>
           </div>
           
-          {!editing ? (
+          {isOwnProfile && !editing && (
             <Button 
               variant="ghost" 
               size="sm" 
@@ -281,7 +371,8 @@ export default function ListenerProfile() {
               <Edit className="w-4 h-4 mr-2" />
               Edit
             </Button>
-          ) : (
+          )}
+          {isOwnProfile && editing && (
             <div className="flex gap-2">
               <Button variant="ghost" size="icon" onClick={() => setEditing(false)} className="h-9 w-9 rounded-full bg-white/5">
                 <X className="w-4 h-4" />
@@ -295,335 +386,480 @@ export default function ListenerProfile() {
         </div>
       </header>
 
-      {/* Profile Section */}
-      <section className="px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8">
-          {/* Circular Avatar */}
-          <div className="relative flex-shrink-0">
-            <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full overflow-hidden bg-gradient-to-br from-indigo-600 to-purple-700 flex items-center justify-center ring-4 ring-white/10">
-              {profile?.profile_image_path ? (
-                <img
-                  src={getProfileImageUrl() || undefined}
-                  alt={formData.display_name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-6xl sm:text-7xl font-bold text-white/80">
-                  {formData.display_name?.charAt(0)?.toUpperCase() || 'U'}
-                </span>
-              )}
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handlePhotoUpload}
-            />
-            <Button
-              size="icon"
-              className="absolute bottom-2 right-2 h-10 w-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingPhoto}
-            >
-              <Camera className="w-5 h-5" />
-            </Button>
-          </div>
-
-          {/* Info */}
-          <div className="flex-1 text-center sm:text-left">
-            {/* Type + Genre Tags */}
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-3">
-              <span className="text-white/60 text-sm">Fan</span>
-              {favoriteGenres.slice(0, 3).map((genre: string) => (
-                <Badge 
-                  key={genre} 
-                  variant="outline" 
-                  className="bg-white/5 border-white/20 text-white/80 text-xs px-3 py-1 rounded-full"
-                >
-                  {genre}
-                </Badge>
-              ))}
-            </div>
-
-            {/* Name */}
-            {editing ? (
-              <Input
-                value={formData.display_name}
-                onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-                placeholder="Your name"
-                className="text-3xl sm:text-4xl font-black bg-transparent border-white/20 mb-3 max-w-md"
-              />
-            ) : (
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black mb-3 tracking-tight">
-                {formData.display_name || "Music Explorer"}
-              </h1>
-            )}
-
-            {/* Stats */}
-            <div className="flex items-center justify-center sm:justify-start gap-1 text-sm text-white/60 mb-6">
-              <span>Following: <strong className="text-white">{followingCount}</strong></span>
-              <span className="mx-2">•</span>
-              <span>Playlists: <strong className="text-white">{playlists.length}</strong></span>
-              <span className="mx-2">•</span>
-              <span>Liked: <strong className="text-white">{likedTracks.length}</strong></span>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center justify-center sm:justify-start gap-3">
-              <Button 
-                onClick={() => navigate("/discover")}
-                className="bg-white text-black hover:bg-white/90 font-semibold px-6 h-11 rounded-full gap-2"
-              >
-                <Play className="w-5 h-5" fill="currentColor" />
-                DISCOVER
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setShareModalOpen(true)}
-                className="border-white/30 text-white hover:bg-white/10 font-semibold px-6 h-11 rounded-full gap-2"
-              >
-                <Share2 className="w-5 h-5" />
-                Share Stats
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-11 w-11 rounded-full border border-white/20 hover:bg-white/10"
-                  >
-                    <MoreHorizontal className="w-5 h-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-[#1a1a1a] border-white/10">
-                  <DropdownMenuItem className="text-white hover:bg-white/10">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Settings
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </div>
-
-        {/* Bio Edit */}
-        {editing && (
-          <div className="mt-6 max-w-2xl mx-auto sm:mx-0 space-y-4">
-            <Textarea
-              value={formData.bio}
-              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-              placeholder="Tell us about your music taste..."
-              className="bg-white/5 border-white/20 text-white"
-            />
-            <Input
-              value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              placeholder="Location"
-              className="bg-white/5 border-white/20 text-white"
-            />
-          </div>
-        )}
-      </section>
-
-      {/* Liked Tracks Section */}
-      {likedTracks.length > 0 && (
-        <section className="px-4 sm:px-6 lg:px-8 py-6">
-          <h2 className="text-2xl sm:text-3xl font-black mb-6 tracking-tight">LIKED TRACKS</h2>
-          <div className="space-y-2">
-            {likedTracks.slice(0, 10).map((track: any, idx: number) => (
-              <div 
-                key={track.id}
-                onClick={() => navigate(`/track/${track.id}`)}
-                className="flex items-center gap-4 p-3 rounded-lg cursor-pointer hover:bg-white/5 transition-colors"
-              >
-                <span className="w-6 text-center text-white/40 text-sm">{idx + 1}</span>
-                <div className="w-12 h-12 rounded-lg overflow-hidden bg-white/5 flex-shrink-0">
-                  <MotionCover
-                    motionCoverPath={track.motion_cover_path}
-                    motionCoverBucket={track.motion_cover_bucket}
-                    staticCoverPath={track.album_cover_path}
-                    staticCoverBucket={track.album_cover_bucket || "album-covers"}
-                    alt={track.title}
-                    className="w-full h-full"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate text-white">{track.title}</p>
-                  <p className="text-sm text-white/50 truncate">{track.artist_name}</p>
-                </div>
-                <Heart className="w-4 h-4 text-pink-500" fill="currentColor" />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Playlists Section */}
-      {playlists.length > 0 && (
-        <section className="px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <h2 className="text-2xl sm:text-3xl font-black tracking-tight">PLAYLISTS</h2>
-              <button className="text-white/40 hover:text-white text-sm">MORE</button>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => scrollPlaylists('left')}
-                className="h-10 w-10 rounded-full border border-white/20 hover:bg-white/10"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => scrollPlaylists('right')}
-                className="h-10 w-10 rounded-full border border-white/20 hover:bg-white/10"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </Button>
-            </div>
-          </div>
-          
-          <div 
-            ref={playlistScrollRef}
-            className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            {playlists.map((playlist) => (
-              <div 
-                key={playlist.id}
-                onClick={() => navigate(`/playlist/${playlist.id}`)}
-                className="flex-shrink-0 w-40 sm:w-48 cursor-pointer group"
-              >
-                <div className="aspect-square rounded-lg overflow-hidden bg-gradient-to-br from-cyan-500/20 to-purple-500/20 mb-3 flex items-center justify-center">
-                  {playlist.cover_image_path ? (
+      {/* Hero Section with Gradient */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-cyan-900/30 via-purple-900/20 to-[#0a0a0a] h-80" />
+        
+        {/* Profile Section */}
+        <section className="relative px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8">
+            {/* Circular Avatar with Ring */}
+            <div className="relative flex-shrink-0">
+              <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-full overflow-hidden bg-gradient-to-br from-cyan-600 to-purple-700 p-1">
+                <div className="w-full h-full rounded-full overflow-hidden bg-[#0a0a0a] flex items-center justify-center">
+                  {profile?.profile_image_path ? (
                     <img
-                      src={supabase.storage.from('playlist-covers').getPublicUrl(playlist.cover_image_path).data.publicUrl}
-                      alt={playlist.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <ListMusic className="w-12 h-12 text-white/30" />
-                  )}
-                </div>
-                <p className="font-medium text-white truncate">{playlist.name}</p>
-                <p className="text-sm text-white/50">Playlist</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Achievements Section */}
-      <section className="px-4 sm:px-6 lg:px-8 py-6">
-        <h2 className="text-2xl sm:text-3xl font-black mb-6 tracking-tight">ACHIEVEMENTS</h2>
-        <div className="flex flex-wrap gap-3">
-          <Badge className="gap-2 py-2 px-4 bg-yellow-500/10 border-yellow-500/30 text-yellow-400 rounded-full">
-            <Star className="w-4 h-4" />
-            Early Adopter
-          </Badge>
-          {likedTracks.length >= 5 && (
-            <Badge className="gap-2 py-2 px-4 bg-pink-500/10 border-pink-500/30 text-pink-400 rounded-full">
-              <Heart className="w-4 h-4" />
-              Music Lover
-            </Badge>
-          )}
-          {playlists.length >= 1 && (
-            <Badge className="gap-2 py-2 px-4 bg-purple-500/10 border-purple-500/30 text-purple-400 rounded-full">
-              <ListMusic className="w-4 h-4" />
-              Curator
-            </Badge>
-          )}
-          {followingCount >= 3 && (
-            <Badge className="gap-2 py-2 px-4 bg-blue-500/10 border-blue-500/30 text-blue-400 rounded-full">
-              <Users className="w-4 h-4" />
-              Fan Club
-            </Badge>
-          )}
-          {recentlyPlayed.length >= 10 && (
-            <Badge className="gap-2 py-2 px-4 bg-green-500/10 border-green-500/30 text-green-400 rounded-full">
-              <Flame className="w-4 h-4" />
-              On Fire
-            </Badge>
-          )}
-          <Badge className="gap-2 py-2 px-4 bg-cyan-500/10 border-cyan-500/30 text-cyan-400 rounded-full">
-            <Zap className="w-4 h-4" />
-            TDZ Pioneer
-          </Badge>
-        </div>
-      </section>
-
-      {/* Recently Played Section */}
-      {recentlyPlayed.length > 0 && (
-        <section className="px-4 sm:px-6 lg:px-8 py-6">
-          <h2 className="text-2xl sm:text-3xl font-black mb-6 tracking-tight">RECENTLY PLAYED</h2>
-          <div className="space-y-2">
-            {recentlyPlayed.slice(0, 5).map((track: any, idx: number) => (
-              <div 
-                key={`${track.id}-${idx}`}
-                onClick={() => navigate(`/track/${track.id}`)}
-                className="flex items-center gap-4 p-3 rounded-lg cursor-pointer hover:bg-white/5 transition-colors"
-              >
-                <div className="w-12 h-12 rounded-lg overflow-hidden bg-white/5 flex-shrink-0">
-                  {track.album_cover_path ? (
-                    <img
-                      src={supabase.storage.from(track.album_cover_bucket || 'album-covers').getPublicUrl(track.album_cover_path).data.publicUrl}
-                      alt={track.title}
+                      src={getProfileImageUrl() || undefined}
+                      alt={formData.display_name}
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Music className="w-5 h-5 text-white/30" />
-                    </div>
+                    <span className="text-5xl sm:text-6xl font-bold text-white/80">
+                      {formData.display_name?.charAt(0)?.toUpperCase() || 'U'}
+                    </span>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate text-white">{track.title}</p>
-                  <p className="text-sm text-white/50 truncate">{track.artist_name}</p>
-                </div>
-                <Clock className="w-4 h-4 text-white/30" />
               </div>
-            ))}
+              {isOwnProfile && (
+                <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePhotoUpload}
+                  />
+                  <Button
+                    size="icon"
+                    className="absolute bottom-2 right-2 h-10 w-10 rounded-full bg-cyan-500 hover:bg-cyan-400 text-black"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                  >
+                    <Camera className="w-5 h-5" />
+                  </Button>
+                </>
+              )}
+              {/* Level Badge */}
+              {engagement && (
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
+                  <FanLevel level={engagement.level || 1} xp={engagement.xp_total || 0} />
+                </div>
+              )}
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 text-center sm:text-left pt-4 sm:pt-0">
+              {/* Badges */}
+              {badges.length > 0 && (
+                <div className="mb-3">
+                  <FanBadges badges={badges} size="md" />
+                </div>
+              )}
+
+              {/* Type + Genre Tags */}
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-2">
+                <Badge variant="outline" className="bg-cyan-500/20 border-cyan-500/30 text-cyan-400 text-xs px-3 py-1 rounded-full">
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  Fan
+                </Badge>
+                {formData.location && (
+                  <span className="text-white/50 text-sm">📍 {formData.location}</span>
+                )}
+              </div>
+
+              {/* Name */}
+              {editing ? (
+                <Input
+                  value={formData.display_name}
+                  onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+                  placeholder="Your name"
+                  className="text-3xl sm:text-4xl font-black bg-transparent border-white/20 mb-3 max-w-md"
+                />
+              ) : (
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black mb-2 tracking-tight bg-gradient-to-r from-white via-cyan-200 to-white bg-clip-text text-transparent">
+                  {formData.display_name || "Music Explorer"}
+                </h1>
+              )}
+
+              {/* Bio */}
+              {formData.bio && !editing && (
+                <p className="text-white/60 text-sm mb-4 max-w-lg">{formData.bio}</p>
+              )}
+
+              {/* Stats */}
+              <div className="flex items-center justify-center sm:justify-start gap-6 text-sm mb-6">
+                <button className="text-center hover:text-cyan-400 transition-colors">
+                  <span className="block text-2xl font-black text-white">{followersCount}</span>
+                  <span className="text-white/50">Followers</span>
+                </button>
+                <button className="text-center hover:text-cyan-400 transition-colors">
+                  <span className="block text-2xl font-black text-white">{followingCount}</span>
+                  <span className="text-white/50">Following</span>
+                </button>
+                <button className="text-center hover:text-cyan-400 transition-colors">
+                  <span className="block text-2xl font-black text-white">{playlists.length}</span>
+                  <span className="text-white/50">Playlists</span>
+                </button>
+                <button className="text-center hover:text-cyan-400 transition-colors">
+                  <span className="block text-2xl font-black text-white">{likedTracks.length}</span>
+                  <span className="text-white/50">Likes</span>
+                </button>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-center sm:justify-start gap-3">
+                {isOwnProfile ? (
+                  <>
+                    <Button 
+                      onClick={() => navigate("/discover")}
+                      className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-black font-bold px-6 h-11 rounded-full gap-2"
+                    >
+                      <Play className="w-5 h-5" fill="currentColor" />
+                      DISCOVER
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShareModalOpen(true)}
+                      className="border-white/30 text-white hover:bg-white/10 font-semibold px-6 h-11 rounded-full gap-2"
+                    >
+                      <Share2 className="w-5 h-5" />
+                      Share
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button 
+                      onClick={toggleFollow}
+                      className={isFollowing 
+                        ? "bg-white/10 hover:bg-white/20 text-white font-bold px-6 h-11 rounded-full gap-2"
+                        : "bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-black font-bold px-6 h-11 rounded-full gap-2"
+                      }
+                    >
+                      {isFollowing ? (
+                        <>
+                          <UserCheck className="w-5 h-5" />
+                          Following
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-5 h-5" />
+                          Follow
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedConversation({ user_id: viewingUserId })}
+                      className="border-white/30 text-white hover:bg-white/10 font-semibold px-6 h-11 rounded-full gap-2"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      Message
+                    </Button>
+                  </>
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-11 w-11 rounded-full border border-white/20 hover:bg-white/10"
+                    >
+                      <MoreHorizontal className="w-5 h-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-[#1a1a1a] border-white/10">
+                    {isOwnProfile && (
+                      <DropdownMenuItem className="text-white hover:bg-white/10">
+                        <Settings className="w-4 h-4 mr-2" />
+                        Settings
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem className="text-white hover:bg-white/10">
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Share Profile
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
           </div>
+
+          {/* Bio Edit */}
+          {editing && (
+            <div className="mt-6 max-w-2xl mx-auto sm:mx-0 space-y-4">
+              <Textarea
+                value={formData.bio}
+                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                placeholder="Tell us about your music taste..."
+                className="bg-white/5 border-white/20 text-white"
+              />
+              <Input
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                placeholder="Location"
+                className="bg-white/5 border-white/20 text-white"
+              />
+            </div>
+          )}
+        </section>
+      </div>
+
+      {/* Stats Cards */}
+      {viewingUserId && (
+        <section className="px-4 sm:px-6 lg:px-8 py-4">
+          <ProfileStats userId={viewingUserId} />
         </section>
       )}
 
-      {/* Share Modal */}
-      <ShareProfileModal
-        open={shareModalOpen}
+      {/* Tabs Section */}
+      <section className="px-4 sm:px-6 lg:px-8 py-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="bg-white/5 border border-white/10 rounded-full p-1 mb-6">
+            <TabsTrigger 
+              value="activity" 
+              className="rounded-full data-[state=active]:bg-cyan-500 data-[state=active]:text-black"
+            >
+              <Activity className="w-4 h-4 mr-2" />
+              Activity
+            </TabsTrigger>
+            <TabsTrigger 
+              value="music" 
+              className="rounded-full data-[state=active]:bg-cyan-500 data-[state=active]:text-black"
+            >
+              <Music className="w-4 h-4 mr-2" />
+              Music
+            </TabsTrigger>
+            <TabsTrigger 
+              value="social" 
+              className="rounded-full data-[state=active]:bg-cyan-500 data-[state=active]:text-black"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Social
+            </TabsTrigger>
+            <TabsTrigger 
+              value="playlists" 
+              className="rounded-full data-[state=active]:bg-cyan-500 data-[state=active]:text-black"
+            >
+              <ListMusic className="w-4 h-4 mr-2" />
+              Playlists
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Activity Tab */}
+          <TabsContent value="activity" className="mt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                  <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-cyan-400" />
+                    Recent Activity
+                  </h3>
+                  {viewingUserId && (
+                    <ProfileActivityFeed userId={viewingUserId} isOwnProfile={isOwnProfile} />
+                  )}
+                </div>
+                
+                {isOwnProfile && (
+                  <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                      <MessageCircle className="w-5 h-5 text-purple-400" />
+                      Share Your Story
+                    </h3>
+                    <SocialFeed variant="compact" />
+                  </div>
+                )}
+              </div>
+              
+              <div>
+                {viewingUserId && <MusicTasteCard userId={viewingUserId} />}
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Music Tab */}
+          <TabsContent value="music" className="mt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Liked Tracks */}
+              <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                  <Heart className="w-5 h-5 text-pink-500" />
+                  Liked Tracks
+                </h3>
+                {likedTracks.length > 0 ? (
+                  <div className="space-y-2">
+                    {likedTracks.slice(0, 10).map((track: any, idx: number) => (
+                      <div 
+                        key={track.id}
+                        onClick={() => navigate(`/track/${track.id}`)}
+                        className="flex items-center gap-4 p-3 rounded-lg cursor-pointer hover:bg-white/5 transition-colors"
+                      >
+                        <span className="w-6 text-center text-white/40 text-sm">{idx + 1}</span>
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-white/5 flex-shrink-0">
+                          <MotionCover
+                            motionCoverPath={track.motion_cover_path}
+                            motionCoverBucket={track.motion_cover_bucket}
+                            staticCoverPath={track.album_cover_path}
+                            staticCoverBucket={track.album_cover_bucket || "album-covers"}
+                            alt={track.title}
+                            className="w-full h-full"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate text-white">{track.title}</p>
+                          <p className="text-sm text-white/50 truncate">{track.artist_name}</p>
+                        </div>
+                        <Heart className="w-4 h-4 text-pink-500" fill="currentColor" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-white/50">
+                    <Heart className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">No liked tracks yet</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Recently Played */}
+              <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-cyan-400" />
+                  Recently Played
+                </h3>
+                {recentlyPlayed.length > 0 ? (
+                  <div className="space-y-2">
+                    {recentlyPlayed.slice(0, 10).map((track: any, idx: number) => (
+                      <div 
+                        key={`${track.id}-${idx}`}
+                        onClick={() => navigate(`/track/${track.id}`)}
+                        className="flex items-center gap-4 p-3 rounded-lg cursor-pointer hover:bg-white/5 transition-colors"
+                      >
+                        <Play className="w-4 h-4 text-cyan-400" />
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-white/5 flex-shrink-0">
+                          {track.album_cover_path ? (
+                            <img
+                              src={supabase.storage.from(track.album_cover_bucket || "album-covers").getPublicUrl(track.album_cover_path).data.publicUrl}
+                              alt={track.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-cyan-600 to-purple-600 flex items-center justify-center">
+                              <Music className="w-6 h-6 text-white/50" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate text-white">{track.title}</p>
+                          <p className="text-sm text-white/50 truncate">{track.artist_name}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-white/50">
+                    <Clock className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">No listening history</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Social Tab */}
+          <TabsContent value="social" className="mt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-cyan-400" />
+                  Followers
+                </h3>
+                {viewingUserId && (
+                  <FollowersGrid userId={viewingUserId} type="followers" isOwnProfile={isOwnProfile} />
+                )}
+              </div>
+              
+              <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                  <Heart className="w-5 h-5 text-pink-500" />
+                  Following
+                </h3>
+                {viewingUserId && (
+                  <FollowersGrid userId={viewingUserId} type="following" isOwnProfile={isOwnProfile} />
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Playlists Tab */}
+          <TabsContent value="playlists" className="mt-0">
+            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+              <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                <ListMusic className="w-5 h-5 text-purple-400" />
+                Playlists
+              </h3>
+              {playlists.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {playlists.map((playlist: any) => (
+                    <div
+                      key={playlist.id}
+                      onClick={() => navigate(`/playlist/${playlist.id}`)}
+                      className="group cursor-pointer"
+                    >
+                      <div className="aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-purple-600 to-cyan-600 mb-3 relative">
+                        {playlist.cover_image_path ? (
+                          <img
+                            src={supabase.storage.from("playlist-covers").getPublicUrl(playlist.cover_image_path).data.publicUrl}
+                            alt={playlist.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ListMusic className="w-12 h-12 text-white/50" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                          <Play className="w-12 h-12 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="currentColor" />
+                        </div>
+                      </div>
+                      <p className="font-medium text-sm truncate">{playlist.name}</p>
+                      <p className="text-xs text-white/50">
+                        {playlist.is_public ? 'Public' : 'Private'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-white/50">
+                  <ListMusic className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">No playlists yet</p>
+                  {isOwnProfile && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-4 border-white/20"
+                      onClick={() => navigate('/discover')}
+                    >
+                      Create Playlist
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </section>
+
+      {/* Modals */}
+      <ShareProfileModal 
+        open={shareModalOpen} 
         onOpenChange={setShareModalOpen}
         profileData={{
-          displayName: formData.display_name || "Music Lover",
-          totalPlays: recentlyPlayed.length * 3,
-          hoursListened: Math.round(recentlyPlayed.length * 3 * 3.5 / 60),
+          displayName: formData.display_name,
+          totalPlays: 0,
+          hoursListened: 0,
           artistsFollowed: followingCount,
           likedSongs: likedTracks.length,
           playlists: playlists.length,
-          tasteScore: likedTracks.length > 0 ? Math.min(100, likedTracks.length * 5) : 0,
-          achievements: [
-            "Early Adopter",
-            ...(likedTracks.length >= 5 ? ["Music Lover"] : []),
-            ...(playlists.length >= 1 ? ["Curator"] : []),
-            ...(followingCount >= 3 ? ["Fan Club"] : []),
-            ...(recentlyPlayed.length >= 10 ? ["On Fire"] : []),
-          ],
-          topGenres: formData.favorite_genres.length > 0 
-            ? formData.favorite_genres 
-            : ["Electronic", "Hip-Hop", "Pop"],
+          tasteScore: 85,
+          achievements: badges,
+          topGenres: favoriteGenres
         }}
       />
 
-      {/* Direct Message Panel */}
       {selectedConversation && (
         <DirectMessagePanel
-          open={!!selectedConversation}
+          receiverId={selectedConversation.user_id}
           onClose={() => setSelectedConversation(null)}
-          recipientId={selectedConversation.partnerId}
-          recipientName={selectedConversation.partnerName}
-          recipientAvatar={selectedConversation.partnerAvatar}
         />
       )}
     </div>
