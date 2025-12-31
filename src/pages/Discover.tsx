@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,8 @@ import { MinimalTrackList } from "@/components/discovery/MinimalTrackList";
 import { MinimalArtistGrid } from "@/components/discovery/MinimalArtistGrid";
 import { MinimalAlbumGrid } from "@/components/discovery/MinimalAlbumGrid";
 import { MinimalGenreSection } from "@/components/discovery/MinimalGenreSection";
+import { Genre3DCarousel } from "@/components/discovery/Genre3DCarousel";
+import { CuratedPlaylistGrid } from "@/components/discovery/CuratedPlaylistGrid";
 
 interface SearchResult {
   id: string;
@@ -245,6 +247,58 @@ export default function Discover() {
     );
   }
 
+  // Generate album data for 3D carousel
+  const genreAlbums = useMemo(() => {
+    const albumsWithCovers = albums.filter(a => a.cover_art_path).map(album => ({
+      id: album.id,
+      title: album.title,
+      artist: album.artist_name,
+      image: album.cover_art_path 
+        ? supabase.storage.from('album-covers').getPublicUrl(album.cover_art_path).data.publicUrl
+        : 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80',
+      genre: album.genre || 'Pop',
+    }));
+    
+    // Add some fallback albums if we don't have enough
+    if (albumsWithCovers.length < 8) {
+      const fallbackImages = [
+        'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=80',
+        'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80',
+        'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&q=80',
+        'https://images.unsplash.com/photo-1571266028243-d220c6e3d9ec?w=400&q=80',
+        'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=80',
+        'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400&q=80',
+        'https://images.unsplash.com/photo-1504509546545-e000b4a62425?w=400&q=80',
+        'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&q=80',
+      ];
+      
+      for (let i = albumsWithCovers.length; i < 8; i++) {
+        albumsWithCovers.push({
+          id: `placeholder-${i}`,
+          title: `Trending Album ${i + 1}`,
+          artist: 'Various Artists',
+          image: fallbackImages[i % fallbackImages.length],
+          genre: selectedGenre || 'Pop',
+        });
+      }
+    }
+    
+    return albumsWithCovers;
+  }, [albums, selectedGenre]);
+
+  const handlePlayPlaylist = (name: string, playlistTracks: any[]) => {
+    if (playlistTracks.length > 0) {
+      const normalizedTracks = playlistTracks.map(t => ({
+        ...t,
+        duration: t.duration || 0,
+        file_path: t.file_path || '',
+        play_count: t.play_count || 0,
+      }));
+      playTrack(normalizedTracks[0], normalizedTracks);
+      toast.success(`Now playing: ${name}`);
+    }
+  };
+
   // Render content based on active tab
   const renderContent = () => {
     switch (activeTab) {
@@ -254,8 +308,41 @@ export default function Discover() {
             {/* Hero */}
             <MinimalHero tracks={genreFilteredTracks} />
 
+            {/* 3D Genre Carousel - BPMSupreme style */}
+            <ErrorBoundary fallback={null}>
+              <Genre3DCarousel
+                albums={genreAlbums}
+                activeGenre={selectedGenre || 'pop'}
+                onGenreChange={handleGenreSelect}
+                onAlbumClick={(album) => {
+                  if (!album.id.startsWith('placeholder')) {
+                    navigate(`/album/${album.id}`);
+                  }
+                }}
+                onPlayAlbum={(album) => {
+                  // Find album tracks and play
+                  const albumTracks = tracks.filter(t => 
+                    t.artist_name === album.artist || 
+                    t.genre?.toLowerCase().includes(album.genre.toLowerCase())
+                  );
+                  if (albumTracks.length > 0) {
+                    handlePlayTrack(albumTracks[0]);
+                  }
+                }}
+              />
+            </ErrorBoundary>
+
             {/* Main Content */}
             <div className="px-4 sm:px-6 lg:px-8 space-y-10">
+              {/* Curated Editorial Playlists - BPMSupreme style */}
+              <ErrorBoundary fallback={null}>
+                <CuratedPlaylistGrid
+                  tracks={tracks}
+                  onPlayPlaylist={handlePlayPlaylist}
+                  onViewAll={(category) => toast.info(`Viewing all ${category}`)}
+                />
+              </ErrorBoundary>
+
               {/* Genre/Mood Section */}
               <ErrorBoundary fallback={null}>
                 <MinimalGenreSection onGenreSelect={handleGenreSelect} />

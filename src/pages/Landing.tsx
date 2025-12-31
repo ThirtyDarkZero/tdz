@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Music, Upload, TrendingUp, Zap, Globe, Radio, Shield, Users, ArrowRight, CheckCircle2, DollarSign, BarChart3, Headphones, Heart, Play, Mic2, Layers, Library, Image, BookOpen, Film, User, ShoppingBag, LayoutDashboard, Download, CreditCard, ChevronDown, Sparkles, Star, MessageCircle, Palette } from "lucide-react";
+import { Music, Upload, TrendingUp, Zap, Globe, Radio, Shield, Users, ArrowRight, CheckCircle2, DollarSign, BarChart3, Headphones, Heart, Play, Mic2, Layers, Library, Image, BookOpen, Film, User, ShoppingBag, LayoutDashboard, Download, CreditCard, ChevronDown, Sparkles, Star, MessageCircle, Palette, ChevronLeft, ChevronRight } from "lucide-react";
 import studioBackground from "@/assets/studio-background.jpg";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -343,6 +343,155 @@ function GalleryTrackCard({ track, onClick }: { track: Track; onClick: () => voi
           <p className="text-sm text-muted-foreground truncate">{track.artist_name}</p>
         </div>
       </div>
+    </div>
+  );
+}
+
+// 3D Album Carousel for Landing Page - BPMSupreme style
+function Landing3DCarousel({ tracks }: { tracks: Track[] }) {
+  const [currentIndex, setCurrentIndex] = useState(Math.floor(tracks.length / 2));
+  const [isAnimating, setIsAnimating] = useState(false);
+  const navigate = useNavigate();
+
+  const handlePrev = () => {
+    if (isAnimating || tracks.length === 0) return;
+    setIsAnimating(true);
+    setCurrentIndex((prev) => (prev - 1 + tracks.length) % tracks.length);
+    setTimeout(() => setIsAnimating(false), 400);
+  };
+
+  const handleNext = () => {
+    if (isAnimating || tracks.length === 0) return;
+    setIsAnimating(true);
+    setCurrentIndex((prev) => (prev + 1) % tracks.length);
+    setTimeout(() => setIsAnimating(false), 400);
+  };
+
+  const getAlbumStyle = (index: number) => {
+    const diff = index - currentIndex;
+    let normalizedDiff = diff;
+    if (tracks.length > 0) {
+      if (diff > tracks.length / 2) normalizedDiff = diff - tracks.length;
+      if (diff < -tracks.length / 2) normalizedDiff = diff + tracks.length;
+    }
+    const absNormalizedDistance = Math.abs(normalizedDiff);
+    
+    const rotateY = normalizedDiff * 50;
+    const translateX = normalizedDiff * 140;
+    const translateZ = -absNormalizedDistance * 180;
+    const scale = 1 - absNormalizedDistance * 0.18;
+    const opacity = absNormalizedDistance > 3 ? 0 : 1 - absNormalizedDistance * 0.2;
+    const zIndex = 10 - absNormalizedDistance;
+
+    return {
+      transform: `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${Math.max(scale, 0.4)})`,
+      opacity: Math.max(opacity, 0),
+      zIndex: Math.max(zIndex, 0),
+    };
+  };
+
+  if (tracks.length === 0) return null;
+
+  return (
+    <div className="relative py-12">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h3 className="text-2xl md:text-3xl font-display font-bold">
+          Latest on <span className="text-secondary">TDZ</span>
+        </h3>
+        <p className="text-muted-foreground mt-2">Click to explore</p>
+      </div>
+
+      {/* Navigation */}
+      <div className="absolute top-1/2 left-4 z-20">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handlePrev}
+          className="rounded-full bg-background/50 backdrop-blur-sm hover:bg-background/80"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </Button>
+      </div>
+      <div className="absolute top-1/2 right-4 z-20">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleNext}
+          className="rounded-full bg-background/50 backdrop-blur-sm hover:bg-background/80"
+        >
+          <ChevronRight className="w-6 h-6" />
+        </Button>
+      </div>
+
+      {/* 3D Carousel */}
+      <div 
+        className="relative h-[350px] flex items-center justify-center overflow-hidden"
+        style={{ perspective: '1200px' }}
+      >
+        <div className="relative w-full flex items-center justify-center" style={{ transformStyle: 'preserve-3d' }}>
+          {tracks.map((track, index) => {
+            const style = getAlbumStyle(index);
+            const isCurrent = index === currentIndex;
+            
+            return (
+              <div
+                key={track.id}
+                className={`
+                  absolute cursor-pointer transition-all duration-500 ease-out
+                  ${isCurrent ? 'ring-4 ring-primary/30' : ''}
+                `}
+                style={{
+                  ...style,
+                  width: '260px',
+                  height: '260px',
+                }}
+                onClick={() => {
+                  if (isCurrent) {
+                    navigate('/discover');
+                  } else {
+                    setCurrentIndex(index);
+                  }
+                }}
+              >
+                <div className="relative w-full h-full rounded-xl overflow-hidden shadow-2xl group">
+                  <MotionCover
+                    staticCoverPath={track.album_cover_path}
+                    staticCoverBucket={track.album_cover_bucket}
+                    motionCoverPath={track.motion_cover_path}
+                    motionCoverBucket={track.motion_cover_bucket}
+                    alt={track.title}
+                    className="w-full h-full object-cover"
+                  />
+                  
+                  {/* Hover overlay */}
+                  <div className={`
+                    absolute inset-0 bg-black/60 flex flex-col items-center justify-center
+                    transition-opacity duration-300
+                    ${isCurrent ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'}
+                  `}>
+                    <Play className="w-12 h-12 text-white mb-2" fill="currentColor" />
+                    <p className="text-white font-bold text-sm text-center px-4 truncate max-w-full">
+                      {track.title}
+                    </p>
+                    <p className="text-white/70 text-xs text-center">
+                      {track.artist_name}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Current track info */}
+      {tracks[currentIndex] && (
+        <div className="text-center mt-6">
+          <p className="text-lg font-bold text-foreground">{tracks[currentIndex].title}</p>
+          <p className="text-sm text-muted-foreground">{tracks[currentIndex].artist_name}</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -825,22 +974,9 @@ export default function Landing() {
             </Card>
           </div>
 
-          {/* Gallery-style Latest Releases */}
+          {/* 3D Carousel - Latest Releases */}
           {latestReleases.length > 0 && (
-            <div className="space-y-8">
-              <h3 className="text-2xl md:text-3xl font-display font-bold text-center">
-                Latest on <span className="text-secondary">TDZ</span>
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                {latestReleases.map((track) => (
-                  <GalleryTrackCard 
-                    key={track.id} 
-                    track={track} 
-                    onClick={() => navigate("/discover")} 
-                  />
-                ))}
-              </div>
-            </div>
+            <Landing3DCarousel tracks={latestReleases} />
           )}
 
           <MusicPlayerPhoneMockups />
