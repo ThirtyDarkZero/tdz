@@ -14,7 +14,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PersistentLayout } from "@/components/discovery/PersistentLayout";
 import { PremiumHero } from "@/components/discovery/PremiumHero";
 import { Premium3DCarousel } from "@/components/discovery/Premium3DCarousel";
-import { PremiumPlaylistGrid } from "@/components/discovery/PremiumPlaylistGrid";
+
 import { PremiumTrackList } from "@/components/discovery/PremiumTrackList";
 import { MinimalArtistGrid } from "@/components/discovery/MinimalArtistGrid";
 import { MinimalAlbumGrid } from "@/components/discovery/MinimalAlbumGrid";
@@ -230,18 +230,16 @@ export default function Discover() {
               </ErrorBoundary>
 
               <ErrorBoundary fallback={null}>
-                <PremiumPlaylistGrid
-                  sectionNumber={3}
-                  title="Featured Playlists"
-                  subtitle="Curated collections for every mood"
-                  onPlayPlaylist={(playlist) => toast.success(`Playing ${playlist.name}`)}
-                  onViewAll={() => setActiveTab('playlists')}
-                />
+                <div className="px-6 md:px-12 py-8 bg-[#030303]">
+                  <SpotifyPlaylistSection
+                    onViewAll={() => setActiveTab('playlists')}
+                  />
+                </div>
               </ErrorBoundary>
 
               <ErrorBoundary fallback={null}>
                 <PremiumTrackList
-                  sectionNumber={4}
+                  sectionNumber={3}
                   title={selectedGenre ? `${selectedGenre} Tracks` : "New Music"}
                   subtitle={selectedGenre ? `Filtered by genre` : `Fresh releases`}
                   tracks={genreFilteredTracks}
@@ -252,14 +250,6 @@ export default function Discover() {
                   onAddToQueue={handleAddToQueue}
                   maxTracks={10}
                 />
-              </ErrorBoundary>
-
-              <ErrorBoundary fallback={null}>
-                <div className="px-6 md:px-12 py-8 bg-[#030303]">
-                  <SpotifyPlaylistSection
-                    onViewAll={() => setActiveTab('library')}
-                  />
-                </div>
               </ErrorBoundary>
 
               <ErrorBoundary fallback={null}>
