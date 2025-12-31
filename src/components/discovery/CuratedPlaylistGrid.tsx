@@ -25,33 +25,37 @@ interface CuratedPlaylistGridProps {
   onViewAll?: (category: string) => void;
 }
 
-// BPMSupreme-inspired curated sets
+// Amazing curated sets with stunning artwork
 const CURATED_SETS = {
   "New & Noteworthy": {
     id: "new-noteworthy",
     icon: Sparkles,
-    gradient: "from-cyan-500 to-blue-600",
+    gradient: "from-cyan-500/80 to-blue-600/80",
+    artwork: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80",
     description: "Fresh drops and rising stars",
-    filter: (tracks: Track[]) => tracks.slice(0, 20), // Most recent
+    filter: (tracks: Track[]) => tracks.slice(0, 20),
   },
   "Trending Now": {
     id: "trending",
     icon: TrendingUp,
-    gradient: "from-pink-500 to-rose-600",
+    gradient: "from-pink-500/80 to-rose-600/80",
+    artwork: "https://images.unsplash.com/photo-1571266028243-d220c6e3d9ec?w=800&q=80",
     description: "What everyone's playing",
     filter: (tracks: Track[]) => [...tracks].sort((a, b) => (b.play_count || 0) - (a.play_count || 0)).slice(0, 20),
   },
   "Best of 2025": {
     id: "best-2025",
     icon: Star,
-    gradient: "from-amber-500 to-orange-600",
+    gradient: "from-amber-500/80 to-orange-600/80",
+    artwork: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80",
     description: "Year's top tracks",
     filter: (tracks: Track[]) => tracks.slice(0, 25),
   },
   "Club Hits": {
     id: "club-hits",
     icon: PartyPopper,
-    gradient: "from-fuchsia-500 to-purple-600",
+    gradient: "from-fuchsia-500/80 to-purple-600/80",
+    artwork: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&q=80",
     description: "Peak time bangers",
     filter: (tracks: Track[]) => tracks.filter(t => 
       (t.bpm && t.bpm >= 120 && t.bpm <= 135) || 
@@ -62,7 +66,8 @@ const CURATED_SETS = {
   "Hip Hop Essentials": {
     id: "hip-hop-essentials",
     icon: Mic2,
-    gradient: "from-orange-500 to-red-600",
+    gradient: "from-orange-500/80 to-red-600/80",
+    artwork: "https://images.unsplash.com/photo-1601643157091-ce5c665179ab?w=800&q=80",
     description: "Bars & beats",
     filter: (tracks: Track[]) => tracks.filter(t => 
       t.genre?.toLowerCase().includes('hip') || 
@@ -72,7 +77,8 @@ const CURATED_SETS = {
   "R&B Slow Jams": {
     id: "rnb-slow-jams",
     icon: Heart,
-    gradient: "from-purple-500 to-pink-600",
+    gradient: "from-purple-500/80 to-pink-600/80",
+    artwork: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80",
     description: "Smooth & sensual",
     filter: (tracks: Track[]) => tracks.filter(t => 
       t.genre?.toLowerCase().includes('r&b') || 
@@ -83,7 +89,8 @@ const CURATED_SETS = {
   "Workout Power": {
     id: "workout",
     icon: Dumbbell,
-    gradient: "from-red-500 to-orange-600",
+    gradient: "from-red-500/80 to-orange-600/80",
+    artwork: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80",
     description: "Pump up the energy",
     filter: (tracks: Track[]) => tracks.filter(t => 
       (t.bpm && t.bpm >= 130) || 
@@ -93,7 +100,8 @@ const CURATED_SETS = {
   "Chill Vibes": {
     id: "chill",
     icon: Coffee,
-    gradient: "from-teal-500 to-cyan-600",
+    gradient: "from-teal-500/80 to-cyan-600/80",
+    artwork: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&q=80",
     description: "Easy listening",
     filter: (tracks: Track[]) => tracks.filter(t => 
       t.mood?.toLowerCase().includes('chill') || 
@@ -104,7 +112,8 @@ const CURATED_SETS = {
   "Late Night": {
     id: "late-night",
     icon: Moon,
-    gradient: "from-indigo-600 to-purple-800",
+    gradient: "from-indigo-600/80 to-purple-800/80",
+    artwork: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&q=80",
     description: "After hours vibes",
     filter: (tracks: Track[]) => tracks.filter(t => 
       t.mood?.toLowerCase().includes('dark') || 
@@ -115,7 +124,8 @@ const CURATED_SETS = {
   "Summertime": {
     id: "summer",
     icon: Sun,
-    gradient: "from-yellow-400 to-orange-500",
+    gradient: "from-yellow-400/80 to-orange-500/80",
+    artwork: "https://images.unsplash.com/photo-1506157786151-b8491531f063?w=800&q=80",
     description: "Feel-good summer anthems",
     filter: (tracks: Track[]) => tracks.filter(t => 
       t.mood?.toLowerCase().includes('happy') || 
@@ -126,7 +136,8 @@ const CURATED_SETS = {
   "Road Trip": {
     id: "road-trip",
     icon: Car,
-    gradient: "from-emerald-500 to-teal-600",
+    gradient: "from-emerald-500/80 to-teal-600/80",
+    artwork: "https://images.unsplash.com/photo-1504509546545-e000b4a62425?w=800&q=80",
     description: "Miles of great music",
     filter: (tracks: Track[]) => tracks.filter(t => 
       t.genre?.toLowerCase().includes('rock') || 
@@ -136,7 +147,8 @@ const CURATED_SETS = {
   "Gaming Session": {
     id: "gaming",
     icon: Gamepad2,
-    gradient: "from-violet-600 to-purple-700",
+    gradient: "from-violet-600/80 to-purple-700/80",
+    artwork: "https://images.unsplash.com/photo-1511882150382-421056c89033?w=800&q=80",
     description: "Epic gaming soundtrack",
     filter: (tracks: Track[]) => tracks.filter(t => 
       t.genre?.toLowerCase().includes('electronic') || 
@@ -195,81 +207,93 @@ export function CuratedPlaylistGrid({ tracks, onPlayPlaylist, onViewAll }: Curat
         key={name}
         className={`
           relative group cursor-pointer overflow-hidden border-0 
-          hover:scale-[1.02] transition-all duration-300 shadow-xl flex-shrink-0
-          ${isLarge ? 'w-[280px] h-[320px]' : 'w-[200px] h-[240px]'}
+          hover:scale-[1.03] transition-all duration-500 shadow-2xl flex-shrink-0
+          ${isLarge ? 'w-[300px] h-[360px]' : 'w-[220px] h-[280px]'}
         `}
         onClick={() => onPlayPlaylist(name, playlist.tracks)}
       >
-        {/* Background gradient */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${playlist.config.gradient} opacity-90`} />
+        {/* Background artwork */}
+        <div className="absolute inset-0">
+          <img 
+            src={playlist.config.artwork}
+            alt={name}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+          {/* Gradient overlay */}
+          <div className={`absolute inset-0 bg-gradient-to-br ${playlist.config.gradient} mix-blend-multiply`} />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+        </div>
         
-        {/* Pattern overlay */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
-        
-        {/* Dark overlay for readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+        {/* Animated shimmer on hover */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+        </div>
         
         {/* Content */}
         <div className="relative h-full flex flex-col justify-between p-5 z-10">
           {/* Top section */}
           <div className="flex items-start justify-between">
             <div className={`
-              ${isLarge ? 'w-14 h-14' : 'w-10 h-10'} 
-              rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center
+              ${isLarge ? 'w-14 h-14' : 'w-12 h-12'} 
+              rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center
+              border border-white/20 shadow-lg
             `}>
-              <Icon className={`${isLarge ? 'w-7 h-7' : 'w-5 h-5'} text-white`} />
+              <Icon className={`${isLarge ? 'w-7 h-7' : 'w-6 h-6'} text-white`} />
             </div>
-            <Badge className="bg-white/20 text-white border-0 backdrop-blur-sm">
+            <Badge className="bg-black/40 text-white border-0 backdrop-blur-sm text-xs px-2.5 py-1">
               {playlist.tracks.length} tracks
             </Badge>
           </div>
           
           {/* Bottom section */}
-          <div className="space-y-2">
-            <h3 className={`${isLarge ? 'text-2xl' : 'text-lg'} font-bold text-white leading-tight`}>
+          <div className="space-y-3">
+            <h3 className={`${isLarge ? 'text-2xl' : 'text-xl'} font-bold text-white leading-tight drop-shadow-lg`}>
               {name}
             </h3>
-            <p className="text-sm text-white/70">{playlist.config.description}</p>
+            <p className="text-sm text-white/80 line-clamp-2">{playlist.config.description}</p>
           </div>
           
-          {/* Play button */}
-          <Button
-            size="icon"
-            className={`
-              absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-              rounded-full bg-white/90 text-black opacity-0 group-hover:opacity-100
-              transition-all hover:scale-110 shadow-xl
-              ${isLarge ? 'w-14 h-14' : 'w-12 h-12'}
-            `}
-          >
-            <Play className={`${isLarge ? 'w-6 h-6' : 'w-5 h-5'} ml-0.5`} fill="currentColor" />
-          </Button>
+          {/* Play button - appears on hover */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Button
+              size="icon"
+              className={`
+                rounded-full bg-white text-black opacity-0 group-hover:opacity-100
+                transition-all duration-300 hover:scale-110 shadow-2xl
+                ${isLarge ? 'w-16 h-16' : 'w-14 h-14'}
+                translate-y-4 group-hover:translate-y-0
+              `}
+            >
+              <Play className={`${isLarge ? 'w-7 h-7' : 'w-6 h-6'} ml-1`} fill="currentColor" />
+            </Button>
+          </div>
         </div>
+        
+        {/* Glow effect on hover */}
+        <div className={`absolute -inset-1 rounded-xl opacity-0 group-hover:opacity-60 transition-opacity duration-500 blur-xl bg-gradient-to-br ${playlist.config.gradient}`} />
       </Card>
     );
   };
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-12">
       {CATEGORY_SECTIONS.map((section) => (
-        <div key={section.title} className="space-y-4">
+        <div key={section.title} className="space-y-5">
           {/* Section header */}
           <div className="flex items-center justify-between px-2">
-            <h2 className="text-xl font-bold text-white">{section.title}</h2>
+            <h2 className="text-2xl font-bold text-white tracking-tight">{section.title}</h2>
             <button
               onClick={() => onViewAll?.(section.title)}
-              className="flex items-center gap-1 text-sm text-white/60 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 text-sm text-white/60 hover:text-cyan-400 transition-colors group"
             >
               See More
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
           
           {/* Playlist cards */}
           <ScrollArea className="w-full">
-            <div className="flex gap-4 pb-4">
+            <div className="flex gap-5 pb-4">
               {section.sets.map((setName, index) => 
                 renderPlaylistCard(setName, index === 0 && section.title === "New & Noteworthy" ? 'large' : 'small')
               )}
