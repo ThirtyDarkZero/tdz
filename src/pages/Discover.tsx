@@ -13,10 +13,7 @@ import { toast } from "sonner";
 import { useDiscoveryData } from "@/hooks/useDiscoveryData";
 import { MerchStore } from "@/components/MerchStore";
 import { usePlayer } from "@/contexts/PlayerContext";
-import { YouTubeVideo } from "@/hooks/useYouTubePlayer";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { UnifiedLibrary } from "@/components/discovery/UnifiedLibrary";
-import { LikedSongsPlaylist } from "@/components/discovery/LikedSongsPlaylist";
 
 // New minimal components
 import { PersistentLayout } from "@/components/discovery/PersistentLayout";
@@ -28,39 +25,14 @@ import { MinimalGenreSection } from "@/components/discovery/MinimalGenreSection"
 import { Genre3DCarousel } from "@/components/discovery/Genre3DCarousel";
 import { CuratedPlaylistGrid } from "@/components/discovery/CuratedPlaylistGrid";
 
-interface SearchResult {
-  id: string;
-  title: string;
-  artist_name: string;
-  type: 'track' | 'album' | 'artist' | 'youtube';
-  thumbnail?: string;
-  youtubeData?: YouTubeVideo;
-}
-
 export default function Discover() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("discover");
   const [selectedGenre, setSelectedGenre] = useState<string | undefined>(undefined);
   const [showSearch, setShowSearch] = useState(false);
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<NodeJS.Timeout>();
-  
-  // Wrap hooks in try-catch for safety
-  let playerContext: ReturnType<typeof usePlayer> | null = null;
-  try {
-    playerContext = usePlayer();
-  } catch (e) {
-    console.error("usePlayer error:", e);
-  }
-  
-  const { currentTrack, playTrack, addToQueue } = playerContext || { 
-    currentTrack: null, 
-    playTrack: () => {}, 
-    addToQueue: () => {} 
-  };
+
+  const { currentTrack, playTrack, addToQueue } = usePlayer();
   
   const {
     tracks,
@@ -79,85 +51,6 @@ export default function Discover() {
   const { hasFeature } = useSubscription(user);
   const isArtist = role === 'artist' || role === 'verified_artist' || role === 'manager';
   const canCreatePlaylists = isArtist || hasFeature('playlists');
-
-  // Search functionality
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    if (!searchQuery || searchQuery.length < 2) {
-      setSearchResults([]);
-      return;
-    }
-
-    debounceRef.current = setTimeout(async () => {
-      setIsSearching(true);
-      
-      try {
-        const { data: searchTracks } = await supabase
-          .from('tracks')
-          .select('id, title, artist_name, album_cover_path, album_cover_bucket')
-          .eq('is_published', true)
-          .or(`title.ilike.%${searchQuery}%,artist_name.ilike.%${searchQuery}%`)
-          .limit(5);
-
-        const { data: searchArtists } = await supabase
-          .from('artist_profiles')
-          .select('user_id, artist_name, profile_image_path')
-          .ilike('artist_name', `%${searchQuery}%`)
-          .limit(3);
-
-        const { data: ytData } = await supabase.functions.invoke('youtube-search', {
-          body: { query: searchQuery, type: 'search', maxResults: 5 }
-        });
-
-        const results: SearchResult[] = [];
-
-        searchTracks?.forEach(track => {
-          results.push({
-            id: track.id,
-            title: track.title,
-            artist_name: track.artist_name,
-            type: 'track',
-            thumbnail: track.album_cover_path 
-              ? supabase.storage.from(track.album_cover_bucket || 'album-covers').getPublicUrl(track.album_cover_path).data.publicUrl
-              : undefined,
-          });
-        });
-
-        searchArtists?.forEach(artist => {
-          results.push({
-            id: artist.user_id,
-            title: artist.artist_name,
-            artist_name: 'Artist',
-            type: 'artist',
-          });
-        });
-
-        if (ytData?.results) {
-          ytData.results.forEach((video: YouTubeVideo) => {
-            results.push({
-              id: `yt-${video.id}`,
-              title: video.title,
-              artist_name: video.channel,
-              type: 'youtube',
-              thumbnail: video.thumbnail,
-              youtubeData: video,
-            });
-          });
-        }
-
-        setSearchResults(results);
-      } catch (error) {
-        console.error('Search error:', error);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 300);
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [searchQuery]);
 
   // Filter tracks by search
   const filteredTracks = tracks.filter(track =>
@@ -206,59 +99,6 @@ export default function Discover() {
     setSelectedGenre(genreId === selectedGenre ? undefined : genreId);
   };
 
-  const handlePlayDiscogsYouTube = (videoId: string, title: string, artist: string, thumbnail: string) => {
-    const youtubeTrack = {
-      id: `yt-${videoId}`,
-      title: title,
-      artist_name: artist,
-      duration: 0,
-      file_path: '',
-      play_count: 0,
-      source: 'youtube' as const,
-      youtubeId: videoId,
-      thumbnail: thumbnail,
-    };
-    playTrack(youtubeTrack);
-    toast.success(`Now playing: ${title}`);
-  };
-
-  const handleSearchResultClick = (result: SearchResult) => {
-    setSearchQuery('');
-    setShowSearch(false);
-
-    if (result.type === 'artist') {
-      navigate(`/artist/${result.id}`);
-    } else if (result.type === 'youtube' && result.youtubeData) {
-      const youtubeTrack = {
-        id: result.id,
-        title: result.title,
-        artist_name: result.artist_name,
-        duration: 0,
-        file_path: '',
-        play_count: 0,
-        source: 'youtube' as const,
-        youtubeId: result.youtubeData.id,
-        thumbnail: result.thumbnail,
-      };
-      playTrack(youtubeTrack);
-      toast.success(`Now playing: ${result.title}`);
-    } else if (result.type === 'track') {
-      navigate(`/track/${result.id}`);
-    }
-  };
-
-  // Loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-white/60 text-sm">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
   // Generate album data for 3D carousel
   const genreAlbums = useMemo(() => {
     const albumsWithCovers = albums.filter(a => a.cover_art_path).map(album => ({
@@ -271,14 +111,13 @@ export default function Discover() {
       genre: album.genre || 'Pop',
     }));
     
-    // Add some fallback albums if we don't have enough
+    // Add fallback albums if we don't have enough
     if (albumsWithCovers.length < 8) {
       const fallbackImages = [
         'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=80',
         'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80',
         'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&q=80',
         'https://images.unsplash.com/photo-1571266028243-d220c6e3d9ec?w=400&q=80',
-        'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=80',
         'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400&q=80',
         'https://images.unsplash.com/photo-1504509546545-e000b4a62425?w=400&q=80',
         'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&q=80',
@@ -311,163 +150,160 @@ export default function Discover() {
     }
   };
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-white/60 text-sm">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Render content based on active tab
   const renderContent = () => {
-    switch (activeTab) {
-      case 'discover':
-        return (
-          <div className="space-y-10">
-            {/* Hero */}
-            <ErrorBoundary fallback={null}>
-              <MinimalHero tracks={genreFilteredTracks} />
-            </ErrorBoundary>
+    try {
+      switch (activeTab) {
+        case 'discover':
+          return (
+            <div className="space-y-10">
+              <ErrorBoundary fallback={<div className="h-[400px] bg-gradient-to-br from-cyan-900/30 to-purple-900/30" />}>
+                <MinimalHero tracks={genreFilteredTracks} />
+              </ErrorBoundary>
 
-            {/* 3D Genre Carousel - BPMSupreme style */}
-            <ErrorBoundary fallback={null}>
-              <Genre3DCarousel
-                albums={genreAlbums}
-                activeGenre={selectedGenre || 'pop'}
-                onGenreChange={handleGenreSelect}
-                onAlbumClick={(album) => {
-                  if (!album.id.startsWith('placeholder')) {
-                    navigate(`/album/${album.id}`);
-                  }
-                }}
-                onPlayAlbum={(album) => {
-                  // Find album tracks and play
-                  const albumTracks = tracks.filter(t => 
-                    t.artist_name === album.artist || 
-                    t.genre?.toLowerCase().includes(album.genre.toLowerCase())
-                  );
-                  if (albumTracks.length > 0) {
-                    handlePlayTrack(albumTracks[0]);
-                  }
-                }}
-              />
-            </ErrorBoundary>
-
-            {/* Main Content */}
-            <div className="px-4 sm:px-6 lg:px-8 space-y-10">
-              {/* Curated Editorial Playlists - BPMSupreme style */}
               <ErrorBoundary fallback={null}>
-                <CuratedPlaylistGrid
-                  tracks={tracks}
-                  onPlayPlaylist={handlePlayPlaylist}
-                  onViewAll={(category) => toast.info(`Viewing all ${category}`)}
+                <Genre3DCarousel
+                  albums={genreAlbums}
+                  activeGenre={selectedGenre || 'pop'}
+                  onGenreChange={handleGenreSelect}
+                  onAlbumClick={(album) => {
+                    if (!album.id.startsWith('placeholder')) {
+                      navigate(`/album/${album.id}`);
+                    }
+                  }}
+                  onPlayAlbum={(album) => {
+                    const albumTracks = tracks.filter(t => 
+                      t.artist_name === album.artist || 
+                      t.genre?.toLowerCase().includes(album.genre.toLowerCase())
+                    );
+                    if (albumTracks.length > 0) {
+                      handlePlayTrack(albumTracks[0]);
+                    }
+                  }}
                 />
               </ErrorBoundary>
 
-              {/* Genre/Mood Section */}
-              <ErrorBoundary fallback={null}>
-                <MinimalGenreSection onGenreSelect={handleGenreSelect} />
-              </ErrorBoundary>
-
-              {/* Selected genre indicator */}
-              {selectedGenre && (
-                <div className="flex items-center gap-2">
-                  <span className="text-white/60 text-sm">Filtering by:</span>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setSelectedGenre(undefined)}
-                    className="bg-cyan-500/10 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
-                  >
-                    {selectedGenre} ×
-                  </Button>
-                </div>
-              )}
-
-              {/* Track List */}
-              <ErrorBoundary fallback={null}>
-                <MinimalTrackList
-                  tracks={genreFilteredTracks}
-                  currentTrackId={currentTrack?.id}
-                  likedTracks={likedTracks}
-                  onPlayTrack={handlePlayTrack}
-                  onToggleLike={toggleLike}
-                  onAddToQueue={handleAddToQueue}
-                  title={selectedGenre ? `${selectedGenre} Tracks` : "All Tracks"}
-                />
-              </ErrorBoundary>
-
-              {/* Albums */}
-              {albums.length > 0 && (
+              <div className="px-4 sm:px-6 lg:px-8 space-y-10">
                 <ErrorBoundary fallback={null}>
-                  <MinimalAlbumGrid
-                    albums={albums}
-                    title="Albums"
+                  <CuratedPlaylistGrid
+                    tracks={tracks}
+                    onPlayPlaylist={handlePlayPlaylist}
+                    onViewAll={(category) => toast.info(`Viewing all ${category}`)}
                   />
                 </ErrorBoundary>
-              )}
+
+                <ErrorBoundary fallback={null}>
+                  <MinimalGenreSection onGenreSelect={handleGenreSelect} />
+                </ErrorBoundary>
+
+                {selectedGenre && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-white/60 text-sm">Filtering by:</span>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setSelectedGenre(undefined)}
+                      className="bg-cyan-500/10 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
+                    >
+                      {selectedGenre} ×
+                    </Button>
+                  </div>
+                )}
+
+                <ErrorBoundary fallback={null}>
+                  <MinimalTrackList
+                    tracks={genreFilteredTracks}
+                    currentTrackId={currentTrack?.id}
+                    likedTracks={likedTracks}
+                    onPlayTrack={handlePlayTrack}
+                    onToggleLike={toggleLike}
+                    onAddToQueue={handleAddToQueue}
+                    title={selectedGenre ? `${selectedGenre} Tracks` : "All Tracks"}
+                  />
+                </ErrorBoundary>
+
+                {albums.length > 0 && (
+                  <ErrorBoundary fallback={null}>
+                    <MinimalAlbumGrid albums={albums} title="Albums" />
+                  </ErrorBoundary>
+                )}
+              </div>
             </div>
-          </div>
-        );
+          );
 
-      case 'library':
-        return (
-          <div className="px-4 sm:px-6 lg:px-8 py-6">
-            <h1 className="text-3xl font-bold text-white mb-6">Library</h1>
-            <ErrorBoundary fallback={<div className="text-white/50 text-center py-10">Library unavailable</div>}>
-              <UnifiedLibrary onPlayYouTube={handlePlayDiscogsYouTube} />
-            </ErrorBoundary>
-          </div>
-        );
+        case 'trending':
+          return (
+            <div className="px-4 sm:px-6 lg:px-8 py-6">
+              <h1 className="text-3xl font-bold text-white mb-6">Trending</h1>
+              <MinimalTrackList
+                tracks={[...filteredTracks].sort((a, b) => (b.play_count || 0) - (a.play_count || 0)).slice(0, 20)}
+                currentTrackId={currentTrack?.id}
+                likedTracks={likedTracks}
+                onPlayTrack={handlePlayTrack}
+                onToggleLike={toggleLike}
+                onAddToQueue={handleAddToQueue}
+              />
+            </div>
+          );
 
-      case 'trending':
-        return (
-          <div className="px-4 sm:px-6 lg:px-8 py-6">
-            <h1 className="text-3xl font-bold text-white mb-6">Trending</h1>
-            <MinimalTrackList
-              tracks={[...filteredTracks].sort((a, b) => (b.play_count || 0) - (a.play_count || 0)).slice(0, 20)}
-              currentTrackId={currentTrack?.id}
-              likedTracks={likedTracks}
-              onPlayTrack={handlePlayTrack}
-              onToggleLike={toggleLike}
-              onAddToQueue={handleAddToQueue}
-            />
-          </div>
-        );
+        case 'artists':
+          return (
+            <div className="px-4 sm:px-6 lg:px-8 py-6">
+              <h1 className="text-3xl font-bold text-white mb-6">Artists</h1>
+              <MinimalArtistGrid
+                artists={artists}
+                followedArtists={followedArtists}
+                onToggleFollow={toggleFollow}
+              />
+            </div>
+          );
 
-      case 'artists':
-        return (
-          <div className="px-4 sm:px-6 lg:px-8 py-6">
-            <h1 className="text-3xl font-bold text-white mb-6">Artists</h1>
-            <MinimalArtistGrid
-              artists={artists}
-              followedArtists={followedArtists}
-              onToggleFollow={toggleFollow}
-            />
-          </div>
-        );
+        case 'playlists':
+          return (
+            <div className="px-4 sm:px-6 lg:px-8 py-6">
+              <h1 className="text-3xl font-bold text-white mb-6">Playlists</h1>
+              <p className="text-white/50">Create and manage your playlists</p>
+            </div>
+          );
 
-      case 'playlists':
-        return (
-          <div className="px-4 sm:px-6 lg:px-8 py-6">
-            <PlaylistsSection
-              playlists={playlists}
-              canCreate={canCreatePlaylists}
-              userId={user?.id || null}
-            />
-          </div>
-        );
+        case 'merch':
+          return (
+            <div className="px-4 sm:px-6 lg:px-8 py-6">
+              <h1 className="text-3xl font-bold text-white mb-6">Merch Store</h1>
+              <MerchStore variant="full" />
+            </div>
+          );
 
-      case 'merch':
-        return (
-          <div className="px-4 sm:px-6 lg:px-8 py-6">
-            <h1 className="text-3xl font-bold text-white mb-6">Merch Store</h1>
-            <MerchStore variant="full" />
-          </div>
-        );
+        case 'library':
+          return (
+            <div className="px-4 sm:px-6 lg:px-8 py-6">
+              <h1 className="text-3xl font-bold text-white mb-6">Library</h1>
+              <p className="text-white/50">Your music library</p>
+            </div>
+          );
 
-      case 'liked':
-        return (
-          <div className="px-4 sm:px-6 lg:px-8 py-6">
-            <LikedSongsPlaylist />
-          </div>
-        );
-
-      default:
-        return null;
+        default:
+          return (
+            <div className="px-4 sm:px-6 lg:px-8 py-6">
+              <p className="text-white/50">Select a tab</p>
+            </div>
+          );
+      }
+    } catch (error) {
+      console.error('renderContent error:', error);
+      return <div className="p-8 text-white">Something went wrong</div>;
     }
   };
 
@@ -480,227 +316,7 @@ export default function Discover() {
       showSearch={showSearch}
       onToggleSearch={() => setShowSearch(!showSearch)}
     >
-      {/* Search Overlay */}
-      {showSearch && (
-        <div className="fixed inset-0 z-40 bg-[#0a0a0a]/95 backdrop-blur-sm pt-14 lg:pt-0 lg:pl-64">
-          <div className="max-w-2xl mx-auto px-4 py-8">
-            <div ref={searchRef} className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search songs, artists, YouTube..."
-                className="pl-12 pr-4 py-6 text-lg bg-white/5 border-white/10 text-white placeholder:text-white/40 rounded-full"
-                autoFocus
-              />
-            </div>
-
-            {/* Search Results */}
-            {searchQuery.length >= 2 && (
-              <div className="mt-6 bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-                <ScrollArea className="max-h-[60vh]">
-                  {isSearching ? (
-                    <div className="p-8 flex items-center justify-center gap-3 text-white/50">
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Searching...</span>
-                    </div>
-                  ) : searchResults.length === 0 ? (
-                    <div className="p-8 text-center text-white/50">
-                      No results for "{searchQuery}"
-                    </div>
-                  ) : (
-                    <div className="py-2">
-                      {searchResults.map((result) => (
-                        <div
-                          key={result.id}
-                          onClick={() => handleSearchResultClick(result)}
-                          className="flex items-center gap-4 px-4 py-3 hover:bg-white/5 cursor-pointer transition-colors"
-                        >
-                          <div className="w-12 h-12 rounded-lg bg-white/5 overflow-hidden flex-shrink-0">
-                            {result.thumbnail ? (
-                              <img src={result.thumbnail} alt={result.title} className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Mic2 className="w-5 h-5 text-white/30" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-white truncate">{result.title}</p>
-                            <p className="text-sm text-white/50 truncate">{result.artist_name}</p>
-                          </div>
-                          <Badge 
-                            variant="outline" 
-                            className={`text-xs ${
-                              result.type === 'youtube' 
-                                ? 'bg-red-500/10 text-red-400 border-red-500/20'
-                                : result.type === 'artist'
-                                ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
-                                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                            }`}
-                          >
-                            {result.type === 'youtube' && <Youtube className="w-3 h-3 mr-1" />}
-                            {result.type === 'track' && <Crown className="w-3 h-3 mr-1" />}
-                            {result.type === 'youtube' ? 'YouTube' : result.type === 'artist' ? 'Artist' : 'TDZ'}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </ScrollArea>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {renderContent()}
     </PersistentLayout>
-  );
-}
-
-// Playlists Section
-function PlaylistsSection({ 
-  playlists, 
-  canCreate,
-  userId
-}: {
-  playlists: any[];
-  canCreate: boolean;
-  userId: string | null;
-}) {
-  const navigate = useNavigate();
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [newPlaylistName, setNewPlaylistName] = useState("");
-  const [creating, setCreating] = useState(false);
-  
-  const handleCreate = async () => {
-    if (!canCreate) {
-      toast.error("Subscribe to create playlists ($12/mo)", {
-        action: {
-          label: "Upgrade",
-          onClick: () => navigate("/auth?upgrade=true"),
-        },
-      });
-      return;
-    }
-    setShowCreateDialog(true);
-  };
-
-  const handleCreatePlaylist = async () => {
-    if (!newPlaylistName.trim() || !userId) return;
-    
-    setCreating(true);
-    const { data, error } = await supabase
-      .from("playlists")
-      .insert({
-        user_id: userId,
-        name: newPlaylistName.trim(),
-        is_public: true
-      })
-      .select()
-      .single();
-
-    if (error) {
-      toast.error("Failed to create playlist");
-    } else {
-      toast.success(`Created "${newPlaylistName}"`);
-      setNewPlaylistName("");
-      setShowCreateDialog(false);
-      navigate(`/playlist/${data.id}`);
-    }
-    setCreating(false);
-  };
-  
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-white">Playlists</h1>
-        <Button 
-          onClick={handleCreate}
-          variant="outline"
-          size="sm"
-          className={`${canCreate 
-            ? 'border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10' 
-            : 'border-white/10 text-white/50'
-          }`}
-        >
-          {canCreate ? <Plus className="w-4 h-4 mr-2" /> : <Lock className="w-4 h-4 mr-2" />}
-          Create
-        </Button>
-      </div>
-      
-      {!canCreate && (
-        <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10">
-          <div className="flex items-center gap-3">
-            <Sparkles className="w-5 h-5 text-cyan-400" />
-            <div>
-              <p className="font-medium text-white text-sm">Unlock Playlists</p>
-              <p className="text-xs text-white/50">Subscribe to create and manage playlists</p>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {playlists.length === 0 ? (
-        <div className="text-center py-20">
-          <ListMusic className="w-16 h-16 mx-auto text-white/10 mb-4" />
-          <p className="text-white/40 text-lg">No playlists yet</p>
-          <p className="text-white/30 text-sm mt-1">Create your first playlist to get started</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {playlists.map((playlist, index) => (
-            <div 
-              key={playlist.id} 
-              className="group cursor-pointer"
-              style={{ animationDelay: `${index * 50}ms` }}
-              onClick={() => navigate(`/playlist/${playlist.id}`)}
-            >
-              <div className="aspect-square rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-white/5 flex items-center justify-center mb-3 group-hover:border-cyan-500/30 transition-colors">
-                <ListMusic className="w-10 h-10 text-white/30" />
-              </div>
-              <h3 className="font-medium text-sm text-white truncate group-hover:text-cyan-400 transition-colors">{playlist.name}</h3>
-              <p className="text-xs text-white/40 mt-0.5">Playlist</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Create Playlist Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="bg-[#1a1a1a] border-white/10">
-          <DialogHeader>
-            <DialogTitle className="text-white">Create New Playlist</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Input
-              placeholder="Playlist name"
-              value={newPlaylistName}
-              onChange={(e) => setNewPlaylistName(e.target.value)}
-              className="bg-white/5 border-white/10 text-white"
-              autoFocus
-            />
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="ghost" 
-              onClick={() => setShowCreateDialog(false)}
-              className="text-white/70 hover:text-white"
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleCreatePlaylist}
-              disabled={!newPlaylistName.trim() || creating}
-              className="bg-cyan-500 hover:bg-cyan-600 text-white"
-            >
-              {creating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              Create
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
   );
 }
