@@ -1,14 +1,15 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Play, Music2, Headphones, Mic2, Guitar, Drum, Piano, 
   Dumbbell, Heart, Moon, Sun, Coffee, PartyPopper, Brain,
   Car, Plane, Gamepad2, Book, Utensils, Sparkles, Zap,
-  CloudRain, Wind, Flame, Leaf, Star, Trophy
+  CloudRain, Wind, Flame, Leaf, Star, Trophy, Loader2
 } from "lucide-react";
 
 interface Track {
@@ -21,6 +22,9 @@ interface Track {
   duration?: number;
   file_path?: string;
   play_count?: number;
+  youtubeId?: string;
+  thumbnail?: string;
+  source?: 'tdz' | 'youtube' | 'global';
   [key: string]: any;
 }
 
@@ -296,12 +300,62 @@ type PlaylistCategory = "genres" | "activities" | "moods";
 
 export function EditorialPlaylists({ tracks, onPlayPlaylist, onPlaylistClick }: EditorialPlaylistsProps) {
   const [activeCategory, setActiveCategory] = useState<PlaylistCategory>("genres");
+  const [globalTracks, setGlobalTracks] = useState<Track[]>([]);
+  const [loadingGlobal, setLoadingGlobal] = useState(false);
 
-  // Generate genre playlists from actual tracks
+  // Fetch trending global library content for editorial playlists
+  useEffect(() => {
+    const fetchGlobalContent = async () => {
+      setLoadingGlobal(true);
+      try {
+        // Fetch from Billboard charts and trending content
+        const { data } = await supabase.functions.invoke('unified-music-search', {
+          body: { 
+            query: 'top hits 2024', 
+            type: 'track',
+            limit: 50,
+            includeCharts: true,
+            aiEnrich: false
+          }
+        });
+        
+        if (data?.results) {
+          const globalResults: Track[] = data.results
+            .filter((r: any) => r.youtubeId)
+            .map((r: any) => ({
+              id: r.id,
+              title: r.title,
+              artist_name: r.artist,
+              genre: r.genres?.[0] || 'Pop',
+              mood: r.moodTags?.[0] || 'Energetic',
+              bpm: r.acousticData?.bpm,
+              youtubeId: r.youtubeId,
+              thumbnail: r.thumbnail,
+              source: 'global' as const,
+              play_count: r.popularity || 0,
+            }));
+          setGlobalTracks(globalResults);
+        }
+      } catch (error) {
+        console.error('Error fetching global content:', error);
+      } finally {
+        setLoadingGlobal(false);
+      }
+    };
+
+    fetchGlobalContent();
+  }, []);
+
+  // Combine TDZ tracks with global library tracks
+  const allTracks = useMemo(() => {
+    return [...tracks, ...globalTracks];
+  }, [tracks, globalTracks]);
+
+  // Generate genre playlists from all tracks (TDZ + global)
   const genrePlaylists = useMemo(() => {
     const grouped: Record<string, Track[]> = {};
     
-    tracks.forEach(track => {
+    allTracks.forEach(track => {
       const genre = track.genre || "Other";
       if (!grouped[genre]) {
         grouped[genre] = [];
@@ -326,11 +380,11 @@ export function EditorialPlaylists({ tracks, onPlayPlaylist, onPlaylistClick }: 
       }));
   }, [tracks]);
 
-  // Generate activity playlists by matching track properties
+  // Generate activity playlists by matching track properties (from all sources)
   const activityPlaylists = useMemo(() => {
     return Object.entries(ACTIVITY_CONFIG).map(([activity, config]) => {
       // Filter tracks by BPM range and keyword matching
-      const matchingTracks = tracks.filter(track => {
+      const matchingTracks = allTracks.filter(track => {
         // BPM match
         if (config.bpmRange && track.bpm) {
           if (track.bpm < config.bpmRange[0] || track.bpm > config.bpmRange[1]) {
@@ -346,7 +400,7 @@ export function EditorialPlaylists({ tracks, onPlayPlaylist, onPlaylistClick }: 
       // If not enough tracks matched, add some from compatible genres
       let finalTracks = matchingTracks;
       if (matchingTracks.length < 5) {
-        const additionalTracks = tracks
+        const additionalTracks = allTracks
           .filter(t => !matchingTracks.includes(t))
           .slice(0, 10 - matchingTracks.length);
         finalTracks = [...matchingTracks, ...additionalTracks];
@@ -361,11 +415,11 @@ export function EditorialPlaylists({ tracks, onPlayPlaylist, onPlaylistClick }: 
     });
   }, [tracks]);
 
-  // Generate mood playlists by matching track mood
+  // Generate mood playlists by matching track mood (from all sources)
   const moodPlaylists = useMemo(() => {
     return Object.entries(MOOD_CONFIG).map(([mood, config]) => {
       // Filter tracks by mood matching
-      const matchingTracks = tracks.filter(track => {
+      const matchingTracks = allTracks.filter(track => {
         const trackMood = (track.mood || '').toLowerCase();
         const trackText = `${trackMood} ${track.genre || ''} ${track.title || ''}`.toLowerCase();
         return config.keywords.some(keyword => trackText.includes(keyword.toLowerCase()));
@@ -374,7 +428,7 @@ export function EditorialPlaylists({ tracks, onPlayPlaylist, onPlaylistClick }: 
       // Fill with random tracks if needed
       let finalTracks = matchingTracks;
       if (matchingTracks.length < 5) {
-        const additionalTracks = tracks
+        const additionalTracks = allTracks
           .filter(t => !matchingTracks.includes(t))
           .slice(0, 10 - matchingTracks.length);
         finalTracks = [...matchingTracks, ...additionalTracks];
