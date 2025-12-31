@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Database, Disc3, Sparkles } from "lucide-react";
+import { Database, Disc3, Sparkles, TrendingUp } from "lucide-react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { DiscogsLibrary } from "./DiscogsLibrary";
 import { MusicBrainzLibrary } from "./MusicBrainzLibrary";
@@ -8,10 +9,15 @@ import { UnifiedMusicEngine } from "./UnifiedMusicEngine";
 
 interface UnifiedLibraryProps {
   onPlayYouTube: (videoId: string, title: string, artist: string, thumbnail: string) => void;
+  showTrending?: boolean;
 }
 
-export function UnifiedLibrary({ onPlayYouTube }: UnifiedLibraryProps) {
+export function UnifiedLibrary({ onPlayYouTube, showTrending = false }: UnifiedLibraryProps) {
+  const [searchParams] = useSearchParams();
   const [activeSource, setActiveSource] = useState<"unified" | "discogs" | "musicbrainz">("unified");
+
+  // Check if we came from "All Trends" button
+  const fromTrending = searchParams.get('trending') === 'true' || showTrending;
 
   return (
     <div className="space-y-6">
@@ -19,10 +25,12 @@ export function UnifiedLibrary({ onPlayYouTube }: UnifiedLibraryProps) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl md:text-3xl font-black tracking-tight">
-            <span className="text-gradient-aurora">Global Music Library</span>
+            <span className="text-gradient-aurora">
+              {fromTrending ? 'Top Trending Songs' : 'Global Music Library'}
+            </span>
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Browse millions of releases from multiple databases
+            {fromTrending ? 'Chart-topping hits from Spotify & Billboard' : 'Browse millions of releases from multiple databases'}
           </p>
         </div>
       </div>
@@ -33,8 +41,8 @@ export function UnifiedLibrary({ onPlayYouTube }: UnifiedLibraryProps) {
             value="unified"
             className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500/20 data-[state=active]:to-purple-500/20 data-[state=active]:text-cyan-400 gap-2"
           >
-            <Sparkles className="w-4 h-4" />
-            AI Engine
+            {fromTrending ? <TrendingUp className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+            {fromTrending ? 'Trending' : 'AI Engine'}
           </TabsTrigger>
           <TabsTrigger 
             value="discogs"
@@ -54,7 +62,7 @@ export function UnifiedLibrary({ onPlayYouTube }: UnifiedLibraryProps) {
 
         <TabsContent value="unified" className="mt-6">
           <ErrorBoundary fallback={<div className="h-40 bg-muted/20 rounded-lg flex items-center justify-center text-muted-foreground">AI Engine unavailable</div>}>
-            <UnifiedMusicEngine onPlayYouTube={onPlayYouTube} />
+            <UnifiedMusicEngine onPlayYouTube={onPlayYouTube} initialTrending={fromTrending} />
           </ErrorBoundary>
         </TabsContent>
 

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,9 +61,10 @@ interface UnifiedResult {
 
 interface UnifiedMusicEngineProps {
   onPlayYouTube: (videoId: string, title: string, artist: string, thumbnail: string) => void;
+  initialTrending?: boolean;
 }
 
-export function UnifiedMusicEngine({ onPlayYouTube }: UnifiedMusicEngineProps) {
+export function UnifiedMusicEngine({ onPlayYouTube, initialTrending = false }: UnifiedMusicEngineProps) {
   const { addToQueue } = usePlayer();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<UnifiedResult[]>([]);
@@ -89,7 +90,30 @@ export function UnifiedMusicEngine({ onPlayYouTube }: UnifiedMusicEngineProps) {
     youtubeId?: string;
     thumbnail?: string;
   } | null>(null);
-  const [sources, setSources] = useState({ musicbrainz: false, discogs: false, youtube: false, billboard: false, theaudiodb: false });
+  const [sources, setSources] = useState({ musicbrainz: false, discogs: false, youtube: false, billboard: false, theaudiodb: false, spotify: false });
+
+  // Load trending on mount if initialTrending is true
+  useEffect(() => {
+    if (initialTrending) {
+      loadTrending();
+    }
+  }, [initialTrending]);
+
+  const loadTrending = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('unified-music-search', {
+        body: { trendingOnly: true }
+      });
+      if (error) throw error;
+      setResults(data.results || []);
+      setSources({ ...sources, spotify: true });
+    } catch (error) {
+      console.error('Trending load error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearch = useCallback(async () => {
     if (!query.trim()) return;
