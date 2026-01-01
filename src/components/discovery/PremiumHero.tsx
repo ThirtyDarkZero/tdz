@@ -80,7 +80,7 @@ export function PremiumHero({ tracks, featuredTrack }: PremiumHeroProps) {
           <h1 className="font-display text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black text-white leading-[0.85] tracking-tight mb-6">
             <span className="block">discover</span>
             <span className="block bg-gradient-to-r from-cyan-400 via-cyan-300 to-cyan-500 bg-clip-text text-transparent">
-              new music
+              new TDZ releases
             </span>
           </h1>
 

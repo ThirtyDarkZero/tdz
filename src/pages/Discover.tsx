@@ -196,7 +196,7 @@ export default function Discover() {
 
               <ErrorBoundary fallback={null}>
                 <Premium3DCarousel
-                  sectionNumber={2}
+                  sectionNumber={0}
                   title="Genres"
                   subtitle={`${genreAlbums.length}+ Albums`}
                   albums={genreAlbums}
@@ -240,8 +240,8 @@ export default function Discover() {
 
               <ErrorBoundary fallback={null}>
                 <PremiumTrackList
-                  sectionNumber={3}
-                  title={selectedGenre ? `${selectedGenre} Tracks` : "New Music"}
+                  sectionNumber={0}
+                  title={selectedGenre ? `${selectedGenre} Tracks` : "New TDZ Releases"}
                   subtitle={selectedGenre ? `Filtered by genre` : `Fresh releases`}
                   tracks={genreFilteredTracks}
                   currentTrackId={currentTrack?.id}
@@ -264,7 +264,7 @@ export default function Discover() {
 
               <ErrorBoundary fallback={null}>
                 <CityTrendingSection
-                  sectionNumber={6}
+                  sectionNumber={0}
                   onViewAllTrends={() => {
                     setShowTrending(true);
                     setActiveTab('library');

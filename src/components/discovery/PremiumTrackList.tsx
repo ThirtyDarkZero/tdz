@@ -55,9 +55,11 @@ export function PremiumTrackList({
       {/* Header */}
       <div className="max-w-7xl mx-auto px-6 md:px-12 mb-8">
         <div className="flex items-baseline gap-10">
-          <span className="text-white/20 text-5xl md:text-6xl font-black font-display">
-            {sectionNumber}
-          </span>
+          {typeof sectionNumber === "number" && sectionNumber > 0 && (
+            <span className="text-white/20 text-5xl md:text-6xl font-black font-display">
+              {sectionNumber}
+            </span>
+          )}
           <div>
             <h2 className="text-2xl md:text-3xl font-bold text-white font-display tracking-tight">
               {title}
