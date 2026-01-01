@@ -338,14 +338,16 @@ export function StudioPhoneMockup({ title, color }: PhoneMockupProps) {
                     )}
                   </div>
                   
-                  <button 
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  <span 
+                    className="opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
                     }}
+                    role="button"
+                    tabIndex={0}
                   >
                     <MoreVertical className="w-3 h-3" />
-                  </button>
+                  </span>
                 </button>
               ))}
             </div>
