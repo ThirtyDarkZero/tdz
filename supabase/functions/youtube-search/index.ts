@@ -7,13 +7,70 @@ const corsHeaders = {
 
 const YOUTUBE_API_KEY = Deno.env.get('YOUTUBE_API_KEY');
 
-// Public Invidious instances used as fallback when YouTube Data API quota is exceeded
+// Public Invidious/Piped instances used as fallback when YouTube Data API quota is exceeded
 // (or when no API key is configured). This keeps playback working.
+// Using more reliable instances that work from edge function environment
 const INVIDIOUS_INSTANCES = [
-  'https://yewtu.be',
-  'https://invidious.fdn.fr',
-  'https://inv.nadeko.net',
+  'https://pipedapi.kavin.rocks',
+  'https://pipedapi.moomoo.me',
+  'https://piped-api.garuber.com',
+  'https://api.piped.yt',
 ];
+
+// Alternative: Use a direct scraping approach as ultimate fallback
+async function pipedSearch(query: string, maxResults: number): Promise<YouTubeSearchResult[]> {
+  for (const base of INVIDIOUS_INSTANCES) {
+    try {
+      const url = `${base}/search?q=${encodeURIComponent(query)}&filter=videos`;
+      const res = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
+      });
+      
+      if (!res.ok) {
+        console.log(`Piped instance ${base} returned ${res.status}`);
+        continue;
+      }
+      
+      const data = await res.json();
+      const items = data?.items || [];
+      
+      if (!Array.isArray(items) || items.length === 0) continue;
+      
+      const results: YouTubeSearchResult[] = items.slice(0, maxResults).map((item: any) => {
+        const title = String(item?.title ?? '');
+        const lowerTitle = title.toLowerCase();
+        
+        // Extract video ID from URL
+        let videoId = item?.url?.replace('/watch?v=', '') || '';
+        
+        return {
+          id: videoId,
+          title,
+          channel: String(item?.uploaderName ?? item?.uploader ?? ''),
+          channelId: undefined,
+          thumbnail: item?.thumbnail || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+          duration: formatDurationFromSeconds(item?.duration),
+          viewCount: formatViewCount(String(item?.views ?? '')),
+          publishedAt: new Date().toISOString(),
+          isOfficialAudio: lowerTitle.includes('official audio') || lowerTitle.includes('audio'),
+          isOfficialMusicVideo: lowerTitle.includes('official video') || lowerTitle.includes('music video'),
+          description: item?.shortDescription,
+        };
+      }).filter((r) => Boolean(r.id));
+      
+      if (results.length > 0) {
+        console.log(`Piped search successful via ${base}: ${results.length} results`);
+        return results;
+      }
+    } catch (e) {
+      console.error(`Piped search failed for ${base}:`, e);
+    }
+  }
+  return [];
+}
 
 function formatDurationFromSeconds(totalSeconds: number | undefined): string {
   if (!totalSeconds || !Number.isFinite(totalSeconds)) return '';
@@ -260,15 +317,19 @@ serve(async (req) => {
         }
       }
 
-      // If no key, or if quota is exceeded, use Invidious fallback.
+      // If no key, or if quota is exceeded, use Piped/Invidious fallback.
       if (!hasYouTubeKey) {
-        const results = await invidiousSearch(searchQuery, Math.min(maxResults, 50));
+        // Try Piped first, then Invidious
+        let results = await pipedSearch(searchQuery, Math.min(maxResults, 50));
+        if (results.length === 0) {
+          results = await invidiousSearch(searchQuery, Math.min(maxResults, 50));
+        }
         return new Response(JSON.stringify({
           results,
           nextPageToken: undefined,
           prevPageToken: undefined,
           totalResults: results.length,
-          source: 'invidious',
+          source: 'piped',
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -293,13 +354,17 @@ serve(async (req) => {
         console.error('YouTube API error:', errorText);
 
         if (searchResponse.status === 403 || searchResponse.status === 429) {
-          const results = await invidiousSearch(searchQuery, Math.min(maxResults, 50));
+          // Try Piped first, then Invidious
+          let results = await pipedSearch(searchQuery, Math.min(maxResults, 50));
+          if (results.length === 0) {
+            results = await invidiousSearch(searchQuery, Math.min(maxResults, 50));
+          }
           return new Response(JSON.stringify({
             results,
             nextPageToken: undefined,
             prevPageToken: undefined,
             totalResults: results.length,
-            source: 'invidious',
+            source: 'piped',
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
