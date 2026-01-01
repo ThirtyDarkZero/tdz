@@ -128,3 +128,12 @@ verify_jwt = false
 
 [functions.allmusic-artist]
 verify_jwt = false
+
+[functions.spotify-trending]
+verify_jwt = false
+
+[functions.genre-top50]
+verify_jwt = false
+
+[functions.editorial-charts]
+verify_jwt = false
