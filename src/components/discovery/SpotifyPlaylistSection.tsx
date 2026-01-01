@@ -37,7 +37,17 @@ export function SpotifyPlaylistSection({ onPlaylistClick, onViewAll }: SpotifyPl
 
       if (error) throw error;
 
-      setPlaylists(data?.data?.featuredPlaylists || []);
+      const featured =
+        data?.data?.featuredPlaylists ??
+        // fallback for older response shapes
+        (data as any)?.featuredPlaylists ??
+        [];
+
+      if (!Array.isArray(featured) || featured.length === 0) {
+        throw new Error('No featured playlists returned');
+      }
+
+      setPlaylists(featured);
     } catch (error) {
       console.error('Failed to fetch Spotify playlists:', error);
       // Use fallback data

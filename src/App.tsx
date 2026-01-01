@@ -20,6 +20,7 @@ import Discover from "./pages/Discover";
 import ArtistProfile from "./pages/ArtistProfile";
 import UnifiedArtistProfile from "./pages/UnifiedArtistProfile";
 import ListenerProfile from "./pages/ListenerProfile";
+import LikedSongs from "./pages/LikedSongs";
 import TrackDetail from "./pages/TrackDetail";
 import AlbumDetail from "./pages/AlbumDetail";
 import PlaylistDetail from "./pages/PlaylistDetail";
@@ -71,6 +72,7 @@ const App = () => (
               <Route path="/artist/:artistId" element={<ArtistProfile />} />
               <Route path="/artist/youtube/:artistId" element={<UnifiedArtistProfile />} />
               <Route path="/profile" element={<ListenerProfile />} />
+              <Route path="/liked-songs" element={<LikedSongs />} />
               <Route path="/fan/:fanId" element={<ListenerProfile />} />
               <Route path="/track/:trackId" element={<TrackDetail />} />
               <Route path="/album/:albumId" element={<AlbumDetail />} />

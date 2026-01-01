@@ -192,17 +192,19 @@ export function CityTrendingSection({
     <section className="relative py-16 bg-[#030303]">
       {/* Header */}
       <div className="max-w-7xl mx-auto px-6 md:px-12 mb-8">
-        <div className="flex items-start justify-between">
-          <div className="flex items-baseline gap-10">
-            <span className="text-white/20 text-5xl md:text-6xl font-black font-display">
-              {sectionNumber}
-            </span>
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-white font-display tracking-tight">
-                Trending in
-              </h2>
+          <div className="flex items-start justify-between">
+            <div className="flex items-baseline gap-10">
+              {typeof sectionNumber === "number" && sectionNumber > 0 && (
+                <span className="text-white/20 text-5xl md:text-6xl font-black font-display">
+                  {sectionNumber}
+                </span>
+              )}
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold text-white font-display tracking-tight">
+                  Trending in
+                </h2>
+              </div>
             </div>
-          </div>
           
           <Button
             variant="ghost"

@@ -118,9 +118,11 @@ export function Premium3DCarousel({
         <div className="flex items-start justify-between flex-wrap gap-6">
           <div className="flex items-baseline gap-10">
             {/* Section number */}
-            <span className="text-white/20 text-5xl md:text-6xl font-black font-display">
-              {sectionNumber}
-            </span>
+            {typeof sectionNumber === "number" && sectionNumber > 0 && (
+              <span className="text-white/20 text-5xl md:text-6xl font-black font-display">
+                {sectionNumber}
+              </span>
+            )}
             
             {/* Title block */}
             <div>
