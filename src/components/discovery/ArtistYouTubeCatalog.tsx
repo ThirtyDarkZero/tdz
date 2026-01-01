@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +6,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Play, Youtube, Disc, Loader2, ChevronRight, Music } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { toast } from "sonner";
+import { useClientYouTubeResolver } from "@/hooks/useClientYouTubeResolver";
 
 interface ArtistYouTubeCatalogProps {
   artistName: string;
@@ -39,6 +40,7 @@ export function ArtistYouTubeCatalog({
   onAlbumClick 
 }: ArtistYouTubeCatalogProps) {
   const { playTrack, addToQueue } = usePlayer();
+  const { resolveTrack } = useClientYouTubeResolver();
   const [videos, setVideos] = useState<YouTubeVideo[]>([]);
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);

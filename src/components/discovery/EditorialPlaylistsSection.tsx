@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { toast } from 'sonner';
 import { AddToPlaylistDialog } from './AddToPlaylistDialog';
+import { useClientYouTubeResolver } from '@/hooks/useClientYouTubeResolver';
 
 interface EditorialPlaylist {
   id: string;
@@ -38,6 +39,7 @@ export function EditorialPlaylistsSection() {
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
   const [addToPlaylistTrack, setAddToPlaylistTrack] = useState<any>(null);
   const { playTrack, addToQueue } = usePlayer();
+  const { resolveTrack } = useClientYouTubeResolver();
 
   useEffect(() => {
     fetchEditorialPlaylists();
@@ -101,61 +103,90 @@ export function EditorialPlaylistsSection() {
     }
   };
 
-  const playTrackFromPlaylist = async (track: ChartTrack, allTracks: ChartTrack[]) => {
-    setPlayingTrackId(`${track.position}-${track.title}`);
-    
+  const resolveYouTubeId = async (title: string, artist: string): Promise<{ id: string; thumbnail: string } | null> => {
+    // First try the edge function
     try {
-      const { data } = await supabase.functions.invoke('youtube-search', {
+      const { data, error } = await supabase.functions.invoke('youtube-search', {
         body: {
-          query: `${track.title} ${track.artist} official audio`,
+          query: `${title} ${artist} official audio`,
           maxResults: 1,
           officialOnly: true,
         },
       });
 
-      const results = data?.results || [];
-      if (results.length === 0) {
+      if (!error && data?.results?.length > 0) {
+        return {
+          id: data.results[0].id,
+          thumbnail: data.results[0].thumbnail
+        };
+      }
+    } catch (e) {
+      console.log('[Editorial] Edge function failed, trying client resolver');
+    }
+
+    // Fallback to client-side resolution (no DNS restrictions in browser)
+    const resolved = await resolveTrack(title, artist);
+    if (resolved?.youtubeId) {
+      return {
+        id: resolved.youtubeId,
+        thumbnail: `https://img.youtube.com/vi/${resolved.youtubeId}/mqdefault.jpg`
+      };
+    }
+
+    return null;
+  };
+
+  const playTrackFromPlaylist = async (track: ChartTrack, allTracks: ChartTrack[]) => {
+    setPlayingTrackId(`${track.position}-${track.title}`);
+    
+    try {
+      const result = await resolveYouTubeId(track.title, track.artist);
+      
+      if (!result) {
         toast.error('Could not find playable version');
         return;
       }
 
       const playable = {
-        id: `yt-${results[0].id}`,
+        id: `yt-${result.id}`,
         title: track.title,
         artist_name: track.artist,
         duration: 0,
         file_path: '',
         play_count: 0,
         source: 'youtube' as const,
-        youtubeId: results[0].id,
-        thumbnail: results[0].thumbnail,
+        youtubeId: result.id,
+        thumbnail: result.thumbnail,
       };
 
-      // Queue remaining tracks
+      // Queue remaining tracks in background (don't block playback)
       const trackIndex = allTracks.findIndex(t => t.title === track.title && t.artist === track.artist);
       const remainingTracks = allTracks.slice(trackIndex + 1);
       
-      for (const t of remainingTracks.slice(0, 10)) {
-        const { data: searchData } = await supabase.functions.invoke('youtube-search', {
-          body: { query: `${t.title} ${t.artist} official audio`, maxResults: 1 }
-        });
-        if (searchData?.results?.[0]) {
-          addToQueue({
-            id: `yt-${searchData.results[0].id}`,
-            title: t.title,
-            artist_name: t.artist,
-            duration: 0,
-            file_path: '',
-            play_count: 0,
-            source: 'youtube' as const,
-            youtubeId: searchData.results[0].id,
-            thumbnail: searchData.results[0].thumbnail,
-          });
-        }
-      }
-
+      // Start playback immediately
       playTrack(playable);
       toast.success(`Now playing: ${track.title}`);
+
+      // Queue next tracks asynchronously
+      (async () => {
+        for (const t of remainingTracks.slice(0, 10)) {
+          const queueResult = await resolveYouTubeId(t.title, t.artist);
+          if (queueResult) {
+            addToQueue({
+              id: `yt-${queueResult.id}`,
+              title: t.title,
+              artist_name: t.artist,
+              duration: 0,
+              file_path: '',
+              play_count: 0,
+              source: 'youtube' as const,
+              youtubeId: queueResult.id,
+              thumbnail: queueResult.thumbnail,
+            });
+          }
+        }
+      })();
+
     } catch (error) {
       console.error('Error playing track:', error);
       toast.error('Failed to play track');
