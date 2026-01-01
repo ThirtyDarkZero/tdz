@@ -2713,6 +2713,7 @@ export type Database = {
           release_date: string | null
           release_type: string | null
           release_version: string | null
+          scheduled_release_date: string | null
           title: string
           track_number: number | null
           upc: string | null
@@ -2759,6 +2760,7 @@ export type Database = {
           release_date?: string | null
           release_type?: string | null
           release_version?: string | null
+          scheduled_release_date?: string | null
           title: string
           track_number?: number | null
           upc?: string | null
@@ -2805,6 +2807,7 @@ export type Database = {
           release_date?: string | null
           release_type?: string | null
           release_version?: string | null
+          scheduled_release_date?: string | null
           title?: string
           track_number?: number | null
           upc?: string | null

@@ -23,6 +23,7 @@ import { UnifiedLibrary } from "@/components/discovery/UnifiedLibrary";
 import { CityTrendingSection } from "@/components/discovery/CityTrendingSection";
 import { SpotifyPlaylistSection } from "@/components/discovery/SpotifyPlaylistSection";
 import { UserPlaylistsSection } from "@/components/discovery/UserPlaylistsSection";
+import { GenreTop50Section } from "@/components/discovery/GenreTop50Section";
 import { PlaylistManager } from "@/components/PlaylistManager";
 
 export default function Discover() {
@@ -270,6 +271,11 @@ export default function Discover() {
                     setActiveTab('library');
                   }}
                 />
+              </ErrorBoundary>
+
+              {/* BPM Supreme-style Genre Top 50 Section */}
+              <ErrorBoundary fallback={null}>
+                <GenreTop50Section onViewAll={() => setActiveTab('library')} />
               </ErrorBoundary>
 
               {albums.length > 0 && (
