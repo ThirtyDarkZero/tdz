@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { useNavigate } from "react-router-dom";
+import { useClientYouTubeResolver } from "@/hooks/useClientYouTubeResolver";
 
 interface TrendingTrack {
   id: string;
@@ -52,6 +53,7 @@ export function CityTrendingSection({
   const [hoveredTrack, setHoveredTrack] = useState<string | null>(null);
   const { playTrack } = usePlayer();
   const navigate = useNavigate();
+  const { resolveTrack } = useClientYouTubeResolver();
 
   // Fetch trending tracks from Spotify and resolve YouTube IDs for playback
   useEffect(() => {
@@ -146,10 +148,11 @@ export function CityTrendingSection({
   };
 
   const handlePlayTrack = async (track: TrendingTrack) => {
-    // If we don't have a YouTube ID, search for one first
+    // If we don't have a YouTube ID, search for one first with fallback
     let youtubeId = track.youtubeId;
     
     if (!youtubeId) {
+      // Try edge function first
       try {
         const searchQuery = `${track.title} ${track.artist} official audio`;
         const { data } = await supabase.functions.invoke('youtube-search', {
@@ -157,7 +160,13 @@ export function CityTrendingSection({
         });
         youtubeId = data?.results?.[0]?.id;
       } catch (err) {
-        console.error('Failed to find YouTube video:', err);
+        console.log('Edge function failed, trying client resolver');
+      }
+
+      // Fallback to client-side resolution
+      if (!youtubeId) {
+        const resolved = await resolveTrack(track.title, track.artist);
+        youtubeId = resolved?.youtubeId;
       }
     }
 

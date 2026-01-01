@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { toast } from "sonner";
 import { AddToPlaylistDialog } from "./AddToPlaylistDialog";
+import { useClientYouTubeResolver } from "@/hooks/useClientYouTubeResolver";
 
 interface TopTrack {
   id: string;
@@ -50,6 +51,7 @@ export function GenreTop50Section({ onViewAll }: GenreTop50SectionProps) {
   const [loadingTrack, setLoadingTrack] = useState<string | null>(null);
   const [addToPlaylistTrack, setAddToPlaylistTrack] = useState<any>(null);
   const { playTrack, addToQueue } = usePlayer();
+  const { resolveTrack } = useClientYouTubeResolver();
 
   // Fetch tracks for selected genre
   const fetchGenreTracks = useCallback(async () => {
@@ -78,10 +80,11 @@ export function GenreTop50Section({ onViewAll }: GenreTop50SectionProps) {
   const handlePlayTrack = async (track: TopTrack, index: number) => {
     let youtubeId = track.youtubeId;
 
-    // If no YouTube ID, search for it
+    // If no YouTube ID, search for it with fallback
     if (!youtubeId) {
       setLoadingTrack(track.id);
       try {
+        // Try edge function first
         const { data } = await supabase.functions.invoke("youtube-search", {
           body: {
             query: `${track.artist} ${track.title} official audio`,
@@ -91,8 +94,15 @@ export function GenreTop50Section({ onViewAll }: GenreTop50SectionProps) {
         });
         youtubeId = data?.results?.[0]?.id;
       } catch (err) {
-        console.error("YouTube search failed:", err);
+        console.log("Edge function failed, trying client resolver");
       }
+
+      // Fallback to client-side resolution if edge function fails
+      if (!youtubeId) {
+        const resolved = await resolveTrack(track.title, track.artist);
+        youtubeId = resolved?.youtubeId;
+      }
+      
       setLoadingTrack(null);
     }
 
