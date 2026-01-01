@@ -4,8 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Play, Music, Sparkles, ChevronRight, ListMusic } from 'lucide-react';
+import { Play, Sparkles, ChevronRight, ListMusic, Loader2, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { usePlayer } from '@/contexts/PlayerContext';
+import { toast } from 'sonner';
+import { AddToPlaylistDialog } from './AddToPlaylistDialog';
 
 interface SpotifyPlaylist {
   id: string;
@@ -16,6 +19,14 @@ interface SpotifyPlaylist {
   source: string;
 }
 
+interface SpotifyTrack {
+  id: string;
+  title: string;
+  artist: string;
+  thumbnail?: string;
+  youtubeId?: string;
+}
+
 interface SpotifyPlaylistSectionProps {
   onPlaylistClick?: (playlist: SpotifyPlaylist) => void;
   onViewAll?: () => void;
@@ -24,6 +35,9 @@ interface SpotifyPlaylistSectionProps {
 export function SpotifyPlaylistSection({ onPlaylistClick, onViewAll }: SpotifyPlaylistSectionProps) {
   const [playlists, setPlaylists] = useState<SpotifyPlaylist[]>([]);
   const [loading, setLoading] = useState(true);
+  const [playingPlaylistId, setPlayingPlaylistId] = useState<string | null>(null);
+  const [addToPlaylistTrack, setAddToPlaylistTrack] = useState<any>(null);
+  const { playTrack, addToQueue } = usePlayer();
 
   useEffect(() => {
     fetchSpotifyPlaylists();
@@ -39,7 +53,6 @@ export function SpotifyPlaylistSection({ onPlaylistClick, onViewAll }: SpotifyPl
 
       const featured =
         data?.data?.featuredPlaylists ??
-        // fallback for older response shapes
         (data as any)?.featuredPlaylists ??
         [];
 
@@ -50,7 +63,6 @@ export function SpotifyPlaylistSection({ onPlaylistClick, onViewAll }: SpotifyPl
       setPlaylists(featured);
     } catch (error) {
       console.error('Failed to fetch Spotify playlists:', error);
-      // Use fallback data
       setPlaylists([
         { id: '1', name: "Today's Top Hits", description: 'The hottest tracks right now', image: 'https://i.scdn.co/image/ab67706f00000002724554ed6bed6f051d9b0bfc', tracks: 50, source: 'spotify' },
         { id: '2', name: 'RapCaviar', description: 'New hip hop and R&B', image: 'https://i.scdn.co/image/ab67706f00000002b10f3d1cf5b0a2da7ab47bc4', tracks: 50, source: 'spotify' },
@@ -61,6 +73,50 @@ export function SpotifyPlaylistSection({ onPlaylistClick, onViewAll }: SpotifyPl
       ]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Play a playlist by fetching its tracks via YouTube
+  const handlePlayPlaylist = async (playlist: SpotifyPlaylist, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPlayingPlaylistId(playlist.id);
+
+    try {
+      // Search for tracks from this playlist via YouTube
+      const { data } = await supabase.functions.invoke('youtube-search', {
+        body: {
+          query: `${playlist.name} playlist top songs`,
+          maxResults: 20,
+          officialOnly: true,
+        },
+      });
+
+      const results = data?.results || [];
+      if (results.length === 0) {
+        toast.error('Could not find playable tracks');
+        return;
+      }
+
+      // Convert to player format
+      const playableTracks = results.map((r: any) => ({
+        id: `yt-${r.id}`,
+        title: r.title,
+        artist_name: r.channelTitle || 'Unknown Artist',
+        duration: 0,
+        file_path: '',
+        play_count: 0,
+        source: 'youtube' as const,
+        youtubeId: r.id,
+        thumbnail: r.thumbnail,
+      }));
+
+      playTrack(playableTracks[0], playableTracks);
+      toast.success(`Now playing: ${playlist.name}`);
+    } catch (error) {
+      console.error('Error playing playlist:', error);
+      toast.error('Failed to play playlist');
+    } finally {
+      setPlayingPlaylistId(null);
     }
   };
 
@@ -121,8 +177,14 @@ export function SpotifyPlaylistSection({ onPlaylistClick, onViewAll }: SpotifyPl
                 <Button
                   size="icon"
                   className="absolute bottom-3 right-3 rounded-full h-12 w-12 bg-primary shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0"
+                  onClick={(e) => handlePlayPlaylist(playlist, e)}
+                  disabled={playingPlaylistId === playlist.id}
                 >
-                  <Play className="w-5 h-5 ml-0.5" fill="currentColor" />
+                  {playingPlaylistId === playlist.id ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Play className="w-5 h-5 ml-0.5" fill="currentColor" />
+                  )}
                 </Button>
                 <Badge className="absolute top-3 left-3 bg-green-500/90 text-white border-0 text-xs">
                   #{index + 1}
@@ -139,6 +201,12 @@ export function SpotifyPlaylistSection({ onPlaylistClick, onViewAll }: SpotifyPl
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
+
+      <AddToPlaylistDialog
+        open={!!addToPlaylistTrack}
+        onOpenChange={(open) => !open && setAddToPlaylistTrack(null)}
+        track={addToPlaylistTrack}
+      />
     </section>
   );
 }
