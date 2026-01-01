@@ -24,6 +24,7 @@ import { CityTrendingSection } from "@/components/discovery/CityTrendingSection"
 import { SpotifyPlaylistSection } from "@/components/discovery/SpotifyPlaylistSection";
 import { UserPlaylistsSection } from "@/components/discovery/UserPlaylistsSection";
 import { GenreTop50Section } from "@/components/discovery/GenreTop50Section";
+import { EditorialPlaylistsSection } from "@/components/discovery/EditorialPlaylistsSection";
 import { PlaylistManager } from "@/components/PlaylistManager";
 
 export default function Discover() {
@@ -271,6 +272,13 @@ export default function Discover() {
                     setActiveTab('library');
                   }}
                 />
+              </ErrorBoundary>
+
+              {/* Billboard & BPM Supreme Charts */}
+              <ErrorBoundary fallback={null}>
+                <div className="px-6 md:px-12 py-8 bg-[#030303]">
+                  <EditorialPlaylistsSection />
+                </div>
               </ErrorBoundary>
 
               {/* BPM Supreme-style Genre Top 50 Section */}
