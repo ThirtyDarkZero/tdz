@@ -164,19 +164,93 @@ export function useMusicBrainz() {
     return data;
   }, [callAPI]);
 
-  // Helper to merge with YouTube for playback
+  // Helper to merge with YouTube for playback using client-side resolution as fallback
   const findYouTubeMatch = useCallback(async (
     track: MBTrack | MBRecording,
     artistName: string
   ): Promise<string | null> => {
     try {
       const searchQuery = `${track.title} ${artistName}`;
+      
+      // Try edge function first
       const { data, error: fnError } = await supabase.functions.invoke('youtube-search', {
         body: { query: searchQuery, maxResults: 1 },
       });
 
-      if (fnError || !data?.items?.length) return null;
-      return data.items[0].id;
+      if (!fnError && data?.items?.length) {
+        return data.items[0].id;
+      }
+
+      // Fallback to client-side resolution using Piped/Invidious
+      console.log(`[MusicBrainz] Edge function failed, using client resolver for "${track.title}"`);
+      
+      const pipedInstances = [
+        'https://pipedapi.kavin.rocks',
+        'https://pipedapi.moomoo.me',
+        'https://api.piped.yt',
+      ];
+
+      for (const instance of pipedInstances) {
+        try {
+          const response = await fetch(
+            `${instance}/search?q=${encodeURIComponent(`${artistName} ${track.title} official audio`)}&filter=videos`,
+            { headers: { 'Accept': 'application/json' } }
+          );
+
+          if (!response.ok) continue;
+
+          const pipedData = await response.json();
+          const items = pipedData?.items || [];
+
+          if (items.length > 0) {
+            const bestMatch = items.find((item: any) => {
+              const itemTitle = (item.title || '').toLowerCase();
+              return itemTitle.includes('official') || 
+                     itemTitle.includes('audio') ||
+                     itemTitle.includes(artistName.toLowerCase());
+            }) || items[0];
+
+            const videoId = bestMatch.url?.replace('/watch?v=', '') || '';
+            if (videoId) {
+              console.log(`[MusicBrainz] Client resolved "${track.title}" to ${videoId}`);
+              return videoId;
+            }
+          }
+        } catch (e) {
+          console.log(`[MusicBrainz] Piped ${instance} failed`);
+        }
+      }
+
+      // Try Invidious as secondary fallback
+      const invidiousInstances = [
+        'https://invidious.fdn.fr',
+        'https://yewtu.be',
+        'https://inv.nadeko.net',
+      ];
+
+      for (const instance of invidiousInstances) {
+        try {
+          const response = await fetch(
+            `${instance}/api/v1/search?q=${encodeURIComponent(`${artistName} ${track.title} official`)}&type=video`,
+            { headers: { 'Accept': 'application/json' } }
+          );
+
+          if (!response.ok) continue;
+
+          const invData = await response.json();
+          if (Array.isArray(invData) && invData.length > 0) {
+            const videoId = invData[0].videoId;
+            if (videoId) {
+              console.log(`[MusicBrainz] Invidious resolved "${track.title}" to ${videoId}`);
+              return videoId;
+            }
+          }
+        } catch (e) {
+          console.log(`[MusicBrainz] Invidious ${instance} failed`);
+        }
+      }
+
+      return null;
     } catch {
       return null;
     }
