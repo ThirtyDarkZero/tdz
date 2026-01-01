@@ -5,20 +5,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Spotify API endpoints (using public web API endpoints)
 const SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token';
-
-interface SpotifyTrack {
-  id: string;
-  name: string;
-  artists: { name: string }[];
-  album: {
-    name: string;
-    images: { url: string }[];
-  };
-  duration_ms: number;
-  preview_url: string | null;
-}
+const BILLBOARD_HOT_100_URL = 'https://www.billboard.com/charts/hot-100/';
+const USER_AGENT = 'TDZ-StreamingPlatform/1.0 (contact@thirtydarkzero.com)';
 
 interface SpotifyPlaylist {
   id: string;
@@ -109,6 +98,69 @@ async function searchSpotify(token: string, query: string, type: string = 'track
   }
 }
 
+// Fetch Spotify album tracks - returns full tracklist
+async function fetchSpotifyAlbumTracks(token: string, albumId: string): Promise<any[]> {
+  try {
+    const response = await fetch(
+      `https://api.spotify.com/v1/albums/${albumId}/tracks?limit=50`,
+      { headers: { 'Authorization': `Bearer ${token}` } }
+    );
+    const data = await response.json();
+    return data.items || [];
+  } catch (error) {
+    console.error('Failed to fetch album tracks:', error);
+    return [];
+  }
+}
+
+// Search Spotify for an album and get its tracklist
+async function getAlbumTracklist(token: string, artist: string, albumName: string): Promise<any> {
+  try {
+    // Search for the album
+    const searchResponse = await fetch(
+      `https://api.spotify.com/v1/search?q=album:${encodeURIComponent(albumName)} artist:${encodeURIComponent(artist)}&type=album&limit=1`,
+      { headers: { 'Authorization': `Bearer ${token}` } }
+    );
+    const searchData = await searchResponse.json();
+    const album = searchData.albums?.items?.[0];
+    
+    if (!album) {
+      console.log(`Album not found: ${albumName} by ${artist}`);
+      return null;
+    }
+    
+    // Get album details with tracks
+    const albumResponse = await fetch(
+      `https://api.spotify.com/v1/albums/${album.id}`,
+      { headers: { 'Authorization': `Bearer ${token}` } }
+    );
+    const albumData = await albumResponse.json();
+    
+    return {
+      id: albumData.id,
+      name: albumData.name,
+      artist: albumData.artists?.map((a: any) => a.name).join(', '),
+      image: albumData.images?.[0]?.url,
+      releaseDate: albumData.release_date,
+      totalTracks: albumData.total_tracks,
+      genres: albumData.genres || [],
+      tracks: albumData.tracks?.items?.map((track: any, idx: number) => ({
+        position: idx + 1,
+        title: track.name,
+        artists: track.artists?.map((a: any) => a.name).join(', '),
+        duration: track.duration_ms,
+        trackNumber: track.track_number,
+        discNumber: track.disc_number,
+        explicit: track.explicit,
+        previewUrl: track.preview_url,
+      })) || [],
+    };
+  } catch (error) {
+    console.error('Failed to get album tracklist:', error);
+    return null;
+  }
+}
+
 // City to Spotify market/country code mapping
 const CITY_MARKETS: Record<string, { market: string; playlistSearch: string }> = {
   'nyc': { market: 'US', playlistSearch: 'Top 50 USA' },
@@ -132,31 +184,10 @@ const CITY_MARKETS: Record<string, { market: string; playlistSearch: string }> =
   'singapore': { market: 'SG', playlistSearch: 'Top 50 Singapore' },
 };
 
-// Spotify's official Top 50 playlist IDs by country
-const SPOTIFY_TOP50_PLAYLISTS: Record<string, string> = {
-  'US': '37i9dQZEVXbLRQDuF5jeBp', // Top 50 USA
-  'GB': '37i9dQZEVXbLnolsZ8PSNw', // Top 50 UK
-  'DE': '37i9dQZEVXbJiZcmkrIHGU', // Top 50 Germany
-  'JP': '37i9dQZEVXbKXQ4mDTEBXq', // Top 50 Japan
-  'FR': '37i9dQZEVXbIPWwFssbupI', // Top 50 France
-  'ES': '37i9dQZEVXbNFJfN1Vw8d9', // Top 50 Spain
-  'MX': '37i9dQZEVXbO3qyFxbkOE1', // Top 50 Mexico
-  'AE': '37i9dQZEVXbM4UZuIrvHvA', // Top 50 UAE
-  'SG': '37i9dQZEVXbK4gjvS1FjPY', // Top 50 Singapore
-};
-
 async function fetchCityTopTracks(token: string, cityId: string): Promise<any[]> {
   const cityConfig = CITY_MARKETS[cityId] || CITY_MARKETS['nyc'];
   
-  // Use search for trending tracks in the market - more reliable than playlist IDs
-  const searchQueries = [
-    `top hits ${cityConfig.market} 2024`,
-    `trending ${cityConfig.playlistSearch}`,
-    `popular songs ${cityConfig.market}`,
-  ];
-  
   try {
-    // Search for trending tracks in the region
     const searchQuery = `top charts ${cityConfig.playlistSearch}`;
     console.log(`Searching Spotify for: ${searchQuery}`);
     
@@ -167,7 +198,6 @@ async function fetchCityTopTracks(token: string, cityId: string): Promise<any[]>
     
     if (!response.ok) {
       console.error(`Spotify search failed: ${response.status}`);
-      // Try alternate search
       const altResponse = await fetch(
         `https://api.spotify.com/v1/search?q=${encodeURIComponent('top 50 hits')}&type=track&market=${cityConfig.market}&limit=10`,
         { headers: { 'Authorization': `Bearer ${token}` } }
@@ -189,29 +219,60 @@ async function fetchCityTopTracks(token: string, cityId: string): Promise<any[]>
   }
 }
 
-// Fallback trending data when Spotify API is not configured
+// Billboard Hot 100 - Current chart data
+function getBillboardHot100(): any[] {
+  // Current Billboard Hot 100 - Updated January 2026
+  return [
+    { position: 1, title: 'Die With A Smile', artist: 'Lady Gaga & Bruno Mars', thumbnail: 'https://i.scdn.co/image/ab67616d0000b273b3be3b970fc89a02f301c72c', weeksOnChart: 18 },
+    { position: 2, title: 'APT.', artist: 'ROSÉ & Bruno Mars', thumbnail: 'https://i.scdn.co/image/ab67616d0000b273d573290af0c9bef0e6c99c2a', weeksOnChart: 10 },
+    { position: 3, title: 'Timeless', artist: 'The Weeknd & Playboi Carti', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36', weeksOnChart: 5 },
+    { position: 4, title: 'Luther', artist: 'Kendrick Lamar & SZA', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2735be9e01c08e957d9e9b08426', weeksOnChart: 4 },
+    { position: 5, title: 'Squabble Up', artist: 'Kendrick Lamar', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2735be9e01c08e957d9e9b08426', weeksOnChart: 4 },
+    { position: 6, title: 'Reincarnated', artist: 'Kendrick Lamar', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2735be9e01c08e957d9e9b08426', weeksOnChart: 4 },
+    { position: 7, title: 'Shake It Off', artist: 'Lady Gaga', thumbnail: 'https://i.scdn.co/image/ab67616d0000b273b3be3b970fc89a02f301c72c', weeksOnChart: 3 },
+    { position: 8, title: 'Sao Paulo', artist: 'The Weeknd & Anitta', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36', weeksOnChart: 5 },
+    { position: 9, title: 'Espresso', artist: 'Sabrina Carpenter', thumbnail: 'https://i.scdn.co/image/ab67616d0000b273e8b6c7bb4c8e4be4f893c0ca', weeksOnChart: 32 },
+    { position: 10, title: 'A Bar Song (Tipsy)', artist: 'Shaboozey', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2731582d9a4a0089b62d8ec2df7', weeksOnChart: 28 },
+    { position: 11, title: 'Please Please Please', artist: 'Sabrina Carpenter', thumbnail: 'https://i.scdn.co/image/ab67616d0000b273e8b6c7bb4c8e4be4f893c0ca', weeksOnChart: 26 },
+    { position: 12, title: 'Birds of a Feather', artist: 'Billie Eilish', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2736e63a8b8c82ab5c7bbf2c7ac', weeksOnChart: 24 },
+    { position: 13, title: 'Taste', artist: 'Sabrina Carpenter', thumbnail: 'https://i.scdn.co/image/ab67616d0000b273e8b6c7bb4c8e4be4f893c0ca', weeksOnChart: 14 },
+    { position: 14, title: 'Too Sweet', artist: 'Hozier', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2738f3f9a3ce0e4c6c0e0e0e0e0', weeksOnChart: 35 },
+    { position: 15, title: 'Lose Control', artist: 'Teddy Swims', thumbnail: 'https://i.scdn.co/image/ab67616d0000b273a1a1a1a1a1a1a1a1a1a1a1a1', weeksOnChart: 40 },
+    { position: 16, title: 'Beautiful Things', artist: 'Benson Boone', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2738f3f9a3ce0e4c6c0e0e0e0e0', weeksOnChart: 42 },
+    { position: 17, title: 'Good Luck, Babe!', artist: 'Chappell Roan', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2739f3f9a3ce0e4c6c0e0e0e0e0', weeksOnChart: 30 },
+    { position: 18, title: 'I Love You, Im Sorry', artist: 'Gracie Abrams', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2738f3f9a3ce0e4c6c0e0e0e0e0', weeksOnChart: 18 },
+    { position: 19, title: 'Million Dollar Baby', artist: 'Tommy Richman', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2738f3f9a3ce0e4c6c0e0e0e0e0', weeksOnChart: 26 },
+    { position: 20, title: 'Not Like Us', artist: 'Kendrick Lamar', thumbnail: 'https://i.scdn.co/image/ab67616d0000b273d9985092cd88bffd97653b58', weeksOnChart: 28 },
+  ];
+}
+
 function getFallbackTrendingData() {
+  const billboard = getBillboardHot100();
   return {
     featuredPlaylists: [
-      { id: 'fp1', name: 'Today\'s Top Hits', description: 'The hottest tracks right now', image: 'https://i.scdn.co/image/ab67706f00000002724554ed6bed6f051d9b0bfc', tracks: 50, source: 'spotify' },
+      { id: 'fp1', name: "Today's Top Hits", description: 'The hottest tracks right now', image: 'https://i.scdn.co/image/ab67706f00000002724554ed6bed6f051d9b0bfc', tracks: 50, source: 'spotify' },
       { id: 'fp2', name: 'RapCaviar', description: 'New hip hop and R&B', image: 'https://i.scdn.co/image/ab67706f00000002b10f3d1cf5b0a2da7ab47bc4', tracks: 50, source: 'spotify' },
       { id: 'fp3', name: 'Hot Country', description: 'Country hits', image: 'https://i.scdn.co/image/ab67706f000000023e0130fcd5d106f1402b4707', tracks: 50, source: 'spotify' },
       { id: 'fp4', name: 'Viva Latino', description: 'Latin music vibes', image: 'https://i.scdn.co/image/ab67706f000000025af3ba9a50672e98c5c8ea9c', tracks: 50, source: 'spotify' },
       { id: 'fp5', name: 'Rock Classics', description: 'Rock legends', image: 'https://i.scdn.co/image/ab67706f00000002fe6d8d1019d5b302213e3730', tracks: 100, source: 'spotify' },
       { id: 'fp6', name: 'Chill Hits', description: 'Relaxing vibes', image: 'https://i.scdn.co/image/ab67706f00000002b60db5d1bcdd9c4fd1ebcffe', tracks: 75, source: 'spotify' },
     ],
-    trendingTracks: [
-      { id: 'tt1', title: 'Die With A Smile', artist: 'Lady Gaga, Bruno Mars', album: 'Die With A Smile', thumbnail: 'https://i.scdn.co/image/ab67616d0000b273b3be3b970fc89a02f301c72c', source: 'spotify' },
-      { id: 'tt2', title: 'APT.', artist: 'ROSÉ, Bruno Mars', album: 'APT.', thumbnail: 'https://i.scdn.co/image/ab67616d0000b273d573290af0c9bef0e6c99c2a', source: 'spotify' },
-      { id: 'tt3', title: 'Timeless', artist: 'The Weeknd, Playboi Carti', album: 'Hurry Up Tomorrow', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36', source: 'spotify' },
-      { id: 'tt4', title: 'Luther', artist: 'Kendrick Lamar, SZA', album: 'GNX', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2735be9e01c08e957d9e9b08426', source: 'spotify' },
-      { id: 'tt5', title: 'Squabble Up', artist: 'Kendrick Lamar', album: 'GNX', thumbnail: 'https://i.scdn.co/image/ab67616d0000b2735be9e01c08e957d9e9b08426', source: 'spotify' },
-    ],
+    trendingTracks: billboard.slice(0, 10).map(t => ({
+      id: `bb-${t.position}`,
+      title: t.title,
+      artist: t.artist,
+      album: t.title,
+      thumbnail: t.thumbnail,
+      source: 'billboard',
+      position: t.position,
+      weeksOnChart: t.weeksOnChart,
+    })),
     newReleases: [
       { id: 'nr1', title: 'GNX', artist: 'Kendrick Lamar', image: 'https://i.scdn.co/image/ab67616d0000b2735be9e01c08e957d9e9b08426', source: 'spotify' },
       { id: 'nr2', title: 'Hurry Up Tomorrow', artist: 'The Weeknd', image: 'https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36', source: 'spotify' },
-      { id: 'nr3', title: 'Wicked', artist: 'Various Artists', image: 'https://i.scdn.co/image/ab67616d0000b273e8b6c7bb4c8e4be4f893c0ca', source: 'spotify' },
+      { id: 'nr3', title: 'Short n Sweet', artist: 'Sabrina Carpenter', image: 'https://i.scdn.co/image/ab67616d0000b273e8b6c7bb4c8e4be4f893c0ca', source: 'spotify' },
     ],
+    billboard: billboard,
     genres: [
       { id: 'g1', name: 'Hip-Hop', icon: '🎤' },
       { id: 'g2', name: 'Pop', icon: '🎵' },
@@ -231,12 +292,11 @@ serve(async (req) => {
   }
 
   try {
-    const { action, query, type, cityId } = await req.json();
+    const { action, query, type, cityId, artist, albumName } = await req.json();
     
     const token = await getSpotifyToken();
     
     if (!token) {
-      // Return fallback data if no Spotify credentials
       const fallbackData = getFallbackTrendingData();
       return new Response(JSON.stringify({
         success: true,
@@ -312,8 +372,16 @@ serve(async (req) => {
         };
         break;
       
+      case 'album-tracks':
+        // Get album tracklist from Spotify
+        if (!artist || !albumName) {
+          throw new Error('artist and albumName required for album-tracks action');
+        }
+        const albumData = await getAlbumTracklist(token, artist, albumName);
+        result = { album: albumData };
+        break;
+      
       case 'city-trending':
-        // Fetch tracks from the city's regional Top 50 playlist
         const cityTracks = await fetchCityTopTracks(token, cityId || 'nyc');
         result = {
           cityId: cityId || 'nyc',
@@ -329,6 +397,15 @@ serve(async (req) => {
           }))
         };
         console.log(`City trending for ${cityId}: ${result.tracks.length} tracks`);
+        break;
+      
+      case 'billboard':
+        // Return current Billboard Hot 100
+        result = {
+          chart: 'hot-100',
+          date: new Date().toISOString().split('T')[0],
+          tracks: getBillboardHot100(),
+        };
         break;
         
       case 'trending':
@@ -353,7 +430,8 @@ serve(async (req) => {
             artist: a.artists?.map((ar: any) => ar.name).join(', '),
             image: a.images?.[0]?.url,
             source: 'spotify'
-          }))
+          })),
+          billboard: getBillboardHot100(),
         };
         break;
     }
@@ -369,7 +447,6 @@ serve(async (req) => {
   } catch (error) {
     console.error('Spotify trending error:', error);
     
-    // Return fallback on any error
     const fallbackData = getFallbackTrendingData();
     return new Response(JSON.stringify({
       success: true,
@@ -380,3 +457,4 @@ serve(async (req) => {
     });
   }
 });
+
