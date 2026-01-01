@@ -31,6 +31,7 @@ export default function Discover() {
   const [activeTab, setActiveTab] = useState("discover");
   const [selectedGenre, setSelectedGenre] = useState<string | undefined>(undefined);
   const [showSearch, setShowSearch] = useState(false);
+  const [showTrending, setShowTrending] = useState(false);
 
   const { currentTrack, playTrack, addToQueue } = usePlayer();
 
@@ -264,7 +265,10 @@ export default function Discover() {
               <ErrorBoundary fallback={null}>
                 <CityTrendingSection
                   sectionNumber={6}
-                  onViewAllTrends={() => setActiveTab('library')}
+                  onViewAllTrends={() => {
+                    setShowTrending(true);
+                    setActiveTab('library');
+                  }}
                 />
               </ErrorBoundary>
 
@@ -346,6 +350,7 @@ export default function Discover() {
             <div className="px-4 sm:px-6 lg:px-8 py-6">
               <ErrorBoundary fallback={<div className="text-white/50">Library unavailable</div>}>
                 <UnifiedLibrary
+                  showTrending={showTrending}
                   onPlayYouTube={(videoId, title, artist, thumbnail) => {
                     playTrack({
                       id: videoId,
@@ -358,6 +363,8 @@ export default function Discover() {
                       file_path: '',
                       play_count: 0,
                     });
+                    // Reset trending state after navigation
+                    if (showTrending) setShowTrending(false);
                   }}
                 />
               </ErrorBoundary>

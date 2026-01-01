@@ -147,29 +147,45 @@ const SPOTIFY_TOP50_PLAYLISTS: Record<string, string> = {
 
 async function fetchCityTopTracks(token: string, cityId: string): Promise<any[]> {
   const cityConfig = CITY_MARKETS[cityId] || CITY_MARKETS['nyc'];
-  const playlistId = SPOTIFY_TOP50_PLAYLISTS[cityConfig.market] || SPOTIFY_TOP50_PLAYLISTS['US'];
+  
+  // Use search for trending tracks in the market - more reliable than playlist IDs
+  const searchQueries = [
+    `top hits ${cityConfig.market} 2024`,
+    `trending ${cityConfig.playlistSearch}`,
+    `popular songs ${cityConfig.market}`,
+  ];
   
   try {
-    // Fetch tracks from the country's Top 50 playlist
+    // Search for trending tracks in the region
+    const searchQuery = `top charts ${cityConfig.playlistSearch}`;
+    console.log(`Searching Spotify for: ${searchQuery}`);
+    
     const response = await fetch(
-      `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=10&market=${cityConfig.market}`,
+      `https://api.spotify.com/v1/search?q=${encodeURIComponent(searchQuery)}&type=track&market=${cityConfig.market}&limit=10`,
       { headers: { 'Authorization': `Bearer ${token}` } }
     );
     
     if (!response.ok) {
-      console.error(`Failed to fetch playlist ${playlistId}: ${response.status}`);
-      // Fallback to search
-      return await searchSpotify(token, cityConfig.playlistSearch, 'track');
+      console.error(`Spotify search failed: ${response.status}`);
+      // Try alternate search
+      const altResponse = await fetch(
+        `https://api.spotify.com/v1/search?q=${encodeURIComponent('top 50 hits')}&type=track&market=${cityConfig.market}&limit=10`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
+      if (altResponse.ok) {
+        const altData = await altResponse.json();
+        return altData.tracks?.items || [];
+      }
+      return [];
     }
     
     const data = await response.json();
-    console.log(`Fetched ${data.items?.length || 0} tracks for ${cityId} from playlist ${playlistId}`);
+    console.log(`Fetched ${data.tracks?.items?.length || 0} tracks for ${cityId}`);
     
-    return (data.items || []).map((item: any) => item.track).filter(Boolean);
+    return data.tracks?.items || [];
   } catch (error) {
     console.error(`Failed to fetch city tracks for ${cityId}:`, error);
-    // Fallback to search
-    return await searchSpotify(token, cityConfig.playlistSearch, 'track');
+    return [];
   }
 }
 
