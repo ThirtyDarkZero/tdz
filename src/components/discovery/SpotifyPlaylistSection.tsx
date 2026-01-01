@@ -101,7 +101,7 @@ export function SpotifyPlaylistSection({ onPlaylistClick, onViewAll }: SpotifyPl
       const playableTracks = results.map((r: any) => ({
         id: `yt-${r.id}`,
         title: r.title,
-        artist_name: r.channelTitle || 'Unknown Artist',
+        artist_name: r.channel || 'Unknown Artist',
         duration: 0,
         file_path: '',
         play_count: 0,

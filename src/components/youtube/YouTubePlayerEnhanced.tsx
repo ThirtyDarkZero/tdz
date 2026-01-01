@@ -141,6 +141,9 @@ export function YouTubePlayerEnhanced({
     lastVideoIdRef.current = videoId;
     
     const initPlayer = () => {
+      // Reset readiness any time we (re)create the underlying IFrame player
+      setIsReady(false);
+
       if (playerRef.current) {
         try {
           if (intervalRef.current) {
@@ -270,6 +273,9 @@ export function YouTubePlayerEnhanced({
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
+      // React StrictMode runs effects twice in dev; ensure we don't get stuck "initializing"
+      // which would prevent the second init and result in no playback.
+      initializingRef.current = false;
       cleanupCrossfade();
     };
   }, [videoId, onPlayingChange, onTrackEnd, setYoutubePlayer, setContextTime, repeat, shouldStartCrossfade, startCrossfade, cleanupCrossfade]);
