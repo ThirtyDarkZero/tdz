@@ -7,21 +7,22 @@ const corsHeaders = {
 
 const YOUTUBE_API_KEY = Deno.env.get('YOUTUBE_API_KEY');
 
-// Updated Piped/Invidious instances - prioritizing the most reliable ones
+// Updated Piped instances - prioritizing most reliable ones (Jan 2026)
 const PIPED_INSTANCES = [
   'https://pipedapi.kavin.rocks',
+  'https://pipedapi.adminforge.de',
+  'https://api.piped.privacydev.net',
+  'https://pipedapi.in.projectsegfau.lt',
   'https://pipedapi.moomoo.me',
-  'https://api.piped.yt',
-  'https://piped-api.garuber.com',
-  'https://pipedapi.r4fo.com',
 ];
 
+// Updated Invidious instances - prioritizing most reliable ones (Jan 2026)
 const INVIDIOUS_INSTANCES = [
-  'https://invidious.fdn.fr',
-  'https://yewtu.be',
-  'https://inv.nadeko.net',
-  'https://invidious.nerdvpn.de',
-  'https://vid.puffyan.us',
+  'https://iv.nboez.cc',
+  'https://invidious.protokolla.fi',
+  'https://invidious.privacydev.net',
+  'https://yt.artemislena.eu',
+  'https://invidious.lunar.icu',
 ];
 
 interface YouTubeSearchResult {

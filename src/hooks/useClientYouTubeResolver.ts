@@ -5,20 +5,22 @@ interface ResolvedTrack {
   source: 'client-resolved';
 }
 
-// Updated Piped instances - most reliable ones first
+// Updated Piped instances - most reliable ones (Jan 2026)
 const PIPED_INSTANCES = [
   'https://pipedapi.kavin.rocks',
+  'https://pipedapi.adminforge.de',
+  'https://api.piped.privacydev.net',
+  'https://pipedapi.in.projectsegfau.lt',
   'https://pipedapi.moomoo.me',
-  'https://api.piped.yt',
-  'https://pipedapi.r4fo.com',
 ];
 
-// Updated Invidious instances - most reliable ones first
+// Updated Invidious instances - most reliable ones (Jan 2026)
 const INVIDIOUS_INSTANCES = [
-  'https://invidious.fdn.fr',
-  'https://yewtu.be',
-  'https://inv.nadeko.net',
-  'https://invidious.nerdvpn.de',
+  'https://iv.nboez.cc',
+  'https://invidious.protokolla.fi',
+  'https://invidious.privacydev.net',
+  'https://yt.artemislena.eu',
+  'https://invidious.lunar.icu',
 ];
 
 // Client-side YouTube resolution with robust multi-source fallback
