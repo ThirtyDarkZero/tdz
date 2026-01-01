@@ -4,11 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Play, Sparkles, ChevronRight, ListMusic, Loader2, Plus } from 'lucide-react';
+import { Play, Sparkles, ChevronRight, ListMusic, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { toast } from 'sonner';
-import { AddToPlaylistDialog } from './AddToPlaylistDialog';
+import { SpotifyPlaylistDetail } from './SpotifyPlaylistDetail';
 
 interface SpotifyPlaylist {
   id: string;
@@ -17,14 +17,6 @@ interface SpotifyPlaylist {
   image?: string;
   tracks: number;
   source: string;
-}
-
-interface SpotifyTrack {
-  id: string;
-  title: string;
-  artist: string;
-  thumbnail?: string;
-  youtubeId?: string;
 }
 
 interface SpotifyPlaylistSectionProps {
@@ -36,7 +28,7 @@ export function SpotifyPlaylistSection({ onPlaylistClick, onViewAll }: SpotifyPl
   const [playlists, setPlaylists] = useState<SpotifyPlaylist[]>([]);
   const [loading, setLoading] = useState(true);
   const [playingPlaylistId, setPlayingPlaylistId] = useState<string | null>(null);
-  const [addToPlaylistTrack, setAddToPlaylistTrack] = useState<any>(null);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<SpotifyPlaylist | null>(null);
   const { playTrack, addToQueue } = usePlayer();
 
   useEffect(() => {
@@ -76,13 +68,12 @@ export function SpotifyPlaylistSection({ onPlaylistClick, onViewAll }: SpotifyPl
     }
   };
 
-  // Play a playlist by fetching its tracks via YouTube
+  // Play a playlist immediately by searching YouTube
   const handlePlayPlaylist = async (playlist: SpotifyPlaylist, e: React.MouseEvent) => {
     e.stopPropagation();
     setPlayingPlaylistId(playlist.id);
 
     try {
-      // Search for tracks from this playlist via YouTube
       const { data } = await supabase.functions.invoke('youtube-search', {
         body: {
           query: `${playlist.name} playlist top songs`,
@@ -97,7 +88,6 @@ export function SpotifyPlaylistSection({ onPlaylistClick, onViewAll }: SpotifyPl
         return;
       }
 
-      // Convert to player format
       const playableTracks = results.map((r: any) => ({
         id: `yt-${r.id}`,
         title: r.title,
@@ -120,6 +110,11 @@ export function SpotifyPlaylistSection({ onPlaylistClick, onViewAll }: SpotifyPl
     }
   };
 
+  // Open playlist detail view
+  const handleOpenPlaylist = (playlist: SpotifyPlaylist) => {
+    setSelectedPlaylist(playlist);
+  };
+
   if (loading) {
     return (
       <section className="py-8">
@@ -137,76 +132,80 @@ export function SpotifyPlaylistSection({ onPlaylistClick, onViewAll }: SpotifyPl
   }
 
   return (
-    <section className="py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-white" />
+    <>
+      <section className="py-8">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">Featured Playlists</h2>
+              <p className="text-sm text-muted-foreground">Curated collections from global charts</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Featured Playlists</h2>
-            <p className="text-sm text-muted-foreground">Curated collections from global charts</p>
-          </div>
+          <Button variant="ghost" onClick={onViewAll} className="gap-2">
+            View All <ChevronRight className="w-4 h-4" />
+          </Button>
         </div>
-        <Button variant="ghost" onClick={onViewAll} className="gap-2">
-          View All <ChevronRight className="w-4 h-4" />
-        </Button>
-      </div>
 
-      <ScrollArea className="w-full whitespace-nowrap">
-        <div className="flex gap-4 pb-4">
-          {playlists.map((playlist, index) => (
-            <Card
-              key={playlist.id}
-              className="w-48 flex-shrink-0 overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-card/50 backdrop-blur-sm border-border/50"
-              onClick={() => onPlaylistClick?.(playlist)}
-            >
-              <div className="relative aspect-square overflow-hidden">
-                {playlist.image ? (
-                  <img
-                    src={playlist.image}
-                    alt={playlist.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
-                    <ListMusic className="w-12 h-12 text-muted-foreground" />
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <Button
-                  size="icon"
-                  className="absolute bottom-3 right-3 rounded-full h-12 w-12 bg-primary shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0"
-                  onClick={(e) => handlePlayPlaylist(playlist, e)}
-                  disabled={playingPlaylistId === playlist.id}
-                >
-                  {playingPlaylistId === playlist.id ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
+        <ScrollArea className="w-full whitespace-nowrap">
+          <div className="flex gap-4 pb-4">
+            {playlists.map((playlist, index) => (
+              <Card
+                key={playlist.id}
+                className="w-48 flex-shrink-0 overflow-hidden group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-card/50 backdrop-blur-sm border-border/50"
+                onClick={() => handleOpenPlaylist(playlist)}
+              >
+                <div className="relative aspect-square overflow-hidden">
+                  {playlist.image ? (
+                    <img
+                      src={playlist.image}
+                      alt={playlist.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
                   ) : (
-                    <Play className="w-5 h-5 ml-0.5" fill="currentColor" />
+                    <div className="w-full h-full bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
+                      <ListMusic className="w-12 h-12 text-muted-foreground" />
+                    </div>
                   )}
-                </Button>
-                <Badge className="absolute top-3 left-3 bg-green-500/90 text-white border-0 text-xs">
-                  #{index + 1}
-                </Badge>
-              </div>
-              <div className="p-4">
-                <h3 className="font-semibold truncate text-sm">{playlist.name}</h3>
-                <p className="text-xs text-muted-foreground truncate mt-1">
-                  {playlist.description || `${playlist.tracks} tracks`}
-                </p>
-              </div>
-            </Card>
-          ))}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <Button
+                    size="icon"
+                    className="absolute bottom-3 right-3 rounded-full h-12 w-12 bg-green-500 shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 hover:bg-green-600"
+                    onClick={(e) => handlePlayPlaylist(playlist, e)}
+                    disabled={playingPlaylistId === playlist.id}
+                  >
+                    {playingPlaylistId === playlist.id ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Play className="w-5 h-5 ml-0.5" fill="currentColor" />
+                    )}
+                  </Button>
+                  <Badge className="absolute top-3 left-3 bg-green-500/90 text-white border-0 text-xs">
+                    #{index + 1}
+                  </Badge>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold truncate text-sm">{playlist.name}</h3>
+                  <p className="text-xs text-muted-foreground truncate mt-1">
+                    {playlist.description || `${playlist.tracks} tracks`}
+                  </p>
+                </div>
+              </Card>
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </section>
 
-      <AddToPlaylistDialog
-        open={!!addToPlaylistTrack}
-        onOpenChange={(open) => !open && setAddToPlaylistTrack(null)}
-        track={addToPlaylistTrack}
-      />
-    </section>
+      {/* Playlist Detail Modal */}
+      {selectedPlaylist && (
+        <SpotifyPlaylistDetail
+          playlist={selectedPlaylist}
+          onClose={() => setSelectedPlaylist(null)}
+        />
+      )}
+    </>
   );
 }
