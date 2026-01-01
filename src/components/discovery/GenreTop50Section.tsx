@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Play, ChevronDown, Loader2, Music } from "lucide-react";
+import { Play, ChevronDown, Loader2, Music, Plus, MoreHorizontal, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -11,6 +11,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { toast } from "sonner";
+import { AddToPlaylistDialog } from "./AddToPlaylistDialog";
 
 interface TopTrack {
   id: string;
@@ -47,6 +48,7 @@ export function GenreTop50Section({ onViewAll }: GenreTop50SectionProps) {
   const [tracks, setTracks] = useState<TopTrack[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingTrack, setLoadingTrack] = useState<string | null>(null);
+  const [addToPlaylistTrack, setAddToPlaylistTrack] = useState<any>(null);
   const { playTrack, addToQueue } = usePlayer();
 
   // Fetch tracks for selected genre
@@ -99,8 +101,74 @@ export function GenreTop50Section({ onViewAll }: GenreTop50SectionProps) {
       return;
     }
 
-    // Play the track
-    playTrack({
+    // Build the track object for playback
+    const playerTrack = {
+      id: track.id,
+      title: track.title,
+      artist_name: track.artist,
+      duration: 0,
+      file_path: "",
+      play_count: 0,
+      source: "youtube" as const,
+      youtubeId,
+      thumbnail: track.thumbnail,
+    };
+
+    // Build queue from remaining tracks that have YouTube IDs
+    const queueTracks = tracks.slice(index + 1, index + 15).filter(t => t.youtubeId).map((t) => ({
+      id: t.id,
+      title: t.title,
+      artist_name: t.artist,
+      duration: 0,
+      file_path: "",
+      play_count: 0,
+      source: "youtube" as const,
+      youtubeId: t.youtubeId!,
+      thumbnail: t.thumbnail,
+    }));
+
+    // Play with queue
+    playTrack(playerTrack, [playerTrack, ...queueTracks]);
+  };
+
+  // Add track to playlist
+  const handleAddToPlaylist = (track: TopTrack, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setAddToPlaylistTrack({
+      id: track.id,
+      title: track.title,
+      artist_name: track.artist,
+      youtubeId: track.youtubeId,
+      thumbnail: track.thumbnail,
+    });
+  };
+
+  // Add to queue
+  const handleAddToQueue = async (track: TopTrack, e: React.MouseEvent) => {
+    e.stopPropagation();
+    let youtubeId = track.youtubeId;
+
+    if (!youtubeId) {
+      try {
+        const { data } = await supabase.functions.invoke("youtube-search", {
+          body: {
+            query: `${track.artist} ${track.title} official audio`,
+            maxResults: 1,
+            officialOnly: true,
+          },
+        });
+        youtubeId = data?.results?.[0]?.id;
+      } catch (err) {
+        console.error("YouTube search failed:", err);
+      }
+    }
+
+    if (!youtubeId) {
+      toast.error("Could not find playable version");
+      return;
+    }
+
+    addToQueue({
       id: track.id,
       title: track.title,
       artist_name: track.artist,
@@ -111,23 +179,7 @@ export function GenreTop50Section({ onViewAll }: GenreTop50SectionProps) {
       youtubeId,
       thumbnail: track.thumbnail,
     });
-
-    // Queue remaining tracks
-    tracks.slice(index + 1, index + 10).forEach((t) => {
-      if (t.youtubeId) {
-        addToQueue({
-          id: t.id,
-          title: t.title,
-          artist_name: t.artist,
-          duration: 0,
-          file_path: "",
-          play_count: 0,
-          source: "youtube",
-          youtubeId: t.youtubeId,
-          thumbnail: t.thumbnail,
-        });
-      }
-    });
+    toast.success(`Added "${track.title}" to queue`);
   };
 
   const currentGenreLabel =
@@ -246,12 +298,57 @@ export function GenreTop50Section({ onViewAll }: GenreTop50SectionProps) {
                   <span className="hidden sm:inline-block px-2 py-1 text-xs bg-white/5 text-white/50 rounded capitalize">
                     {track.genre}
                   </span>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-white/60 hover:text-white hover:bg-white/10"
+                      onClick={(e) => handleAddToPlaylist(track, e)}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-white/60 hover:text-white hover:bg-white/10"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-[#1a1a1a] border-white/10">
+                        <DropdownMenuItem
+                          onClick={(e) => handleAddToQueue(track, e as any)}
+                          className="text-white/80 hover:text-white cursor-pointer"
+                        >
+                          Add to Queue
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => handleAddToPlaylist(track, e as any)}
+                          className="text-white/80 hover:text-white cursor-pointer"
+                        >
+                          Add to Playlist
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
               ))}
             </div>
           </ScrollArea>
         )}
       </div>
+
+      {/* Add to Playlist Dialog */}
+      <AddToPlaylistDialog
+        open={!!addToPlaylistTrack}
+        onOpenChange={(open) => !open && setAddToPlaylistTrack(null)}
+        track={addToPlaylistTrack}
+      />
     </section>
   );
 }
