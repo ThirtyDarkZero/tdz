@@ -53,12 +53,12 @@ export function CityTrendingSection({
   const { playTrack } = usePlayer();
   const navigate = useNavigate();
 
-  // Fetch trending tracks from Spotify's regional Top 50 playlists
+  // Fetch trending tracks from Spotify and resolve YouTube IDs for playback
   useEffect(() => {
     const fetchTrending = async () => {
       setLoading(true);
       try {
-        // Use the city-trending action to get regional Top 50 tracks
+        // Use the city-trending action to get regional tracks from Spotify
         const { data, error } = await supabase.functions.invoke('spotify-trending', {
           body: { action: 'city-trending', cityId: activeCity }
         });
@@ -72,16 +72,35 @@ export function CityTrendingSection({
         const spotifyTracks = data?.data?.tracks || [];
         
         if (spotifyTracks.length > 0) {
-          const mappedTracks: TrendingTrack[] = spotifyTracks.slice(0, 5).map((track: any) => ({
-            id: track.id || `spotify-${track.position}`,
-            title: track.title || 'Unknown Track',
-            artist: track.artist || 'Unknown Artist',
-            image: track.thumbnail || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80',
-            position: track.position,
-            source: 'spotify',
-          }));
-          setTracks(mappedTracks);
-          console.log(`Loaded ${mappedTracks.length} Spotify tracks for ${activeCity}`);
+          // Map Spotify tracks and resolve YouTube IDs for playback
+          const tracksWithYouTube = await Promise.all(
+            spotifyTracks.slice(0, 5).map(async (track: any, index: number) => {
+              // Search YouTube for this track to get a playable ID
+              let youtubeId: string | undefined;
+              try {
+                const searchQuery = `${track.title} ${track.artist} official audio`;
+                const ytResponse = await supabase.functions.invoke('youtube-search', {
+                  body: { query: searchQuery, type: 'search', maxResults: 1, officialOnly: true }
+                });
+                youtubeId = ytResponse.data?.results?.[0]?.id;
+              } catch (ytErr) {
+                console.error('YouTube search failed for:', track.title, ytErr);
+              }
+
+              return {
+                id: track.id || `spotify-${index + 1}`,
+                title: track.title || 'Unknown Track',
+                artist: track.artist || 'Unknown Artist',
+                image: track.thumbnail || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80',
+                position: index + 1,
+                youtubeId,
+                source: 'spotify',
+              };
+            })
+          );
+          
+          setTracks(tracksWithYouTube);
+          console.log(`Loaded ${tracksWithYouTube.length} Spotify tracks with YouTube IDs for ${activeCity}`);
         } else {
           console.log(`No Spotify tracks for ${activeCity}, using fallback`);
           setTracks(getFallbackTracks(activeCity));
@@ -126,13 +145,33 @@ export function CityTrendingSection({
     return cityTracks[cityId] || cityTracks['nyc'];
   };
 
-  const handlePlayTrack = (track: TrendingTrack) => {
+  const handlePlayTrack = async (track: TrendingTrack) => {
+    // If we don't have a YouTube ID, search for one first
+    let youtubeId = track.youtubeId;
+    
+    if (!youtubeId) {
+      try {
+        const searchQuery = `${track.title} ${track.artist} official audio`;
+        const { data } = await supabase.functions.invoke('youtube-search', {
+          body: { query: searchQuery, type: 'search', maxResults: 1, officialOnly: true }
+        });
+        youtubeId = data?.results?.[0]?.id;
+      } catch (err) {
+        console.error('Failed to find YouTube video:', err);
+      }
+    }
+
+    if (!youtubeId) {
+      console.error('No YouTube ID available for track:', track.title);
+      return;
+    }
+
     playTrack({
       id: track.id,
       title: track.title,
       artist_name: track.artist,
       source: 'youtube',
-      youtubeId: track.youtubeId,
+      youtubeId,
       album_cover_path: track.image,
       duration: 0,
       file_path: '',
@@ -144,7 +183,8 @@ export function CityTrendingSection({
     if (onViewAllTrends) {
       onViewAllTrends();
     } else {
-      navigate('/discover?tab=library');
+      // Navigate with trending param so UnifiedLibrary loads trending results
+      navigate('/discover?tab=library&trending=true');
     }
   };
 
