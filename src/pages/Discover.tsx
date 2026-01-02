@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
@@ -122,43 +121,45 @@ export default function Discover() {
     setSelectedGenre(genreId === selectedGenre ? undefined : genreId);
   };
 
-  // Generate album data for 3D carousel
-  const genreAlbums = useMemo(() => {
-    const albumsWithCovers = albums.filter(a => a.cover_art_path).map(album => ({
-      id: album.id,
-      title: album.title,
-      artist: album.artist_name,
-      image: album.cover_art_path 
-        ? supabase.storage.from('album-covers').getPublicUrl(album.cover_art_path).data.publicUrl
-        : 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&q=80',
-      genre: album.genre || 'Pop',
-    }));
+  // Generate TDZ release data for 3D carousel - prioritize tracks with cover art
+  const tdzReleases = useMemo(() => {
+    // Combine albums and tracks with cover art for carousel
+    const releasesWithCovers: Array<{
+      id: string;
+      title: string;
+      artist: string;
+      image: string;
+      genre: string;
+    }> = [];
     
-    // Add fallback albums if we don't have enough
-    if (albumsWithCovers.length < 8) {
-      const fallbackImages = [
-        'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=80',
-        'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80',
-        'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&q=80',
-        'https://images.unsplash.com/photo-1571266028243-d220c6e3d9ec?w=400&q=80',
-        'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400&q=80',
-        'https://images.unsplash.com/photo-1504509546545-e000b4a62425?w=400&q=80',
-        'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&q=80',
-      ];
-      
-      for (let i = albumsWithCovers.length; i < 8; i++) {
-        albumsWithCovers.push({
-          id: `placeholder-${i}`,
-          title: `Trending Album ${i + 1}`,
-          artist: 'Various Artists',
-          image: fallbackImages[i % fallbackImages.length],
-          genre: selectedGenre || 'Pop',
+    // Add albums first
+    albums.filter(a => a.cover_art_path).forEach(album => {
+      releasesWithCovers.push({
+        id: album.id,
+        title: album.title,
+        artist: album.artist_name,
+        image: supabase.storage.from('album-covers').getPublicUrl(album.cover_art_path!).data.publicUrl,
+        genre: album.genre || 'Pop',
+      });
+    });
+    
+    // Add tracks with album covers if we need more
+    if (releasesWithCovers.length < 8) {
+      tracks.filter(t => t.album_cover_path).slice(0, 8 - releasesWithCovers.length).forEach(track => {
+        releasesWithCovers.push({
+          id: track.id,
+          title: track.title,
+          artist: track.artist_name,
+          image: track.album_cover_bucket 
+            ? supabase.storage.from(track.album_cover_bucket).getPublicUrl(track.album_cover_path!).data.publicUrl
+            : supabase.storage.from('album-covers').getPublicUrl(track.album_cover_path!).data.publicUrl,
+          genre: track.genre || 'Pop',
         });
-      }
+      });
     }
     
-    return albumsWithCovers;
-  }, [albums, selectedGenre]);
+    return releasesWithCovers;
+  }, [albums, tracks]);
 
   const handlePlayPlaylist = (name: string, playlistTracks: any[]) => {
     if (playlistTracks.length > 0) {
@@ -176,10 +177,10 @@ export default function Discover() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-white/60 text-sm">Loading...</p>
+          <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-muted-foreground text-sm">Loading...</p>
         </div>
       </div>
     );
@@ -190,61 +191,59 @@ export default function Discover() {
     try {
       switch (activeTab) {
         case 'discover':
+          // Main TDZ Releases page - focused on native content
           return (
             <div className="space-y-0">
-              <ErrorBoundary fallback={<div className="h-[400px] bg-gradient-to-br from-cyan-900/30 to-purple-900/30" />}>
+              {/* Hero Section */}
+              <ErrorBoundary fallback={<div className="h-[300px] sm:h-[400px] bg-gradient-to-br from-primary/10 to-secondary/10" />}>
                 <PremiumHero tracks={genreFilteredTracks} />
               </ErrorBoundary>
 
-              <ErrorBoundary fallback={null}>
-                <Premium3DCarousel
-                  sectionNumber={0}
-                  title="Genres"
-                  subtitle={`${genreAlbums.length}+ Albums`}
-                  albums={genreAlbums}
-                  activeCategory={selectedGenre || 'pop'}
-                  categories={[
-                    { id: 'pop', name: 'Pop' },
-                    { id: 'hip-hop', name: 'Hip-Hop' },
-                    { id: 'r-b', name: 'R&B' },
-                    { id: 'electronic', name: 'Electronic' },
-                    { id: 'rock', name: 'Rock' },
-                    { id: 'latin', name: 'Latin' },
-                    { id: 'country', name: 'Country' },
-                    { id: 'jazz', name: 'Jazz' },
-                  ]}
-                  onCategoryChange={handleGenreSelect}
-                  onAlbumClick={(album) => {
-                    if (!album.id.startsWith('placeholder')) {
-                      navigate(`/album/${album.id}`);
-                    }
-                  }}
-                  onPlayAlbum={(album) => {
-                    const albumGenre = (album.genre ?? "").toLowerCase();
-                    const albumTracks = tracks.filter((t) =>
-                      t.artist_name === album.artist ||
-                      (t.genre ?? "").toLowerCase().includes(albumGenre)
-                    );
-                    if (albumTracks.length > 0) {
-                      handlePlayTrack(albumTracks[0]);
-                    }
-                  }}
-                />
-              </ErrorBoundary>
-
-              <ErrorBoundary fallback={null}>
-                <div className="px-6 md:px-12 py-8 bg-[#030303]">
-                  <SpotifyPlaylistSection
-                    onViewAll={() => setActiveTab('playlists')}
+              {/* TDZ Releases Carousel */}
+              {tdzReleases.length > 0 && (
+                <ErrorBoundary fallback={null}>
+                  <Premium3DCarousel
+                    sectionNumber={0}
+                    title="Top TDZ Releases"
+                    subtitle={`${tdzReleases.length} Releases`}
+                    albums={tdzReleases}
+                    activeCategory={selectedGenre || 'all'}
+                    categories={[
+                      { id: 'all', name: 'All' },
+                      { id: 'pop', name: 'Pop' },
+                      { id: 'hip-hop', name: 'Hip-Hop' },
+                      { id: 'r-b', name: 'R&B' },
+                      { id: 'electronic', name: 'Electronic' },
+                    ]}
+                    onCategoryChange={handleGenreSelect}
+                    onAlbumClick={(album) => {
+                      // Check if it's an album or track
+                      const isAlbum = albums.some(a => a.id === album.id);
+                      if (isAlbum) {
+                        navigate(`/album/${album.id}`);
+                      } else {
+                        navigate(`/track/${album.id}`);
+                      }
+                    }}
+                    onPlayAlbum={(album) => {
+                      const albumTracks = tracks.filter((t) =>
+                        t.artist_name === album.artist ||
+                        (t.genre ?? "").toLowerCase().includes(album.genre.toLowerCase())
+                      );
+                      if (albumTracks.length > 0) {
+                        handlePlayTrack(albumTracks[0]);
+                      }
+                    }}
                   />
-                </div>
-              </ErrorBoundary>
+                </ErrorBoundary>
+              )}
 
+              {/* New TDZ Releases Track List */}
               <ErrorBoundary fallback={null}>
                 <PremiumTrackList
                   sectionNumber={0}
                   title={selectedGenre ? `${selectedGenre} Tracks` : "New TDZ Releases"}
-                  subtitle={selectedGenre ? `Filtered by genre` : `Fresh releases`}
+                  subtitle="Fresh from TDZ artists"
                   tracks={genreFilteredTracks}
                   currentTrackId={currentTrack?.id}
                   likedTracks={Array.from(likedTracks)}
@@ -255,8 +254,9 @@ export default function Discover() {
                 />
               </ErrorBoundary>
 
+              {/* Your Playlists */}
               <ErrorBoundary fallback={null}>
-                <div className="px-6 md:px-12 py-8 bg-[#0a0a0a]">
+                <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 bg-background/50">
                   <UserPlaylistsSection
                     onPlaylistClick={(id) => navigate(`/playlist/${id}`)}
                     onViewAll={() => setActiveTab('playlists')}
@@ -264,6 +264,40 @@ export default function Discover() {
                 </div>
               </ErrorBoundary>
 
+              {/* TDZ Albums Grid */}
+              {albums.length > 0 && (
+                <div className="px-4 sm:px-6 lg:px-8 py-8 sm:py-12 bg-background">
+                  <ErrorBoundary fallback={null}>
+                    <MinimalAlbumGrid albums={albums} title="TDZ Albums" />
+                  </ErrorBoundary>
+                </div>
+              )}
+
+              {/* TDZ Artists */}
+              <ErrorBoundary fallback={null}>
+                <div className="px-4 sm:px-6 lg:px-8 py-8 sm:py-12 bg-background/50">
+                  <MinimalArtistGrid
+                    artists={artists.slice(0, 8)}
+                    followedArtists={followedArtists}
+                    onToggleFollow={toggleFollow}
+                  />
+                </div>
+              </ErrorBoundary>
+            </div>
+          );
+
+        case 'trending':
+          // Trending tab - Global charts, city trending, editorial playlists
+          return (
+            <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6 sm:space-y-8">
+              <h1 className="text-2xl sm:text-3xl font-bold">Trending</h1>
+              
+              {/* Top 50 Trending Songs */}
+              <ErrorBoundary fallback={null}>
+                <GenreTop50Section onViewAll={() => setActiveTab('library')} />
+              </ErrorBoundary>
+              
+              {/* City Trending */}
               <ErrorBoundary fallback={null}>
                 <CityTrendingSection
                   sectionNumber={0}
@@ -273,48 +307,18 @@ export default function Discover() {
                   }}
                 />
               </ErrorBoundary>
-
-              {/* Billboard & BPM Supreme Charts */}
+              
+              {/* Billboard & Editorial Charts */}
               <ErrorBoundary fallback={null}>
-                <div className="px-6 md:px-12 py-8 bg-[#030303]">
-                  <EditorialPlaylistsSection />
-                </div>
+                <EditorialPlaylistsSection />
               </ErrorBoundary>
-
-              {/* BPM Supreme-style Genre Top 50 Section */}
-              <ErrorBoundary fallback={null}>
-                <GenreTop50Section onViewAll={() => setActiveTab('library')} />
-              </ErrorBoundary>
-
-              {albums.length > 0 && (
-                <div className="px-6 md:px-12 py-16 bg-[#030303]">
-                  <ErrorBoundary fallback={null}>
-                    <MinimalAlbumGrid albums={albums} title="Albums" />
-                  </ErrorBoundary>
-                </div>
-              )}
-            </div>
-          );
-
-        case 'trending':
-          return (
-            <div className="px-4 sm:px-6 lg:px-8 py-6">
-              <h1 className="text-3xl font-bold text-white mb-6">Trending</h1>
-              <MinimalTrackList
-                tracks={[...filteredTracks].sort((a, b) => (b.play_count || 0) - (a.play_count || 0)).slice(0, 20)}
-                currentTrackId={currentTrack?.id}
-                likedTracks={likedTracks}
-                onPlayTrack={handlePlayTrack}
-                onToggleLike={toggleLike}
-                onAddToQueue={handleAddToQueue}
-              />
             </div>
           );
 
         case 'artists':
           return (
-            <div className="px-4 sm:px-6 lg:px-8 py-6">
-              <h1 className="text-3xl font-bold text-white mb-6">Artists</h1>
+            <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+              <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">TDZ Artists</h1>
               <MinimalArtistGrid
                 artists={artists}
                 followedArtists={followedArtists}
@@ -325,8 +329,8 @@ export default function Discover() {
 
         case 'playlists':
           return (
-            <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-              <h1 className="text-3xl font-bold text-white mb-6">Your Library</h1>
+            <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6 sm:space-y-8">
+              <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Your Library</h1>
               
               <ErrorBoundary fallback={null}>
                 <UserPlaylistsSection
@@ -335,13 +339,7 @@ export default function Discover() {
               </ErrorBoundary>
               
               <ErrorBoundary fallback={null}>
-                <SpotifyPlaylistSection
-                  onViewAll={() => setActiveTab('library')}
-                />
-              </ErrorBoundary>
-              
-              <ErrorBoundary fallback={null}>
-                <div className="mt-8">
+                <div className="mt-6 sm:mt-8">
                   <PlaylistManager
                     userId={user?.id || null}
                     onPlaylistSelect={(id) => navigate(`/playlist/${id}`)}
@@ -353,16 +351,25 @@ export default function Discover() {
 
         case 'merch':
           return (
-            <div className="px-4 sm:px-6 lg:px-8 py-6">
-              <h1 className="text-3xl font-bold text-white mb-6">Merch Store</h1>
+            <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+              <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Merch Store</h1>
               <MerchStore variant="full" />
             </div>
           );
 
         case 'library':
+          // Global Library - All global content (Spotify playlists, charts, etc.)
           return (
-            <div className="px-4 sm:px-6 lg:px-8 py-6">
-              <ErrorBoundary fallback={<div className="text-white/50">Library unavailable</div>}>
+            <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6 sm:space-y-8">
+              <h1 className="text-2xl sm:text-3xl font-bold">Global Library</h1>
+              
+              {/* Spotify Featured Playlists */}
+              <ErrorBoundary fallback={null}>
+                <SpotifyPlaylistSection />
+              </ErrorBoundary>
+              
+              {/* Unified Library with AI Engine, Discogs, MusicBrainz */}
+              <ErrorBoundary fallback={<div className="text-muted-foreground">Library unavailable</div>}>
                 <UnifiedLibrary
                   showTrending={showTrending}
                   onPlayYouTube={(videoId, title, artist, thumbnail) => {
@@ -377,7 +384,6 @@ export default function Discover() {
                       file_path: '',
                       play_count: 0,
                     });
-                    // Reset trending state after navigation
                     if (showTrending) setShowTrending(false);
                   }}
                 />
@@ -387,14 +393,14 @@ export default function Discover() {
 
         default:
           return (
-            <div className="px-4 sm:px-6 lg:px-8 py-6">
-              <p className="text-white/50">Select a tab</p>
+            <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+              <p className="text-muted-foreground">Select a tab</p>
             </div>
           );
       }
     } catch (error) {
       console.error('renderContent error:', error);
-      return <div className="p-8 text-white">Something went wrong</div>;
+      return <div className="p-4 sm:p-8">Something went wrong</div>;
     }
   };
 

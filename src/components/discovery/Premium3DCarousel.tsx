@@ -107,38 +107,38 @@ export function Premium3DCarousel({
   }
 
   return (
-    <section className="relative py-16 overflow-hidden bg-[#030303]">
+    <section className="relative py-8 sm:py-12 md:py-16 overflow-hidden bg-background/50">
       {/* Background glow */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-cyan-500/5 rounded-full blur-[100px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[600px] md:w-[800px] h-[200px] sm:h-[300px] md:h-[400px] bg-primary/5 rounded-full blur-[80px] sm:blur-[100px]" />
       </div>
 
       {/* Header - BPM Supreme style */}
-      <div className="max-w-7xl mx-auto px-6 md:px-12 mb-10">
-        <div className="flex items-start justify-between flex-wrap gap-6">
-          <div className="flex items-baseline gap-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 mb-6 sm:mb-8 md:mb-10">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 sm:gap-6">
+          <div className="flex items-baseline gap-4 sm:gap-6 md:gap-10">
             {/* Section number */}
             {typeof sectionNumber === "number" && sectionNumber > 0 && (
-              <span className="text-white/20 text-5xl md:text-6xl font-black font-display">
+              <span className="hidden md:block text-foreground/20 text-4xl md:text-5xl lg:text-6xl font-black font-display">
                 {sectionNumber}
               </span>
             )}
             
             {/* Title block */}
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-white font-display tracking-tight">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold font-display tracking-tight">
                 {title}
               </h2>
-              <p className="text-white/40 text-sm mt-1">{subtitle || `${albums.length}+ ${title}`}</p>
+              <p className="text-muted-foreground text-xs sm:text-sm mt-0.5 sm:mt-1">{subtitle || `${albums.length}+ ${title}`}</p>
             </div>
 
             {/* Current selection info */}
             {currentAlbum && (
-              <div className="hidden md:block">
-                <h3 className="text-xl md:text-2xl font-bold text-white">
+              <div className="hidden lg:block">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-bold">
                   {categories.find(c => c.id === activeCategory)?.name || activeCategory}
                 </h3>
-                <p className="text-white/40 text-sm truncate max-w-[300px]">
+                <p className="text-muted-foreground text-xs sm:text-sm truncate max-w-[200px] md:max-w-[300px]">
                   {currentAlbum.title} — {currentAlbum.artist}
                 </p>
               </div>
@@ -146,39 +146,39 @@ export function Premium3DCarousel({
           </div>
           
           {/* Navigation arrows */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Button
               variant="ghost"
               size="icon"
               onClick={handlePrev}
               disabled={albums.length === 0}
-              className="w-10 h-10 rounded-full border border-white/10 text-white/60 hover:text-white hover:bg-white/10 hover:border-white/30 transition-all"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/50 hover:border-border transition-all"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
               onClick={handleNext}
               disabled={albums.length === 0}
-              className="w-10 h-10 rounded-full border border-white/10 text-white/60 hover:text-white hover:bg-white/10 hover:border-white/30 transition-all"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/50 hover:border-border transition-all"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
           </div>
         </div>
 
-        {/* Category pills */}
-        <div className="flex flex-wrap gap-2 mt-8">
+        {/* Category pills - horizontal scroll on mobile */}
+        <div className="flex gap-2 mt-4 sm:mt-6 md:mt-8 overflow-x-auto pb-2 scrollbar-hide">
           {categories.map((category) => (
             <button
               key={category.id}
               onClick={() => onCategoryChange?.(category.id)}
               className={`
-                px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-300
+                px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 md:py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 flex-shrink-0
                 ${activeCategory === category.id
-                  ? 'bg-white text-black shadow-lg shadow-white/20'
-                  : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/5 hover:border-white/20'
+                  ? 'bg-foreground text-background shadow-lg'
+                  : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground border border-border/50 hover:border-border'
                 }
               `}
             >
@@ -188,10 +188,10 @@ export function Premium3DCarousel({
         </div>
       </div>
 
-      {/* 3D Carousel */}
+      {/* 3D Carousel - Responsive sizing */}
       <div 
-        className="relative h-[420px] md:h-[480px] flex items-center justify-center"
-        style={{ perspective: '1400px' }}
+        className="relative h-[280px] sm:h-[350px] md:h-[420px] lg:h-[480px] flex items-center justify-center"
+        style={{ perspective: '1000px' }}
       >
         <div 
           className="relative w-full flex items-center justify-center" 
@@ -201,15 +201,18 @@ export function Premium3DCarousel({
             const style = getAlbumStyle(index);
             const isCurrent = index === currentIndex;
             
+            // Responsive album sizes
+            const albumSize = isCurrent 
+              ? 'w-[180px] h-[180px] sm:w-[240px] sm:h-[240px] md:w-[280px] md:h-[280px] lg:w-[320px] lg:h-[320px]'
+              : 'w-[160px] h-[160px] sm:w-[200px] sm:h-[200px] md:w-[240px] md:h-[240px] lg:w-[280px] lg:h-[280px]';
+            
             return (
               <div
                 key={album.id}
-                className="absolute cursor-pointer transition-all duration-600 ease-out"
+                className={`absolute cursor-pointer transition-all duration-500 ease-out ${albumSize}`}
                 style={{
                   ...style,
-                  width: isCurrent ? '320px' : '280px',
-                  height: isCurrent ? '320px' : '280px',
-                  transitionDuration: '600ms',
+                  transitionDuration: '500ms',
                   transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
                 }}
                 onClick={() => {
@@ -222,9 +225,9 @@ export function Premium3DCarousel({
               >
                 {/* Album cover */}
                 <div className={`
-                  relative w-full h-full rounded-xl overflow-hidden shadow-2xl group
+                  relative w-full h-full rounded-lg sm:rounded-xl overflow-hidden shadow-xl sm:shadow-2xl group
                   transition-all duration-500
-                  ${isCurrent ? 'shadow-black/80 ring-1 ring-white/10' : 'shadow-black/60'}
+                  ${isCurrent ? 'ring-1 ring-border/50' : ''}
                 `}>
                   <img
                     src={album.image}
@@ -247,24 +250,24 @@ export function Premium3DCarousel({
                   `}>
                     <Button
                       size="icon"
-                      className="w-16 h-16 rounded-full bg-white text-black hover:scale-110 transition-transform shadow-2xl"
+                      className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full bg-foreground text-background hover:scale-110 transition-transform shadow-2xl"
                       onClick={(e) => {
                         e.stopPropagation();
                         onPlayAlbum?.(album);
                       }}
                     >
-                      <Play className="w-7 h-7 ml-1" fill="currentColor" />
+                      <Play className="w-4 h-4 sm:w-5 sm:h-5 md:w-7 md:h-7 ml-0.5" fill="currentColor" />
                     </Button>
                   </div>
                   
                   {/* Title overlay on hover */}
                   <div className={`
-                    absolute bottom-0 left-0 right-0 p-4
+                    absolute bottom-0 left-0 right-0 p-2 sm:p-3 md:p-4
                     transition-all duration-300
                     ${isCurrent ? 'opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0' : 'opacity-0'}
                   `}>
-                    <p className="font-bold text-white truncate">{album.title}</p>
-                    <p className="text-sm text-white/60 truncate">{album.artist}</p>
+                    <p className="font-bold text-white text-sm sm:text-base truncate">{album.title}</p>
+                    <p className="text-xs sm:text-sm text-white/60 truncate">{album.artist}</p>
                   </div>
                 </div>
               </div>
@@ -273,17 +276,17 @@ export function Premium3DCarousel({
         </div>
       </div>
 
-      {/* Progress dots */}
-      <div className="flex justify-center gap-1.5 mt-8">
-        {albums.slice(0, Math.min(albums.length, 12)).map((_, index) => (
+      {/* Progress dots - scrollable on mobile */}
+      <div className="flex justify-center gap-1 sm:gap-1.5 mt-4 sm:mt-6 md:mt-8 px-4 overflow-x-auto scrollbar-hide">
+        {albums.slice(0, Math.min(albums.length, 10)).map((_, index) => (
           <button
             key={index}
             onClick={() => setCurrentIndex(index)}
             className={`
-              h-1 rounded-full transition-all duration-300
-              ${index === currentIndex % Math.min(albums.length, 12)
-                ? 'bg-white w-8'
-                : 'bg-white/20 w-1.5 hover:bg-white/40'
+              h-1 rounded-full transition-all duration-300 flex-shrink-0
+              ${index === currentIndex % Math.min(albums.length, 10)
+                ? 'bg-foreground w-6 sm:w-8'
+                : 'bg-muted-foreground/30 w-1.5 sm:w-2 hover:bg-muted-foreground/50'
               }
             `}
           />
