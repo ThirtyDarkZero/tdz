@@ -855,6 +855,7 @@ export default function Landing() {
             ))}
           </div>
 
+          {/* 3 Artist Studio Mockups */}
           <StudioPhoneMockups />
         </div>
       </section>
@@ -862,28 +863,28 @@ export default function Landing() {
       <SectionDivider label="AI Welcome" scrollTo="ai-section" />
 
       {/* ========== AI MUSIC SECTION ========== */}
-      <section id="ai-section" className="py-16 md:py-24 px-4 md:px-6 relative bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
+      <section id="ai-section" className="py-12 sm:py-16 md:py-24 px-4 md:px-6 relative bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
         <div className="max-w-5xl mx-auto text-center">
-          <Badge className="bg-accent/20 text-accent border-accent/30 mb-6 px-4 py-2">
-            <Layers className="w-4 h-4 mr-2" />
+          <Badge className="bg-accent/20 text-accent border-accent/30 mb-4 sm:mb-6 px-3 sm:px-4 py-1.5 sm:py-2">
+            <Layers className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
             AI MUSIC WELCOME
           </Badge>
-          <h2 className="text-3xl md:text-5xl font-display font-black mb-6">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-display font-black mb-4 sm:mb-6">
             <span className="bg-gradient-to-r from-accent via-primary to-secondary bg-clip-text text-transparent">
               AI ARTISTS EARN THE SAME
             </span>
           </h2>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-6 sm:mb-8">
             TDZ welcomes AI-generated music, AI-assisted creation, and human-led production equally. 
             If you can create it, you can distribute and monetize it on TDZ. 
             <span className="text-primary font-semibold"> Same $1 per stream. Same 100% download revenue.</span>
           </p>
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-4">
             {["AI-Generated Tracks", "AI-Assisted Production", "AI Vocals", "Hybrid Projects"].map((badge, idx) => (
               <Badge 
                 key={idx} 
                 variant="outline" 
-                className="px-4 py-2 hover:bg-primary/10 hover:border-primary/50 transition-all duration-300 cursor-default"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm hover:bg-primary/10 hover:border-primary/50 transition-all duration-300 cursor-default"
               >
                 {badge}
               </Badge>
@@ -903,49 +904,49 @@ export default function Landing() {
       />
 
       {/* ========== FOR FANS SECTION ========== */}
-      <section id="fans-section" className="py-16 md:py-32 px-4 md:px-6 relative overflow-hidden">
+      <section id="fans-section" className="py-12 sm:py-16 md:py-32 px-4 md:px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 to-transparent" />
         <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-12 md:mb-20">
-            <Badge className="bg-secondary/20 text-secondary border-secondary/30 mb-4 md:mb-6 text-sm md:text-base px-4 py-2">
-              <Headphones className="w-3 h-3 md:w-4 md:h-4 mr-2" />
+          <div className="text-center mb-8 sm:mb-12 md:mb-20">
+            <Badge className="bg-secondary/20 text-secondary border-secondary/30 mb-3 sm:mb-4 md:mb-6 text-xs sm:text-sm md:text-base px-3 sm:px-4 py-1.5 sm:py-2">
+              <Headphones className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
               FOR FANS
             </Badge>
             
-            <h2 className="text-3xl md:text-5xl lg:text-6xl font-display font-black mb-6">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-display font-black mb-4 sm:mb-6">
               <span className="bg-gradient-to-r from-secondary via-accent to-primary bg-clip-text text-transparent">
                 YOUR STREAMS MATTER HERE
               </span>
             </h2>
-            <p className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base md:text-xl text-muted-foreground max-w-2xl mx-auto">
               Every stream pays artists $1. Buy downloads at artist-set prices.
             </p>
           </div>
 
           {/* Interactive Fan Features Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-12 md:mb-20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-8 sm:mb-12 md:mb-20">
             {fanFeatures.map((feature, idx) => (
               <InteractiveFeatureCard key={idx} feature={feature} index={idx} variant="fan" />
             ))}
           </div>
 
           {/* Fan Subscription Plan */}
-          <div className="mb-12 md:mb-20">
-            <Card className="glass-card p-6 md:p-8 max-w-lg mx-auto relative overflow-hidden border-secondary/40 hover:border-secondary/60 transition-all hover:scale-[1.02] duration-500">
+          <div className="mb-8 sm:mb-12 md:mb-20">
+            <Card className="glass-card p-4 sm:p-6 md:p-8 max-w-lg mx-auto relative overflow-hidden border-secondary/40 hover:border-secondary/60 transition-all hover:scale-[1.02] duration-500">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-secondary/20 to-transparent rounded-full blur-2xl" />
               <div className="relative z-10 text-center">
-                <Badge className="bg-secondary/20 text-secondary border-secondary/30 mb-4">
+                <Badge className="bg-secondary/20 text-secondary border-secondary/30 mb-3 sm:mb-4">
                   <Headphones className="w-3 h-3 mr-1" />
                   FAN SUBSCRIPTION
                 </Badge>
-                <h3 className="text-2xl md:text-3xl font-display font-bold mb-2">Unlimited Streaming</h3>
-                <div className="text-4xl md:text-5xl font-black text-secondary mb-2">
-                  $12<span className="text-lg font-normal text-muted-foreground">/month</span>
+                <h3 className="text-xl sm:text-2xl md:text-3xl font-display font-bold mb-2">Unlimited Streaming</h3>
+                <div className="text-3xl sm:text-4xl md:text-5xl font-black text-secondary mb-2">
+                  $12<span className="text-base sm:text-lg font-normal text-muted-foreground">/month</span>
                 </div>
-                <p className="text-muted-foreground mb-6">
+                <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">
                   Stream unlimited, support artists directly
                 </p>
-                <div className="space-y-3 text-left mb-6">
+                <div className="space-y-2 sm:space-y-3 text-left mb-4 sm:mb-6">
                   {[
                     "Unlimited high-fidelity streaming",
                     "Every stream pays artists $1",
@@ -954,20 +955,20 @@ export default function Landing() {
                     "Follow artists & get exclusive updates",
                     "No ads, ever"
                   ].map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-sm group">
-                      <CheckCircle2 className="w-4 h-4 text-secondary flex-shrink-0 group-hover:scale-110 transition-transform" />
+                    <div key={idx} className="flex items-center gap-2 text-xs sm:text-sm group">
+                      <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-secondary flex-shrink-0 group-hover:scale-110 transition-transform" />
                       <span>{item}</span>
                     </div>
                   ))}
                 </div>
                 <Button 
                   onClick={() => navigate("/auth")} 
-                  className="w-full bg-gradient-to-r from-secondary to-accent text-background font-bold h-12 hover:scale-105 transition-transform"
+                  className="w-full bg-gradient-to-r from-secondary to-accent text-background font-bold h-10 sm:h-12 text-sm sm:text-base hover:scale-105 transition-transform"
                 >
                   Start Listening
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
-                <p className="text-xs text-muted-foreground mt-3">
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-2 sm:mt-3">
                   30-second previews free • Full access requires subscription
                 </p>
               </div>
@@ -979,9 +980,8 @@ export default function Landing() {
             <Landing3DCarousel tracks={latestReleases} />
           )}
 
+          {/* 3 Fan Experience Mockups - Only this section, no DiscoveryPhoneMockups */}
           <MusicPlayerPhoneMockups />
-          
-          <DiscoveryPhoneMockups />
         </div>
       </section>
 
