@@ -30,9 +30,12 @@ export interface Track {
     };
   };
   // YouTube support
-  source?: 'tdz' | 'youtube';
+  source?: 'tdz' | 'youtube' | 'spotify';
   youtubeId?: string;
   thumbnail?: string;
+  // Spotify preview URL fallback for audio playback
+  spotifyPreviewUrl?: string;
+  spotifyId?: string;
 }
 
 interface YouTubePlayerState {

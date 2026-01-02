@@ -54,6 +54,9 @@ interface UnifiedResult {
   theAudioDBImage?: string;
   fanart?: string;
   description?: string;
+  // Spotify playback fallback
+  spotifyPreviewUrl?: string;
+  spotifyId?: string;
 }
 
 interface AcousticData {
@@ -548,6 +551,9 @@ async function searchSpotify(query: string, type: string, limit: number): Promis
           source: 'spotify',
           sourceId: track.id,
           popularity: track.popularity,
+          // Include Spotify preview URL for audio fallback
+          spotifyPreviewUrl: track.preview_url || undefined,
+          spotifyId: track.id,
           metadata: {
             duration: track.duration_ms,
             previewUrl: track.preview_url,

@@ -30,6 +30,15 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const squareAccessToken = Deno.env.get('SQUARE_ACCESS_TOKEN')!;
     const squareLocationId = Deno.env.get('SQUARE_LOCATION_ID')!;
+    const squareAppId = Deno.env.get('SQUARE_APPLICATION_ID') || '';
+    
+    // Determine if production based on app ID prefix
+    const isProduction = squareAppId.startsWith('sq0idp');
+    const squareApiUrl = isProduction 
+      ? 'https://connect.squareup.com/v2/payments'
+      : 'https://connect.squareupsandbox.com/v2/payments';
+    
+    console.log(`Square environment: ${isProduction ? 'PRODUCTION' : 'SANDBOX'}`);
 
     // Get auth user
     const authHeader = req.headers.get('Authorization');
@@ -71,12 +80,14 @@ serve(async (req) => {
 
     console.log(`Processing ${plan} subscription for user ${user.id}`);
 
-    // Create payment with Square API
+    // Create payment with Square API - use dynamic URL based on environment
     const idempotencyKey = crypto.randomUUID();
-    const squareResponse = await fetch('https://connect.squareup.com/v2/payments', {
+    console.log(`Calling Square API at: ${squareApiUrl}`);
+    
+    const squareResponse = await fetch(squareApiUrl, {
       method: 'POST',
       headers: {
-        'Square-Version': '2024-01-18',
+        'Square-Version': '2024-11-20',
         'Authorization': `Bearer ${squareAccessToken}`,
         'Content-Type': 'application/json',
       },
