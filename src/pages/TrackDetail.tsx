@@ -260,15 +260,25 @@ export default function TrackDetail() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Minimal Top Bar */}
+      {/* Minimal Top Bar with Back Button */}
       <div className="fixed top-0 left-0 right-0 z-50 glass-card border-b border-border/50">
         <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
-          <button 
-            onClick={() => navigate("/discover")}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-          >
-            <img src={tdzLogo} alt="TDZ" className="h-8 w-auto" style={{ mixBlendMode: 'screen' }} />
-          </button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="h-9 w-9 rounded-full"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <button 
+              onClick={() => navigate("/discover")}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <img src={tdzLogo} alt="TDZ" className="h-8 w-auto" style={{ mixBlendMode: 'screen' }} />
+            </button>
+          </div>
           <div className="text-sm text-muted-foreground hidden sm:block">
             Press{" "}
             <kbd className="px-2 py-1 text-xs bg-muted rounded">⌘K</kbd>
