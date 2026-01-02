@@ -306,51 +306,51 @@ export const ReleaseManager = () => {
   ];
 
   return (
-    <div className="space-y-6">
-      <Card className="glass-card p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Disc3 className="w-6 h-6 text-primary" />
+    <div className="space-y-4 sm:space-y-6">
+      <Card className="glass-card p-4 sm:p-6">
+        <div className="flex items-center gap-3 mb-4 sm:mb-6">
+          <Disc3 className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
           <div>
-            <h2 className="text-2xl font-display font-bold">Release Manager</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="text-xl sm:text-2xl font-display font-bold">Release Manager</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Publish your music directly to TDZ Streaming
             </p>
           </div>
         </div>
 
         {/* TDZ Platform Badge */}
-        <Card className="p-4 mb-6 bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 border-primary/30">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-              <Zap className="w-6 h-6 text-white" />
+        <Card className="p-3 sm:p-4 mb-4 sm:mb-6 bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 border-primary/30">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
+              <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
-            <div className="flex-1">
-              <h3 className="font-bold">TDZ Streaming Platform</h3>
-              <p className="text-sm text-muted-foreground">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-bold text-sm sm:text-base">TDZ Streaming Platform</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
                 Your music goes live instantly to all TDZ listeners worldwide
               </p>
             </div>
-            <Badge className="bg-primary/20 text-primary border-primary/30">
+            <Badge className="bg-primary/20 text-primary border-primary/30 text-xs whitespace-nowrap">
               100% Royalties
             </Badge>
           </div>
         </Card>
 
         {/* Release Type Tabs */}
-        <Tabs value={releaseType} onValueChange={(v) => setReleaseType(v as "track" | "project")} className="mb-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="track" className="gap-2">
-              <Music className="w-4 h-4" />
+        <Tabs value={releaseType} onValueChange={(v) => setReleaseType(v as "track" | "project")} className="mb-4 sm:mb-6">
+          <TabsList className="grid w-full grid-cols-2 h-auto">
+            <TabsTrigger value="track" className="gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-2.5">
+              <Music className="w-3 h-3 sm:w-4 sm:h-4" />
               Single Track
             </TabsTrigger>
-            <TabsTrigger value="project" className="gap-2">
-              <Album className="w-4 h-4" />
+            <TabsTrigger value="project" className="gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-2.5">
+              <Album className="w-3 h-3 sm:w-4 sm:h-4" />
               Album / EP
             </TabsTrigger>
           </TabsList>
         </Tabs>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Left Column - Selection */}
           <div className="space-y-4">
             {releaseType === "track" ? (

@@ -223,11 +223,10 @@ export function Premium3DCarousel({
                   }
                 }}
               >
-                {/* Album cover */}
+                {/* Album cover - removed green outline */}
                 <div className={`
                   relative w-full h-full rounded-lg sm:rounded-xl overflow-hidden shadow-xl sm:shadow-2xl group
                   transition-all duration-500
-                  ${isCurrent ? 'ring-1 ring-border/50' : ''}
                 `}>
                   <img
                     src={album.image}

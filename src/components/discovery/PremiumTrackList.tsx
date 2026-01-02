@@ -51,28 +51,28 @@ export function PremiumTrackList({
   }
 
   return (
-    <section className="relative py-16 bg-[#030303]">
+    <section className="relative py-8 sm:py-16 bg-[#030303]">
       {/* Header */}
-      <div className="max-w-7xl mx-auto px-6 md:px-12 mb-8">
-        <div className="flex items-baseline gap-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 mb-6 sm:mb-8">
+        <div className="flex items-baseline gap-4 sm:gap-10">
           {typeof sectionNumber === "number" && sectionNumber > 0 && (
-            <span className="text-white/20 text-5xl md:text-6xl font-black font-display">
+            <span className="hidden sm:block text-white/20 text-4xl sm:text-5xl md:text-6xl font-black font-display">
               {sectionNumber}
             </span>
           )}
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white font-display tracking-tight">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white font-display tracking-tight">
               {title}
             </h2>
-            <p className="text-white/40 text-sm mt-1">{subtitle || `${tracks.length} tracks available`}</p>
+            <p className="text-white/40 text-xs sm:text-sm mt-1">{subtitle || `${tracks.length} tracks available`}</p>
           </div>
         </div>
       </div>
 
       {/* Track list */}
-      <div className="max-w-7xl mx-auto px-6 md:px-12">
-        {/* Column headers */}
-        <div className="grid grid-cols-[40px_1fr_1fr_100px_60px] gap-4 px-4 py-3 text-white/40 text-xs uppercase tracking-wider border-b border-white/5 mb-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12">
+        {/* Column headers - simplified for mobile */}
+        <div className="hidden sm:grid grid-cols-[40px_1fr_1fr_100px_60px] gap-4 px-4 py-3 text-white/40 text-xs uppercase tracking-wider border-b border-white/5 mb-2">
           <div>#</div>
           <div>Title</div>
           <div className="hidden md:block">Album</div>
@@ -92,7 +92,7 @@ export function PremiumTrackList({
               <div
                 key={track.id}
                 className={`
-                  group grid grid-cols-[40px_1fr_1fr_100px_60px] gap-4 items-center px-4 py-3 rounded-lg
+                  group flex sm:grid sm:grid-cols-[40px_1fr_1fr_100px_60px] gap-3 sm:gap-4 items-center px-3 sm:px-4 py-3 rounded-lg
                   transition-all duration-200 cursor-pointer
                   ${isPlaying 
                     ? 'bg-white/10 text-white' 
@@ -102,7 +102,7 @@ export function PremiumTrackList({
                 onClick={() => onPlayTrack(track)}
               >
                 {/* Number / Play icon */}
-                <div className="relative">
+                <div className="relative flex-shrink-0 w-8 sm:w-auto">
                   <span className={`
                     text-sm font-medium transition-opacity
                     ${isPlaying ? 'text-cyan-400' : ''}
@@ -136,14 +136,14 @@ export function PremiumTrackList({
                 </div>
 
                 {/* Title & Artist */}
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className={`
-                    font-medium truncate transition-colors
+                    font-medium text-sm sm:text-base transition-colors line-clamp-1
                     ${isPlaying ? 'text-cyan-400' : ''}
                   `}>
                     {track.title}
                   </p>
-                  <p className="text-sm text-white/40 truncate">{track.artist_name}</p>
+                  <p className="text-xs sm:text-sm text-white/40 line-clamp-1">{track.artist_name}</p>
                 </div>
 
                 {/* Album */}

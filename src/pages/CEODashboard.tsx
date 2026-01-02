@@ -6,7 +6,7 @@ import {
   Users, Music, TrendingUp, Activity, Database, HardDrive,
   Play, Heart, Download, AlertCircle, CheckCircle, Clock, Sparkles,
   DollarSign, PiggyBank, CreditCard, ArrowUpRight, ArrowDownRight, Bot, Workflow,
-  MessageCircle, Zap, Crown
+  MessageCircle, Zap, Crown, Menu
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,6 +22,7 @@ import { CEOArtistMessaging } from "@/components/CEOArtistMessaging";
 import { SystemDiagnosticsPanel } from "@/components/SystemDiagnosticsPanel";
 import { AdminSidebar, CEORevenueControl } from "@/components/admin";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 type DashboardMetrics = {
   totalUsers: number;
@@ -321,20 +322,59 @@ export default function CEODashboard() {
     );
   }
 
+  // Mobile sidebar toggle
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 relative overflow-hidden">
-      {/* Admin Sidebar */}
-      <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      {/* Admin Sidebar - hidden on mobile when closed */}
+      <div className={cn(
+        "fixed inset-0 z-40 transition-opacity md:hidden",
+        mobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+      )}>
+        <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
+      </div>
+      <div className={cn(
+        "md:block",
+        mobileMenuOpen ? "block" : "hidden md:block"
+      )}>
+        <AdminSidebar activeTab={activeTab} onTabChange={(tab) => {
+          setActiveTab(tab);
+          setMobileMenuOpen(false);
+        }} />
+      </div>
+      
+      {/* Mobile Header */}
+      <header className="md:hidden fixed top-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-md border-b border-border/50 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="h-9 w-9"
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+          <div className="flex items-center gap-2">
+            <Crown className="w-5 h-5 text-amber-500" />
+            <span className="font-bold text-sm">CEO Dashboard</span>
+          </div>
+          <Badge variant="outline" className="gap-1 border-green-500/50 text-green-500 bg-green-500/10 text-xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            Online
+          </Badge>
+        </div>
+      </header>
       
       {/* Subtle Background effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none ml-[72px]">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none md:ml-[72px]">
         <div className="absolute -top-40 -right-40 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="ml-[72px] hover:ml-[220px] transition-all duration-300 p-6 relative z-10">
-        {/* PHP Admin Header Box */}
-        <div className="mb-6 rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden">
+      <div className="pt-16 md:pt-0 md:ml-[72px] md:hover:ml-[220px] transition-all duration-300 p-4 md:p-6 relative z-10">
+        {/* PHP Admin Header Box - Hidden on mobile (shown in header instead) */}
+        <div className="hidden md:block mb-6 rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-border/50 bg-amber-500/10 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="relative">

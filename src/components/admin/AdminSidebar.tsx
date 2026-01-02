@@ -41,20 +41,35 @@ const adminNavItems = [
 
 export const AdminSidebar = ({ activeTab, onTabChange }: AdminSidebarProps) => {
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true); // Default collapsed for mobile
   const [isHovering, setIsHovering] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  const shouldExpand = !collapsed || isHovering;
+  // Detect mobile and collapse sidebar
+  useState(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth < 768) {
+        setCollapsed(true);
+      }
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  });
+
+  const shouldExpand = isMobile ? !collapsed : (!collapsed || isHovering);
 
   return (
     <TooltipProvider>
       <div
         className={cn(
           "fixed left-0 top-0 h-screen bg-card/95 backdrop-blur-xl border-r border-border/50 z-50 flex flex-col transition-all duration-300",
-          shouldExpand ? "w-[220px]" : "w-[72px]"
+          shouldExpand ? "w-[220px]" : "w-[72px]",
+          isMobile && collapsed && "w-0 border-0 overflow-hidden"
         )}
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
+        onMouseEnter={() => !isMobile && setIsHovering(true)}
+        onMouseLeave={() => !isMobile && setIsHovering(false)}
       >
         {/* Header */}
         <div className="p-4 border-b border-border/50">

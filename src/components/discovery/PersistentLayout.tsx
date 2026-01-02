@@ -176,9 +176,9 @@ export function PersistentLayout({
         </div>
       </aside>
 
-      {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
-        <div className="flex items-center justify-between h-14 px-4">
+      {/* Mobile Header - Fixed sticky */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/50">
+        <div className="flex items-center justify-between h-14 px-4 max-w-screen-sm mx-auto">
           <Button
             variant="ghost"
             size="icon"
@@ -207,7 +207,7 @@ export function PersistentLayout({
 
         {/* Mobile Search Bar */}
         {showSearch && (
-          <div className="px-4 pb-3">
+          <div className="px-4 pb-3 max-w-screen-sm mx-auto">
             <Input
               type="search"
               placeholder="Search tracks, artists..."
