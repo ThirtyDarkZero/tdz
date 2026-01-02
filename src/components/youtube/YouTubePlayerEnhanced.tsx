@@ -42,6 +42,7 @@ interface YouTubePlayerEnhancedProps {
   onTrackEnd: () => void;
   isPlaying: boolean;
   onPlayingChange: (playing: boolean) => void;
+  onError?: () => void;
 }
 
 export function YouTubePlayerEnhanced({ 
@@ -51,7 +52,8 @@ export function YouTubePlayerEnhanced({
   onPrevious, 
   onTrackEnd,
   isPlaying,
-  onPlayingChange
+  onPlayingChange,
+  onError
 }: YouTubePlayerEnhancedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
@@ -241,12 +243,15 @@ export function YouTubePlayerEnhanced({
             onError: (event: any) => {
               console.error('YouTube player error:', event.data);
               initializingRef.current = false;
+              // Notify parent of error for fallback handling
+              onError?.();
             },
           },
         });
       } catch (e) {
         console.error('Failed to create YouTube player:', e);
         initializingRef.current = false;
+        onError?.();
       }
     };
     

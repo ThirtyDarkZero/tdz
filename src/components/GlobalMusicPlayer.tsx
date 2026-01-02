@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { usePlayer, Track as PlayerTrack } from "@/contexts/PlayerContext";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { YouTubePlayerEnhanced } from "@/components/youtube/YouTubePlayerEnhanced";
+import { SpotifyPreviewPlayer } from "@/components/SpotifyPreviewPlayer";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -17,9 +18,38 @@ export function GlobalMusicPlayer() {
   const { hasFeature } = useSubscription(user);
   const { currentTrack, queue, nextTrack, previousTrack, setIsPlaying, isPlaying, playTrack, addToQueue } = usePlayer();
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [youtubeErrorCount, setYoutubeErrorCount] = useState(0);
+  const [useSpotifyFallback, setUseSpotifyFallback] = useState(false);
+  const lastTrackIdRef = useRef<string>('');
   
   const isArtist = role === 'artist' || role === 'verified_artist' || role === 'manager';
   const hasUnlimitedStreaming = hasFeature('unlimitedStreaming') || isArtist;
+  
+  // Reset fallback state when track changes
+  useEffect(() => {
+    if (currentTrack?.id && currentTrack.id !== lastTrackIdRef.current) {
+      lastTrackIdRef.current = currentTrack.id;
+      setUseSpotifyFallback(false);
+      setYoutubeErrorCount(0);
+    }
+  }, [currentTrack?.id]);
+  
+  // Handle YouTube errors - fallback to Spotify preview if available
+  const handleYouTubeError = useCallback(() => {
+    setYoutubeErrorCount(prev => {
+      const newCount = prev + 1;
+      if (newCount >= 2 && currentTrack?.spotifyPreviewUrl) {
+        console.log('[GlobalMusicPlayer] YouTube failed, falling back to Spotify preview');
+        setUseSpotifyFallback(true);
+        toast.info("Using Spotify preview for this track");
+      } else if (newCount >= 2) {
+        // No Spotify fallback available - try next track
+        console.log('[GlobalMusicPlayer] YouTube failed, no Spotify fallback, skipping');
+        nextTrack();
+      }
+      return newCount;
+    });
+  }, [currentTrack?.spotifyPreviewUrl, nextTrack]);
 
   // Auto-continue with same artist when queue ends
   const loadMoreFromArtist = useCallback(async (artistName: string) => {
@@ -99,6 +129,32 @@ export function GlobalMusicPlayer() {
 
   // Check if this is a YouTube track
   const isYouTubeTrack = currentTrack.source === 'youtube' || currentTrack.youtubeId;
+  const isSpotifyTrack = currentTrack.source === 'spotify' || useSpotifyFallback;
+
+  // Use Spotify preview player if we're in fallback mode and have a preview URL
+  if (useSpotifyFallback && currentTrack.spotifyPreviewUrl) {
+    return (
+      <>
+        <div className="fixed bottom-0 left-0 right-0 z-50">
+          <div className="glass-ultra border-t border-white/5 shadow-3d-lg">
+            <SpotifyPreviewPlayer
+              track={currentTrack}
+              queue={queue}
+              onNext={nextTrack}
+              onPrevious={previousTrack}
+              onTrackEnd={handleTrackEnd}
+              isPlaying={isPlaying}
+              onPlayingChange={setIsPlaying}
+            />
+          </div>
+        </div>
+        <SubscriptionModal
+          open={showSubscriptionModal}
+          onOpenChange={setShowSubscriptionModal}
+        />
+      </>
+    );
+  }
 
   if (isYouTubeTrack) {
     return (
@@ -113,6 +169,7 @@ export function GlobalMusicPlayer() {
               onTrackEnd={handleTrackEnd}
               isPlaying={isPlaying}
               onPlayingChange={setIsPlaying}
+              onError={handleYouTubeError}
             />
           </div>
         </div>
