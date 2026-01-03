@@ -64,6 +64,7 @@ export default function CEODashboard() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("executive");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Check if user is CEO - only after auth has loaded
   const isCEO = user?.email === 'info@thirtydarkzero.com';
@@ -322,8 +323,8 @@ export default function CEODashboard() {
     );
   }
 
-  // Mobile sidebar toggle
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 relative overflow-hidden">
