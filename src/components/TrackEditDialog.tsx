@@ -29,6 +29,7 @@ interface Track {
   genre?: string;
   lyrics?: string;
   ai_tags?: Record<string, unknown>;
+  download_price?: number | null;
 }
 
 interface TrackEditDialogProps {
@@ -73,6 +74,9 @@ export const TrackEditDialog = ({ track, open, onOpenChange, onSuccess }: TrackE
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [newContributor, setNewContributor] = useState({ name: "", role: "", split: 0 });
 
+  // Pricing
+  const [downloadPrice, setDownloadPrice] = useState<string>("");
+
   // Update form fields when track changes
   useEffect(() => {
     if (track) {
@@ -80,6 +84,7 @@ export const TrackEditDialog = ({ track, open, onOpenChange, onSuccess }: TrackE
       setArtistName(track.artist_name);
       setGenre(track.genre || "");
       setLyrics(track.lyrics || "");
+      setDownloadPrice(track.download_price ? track.download_price.toString() : "");
 
       const metadata = getMetadata(track.ai_tags);
       setIsrc(String(metadata.isrc || ""));
@@ -145,6 +150,8 @@ export const TrackEditDialog = ({ track, open, onOpenChange, onSuccess }: TrackE
         }
       };
 
+      const priceValue = downloadPrice ? parseFloat(downloadPrice) : null;
+      
       const { error } = await supabase
         .from('tracks')
         .update({
@@ -152,7 +159,8 @@ export const TrackEditDialog = ({ track, open, onOpenChange, onSuccess }: TrackE
           artist_name: artistName.slice(0, 100),
           genre: genre || null,
           lyrics: lyrics || null,
-          ai_tags: updatedAiTags
+          ai_tags: updatedAiTags,
+          download_price: priceValue && priceValue > 0 ? priceValue : null
         })
         .eq('id', track.id);
 
@@ -298,6 +306,24 @@ export const TrackEditDialog = ({ track, open, onOpenChange, onSuccess }: TrackE
                   placeholder="Tell listeners about this track..."
                   rows={3}
                 />
+              </div>
+
+              <Separator />
+
+              <div>
+                <Label htmlFor="edit-download-price">Download Price (USD)</Label>
+                <Input
+                  id="edit-download-price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={downloadPrice}
+                  onChange={(e) => setDownloadPrice(e.target.value)}
+                  placeholder="0.00 = Free download"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Leave empty or set to 0 for free downloads. Set a price to require purchase.
+                </p>
               </div>
             </TabsContent>
 
