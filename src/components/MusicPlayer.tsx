@@ -45,6 +45,8 @@ interface Track {
   album_cover_bucket?: string;
   motion_cover_path?: string;
   motion_cover_bucket?: string;
+  download_price?: number | null;
+  user_id?: string;
   album?: {
     title: string;
     cover_art_path?: string;
@@ -458,6 +460,46 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
   const downloadTrack = async () => {
     if (!currentTrack) return;
     
+    // Check if track has a download price - require purchase
+    if (currentTrack.download_price && currentTrack.download_price > 0) {
+      // Check if user already purchased this track
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({ 
+          title: "Sign in Required", 
+          description: "Please sign in to purchase downloads.",
+          variant: "destructive" 
+        });
+        return;
+      }
+
+      const { data: existingPurchase } = await supabase
+        .from('download_purchases')
+        .select('id')
+        .eq('buyer_id', user.id)
+        .eq('track_id', currentTrack.id)
+        .maybeSingle();
+
+      if (existingPurchase) {
+        // Already purchased - allow download
+        const audioUrl = supabase.storage.from('track-files').getPublicUrl(currentTrack.file_path).data.publicUrl;
+        const link = document.createElement('a');
+        link.href = audioUrl;
+        link.download = `${currentTrack.artist_name} - ${currentTrack.title}.mp3`;
+        link.click();
+        toast({ title: "Download Started", description: currentTrack.title });
+        return;
+      }
+
+      // Needs purchase - show purchase dialog or redirect
+      toast({ 
+        title: "Purchase Required", 
+        description: `This track costs $${currentTrack.download_price.toFixed(2)} to download. Purchase coming soon.`,
+      });
+      return;
+    }
+    
+    // Free download (no price set or price is 0/null)
     const audioUrl = supabase.storage.from('track-files').getPublicUrl(currentTrack.file_path).data.publicUrl;
     const link = document.createElement('a');
     link.href = audioUrl;
