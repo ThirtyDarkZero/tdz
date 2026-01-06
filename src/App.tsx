@@ -32,6 +32,7 @@ import Privacy from "./pages/Privacy";
 import Support from "./pages/Support";
 import Pricing from "./pages/Pricing";
 import Checkout from "./pages/Checkout";
+import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import SquareOAuthCallback from "./pages/SquareOAuthCallback";
 import Browse from "./pages/Browse";
 import NotFound from "./pages/NotFound";
@@ -85,6 +86,7 @@ const App = () => (
               <Route path="/support" element={<Support />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/subscription-success" element={<SubscriptionSuccess />} />
               <Route path="/square-callback" element={<SquareOAuthCallback />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

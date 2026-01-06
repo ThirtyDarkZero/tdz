@@ -8,11 +8,20 @@ export const SQUARE_CHECKOUT_URLS = {
 
 export type CheckoutPlan = keyof typeof SQUARE_CHECKOUT_URLS;
 
+export function getAppBaseUrl(): string {
+  // Use current origin for redirect
+  return window.location.origin;
+}
+
 export function openSquareCheckout(plan: CheckoutPlan) {
-  const url = SQUARE_CHECKOUT_URLS[plan];
-  if (url) {
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
+  const baseUrl = SQUARE_CHECKOUT_URLS[plan];
+  const redirectUrl = `${getAppBaseUrl()}/subscription-success?plan=${plan}`;
+  
+  // Square checkout supports redirect_url parameter
+  const checkoutUrl = `${baseUrl}?redirect_url=${encodeURIComponent(redirectUrl)}`;
+  
+  // Open in same window for better redirect experience
+  window.location.href = checkoutUrl;
 }
 
 export function isCheckoutPlan(plan: string): plan is CheckoutPlan {
