@@ -6,9 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Crown, Music, Sparkles, Star, Zap, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription, SubscriptionPlan } from "@/hooks/useSubscription";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
+import { openSquareCheckout, isCheckoutPlan } from "@/lib/subscription-checkout";
 
 interface PlanConfig {
   name: string;
@@ -137,8 +137,10 @@ export default function Pricing() {
       return;
     }
 
-    // For paid plans, redirect to checkout
-    navigate(`/checkout?plan=${plan.planType}`);
+    // For paid plans, open Square hosted checkout
+    if (isCheckoutPlan(plan.planType)) {
+      openSquareCheckout(plan.planType);
+    }
   };
 
   const displayPlans = selectedAudience === 'artist' ? ARTIST_PLANS : [FAN_PLAN];
