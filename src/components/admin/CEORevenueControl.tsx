@@ -71,9 +71,9 @@ export function CEORevenueControl() {
       
       const fanSubs = revenue?.filter(r => r.revenue_type === "fan_subscription").reduce((sum, r) => sum + (r.amount || 0), 0) || 0;
       const artistSubs = revenue?.filter(r => r.revenue_type === "artist_subscription").reduce((sum, r) => sum + (r.amount || 0), 0) || 0;
-      const downloads = revenue?.filter(r => r.revenue_type === "download_fee").reduce((sum, r) => sum + (r.amount || 0), 0) || 0;
-      const ceoFunds = revenue?.filter(r => r.revenue_type === "ceo_injection").reduce((sum, r) => sum + (r.amount || 0), 0) || 0;
-      const totalRevenue = fanSubs + artistSubs + downloads + ceoFunds;
+      const downloads = revenue?.filter(r => r.revenue_type === "download_revenue" || r.revenue_type === "downloads").reduce((sum, r) => sum + (r.amount || 0), 0) || 0;
+      const manualDeposits = revenue?.filter(r => r.revenue_type === "manual_deposit").reduce((sum, r) => sum + (r.amount || 0), 0) || 0;
+      const totalRevenue = fanSubs + artistSubs + downloads + manualDeposits;
 
       // Load artist earnings
       const { data: earnings } = await supabase
@@ -159,8 +159,9 @@ export function CEORevenueControl() {
         .from("platform_revenue")
         .insert({
           amount,
-          revenue_type: "ceo_injection",
+          revenue_type: "manual_deposit",
           description: `CEO fund injection - $${amount.toFixed(2)}`,
+          period_date: new Date().toISOString().split('T')[0],
         });
 
       if (error) throw error;
