@@ -581,13 +581,14 @@ export const ReleaseManager = () => {
                     {releaseDate ? format(releaseDate, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+              <PopoverContent className="w-auto p-0 pointer-events-auto z-50" align="start" sideOffset={4}>
                   <Calendar
                     mode="single"
                     selected={releaseDate}
                     onSelect={setReleaseDate}
                     disabled={(date) => date < new Date()}
                     initialFocus
+                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
