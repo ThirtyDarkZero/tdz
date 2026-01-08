@@ -328,16 +328,18 @@ export default function CEODashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 relative overflow-hidden">
-      {/* Admin Sidebar - hidden on mobile when closed */}
+      {/* Admin Sidebar - Always visible on desktop, overlay on mobile */}
       <div className={cn(
         "fixed inset-0 z-40 transition-opacity md:hidden",
         mobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       )}>
         <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
       </div>
+      
+      {/* Sidebar Container */}
       <div className={cn(
-        "md:block",
-        mobileMenuOpen ? "block" : "hidden md:block"
+        "fixed top-0 left-0 h-full z-50 transition-transform duration-300",
+        mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}>
         <AdminSidebar activeTab={activeTab} onTabChange={(tab) => {
           setActiveTab(tab);
@@ -373,7 +375,7 @@ export default function CEODashboard() {
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="pt-16 md:pt-0 md:ml-[72px] md:hover:ml-[220px] transition-all duration-300 p-4 md:p-6 relative z-10">
+      <div className="pt-16 md:pt-0 md:ml-[72px] transition-all duration-300 p-4 md:p-6 relative z-10">
         {/* PHP Admin Header Box - Hidden on mobile (shown in header instead) */}
         <div className="hidden md:block mb-6 rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-border/50 bg-amber-500/10 flex items-center justify-between">

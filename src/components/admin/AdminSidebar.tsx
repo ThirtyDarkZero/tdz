@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -46,17 +46,18 @@ export const AdminSidebar = ({ activeTab, onTabChange }: AdminSidebarProps) => {
   const [isMobile, setIsMobile] = useState(false);
 
   // Detect mobile and collapse sidebar
-  useState(() => {
+  useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth < 768) {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
         setCollapsed(true);
       }
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  });
+  }, []);
 
   const shouldExpand = isMobile ? !collapsed : (!collapsed || isHovering);
 
@@ -64,9 +65,8 @@ export const AdminSidebar = ({ activeTab, onTabChange }: AdminSidebarProps) => {
     <TooltipProvider>
       <div
         className={cn(
-          "fixed left-0 top-0 h-screen bg-card/95 backdrop-blur-xl border-r border-border/50 z-50 flex flex-col transition-all duration-300",
-          shouldExpand ? "w-[220px]" : "w-[72px]",
-          isMobile && collapsed && "w-0 border-0 overflow-hidden"
+          "h-screen bg-card/95 backdrop-blur-xl border-r border-border/50 flex flex-col transition-all duration-300",
+          shouldExpand ? "w-[220px]" : "w-[72px]"
         )}
         onMouseEnter={() => !isMobile && setIsHovering(true)}
         onMouseLeave={() => !isMobile && setIsHovering(false)}

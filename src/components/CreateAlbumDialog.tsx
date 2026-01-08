@@ -173,13 +173,14 @@ export const CreateAlbumDialog = ({ selectedTracks, open, onOpenChange, onSucces
                   {releaseDate ? format(releaseDate, "PPP") : "Pick a date"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0 pointer-events-auto z-50" align="start" sideOffset={4}>
                 <Calendar
                   mode="single"
                   selected={releaseDate}
                   onSelect={setReleaseDate}
                   disabled={(date) => date < new Date()}
                   initialFocus
+                  className="pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>

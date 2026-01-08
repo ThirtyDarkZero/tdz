@@ -200,7 +200,7 @@ export const CanvasManager = () => {
                     </Button>
                     <input
                       type="file"
-                      accept="video/*"
+                      accept="video/*,image/*,.heic,.heif"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) handleCanvasUpload(track.id, file);
