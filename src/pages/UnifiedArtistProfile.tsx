@@ -10,7 +10,7 @@ import {
   Play, Heart, UserPlus, UserCheck, Share2, 
   Music, Image as ImageIcon, ArrowLeft, Home, 
   Youtube, Crown, Clock, Disc, MoreHorizontal,
-  Loader2
+  Loader2, Camera
 } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { YouTubeVideo } from "@/hooks/useYouTubePlayer";
@@ -29,6 +29,13 @@ interface UnifiedTrack {
   youtubeData?: YouTubeVideo;
 }
 
+interface GalleryPhoto {
+  id: string;
+  image_path: string;
+  caption: string | null;
+  imageUrl: string;
+}
+
 export default function UnifiedArtistProfile() {
   const { artistId, source } = useParams<{ artistId: string; source?: string }>();
   const navigate = useNavigate();
@@ -36,6 +43,7 @@ export default function UnifiedArtistProfile() {
   
   const [artist, setArtist] = useState<any>(null);
   const [tracks, setTracks] = useState<UnifiedTrack[]>([]);
+  const [gallery, setGallery] = useState<GalleryPhoto[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -135,6 +143,23 @@ export default function UnifiedArtistProfile() {
           source: 'tdz',
         }));
         setTracks(mappedTracks);
+      }
+
+      // Load gallery photos
+      const { data: galleryData } = await supabase
+        .from("artist_gallery")
+        .select("*")
+        .eq("artist_id", artistId)
+        .order("display_order", { ascending: true });
+
+      if (galleryData) {
+        const galleryWithUrls: GalleryPhoto[] = galleryData.map(item => ({
+          id: item.id,
+          image_path: item.image_path,
+          caption: item.caption,
+          imageUrl: supabase.storage.from("artist-gallery").getPublicUrl(item.image_path).data.publicUrl
+        }));
+        setGallery(galleryWithUrls);
       }
     } catch (error) {
       console.error('Error loading TDZ artist:', error);
@@ -530,6 +555,35 @@ export default function UnifiedArtistProfile() {
           <div className="text-center py-12 text-muted-foreground">
             <Music className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>No tracks available</p>
+          </div>
+        )}
+
+        {/* Photo Gallery Section - Only for TDZ artists */}
+        {artistSource === 'tdz' && gallery.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-2xl md:text-3xl font-black mb-6 flex items-center gap-2">
+              <Camera className="w-6 h-6" />
+              Photos
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {gallery.map((photo) => (
+                <div
+                  key={photo.id}
+                  className="group relative aspect-square rounded-xl overflow-hidden cursor-pointer"
+                >
+                  <img
+                    src={photo.imageUrl}
+                    alt={photo.caption || "Gallery photo"}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                  />
+                  {photo.caption && (
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <p className="text-white text-sm line-clamp-2">{photo.caption}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
