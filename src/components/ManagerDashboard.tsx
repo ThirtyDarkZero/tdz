@@ -438,7 +438,7 @@ export const ManagerDashboard = () => {
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*"
+                      accept="image/*,.heic,.heif"
                       className="hidden"
                       onChange={handleProfileImageChange}
                     />
@@ -681,7 +681,7 @@ export const ManagerDashboard = () => {
                               <input
                                 ref={coverInputRef}
                                 type="file"
-                                accept="image/*"
+                                accept="image/*,.heic,.heif"
                                 className="hidden"
                                 onChange={handleCoverImageChange}
                               />

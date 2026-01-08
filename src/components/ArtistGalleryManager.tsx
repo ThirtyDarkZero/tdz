@@ -157,7 +157,7 @@ export const ArtistGalleryManager = () => {
               </Button>
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,.heic,.heif"
                 onChange={handleGalleryUpload}
                 className="hidden"
                 disabled={uploadingGallery}
