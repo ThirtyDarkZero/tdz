@@ -452,7 +452,7 @@ export const TrackMetadataForm = ({
                       {metadata.originalReleaseDate ? format(metadata.originalReleaseDate, "PPP") : "Select date"}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
                       selected={metadata.originalReleaseDate || undefined}
@@ -471,7 +471,7 @@ export const TrackMetadataForm = ({
                       {metadata.preorderDate ? format(metadata.preorderDate, "PPP") : "Select date"}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
                       selected={metadata.preorderDate || undefined}

@@ -134,7 +134,7 @@ export const UploadPanel = () => {
           <input
             ref={characterInputRef}
             type="file"
-            accept="image/jpeg,image/jpg,image/png,image/webp,video/mp4,video/quicktime"
+            accept="image/*,.heic,.heif,video/mp4,video/quicktime"
             onChange={handleCharacterUpload}
             className="hidden"
           />

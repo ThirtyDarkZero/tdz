@@ -415,7 +415,7 @@ export default function ListenerProfile() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/*,.heic,.heif"
                     className="hidden"
                     onChange={handlePhotoUpload}
                   />

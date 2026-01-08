@@ -527,7 +527,7 @@ export function PlaylistManager({ userId, onPlaylistSelect, onRefresh }: Playlis
               <input
                 ref={coverInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,.heic,.heif"
                 onChange={handleCoverSelect}
                 className="hidden"
               />

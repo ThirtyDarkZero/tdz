@@ -307,7 +307,7 @@ export const ArtistProfileEditor = () => {
                 </Button>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,.heic,.heif"
                   onChange={handleBannerImageChange}
                   className="hidden"
                 />
@@ -337,7 +337,7 @@ export const ArtistProfileEditor = () => {
                 </Button>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,.heic,.heif"
                   onChange={handleProfileImageChange}
                   className="hidden"
                 />

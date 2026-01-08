@@ -401,7 +401,7 @@ export const MusicUploadPro = ({ onSuccess }: { onSuccess?: () => void }) => {
                 <input
                   id="artwork-file"
                   type="file"
-                  accept="image/jpeg,image/png,video/mp4,video/webm,video/quicktime,image/gif"
+                  accept="image/*,.heic,.heif,video/mp4,video/webm,video/quicktime,image/gif"
                   onChange={handleArtworkChange}
                   className="hidden"
                   disabled={uploading}
