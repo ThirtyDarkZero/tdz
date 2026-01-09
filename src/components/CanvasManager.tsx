@@ -32,8 +32,11 @@ export const CanvasManager = () => {
   };
 
   const handleCanvasUpload = async (trackId: string, file: File) => {
-    if (!file.type.startsWith('video/')) {
-      toast.error("Please upload a video file");
+    const isVideo = file.type.startsWith('video/');
+    const isImage = file.type.startsWith('image/') || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
+    
+    if (!isVideo && !isImage) {
+      toast.error("Please upload an image or video file");
       return;
     }
 
@@ -43,28 +46,31 @@ export const CanvasManager = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Upload video to motion-covers bucket
+      const isVideo = file.type.startsWith('video/');
+      const bucket = isVideo ? "motion-covers" : "album-covers";
+      
+      // Upload to appropriate bucket
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${trackId}/${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("motion-covers")
+        .from(bucket)
         .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from("motion-covers")
+        .from(bucket)
         .getPublicUrl(fileName);
 
-      // Update track with canvas URL
+      // Update track with canvas/cover URL
       const track = tracks.find(t => t.id === trackId);
       const updatedAiTags = {
         ...track?.ai_tags,
         metadata: {
           ...track?.ai_tags?.metadata,
-          isMotionCover: true,
+          isMotionCover: isVideo,
           artworkUrl: publicUrl
         }
       };
