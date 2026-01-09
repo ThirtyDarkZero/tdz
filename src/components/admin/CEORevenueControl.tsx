@@ -11,7 +11,8 @@ import { Separator } from "@/components/ui/separator";
 import { 
   DollarSign, PiggyBank, ArrowUpRight, ArrowDownRight, 
   Wallet, CreditCard, Users, TrendingUp, AlertCircle,
-  CheckCircle, Clock, Loader2, Send, Plus, History
+  CheckCircle, Clock, Loader2, Send, Plus, History,
+  RefreshCw, Building2, ExternalLink
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -34,10 +35,38 @@ interface PayoutHistory {
   artist_name?: string;
 }
 
+interface SquareAccountData {
+  configured: boolean;
+  isProduction: boolean;
+  location?: {
+    id: string;
+    name: string;
+    currency: string;
+  };
+  revenue?: {
+    last30Days: number;
+    completedPayments: number;
+  };
+  payouts?: {
+    total: number;
+    count: number;
+  };
+  estimatedBalance?: number;
+  bankAccounts?: Array<{
+    id: string;
+    bankName: string;
+    last4: string;
+    status: string;
+  }>;
+  error?: string;
+}
+
 export function CEORevenueControl() {
   const [loading, setLoading] = useState(true);
   const [artists, setArtists] = useState<Artist[]>([]);
   const [payoutHistory, setPayoutHistory] = useState<PayoutHistory[]>([]);
+  const [squareData, setSquareData] = useState<SquareAccountData | null>(null);
+  const [squareLoading, setSquareLoading] = useState(false);
   const [revenuePool, setRevenuePool] = useState({
     total: 0,
     artistLiability: 0,
@@ -60,7 +89,30 @@ export function CEORevenueControl() {
 
   useEffect(() => {
     loadData();
+    loadSquareData();
   }, []);
+
+  const loadSquareData = async () => {
+    setSquareLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const response = await supabase.functions.invoke("square-account-balance");
+      
+      if (response.error) {
+        console.error("Square API error:", response.error);
+        setSquareData({ configured: false, isProduction: false });
+      } else {
+        setSquareData(response.data);
+      }
+    } catch (error) {
+      console.error("Error loading Square data:", error);
+      setSquareData({ configured: false, isProduction: false });
+    } finally {
+      setSquareLoading(false);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -233,18 +285,93 @@ export function CEORevenueControl() {
 
   return (
     <div className="space-y-6">
+      {/* Square Account Status */}
+      <Card className="glass-card border-blue-500/30 bg-gradient-to-br from-blue-500/5 to-transparent">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg font-medium flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-blue-500" />
+              Square Account
+              {squareData?.isProduction ? (
+                <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Production</Badge>
+              ) : (
+                <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Sandbox</Badge>
+              )}
+            </CardTitle>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={loadSquareData}
+              disabled={squareLoading}
+              className="gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${squareLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {squareLoading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading Square data...
+            </div>
+          ) : squareData?.configured ? (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                <p className="text-xs text-muted-foreground">Square Balance (30d)</p>
+                <p className="text-2xl font-bold text-blue-400">
+                  ${(squareData.estimatedBalance ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                <p className="text-xs text-muted-foreground">Revenue (30d)</p>
+                <p className="text-2xl font-bold text-green-400">
+                  ${(squareData.revenue?.last30Days ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-muted-foreground">{squareData.revenue?.completedPayments ?? 0} payments</p>
+              </div>
+              <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                <p className="text-xs text-muted-foreground">Payouts Sent</p>
+                <p className="text-2xl font-bold text-orange-400">
+                  ${(squareData.payouts?.total ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+                <p className="text-xs text-muted-foreground">{squareData.payouts?.count ?? 0} payouts</p>
+              </div>
+              <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+                <p className="text-xs text-muted-foreground">Location</p>
+                <p className="text-lg font-medium">{squareData.location?.name || 'Not set'}</p>
+                {squareData.bankAccounts && squareData.bankAccounts.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Bank: {squareData.bankAccounts[0].bankName} •••{squareData.bankAccounts[0].last4}
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-yellow-500">
+              <AlertCircle className="w-4 h-4" />
+              Square not configured. Add SQUARE_ACCESS_TOKEN to enable live payments.
+            </div>
+          )}
+          {squareData?.error && (
+            <p className="text-sm text-destructive mt-2">{squareData.error}</p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Revenue Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="glass-card border-green-500/30 bg-gradient-to-br from-green-500/10 to-transparent">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <PiggyBank className="w-4 h-4 text-green-500" />
-              Revenue Pool
+              Revenue Pool (DB)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-green-500">${revenuePool.total.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground mt-1">Total collected revenue</p>
+            <p className="text-xs text-muted-foreground mt-1">Database recorded revenue</p>
           </CardContent>
         </Card>
 
@@ -326,13 +453,29 @@ export function CEORevenueControl() {
               <div className="p-4 bg-muted/50 rounded-lg text-sm">
                 <p className="font-medium mb-2">Current Pool Status:</p>
                 <div className="space-y-1 text-muted-foreground">
-                  <p>Balance: ${revenuePool.total.toLocaleString()}</p>
+                  <p>DB Balance: ${revenuePool.total.toLocaleString()}</p>
+                  {squareData?.configured && (
+                    <p className="text-blue-400">
+                      Square Balance: ${(squareData.estimatedBalance ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </p>
+                  )}
                   <p>Liability: ${revenuePool.artistLiability.toLocaleString()}</p>
                   <p className={revenuePool.available >= 0 ? 'text-green-500' : 'text-destructive'}>
                     {revenuePool.available >= 0 ? 'Surplus' : 'Deficit'}: ${Math.abs(revenuePool.available).toLocaleString()}
                   </p>
                 </div>
               </div>
+              {squareData?.configured && (
+                <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm">
+                  <div className="flex items-center gap-2 text-blue-400">
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Connected to Square {squareData.isProduction ? '(Production)' : '(Sandbox)'}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Funds recorded in database. Artist payouts processed via Square.
+                  </p>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setAddFundsOpen(false)}>Cancel</Button>
