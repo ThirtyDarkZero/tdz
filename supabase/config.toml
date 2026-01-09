@@ -137,3 +137,6 @@ verify_jwt = false
 
 [functions.editorial-charts]
 verify_jwt = false
+
+[functions.square-account-balance]
+verify_jwt = true
