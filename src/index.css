@@ -39,7 +39,10 @@
 
     --border: 220 15% 18%;
     --input: 220 15% 12%;
-    --ring: 127 100% 60%;
+    --ring: 200 100% 60%;
+    
+    /* Softer focus ring for better UX */
+    --focus-ring: 200 100% 60%;
 
     --radius: 1rem;
 
@@ -108,6 +111,33 @@
     font-family: 'Bebas Neue', 'Impact', system-ui, sans-serif;
     letter-spacing: 0.04em;
     text-transform: uppercase;
+  }
+  
+  /* Fix focus rings - use subtle accent color instead of primary green */
+  input:focus-visible,
+  textarea:focus-visible,
+  button:focus-visible,
+  select:focus-visible,
+  [role="combobox"]:focus-visible,
+  [data-state="open"]:focus-visible {
+    outline: none !important;
+    ring: none !important;
+    box-shadow: 0 0 0 2px hsl(var(--accent) / 0.4) !important;
+  }
+  
+  /* Override all focus-visible rings */
+  *:focus-visible {
+    outline: 2px solid hsl(var(--accent) / 0.5);
+    outline-offset: 2px;
+  }
+  
+  /* Remove green outlines from shadcn components */
+  [data-radix-collection-item]:focus,
+  [role="option"]:focus,
+  [cmdk-item]:focus,
+  [data-highlighted] {
+    outline: none;
+    box-shadow: none;
   }
 }
 

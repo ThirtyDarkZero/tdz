@@ -7,10 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AlbumCoverUploader } from "./AlbumCoverUploader";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface CreateAlbumDialogProps {
   selectedTracks: string[];
@@ -25,12 +27,24 @@ export const CreateAlbumDialog = ({ selectedTracks, open, onOpenChange, onSucces
   const [genre, setGenre] = useState("");
   const [description, setDescription] = useState("");
   const [releaseDate, setReleaseDate] = useState<Date>();
+  const [coverArtPath, setCoverArtPath] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+
+  const handleCoverUpload = (path: string, _publicUrl: string) => {
+    setCoverArtPath(path);
+  };
+
+  const canSubmit = title && artistName && coverArtPath;
 
   const handleCreate = async () => {
     if (!title || !artistName) {
       toast({ title: "Title and artist name required", variant: "destructive" });
+      return;
+    }
+
+    if (!coverArtPath) {
+      toast({ title: "Album cover is required", variant: "destructive" });
       return;
     }
 
@@ -39,15 +53,7 @@ export const CreateAlbumDialog = ({ selectedTracks, open, onOpenChange, onSucces
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Get the first track's cover art
-      const { data: firstTrack } = await supabase
-        .from('tracks')
-        .select('album_cover_path')
-        .in('id', selectedTracks)
-        .limit(1)
-        .maybeSingle();
-
-      // Create album
+      // Create album with the uploaded cover
       const { data: albumData, error: albumError } = await supabase
         .from('albums')
         .insert({
@@ -60,20 +66,21 @@ export const CreateAlbumDialog = ({ selectedTracks, open, onOpenChange, onSucces
           is_published: false,
           release_date: releaseDate ? format(releaseDate, 'yyyy-MM-dd') : null,
           scheduled_release_date: releaseDate ? format(releaseDate, 'yyyy-MM-dd') : null,
-          cover_art_path: firstTrack?.album_cover_path || null
+          cover_art_path: coverArtPath
         })
         .select()
         .single();
 
       if (albumError) throw albumError;
 
-      // Update tracks with album_id and track_number
+      // Update tracks with album_id, track_number, and propagate cover
       for (let i = 0; i < selectedTracks.length; i++) {
         const { error: updateError } = await supabase
           .from('tracks')
           .update({ 
             album_id: albumData.id,
-            track_number: i + 1
+            track_number: i + 1,
+            album_cover_path: coverArtPath // Propagate cover to tracks
           })
           .eq('id', selectedTracks[i]);
 
@@ -94,6 +101,7 @@ export const CreateAlbumDialog = ({ selectedTracks, open, onOpenChange, onSucces
       setGenre("");
       setDescription("");
       setReleaseDate(undefined);
+      setCoverArtPath(null);
     } catch (error: any) {
       console.error('Error creating album:', error);
       toast({
@@ -108,11 +116,30 @@ export const CreateAlbumDialog = ({ selectedTracks, open, onOpenChange, onSucces
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Album from Selected Tracks</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          {/* Album Cover Upload - Required */}
+          <AlbumCoverUploader
+            coverPath={coverArtPath}
+            onUpload={handleCoverUpload}
+            required={true}
+            size="lg"
+            label="Album Cover"
+            className="flex flex-col items-center"
+          />
+
+          {!coverArtPath && (
+            <Alert variant="destructive" className="py-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                Album cover is required before creating an album
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div>
             <Label htmlFor="album-title">Album Title *</Label>
             <Input
@@ -190,7 +217,7 @@ export const CreateAlbumDialog = ({ selectedTracks, open, onOpenChange, onSucces
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleCreate} disabled={saving}>
+          <Button onClick={handleCreate} disabled={saving || !canSubmit}>
             {saving ? "Creating..." : "Create Album"}
           </Button>
         </DialogFooter>
