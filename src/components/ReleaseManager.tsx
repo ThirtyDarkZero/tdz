@@ -353,6 +353,21 @@ export const ReleaseManager = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Left Column - Selection */}
           <div className="space-y-4">
+            {/* Album Cover Upload for Albums */}
+            {releaseType === "project" && selectedAlbum && !selectedAlbum.cover_art_path && (
+              <Card className="p-4 border-destructive/50 bg-destructive/5">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-destructive">Cover Art Required</p>
+                    <p className="text-xs text-muted-foreground">
+                      Please upload album cover art before publishing. Go to Studio → Music → Edit Album to add cover art.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            )}
+            
             {releaseType === "track" ? (
               <div>
                 <Label>Select Track to Release</Label>
@@ -634,7 +649,8 @@ export const ReleaseManager = () => {
               disabled={
                 (releaseType === "track" ? !selectedTrack : !selectedAlbum) || 
                 !releaseDate || 
-                isSubmitting
+                isSubmitting ||
+                (releaseType === "project" && selectedAlbum && !selectedAlbum.cover_art_path)
               }
               className="w-full bg-gradient-to-r from-primary via-secondary to-accent h-12"
             >

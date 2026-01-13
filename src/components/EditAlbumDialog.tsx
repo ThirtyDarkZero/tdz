@@ -12,12 +12,13 @@ import { SortableTrackItem } from "./SortableTrackItem";
 import { Switch } from "@/components/ui/switch";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plus } from "lucide-react";
+import { CalendarIcon, Plus, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AlbumCoverUploader } from "./AlbumCoverUploader";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Album {
   id: string;
@@ -53,6 +54,7 @@ export const EditAlbumDialog = ({ album, open, onOpenChange, onSuccess }: EditAl
   const [description, setDescription] = useState("");
   const [isPublished, setIsPublished] = useState(false);
   const [releaseDate, setReleaseDate] = useState<Date | undefined>();
+  const [coverArtPath, setCoverArtPath] = useState<string | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [availableTracks, setAvailableTracks] = useState<Track[]>([]);
   const [selectedAvailableTracks, setSelectedAvailableTracks] = useState<string[]>([]);
@@ -74,6 +76,7 @@ export const EditAlbumDialog = ({ album, open, onOpenChange, onSuccess }: EditAl
       setGenre(album.genre || "");
       setDescription(album.description || "");
       setIsPublished(album.is_published || false);
+      setCoverArtPath(album.cover_art_path || null);
       if (album.scheduled_release_date) {
         setReleaseDate(new Date(album.scheduled_release_date));
       } else if (album.release_date) {
@@ -117,7 +120,6 @@ export const EditAlbumDialog = ({ album, open, onOpenChange, onSuccess }: EditAl
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get tracks that don't belong to any album or belong to a different album
       const { data, error } = await supabase
         .from('tracks')
         .select('id, title, track_number, duration, file_path')
@@ -135,6 +137,10 @@ export const EditAlbumDialog = ({ album, open, onOpenChange, onSuccess }: EditAl
         variant: "destructive"
       });
     }
+  };
+
+  const handleCoverUpload = (path: string, _publicUrl: string) => {
+    setCoverArtPath(path);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -164,7 +170,6 @@ export const EditAlbumDialog = ({ album, open, onOpenChange, onSuccess }: EditAl
     if (selectedAvailableTracks.length === 0 || !album) return;
 
     try {
-      // Add selected tracks to album with appropriate track numbers
       const startingTrackNumber = tracks.length + 1;
       
       for (let i = 0; i < selectedAvailableTracks.length; i++) {
@@ -172,7 +177,8 @@ export const EditAlbumDialog = ({ album, open, onOpenChange, onSuccess }: EditAl
           .from('tracks')
           .update({
             album_id: album.id,
-            track_number: startingTrackNumber + i
+            track_number: startingTrackNumber + i,
+            album_cover_path: coverArtPath // Propagate cover to new tracks
           })
           .eq('id', selectedAvailableTracks[i]);
 
@@ -198,8 +204,21 @@ export const EditAlbumDialog = ({ album, open, onOpenChange, onSuccess }: EditAl
     }
   };
 
+  // Check if album can be published (requires cover)
+  const canPublish = !!coverArtPath;
+
   const handleSave = async () => {
     if (!album) return;
+
+    // Block publishing without cover
+    if (isPublished && !coverArtPath) {
+      toast({
+        title: "Cover required",
+        description: "Album cover is required before publishing",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setSaving(true);
     try {
@@ -213,16 +232,20 @@ export const EditAlbumDialog = ({ album, open, onOpenChange, onSuccess }: EditAl
           description,
           is_published: isPublished,
           scheduled_release_date: releaseDate ? format(releaseDate, "yyyy-MM-dd") : null,
+          cover_art_path: coverArtPath,
         })
         .eq('id', album.id);
 
       if (albumError) throw albumError;
 
-      // Update track numbers for reordered tracks
+      // Update track numbers and propagate cover for reordered tracks
       for (let i = 0; i < tracks.length; i++) {
         const { error: trackError } = await supabase
           .from('tracks')
-          .update({ track_number: i + 1 })
+          .update({ 
+            track_number: i + 1,
+            album_cover_path: coverArtPath // Propagate cover to all tracks
+          })
           .eq('id', tracks[i].id);
 
         if (trackError) throw trackError;
@@ -255,25 +278,48 @@ export const EditAlbumDialog = ({ album, open, onOpenChange, onSuccess }: EditAl
         </DialogHeader>
 
         <div className="space-y-4">
-          <div>
-            <Label htmlFor="title">Album Title</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter album title"
+          {/* Album Cover Upload - Prominent position */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <AlbumCoverUploader
+              coverPath={coverArtPath}
+              onUpload={handleCoverUpload}
+              required={isPublished}
+              size="lg"
+              label="Album Cover"
             />
+            
+            <div className="flex-1 space-y-4">
+              <div>
+                <Label htmlFor="title">Album Title</Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter album title"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="artist">Artist Name</Label>
+                <Input
+                  id="artist"
+                  value={artistName}
+                  onChange={(e) => setArtistName(e.target.value)}
+                  placeholder="Enter artist name"
+                />
+              </div>
+            </div>
           </div>
 
-          <div>
-            <Label htmlFor="artist">Artist Name</Label>
-            <Input
-              id="artist"
-              value={artistName}
-              onChange={(e) => setArtistName(e.target.value)}
-              placeholder="Enter artist name"
-            />
-          </div>
+          {/* Warning when trying to publish without cover */}
+          {isPublished && !coverArtPath && (
+            <Alert variant="destructive" className="py-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                Album cover is required before publishing
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div>
             <Label htmlFor="genre">Genre</Label>
@@ -300,7 +346,17 @@ export const EditAlbumDialog = ({ album, open, onOpenChange, onSuccess }: EditAl
             <Switch
               id="published"
               checked={isPublished}
-              onCheckedChange={setIsPublished}
+              onCheckedChange={(checked) => {
+                if (checked && !coverArtPath) {
+                  toast({
+                    title: "Cover required",
+                    description: "Please upload an album cover before publishing",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                setIsPublished(checked);
+              }}
             />
             <Label htmlFor="published">Published</Label>
           </div>
@@ -314,12 +370,13 @@ export const EditAlbumDialog = ({ album, open, onOpenChange, onSuccess }: EditAl
                   {releaseDate ? format(releaseDate, "PPP") : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
+              <PopoverContent className="w-auto p-0 pointer-events-auto z-50" align="start" sideOffset={4}>
                 <Calendar
                   mode="single"
                   selected={releaseDate}
                   onSelect={setReleaseDate}
                   initialFocus
+                  className="pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
