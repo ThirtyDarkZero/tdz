@@ -2072,6 +2072,117 @@ export type Database = {
           },
         ]
       }
+      presave_campaigns: {
+        Row: {
+          album_id: string | null
+          campaign_name: string
+          cover_image_path: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          landing_page_settings: Json | null
+          release_date: string
+          slug: string
+          total_presaves: number
+          track_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          album_id?: string | null
+          campaign_name: string
+          cover_image_path?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          landing_page_settings?: Json | null
+          release_date: string
+          slug: string
+          total_presaves?: number
+          track_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          album_id?: string | null
+          campaign_name?: string
+          cover_image_path?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          landing_page_settings?: Json | null
+          release_date?: string
+          slug?: string
+          total_presaves?: number
+          track_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presave_campaigns_album_id_fkey"
+            columns: ["album_id"]
+            isOneToOne: false
+            referencedRelation: "albums"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presave_campaigns_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "published_tracks_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presave_campaigns_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presave_signups: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          email: string
+          id: string
+          notified_on_release: boolean
+          platform_preferences: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          email: string
+          id?: string
+          notified_on_release?: boolean
+          platform_preferences?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          notified_on_release?: boolean
+          platform_preferences?: Json | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presave_signups_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "presave_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_versions: {
         Row: {
           characters_snapshot: Json | null
@@ -2497,6 +2608,85 @@ export type Database = {
         }
         Relationships: []
       }
+      support_tickets: {
+        Row: {
+          album_id: string | null
+          assigned_to: string | null
+          attachments: Json | null
+          category: string
+          created_at: string
+          description: string
+          id: string
+          priority: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          status: string
+          subject: string
+          ticket_number: string
+          track_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          album_id?: string | null
+          assigned_to?: string | null
+          attachments?: Json | null
+          category: string
+          created_at?: string
+          description: string
+          id?: string
+          priority?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          status?: string
+          subject: string
+          ticket_number: string
+          track_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          album_id?: string | null
+          assigned_to?: string | null
+          attachments?: Json | null
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          priority?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          status?: string
+          subject?: string
+          ticket_number?: string
+          track_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_album_id_fkey"
+            columns: ["album_id"]
+            isOneToOne: false
+            referencedRelation: "albums"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "published_tracks_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tempo_maps: {
         Row: {
           beat_grid: Json
@@ -2528,6 +2718,44 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: true
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_responses: {
+        Row: {
+          attachments: Json | null
+          content: string
+          created_at: string
+          id: string
+          is_staff: boolean
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          attachments?: Json | null
+          content: string
+          created_at?: string
+          id?: string
+          is_staff?: boolean
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          attachments?: Json | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_staff?: boolean
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_responses_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
             referencedColumns: ["id"]
           },
         ]
@@ -2666,6 +2894,111 @@ export type Database = {
           },
           {
             foreignKeyName: "track_presaves_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      track_rights_splits: {
+        Row: {
+          created_at: string
+          holder_email: string | null
+          holder_name: string
+          id: string
+          ipi_number: string | null
+          is_verified: boolean
+          pro_affiliation: string | null
+          rights_type: string
+          split_percentage: number
+          track_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          holder_email?: string | null
+          holder_name: string
+          id?: string
+          ipi_number?: string | null
+          is_verified?: boolean
+          pro_affiliation?: string | null
+          rights_type: string
+          split_percentage: number
+          track_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          holder_email?: string | null
+          holder_name?: string
+          id?: string
+          ipi_number?: string | null
+          is_verified?: boolean
+          pro_affiliation?: string | null
+          rights_type?: string
+          split_percentage?: number
+          track_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_rights_splits_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "published_tracks_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_rights_splits_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      track_territories: {
+        Row: {
+          created_at: string
+          id: string
+          is_available: boolean
+          restriction_reason: string | null
+          territory_code: string
+          territory_name: string
+          track_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          restriction_reason?: string | null
+          territory_code: string
+          territory_name: string
+          track_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          restriction_reason?: string | null
+          territory_code?: string
+          territory_name?: string
+          track_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_territories_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "published_tracks_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_territories_track_id_fkey"
             columns: ["track_id"]
             isOneToOne: false
             referencedRelation: "tracks"
@@ -3285,6 +3618,7 @@ export type Database = {
             Returns: number
           }
       generate_isrc: { Args: never; Returns: string }
+      generate_ticket_number: { Args: never; Returns: string }
       generate_upc: { Args: never; Returns: string }
       get_user_plan: {
         Args: { _user_id: string }
