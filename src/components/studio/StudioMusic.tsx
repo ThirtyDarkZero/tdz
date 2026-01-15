@@ -1,8 +1,9 @@
-import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MusicLibrary } from "@/components/MusicLibrary";
 import { ReleaseManager } from "@/components/ReleaseManager";
 import { ArtistGalleryManager } from "@/components/ArtistGalleryManager";
+import { TerritoryRightsHub } from "@/components/TerritoryRightsHub";
+import { FeatureGate } from "@/components/FeatureGate";
 
 interface Track {
   id: string;
@@ -30,12 +31,15 @@ export const StudioMusic = ({ onPlayTrack }: StudioMusicProps) => {
       </div>
 
       <Tabs defaultValue="releases" className="space-y-6">
-        <TabsList className="bg-muted/50 p-1">
+        <TabsList className="bg-muted/50 p-1 flex-wrap h-auto">
           <TabsTrigger value="releases" className="data-[state=active]:bg-background">
             Releases
           </TabsTrigger>
           <TabsTrigger value="library" className="data-[state=active]:bg-background">
             Library
+          </TabsTrigger>
+          <TabsTrigger value="rights" className="data-[state=active]:bg-background">
+            Rights & Territories
           </TabsTrigger>
           <TabsTrigger value="gallery" className="data-[state=active]:bg-background">
             Gallery
@@ -48,6 +52,12 @@ export const StudioMusic = ({ onPlayTrack }: StudioMusicProps) => {
 
         <TabsContent value="library" className="mt-0">
           <MusicLibrary onPlayTrack={onPlayTrack} />
+        </TabsContent>
+
+        <TabsContent value="rights" className="mt-0">
+          <FeatureGate feature="territoryRights">
+            <TerritoryRightsHub />
+          </FeatureGate>
         </TabsContent>
 
         <TabsContent value="gallery" className="mt-0">

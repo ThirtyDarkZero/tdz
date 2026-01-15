@@ -3,6 +3,7 @@ import { FanEngagementHub } from "@/components/FanEngagementHub";
 import { StorytellingStudio } from "@/components/StorytellingStudio";
 import { CanvasManager } from "@/components/CanvasManager";
 import { MerchStore } from "@/components/MerchStore";
+import { PreSaveCampaignManager } from "@/components/PreSaveCampaignManager";
 import { FeatureGate } from "@/components/FeatureGate";
 import { LabelStaff } from "@/components/LabelStaff";
 
@@ -15,9 +16,12 @@ export const StudioPromote = () => {
       </div>
 
       <Tabs defaultValue="ai-assistant" className="space-y-6">
-        <TabsList className="bg-muted/50 p-1">
+        <TabsList className="bg-muted/50 p-1 flex-wrap h-auto">
           <TabsTrigger value="ai-assistant" className="data-[state=active]:bg-background">
             AI Assistant
+          </TabsTrigger>
+          <TabsTrigger value="presave" className="data-[state=active]:bg-background">
+            Pre-Save
           </TabsTrigger>
           <TabsTrigger value="fans" className="data-[state=active]:bg-background">
             Fan Engagement
@@ -35,6 +39,12 @@ export const StudioPromote = () => {
 
         <TabsContent value="ai-assistant" className="mt-0">
           <LabelStaff />
+        </TabsContent>
+
+        <TabsContent value="presave" className="mt-0">
+          <FeatureGate feature="presaveCampaigns">
+            <PreSaveCampaignManager />
+          </FeatureGate>
         </TabsContent>
 
         <TabsContent value="fans" className="mt-0">
