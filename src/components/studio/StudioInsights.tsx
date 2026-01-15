@@ -1,9 +1,9 @@
-import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DistributionAnalytics } from "@/components/DistributionAnalytics";
 import { FanDemographics } from "@/components/FanDemographics";
 import { MomentumTracker } from "@/components/MomentumTracker";
 import { TourRecommendations } from "@/components/TourRecommendations";
+import { AdvancedAnalyticsDashboard } from "@/components/AdvancedAnalyticsDashboard";
 import { FeatureGate } from "@/components/FeatureGate";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,8 +19,11 @@ export const StudioInsights = () => {
         <p className="text-muted-foreground">Track your performance, audience, and growth</p>
       </div>
 
-      <Tabs defaultValue="streams" className="space-y-6">
-        <TabsList className="bg-muted/50 p-1">
+      <Tabs defaultValue="advanced" className="space-y-6">
+        <TabsList className="bg-muted/50 p-1 flex-wrap h-auto">
+          <TabsTrigger value="advanced" className="data-[state=active]:bg-background">
+            Analytics
+          </TabsTrigger>
           <TabsTrigger value="streams" className="data-[state=active]:bg-background">
             Streams
           </TabsTrigger>
@@ -34,6 +37,12 @@ export const StudioInsights = () => {
             Tour
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="advanced" className="mt-0">
+          <FeatureGate feature="advancedAnalytics">
+            <AdvancedAnalyticsDashboard />
+          </FeatureGate>
+        </TabsContent>
 
         <TabsContent value="streams" className="mt-0">
           <DistributionAnalytics showAdvanced={hasFeature('advancedAnalytics')} />

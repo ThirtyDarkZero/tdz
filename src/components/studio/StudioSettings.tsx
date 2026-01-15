@@ -10,10 +10,11 @@ import { ArtistProfileEditor } from "@/components/ArtistProfileEditor";
 import { ArtistPayoutSettings } from "@/components/ArtistPayoutSettings";
 import { CollaboratorsList } from "@/components/CollaboratorsList";
 import { CollaboratorInviteDialog } from "@/components/CollaboratorInviteDialog";
+import { SupportTicketSystem } from "@/components/SupportTicketSystem";
 import { FeatureGate } from "@/components/FeatureGate";
 import { 
   Users, Shield, Bell, Palette, Globe, Lock, 
-  Download, Trash2, AlertTriangle, Zap
+  Download, Trash2, AlertTriangle, Zap, LifeBuoy
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -62,11 +63,14 @@ export const StudioSettings = () => {
           <TabsTrigger value="team" className="data-[state=active]:bg-background">
             Team
           </TabsTrigger>
+          <TabsTrigger value="support" className="data-[state=active]:bg-background">
+            <LifeBuoy className="h-4 w-4 mr-1" />
+            Support
+          </TabsTrigger>
           <TabsTrigger value="advanced" className="data-[state=active]:bg-background">
             Advanced
           </TabsTrigger>
         </TabsList>
-
         <TabsContent value="profile" className="mt-0">
           <ArtistProfileEditor />
         </TabsContent>
@@ -93,6 +97,10 @@ export const StudioSettings = () => {
             onOpenChange={setShowInviteDialog}
             onInviteSent={() => setCollaboratorsKey(prev => prev + 1)}
           />
+        </TabsContent>
+
+        <TabsContent value="support" className="mt-0">
+          <SupportTicketSystem />
         </TabsContent>
 
         <TabsContent value="advanced" className="mt-0 space-y-6">
