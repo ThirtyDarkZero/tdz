@@ -139,8 +139,13 @@ export const ArtistPayoutSettings = () => {
     setConnectLoading(true);
 
     try {
-      // Get OAuth URL from edge function
-      const redirectUri = `${window.location.origin}/square-callback`;
+      // Use the published app URL for the callback
+      const appOrigin = window.location.origin.includes('localhost') 
+        ? 'https://tdz.lovable.app' 
+        : window.location.origin;
+      const redirectUri = `${appOrigin}/square-callback`;
+      
+      console.log('Requesting Square OAuth with redirect URI:', redirectUri);
       
       const response = await supabase.functions.invoke('square-oauth-url', {
         body: { redirectUri },

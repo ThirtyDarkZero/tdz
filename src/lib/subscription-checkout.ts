@@ -9,7 +9,10 @@ export const SQUARE_CHECKOUT_URLS = {
 export type CheckoutPlan = keyof typeof SQUARE_CHECKOUT_URLS;
 
 export function getAppBaseUrl(): string {
-  // Use current origin for redirect
+  // Always use production URL for Square redirects
+  if (window.location.origin.includes('localhost') || window.location.origin.includes('preview')) {
+    return 'https://tdz.lovable.app';
+  }
   return window.location.origin;
 }
 
