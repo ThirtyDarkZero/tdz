@@ -87,34 +87,45 @@ export const ArtistPayoutSettings = () => {
     if (!user) return;
 
     try {
-      const { data: earningsData, error } = await supabase
+      // Get actual play counts from tracks (single source of truth)
+      const { data: tracksData, error: tracksError } = await supabase
+        .from('tracks')
+        .select('play_count')
+        .eq('user_id', user.id);
+
+      if (tracksError) {
+        console.error('Error loading tracks:', tracksError);
+        return;
+      }
+
+      // Calculate total streams from actual track data
+      const actualStreams = tracksData?.reduce((sum, t) => sum + (t.play_count || 0), 0) || 0;
+      const actualEarnings = actualStreams * 1.00; // $1 per stream
+
+      // Get paid amount from earnings table
+      const { data: earningsData, error: earningsError } = await supabase
         .from('artist_earnings')
         .select('*')
         .eq('artist_id', user.id);
 
-      if (error) {
-        console.error('Error loading earnings:', error);
-        return;
+      if (earningsError) {
+        console.error('Error loading earnings:', earningsError);
       }
 
-      const pending = earningsData
-        ?.filter(e => e.payout_status === 'pending')
-        .reduce((sum, e) => sum + (e.total_earnings || 0), 0) || 0;
-      
       const paid = earningsData
         ?.filter(e => e.payout_status === 'paid')
         .reduce((sum, e) => sum + (e.total_earnings || 0), 0) || 0;
 
-      const streams = earningsData
-        ?.reduce((sum, e) => sum + (e.total_streams || 0), 0) || 0;
-
       const now = new Date();
       const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+      // Pending = actual earnings minus already paid
+      const pending = Math.max(0, actualEarnings - paid);
 
       setEarnings({
         totalPending: pending,
         totalPaid: paid,
-        totalStreams: streams,
+        totalStreams: actualStreams,
         nextPayoutDate: nextMonth.toISOString(),
       });
     } catch (error) {
