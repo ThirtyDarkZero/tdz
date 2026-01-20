@@ -139,11 +139,9 @@ export const ArtistPayoutSettings = () => {
     setConnectLoading(true);
 
     try {
-      // Use the published app URL for the callback
-      const appOrigin = window.location.origin.includes('localhost') 
-        ? 'https://tdz.lovable.app' 
-        : window.location.origin;
-      const redirectUri = `${appOrigin}/square-callback`;
+      // ALWAYS use the Lovable app URL for Square OAuth redirects
+      // Square only has this URL configured as a valid redirect URI
+      const redirectUri = 'https://tdz.lovable.app/square-callback';
       
       console.log('Requesting Square OAuth with redirect URI:', redirectUri);
       
