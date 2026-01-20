@@ -60,8 +60,12 @@ serve(async (req) => {
       nonce: crypto.randomUUID()
     }));
 
-    // Square OAuth authorization URL (production)
-    const baseUrl = 'https://connect.squareup.com/oauth2/authorize';
+    // Square OAuth authorization URL (auto-detect Production vs Sandbox)
+    // Production app IDs start with "sq0idp-"; sandbox typically starts with "sq0idb-".
+    const isProd = squareAppId.startsWith('sq0idp-');
+    const baseUrl = isProd
+      ? 'https://connect.squareup.com/oauth2/authorize'
+      : 'https://connect.squareupsandbox.com/oauth2/authorize';
     
     const params = new URLSearchParams({
       client_id: squareAppId,

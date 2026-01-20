@@ -55,8 +55,13 @@ serve(async (req) => {
       );
     }
 
+    // Square uses different base URLs for production vs sandbox.
+    // Production app IDs start with "sq0idp-"; sandbox typically starts with "sq0idb-".
+    const isProd = squareAppId.startsWith('sq0idp-');
+    const connectBase = isProd ? 'https://connect.squareup.com' : 'https://connect.squareupsandbox.com';
+
     // Exchange authorization code for access token
-    const tokenResponse = await fetch('https://connect.squareup.com/oauth2/token', {
+    const tokenResponse = await fetch(`${connectBase}/oauth2/token`, {
       method: 'POST',
       headers: {
         'Square-Version': '2024-01-18',
@@ -86,7 +91,7 @@ serve(async (req) => {
     // Get merchant info to display account name
     let merchantName = 'Square Account';
     try {
-      const merchantResponse = await fetch('https://connect.squareup.com/v2/merchants/me', {
+      const merchantResponse = await fetch(`${connectBase}/v2/merchants/me`, {
         headers: {
           'Square-Version': '2024-01-18',
           'Authorization': `Bearer ${access_token}`,
