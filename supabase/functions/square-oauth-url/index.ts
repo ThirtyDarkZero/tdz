@@ -67,24 +67,39 @@ serve(async (req) => {
       ? 'https://connect.squareup.com/oauth2/authorize'
       : 'https://connect.squareupsandbox.com/oauth2/authorize';
     
+    // CRITICAL: Use the exact hardcoded redirect URI that matches Square Dashboard
+    const exactRedirectUri = 'https://tdz.lovable.app/square-callback';
+    
+    console.log('=== SQUARE OAUTH DEBUG ===');
+    console.log('Environment:', isProd ? 'PRODUCTION' : 'SANDBOX');
+    console.log('App ID:', squareAppId);
+    console.log('Requested redirectUri from client:', redirectUri);
+    console.log('Using exact redirectUri:', exactRedirectUri);
+    console.log('Base URL:', baseUrl);
+    
     const params = new URLSearchParams({
       client_id: squareAppId,
       scope: 'MERCHANT_PROFILE_READ BANK_ACCOUNTS_READ PAYMENTS_WRITE PAYMENTS_READ',
       session: 'false',
       state: state,
-      redirect_uri: redirectUri,
+      redirect_uri: exactRedirectUri,
     });
 
     const authUrl = `${baseUrl}?${params.toString()}`;
 
-    console.log(`Generated Square OAuth URL for user ${user.id}`);
-    console.log(`Redirect URI: ${redirectUri}`);
+    console.log('Final auth URL:', authUrl);
+    console.log('=== END DEBUG ===');
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         authUrl,
-        state 
+        state,
+        debug: {
+          environment: isProd ? 'production' : 'sandbox',
+          redirectUri: exactRedirectUri,
+          baseUrl
+        }
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
