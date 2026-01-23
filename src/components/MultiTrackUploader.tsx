@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import { Upload, Music, Disc, Album as AlbumIcon, GripVertical, Edit, Sparkles, AlertTriangle, Lock, Shield, ChevronDown, ChevronUp, CalendarIcon, RefreshCw, X, Save } from "lucide-react";
+import { Upload, Music, Disc, Album as AlbumIcon, GripVertical, Edit, Sparkles, AlertTriangle, Lock, Shield, ChevronDown, ChevronUp, CalendarIcon, RefreshCw, X, Save, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +35,7 @@ import { TrackMetadataForm, TrackMetadata } from './TrackMetadataForm';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useUploadDraft, useAutoSaveDraft, DraftTrack, UploadDraft } from "@/hooks/useUploadDraft";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlbumCoverUploader } from "./AlbumCoverUploader";
 
 // Helper function to detect audio quality from file
 const detectAudioQuality = (file: File): 'standard' | 'hd' | 'dolby_atmos' | 'hi_res' => {
@@ -88,6 +89,8 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
   const [scheduledReleaseDate, setScheduledReleaseDate] = useState<Date | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
   const [showDraftBanner, setShowDraftBanner] = useState(false);
+  const [coverArtPath, setCoverArtPath] = useState<string | null>(null);
+  const [coverArtUrl, setCoverArtUrl] = useState<string | null>(null);
   const { toast } = useToast();
   
   // Draft persistence hooks
@@ -370,6 +373,16 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
       return;
     }
 
+    // Require cover art for EP and Album releases
+    if (releaseType !== 'single' && !coverArtPath) {
+      toast({ 
+        title: "Cover art required", 
+        description: "Please upload album artwork for EPs and Albums",
+        variant: "destructive" 
+      });
+      return;
+    }
+
     // Check album limits for non-singles
     if (releaseType !== 'single' && !canCreateAlbum) {
       toast({ 
@@ -418,6 +431,7 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
               artist_name: artistName.trim().slice(0, 100),
               genre: genre?.trim() || null,
               description: description?.trim() || null,
+              cover_art_path: coverArtPath,
               is_published: false,
               total_tracks: tracks.length
             })
@@ -600,6 +614,8 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
       setMetadata(null);
       setMetadataComplete(false);
       setScheduledReleaseDate(null);
+      setCoverArtPath(null);
+      setCoverArtUrl(null);
       
       // Refetch limits
       refetchLimits();
@@ -735,6 +751,47 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
           </Card>
         </div>
       </div>
+
+      {/* Album Cover Upload - Required for EP/Album */}
+      <Card className={`p-6 ${releaseType !== 'single' && !coverArtPath ? 'border-amber-500/50 bg-amber-500/5' : 'border-border'}`}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+          <AlbumCoverUploader
+            coverPath={coverArtPath}
+            bucket="album-covers"
+            onUpload={(path, url) => {
+              setCoverArtPath(path);
+              setCoverArtUrl(url);
+            }}
+            required={releaseType !== 'single'}
+            size="lg"
+            label="Cover Art"
+            showValidation={true}
+            disabled={uploading}
+          />
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold">Release Artwork</h3>
+              {releaseType !== 'single' && !coverArtPath && (
+                <Badge variant="outline" className="text-amber-500 border-amber-500">Required</Badge>
+              )}
+              {coverArtPath && (
+                <Badge className="bg-green-600">Uploaded</Badge>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {releaseType === 'single' 
+                ? "Optional cover art for your single. Recommended for better discoverability."
+                : "Required for EPs and Albums. Your cover will appear across all streaming platforms."}
+            </p>
+            <ul className="text-xs text-muted-foreground space-y-1">
+              <li>• Square format (1:1 ratio) recommended</li>
+              <li>• JPG, PNG, or WebP format</li>
+              <li>• Minimum 3000×3000px for best quality</li>
+            </ul>
+          </div>
+        </div>
+      </Card>
 
       {/* Upload Limits Indicator */}
       {!isUnlimited && (
