@@ -19,7 +19,7 @@ interface MinimalArtistCardProps {
 }
 
 // Storage buckets to try in order for artist images
-const IMAGE_BUCKETS = ['artist-profiles', 'artist-images', 'artist-banners'] as const;
+const IMAGE_BUCKETS = ['artist-profiles', 'artist-images', 'artist-banners', 'listener-images'] as const;
 
 export function MinimalArtistCard({
   artist,

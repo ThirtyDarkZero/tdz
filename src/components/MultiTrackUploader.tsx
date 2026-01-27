@@ -432,9 +432,10 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
               genre: genre?.trim() || null,
               description: description?.trim() || null,
               cover_art_path: coverArtPath,
+              release_type: releaseType, // Store release type for categorization
               is_published: false,
               total_tracks: tracks.length
-            })
+            } as any)
             .select()
             .single();
 
@@ -546,7 +547,7 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
               c_line: metadata!.cLine || null,
               explicit: metadata!.explicit || false,
               language: metadata!.language || 'English',
-              release_type: metadata!.releaseType || 'single',
+              release_type: releaseType, // Store the actual release type selected
               release_version: metadata!.releaseVersion || 'Original',
               original_release_date: metadata!.originalReleaseDate?.toISOString().split('T')[0] || null,
               preorder_date: metadata!.preorderDate?.toISOString().split('T')[0] || null,
@@ -556,6 +557,9 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
               // Scheduled release date - saves release date set during upload
               scheduled_release_date: scheduledReleaseDate?.toISOString().split('T')[0] || null,
               release_date: scheduledReleaseDate?.toISOString().split('T')[0] || null,
+              // For singles, store cover art directly on track if provided
+              album_cover_path: releaseType === 'single' ? coverArtPath : null,
+              album_cover_bucket: releaseType === 'single' && coverArtPath ? 'album-covers' : null,
             } as any;
             
             const { data: trackData, error: dbError } = await supabase

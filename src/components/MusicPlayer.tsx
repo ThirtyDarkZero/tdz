@@ -460,19 +460,19 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
   const downloadTrack = async () => {
     if (!currentTrack) return;
     
+    // SECURITY: Require authentication for ALL downloads
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({ 
+        title: "Sign in Required", 
+        description: "Please sign in to download tracks.",
+        variant: "destructive" 
+      });
+      return;
+    }
+    
     // Check if track has a download price - require purchase
     if (currentTrack.download_price && currentTrack.download_price > 0) {
-      // Check if user already purchased this track
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({ 
-          title: "Sign in Required", 
-          description: "Please sign in to purchase downloads.",
-          variant: "destructive" 
-        });
-        return;
-      }
-
       const { data: existingPurchase } = await supabase
         .from('download_purchases')
         .select('id')
@@ -499,7 +499,7 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
       return;
     }
     
-    // Free download (no price set or price is 0/null)
+    // Free download (no price set or price is 0/null) - still requires auth
     const audioUrl = supabase.storage.from('track-files').getPublicUrl(currentTrack.file_path).data.publicUrl;
     const link = document.createElement('a');
     link.href = audioUrl;
