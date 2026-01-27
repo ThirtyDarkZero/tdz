@@ -181,7 +181,36 @@ serve(async (req) => {
     allResults = allResults.filter(r => isValidTitle(r.title) && isValidTitle(r.artist));
 
     // Deduplicate and merge results using fuzzy matching
-    const mergedResults = deduplicateAndMerge(allResults);
+    let mergedResults = deduplicateAndMerge(allResults);
+    
+    // For artist searches, prioritize exact or very close artist name matches
+    if (type === 'artist' && query.trim().length > 0) {
+      const normalizedQuery = normalizeString(query);
+      mergedResults = mergedResults.filter(r => {
+        const normalizedArtist = normalizeString(r.artist);
+        const normalizedTitle = normalizeString(r.title);
+        // For artists, the title IS the artist name
+        if (r.type === 'artist') {
+          return normalizedTitle.includes(normalizedQuery) || normalizedQuery.includes(normalizedTitle);
+        }
+        // For tracks/albums by this artist
+        return normalizedArtist.includes(normalizedQuery) || normalizedQuery.includes(normalizedArtist);
+      });
+    }
+    
+    // For specific artist name search (when searching for an artist's content)
+    // Boost results that match the artist name exactly
+    const queryLower = normalizeString(query);
+    mergedResults.forEach(r => {
+      const artistLower = normalizeString(r.artist);
+      const titleLower = normalizeString(r.title);
+      // Boost exact matches
+      if (artistLower === queryLower || titleLower === queryLower) {
+        r.popularity = (r.popularity || 0) + 10000;
+      } else if (artistLower.includes(queryLower) || queryLower.includes(artistLower)) {
+        r.popularity = (r.popularity || 0) + 5000;
+      }
+    });
 
     // Sort by relevance (chart position first, then official content, then popularity)
     mergedResults.sort((a, b) => {

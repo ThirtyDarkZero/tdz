@@ -72,6 +72,7 @@ export type Database = {
           play_count: number | null
           preorder_date: string | null
           release_date: string | null
+          release_type: string | null
           scheduled_release_date: string | null
           title: string
           total_duration: number | null
@@ -104,6 +105,7 @@ export type Database = {
           play_count?: number | null
           preorder_date?: string | null
           release_date?: string | null
+          release_type?: string | null
           scheduled_release_date?: string | null
           title: string
           total_duration?: number | null
@@ -136,6 +138,7 @@ export type Database = {
           play_count?: number | null
           preorder_date?: string | null
           release_date?: string | null
+          release_type?: string | null
           scheduled_release_date?: string | null
           title?: string
           total_duration?: number | null
@@ -3647,6 +3650,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_artist_monthly_listeners: { Args: never; Returns: undefined }
       validate_stream: {
         Args: {
           p_device_fingerprint: string

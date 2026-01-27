@@ -24,6 +24,7 @@ export default function ArtistProfile() {
   const [artist, setArtist] = useState<any>(null);
   const [tracks, setTracks] = useState<any[]>([]);
   const [albums, setAlbums] = useState<any[]>([]);
+  const [gallery, setGallery] = useState<any[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [presavedTracks, setPresavedTracks] = useState<Set<string>>(new Set());
   const [user, setUser] = useState<any>(null);
@@ -45,6 +46,7 @@ export default function ArtistProfile() {
       loadArtist();
       loadTracks();
       loadAlbums();
+      loadGallery();
     }
   }, [artistId]);
 
@@ -103,6 +105,18 @@ export default function ArtistProfile() {
 
     if (!error && data) {
       setAlbums(data);
+    }
+  };
+
+  const loadGallery = async () => {
+    const { data, error } = await supabase
+      .from("artist_gallery")
+      .select("*")
+      .eq("artist_id", artistId)
+      .order("display_order", { ascending: true });
+
+    if (!error && data) {
+      setGallery(data);
     }
   };
 
@@ -385,12 +399,12 @@ export default function ArtistProfile() {
         </section>
       )}
 
-      {/* Albums Section - RKHM/Spotify Style Grid */}
-      {albums.length > 0 && (
+      {/* Albums Section - Filter by release_type */}
+      {albums.filter(a => (a as any).release_type === 'album' || (!(a as any).release_type && !a.title?.toLowerCase().includes('single') && !a.title?.toLowerCase().includes('ep'))).length > 0 && (
         <section className="px-4 sm:px-6 lg:px-8 py-6">
           <h2 className="text-2xl sm:text-3xl font-black mb-6 tracking-tight">Albums</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {albums.filter(a => !a.title?.toLowerCase().includes('single') && !a.title?.toLowerCase().includes('ep')).map((album) => (
+            {albums.filter(a => (a as any).release_type === 'album' || (!(a as any).release_type && !a.title?.toLowerCase().includes('single') && !a.title?.toLowerCase().includes('ep'))).map((album) => (
               <div 
                 key={album.id}
                 onClick={() => navigate(`/album/${album.id}`)}
@@ -417,7 +431,7 @@ export default function ArtistProfile() {
                 </div>
                 <p className="font-semibold text-white truncate">{album.title}</p>
                 <p className="text-sm text-white/50 flex items-center gap-1">
-                  <span className="text-xs bg-white/10 px-1.5 py-0.5 rounded">E</span>
+                  <span className="text-xs bg-white/10 px-1.5 py-0.5 rounded">Album</span>
                   {album.release_date ? new Date(album.release_date).getFullYear() : '—'}
                 </p>
               </div>
@@ -426,15 +440,52 @@ export default function ArtistProfile() {
         </section>
       )}
 
-      {/* Singles & EPs Section */}
-      {tracks.length > 0 && (
+      {/* EPs Section */}
+      {albums.filter(a => (a as any).release_type === 'ep').length > 0 && (
+        <section className="px-4 sm:px-6 lg:px-8 py-6">
+          <h2 className="text-2xl sm:text-3xl font-black mb-6 tracking-tight">EPs</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {albums.filter(a => (a as any).release_type === 'ep').map((album) => (
+              <div 
+                key={album.id}
+                onClick={() => navigate(`/album/${album.id}`)}
+                className="cursor-pointer group"
+              >
+                <div className="aspect-square rounded-lg overflow-hidden bg-white/5 mb-3 relative shadow-lg">
+                  {album.cover_art_path ? (
+                    <img
+                      src={getAlbumCover(album)}
+                      alt={album.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Music className="w-12 h-12 text-white/20" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
+                      <Play className="w-5 h-5 text-black ml-0.5" fill="currentColor" />
+                    </div>
+                  </div>
+                </div>
+                <p className="font-semibold text-white truncate">{album.title}</p>
+                <p className="text-sm text-white/50 flex items-center gap-1">
+                  <span className="text-xs bg-purple-500/30 text-purple-300 px-1.5 py-0.5 rounded">EP</span>
+                  {album.release_date ? new Date(album.release_date).getFullYear() : '—'}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Singles Section - Show albums marked as singles or tracks without album_id */}
+      {albums.filter(a => (a as any).release_type === 'single' || a.total_tracks === 1).length > 0 && (
         <section className="px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Singles & EPs</h2>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Singles</h2>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="rounded-full border-white/20 text-white/60 hover:text-white">
-                More
-              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -459,8 +510,7 @@ export default function ArtistProfile() {
             className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {/* Show singles/EPs from albums or standalone tracks */}
-            {albums.filter(a => a.title?.toLowerCase().includes('single') || a.title?.toLowerCase().includes('ep') || a.total_tracks === 1).map((album) => (
+            {albums.filter(a => (a as any).release_type === 'single' || a.total_tracks === 1).map((album) => (
               <div 
                 key={album.id}
                 onClick={() => navigate(`/album/${album.id}`)}
@@ -478,12 +528,38 @@ export default function ArtistProfile() {
                       <Music className="w-12 h-12 text-white/20" />
                     </div>
                   )}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
+                      <Play className="w-5 h-5 text-black ml-0.5" fill="currentColor" />
+                    </div>
+                  </div>
                 </div>
                 <p className="font-semibold text-white truncate">{album.title}</p>
                 <p className="text-sm text-white/50 flex items-center gap-1">
-                  <span className="text-xs bg-white/10 px-1.5 py-0.5 rounded">E</span>
-                  Single • {album.release_date ? new Date(album.release_date).getFullYear() : '—'}
+                  <span className="text-xs bg-cyan-500/30 text-cyan-300 px-1.5 py-0.5 rounded">Single</span>
+                  {album.release_date ? new Date(album.release_date).getFullYear() : '—'}
                 </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Photo Gallery Section */}
+      {gallery.length > 0 && (
+        <section className="px-4 sm:px-6 lg:px-8 py-6">
+          <h2 className="text-2xl sm:text-3xl font-black mb-6 tracking-tight">Gallery</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {gallery.map((item) => (
+              <div 
+                key={item.id}
+                className="aspect-square rounded-lg overflow-hidden bg-white/5 cursor-pointer group"
+              >
+                <img
+                  src={supabase.storage.from('artist-gallery').getPublicUrl(item.image_path).data.publicUrl}
+                  alt={item.caption || 'Gallery image'}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
               </div>
             ))}
           </div>

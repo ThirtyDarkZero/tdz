@@ -1,6 +1,7 @@
-import { Play, Pause, Heart, MoreHorizontal, Clock, Plus } from "lucide-react";
+import { Play, Pause, Heart, MoreHorizontal, Clock, Plus, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Track {
   id: string;
@@ -10,6 +11,11 @@ interface Track {
   duration?: number;
   play_count?: number;
   created_at?: string;
+  album_cover_path?: string;
+  album_cover_bucket?: string;
+  albums?: {
+    cover_art_path?: string;
+  };
 }
 
 interface PremiumTrackListProps {
@@ -135,15 +141,32 @@ export function PremiumTrackList({
                   </Button>
                 </div>
 
-                {/* Title & Artist */}
-                <div className="min-w-0 flex-1">
-                  <p className={`
-                    font-medium text-sm sm:text-base transition-colors line-clamp-1
-                    ${isPlaying ? 'text-cyan-400' : ''}
-                  `}>
-                    {track.title}
-                  </p>
-                  <p className="text-xs sm:text-sm text-white/40 line-clamp-1">{track.artist_name}</p>
+                {/* Cover Art + Title & Artist */}
+                <div className="min-w-0 flex-1 flex items-center gap-3">
+                  {/* Album Cover */}
+                  <div className="w-10 h-10 rounded overflow-hidden bg-white/5 flex-shrink-0">
+                    {(track.album_cover_path || track.albums?.cover_art_path) ? (
+                      <img
+                        src={supabase.storage.from(track.album_cover_bucket || 'album-covers').getPublicUrl(track.album_cover_path || track.albums?.cover_art_path || '').data.publicUrl}
+                        alt={track.title}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Music className="w-4 h-4 text-white/30" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className={`
+                      font-medium text-sm sm:text-base transition-colors line-clamp-1
+                      ${isPlaying ? 'text-cyan-400' : ''}
+                    `}>
+                      {track.title}
+                    </p>
+                    <p className="text-xs sm:text-sm text-white/40 line-clamp-1">{track.artist_name}</p>
+                  </div>
                 </div>
 
                 {/* Album */}
