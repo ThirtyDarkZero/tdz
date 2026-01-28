@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
-import { UserPlus, Users, TrendingUp, DollarSign, Music, Upload, ChevronRight, Image, X, Check, Lock } from "lucide-react";
+import { UserPlus, Users, TrendingUp, DollarSign, Music, Upload, ChevronRight, Image, X, Check, Lock, HardDrive } from "lucide-react";
+import { CatalogImport } from "@/components/CatalogImport";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart
 } from "recharts";
@@ -407,6 +408,21 @@ export const ManagerDashboard = () => {
           <p className="text-muted-foreground mt-2">Manage your roster like a sports team</p>
         </div>
         <div className="flex gap-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <HardDrive className="h-4 w-4" />
+                Catalog Import
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <CatalogImport 
+                artistId={selectedArtist?.artist_id}
+                artistName={selectedArtist?.artist_name}
+                onComplete={loadArtists}
+              />
+            </DialogContent>
+          </Dialog>
           <Dialog open={createProfileOpen} onOpenChange={setCreateProfileOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2">

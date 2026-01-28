@@ -435,6 +435,7 @@ export type Database = {
           updated_at: string
           user_id: string
           verified: boolean | null
+          website: string | null
         }
         Insert: {
           artist_name: string
@@ -449,6 +450,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           verified?: boolean | null
+          website?: string | null
         }
         Update: {
           artist_name?: string
@@ -463,6 +465,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           verified?: boolean | null
+          website?: string | null
         }
         Relationships: []
       }
@@ -1362,6 +1365,7 @@ export type Database = {
       }
       listener_demographics: {
         Row: {
+          age_range: string | null
           artist_id: string
           browser: string | null
           city: string | null
@@ -1369,16 +1373,21 @@ export type Database = {
           country_code: string | null
           created_at: string
           device_type: string | null
+          gender: string | null
           id: string
           ip_address: unknown
+          language: string | null
           latitude: number | null
           listener_id: string | null
+          listening_time_of_day: string | null
           longitude: number | null
           os: string | null
+          referral_source: string | null
           region: string | null
           track_id: string | null
         }
         Insert: {
+          age_range?: string | null
           artist_id: string
           browser?: string | null
           city?: string | null
@@ -1386,16 +1395,21 @@ export type Database = {
           country_code?: string | null
           created_at?: string
           device_type?: string | null
+          gender?: string | null
           id?: string
           ip_address?: unknown
+          language?: string | null
           latitude?: number | null
           listener_id?: string | null
+          listening_time_of_day?: string | null
           longitude?: number | null
           os?: string | null
+          referral_source?: string | null
           region?: string | null
           track_id?: string | null
         }
         Update: {
+          age_range?: string | null
           artist_id?: string
           browser?: string | null
           city?: string | null
@@ -1403,12 +1417,16 @@ export type Database = {
           country_code?: string | null
           created_at?: string
           device_type?: string | null
+          gender?: string | null
           id?: string
           ip_address?: unknown
+          language?: string | null
           latitude?: number | null
           listener_id?: string | null
+          listening_time_of_day?: string | null
           longitude?: number | null
           os?: string | null
+          referral_source?: string | null
           region?: string | null
           track_id?: string | null
         }

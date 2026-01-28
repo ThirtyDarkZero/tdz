@@ -252,7 +252,7 @@ export const StudioHome = ({ artistName, onNavigate, onUploadClick }: StudioHome
                     <div className="w-14 h-14 rounded-xl bg-muted/50 flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform">
                       {track.album?.cover_art_path ? (
                         <img 
-                          src={supabase.storage.from("artist-images").getPublicUrl(track.album.cover_art_path).data.publicUrl}
+                          src={supabase.storage.from("album-covers").getPublicUrl(track.album.cover_art_path).data.publicUrl}
                           alt={track.title}
                           className="w-full h-full object-cover"
                         />
