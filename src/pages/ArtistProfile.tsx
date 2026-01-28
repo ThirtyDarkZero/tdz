@@ -7,7 +7,8 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { 
   Play, Bell, BellOff, ArrowLeft, MoreHorizontal, 
-  Music, ChevronLeft, ChevronRight, MessageCircle, Share2, UserPlus, UserCheck
+  Music, ChevronLeft, ChevronRight, MessageCircle, Share2, UserPlus, UserCheck,
+  Globe, Instagram, Twitter, Youtube, Facebook, ExternalLink
 } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { DirectMessagePanel } from "@/components/DirectMessagePanel";
@@ -346,6 +347,89 @@ export default function ArtistProfile() {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
+
+            {/* Social Links & Website */}
+            {(artist.social_links || artist.website) && (
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-4">
+                {artist.website && (
+                  <a
+                    href={artist.website.startsWith('http') ? artist.website : `https://${artist.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-sm text-white/80 hover:text-white"
+                  >
+                    <Globe className="w-4 h-4" />
+                    Website
+                  </a>
+                )}
+                {artist.social_links?.instagram && (
+                  <a
+                    href={`https://instagram.com/${artist.social_links.instagram.replace('@', '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500 transition-all text-sm text-white/80 hover:text-white"
+                  >
+                    <Instagram className="w-4 h-4" />
+                    Instagram
+                  </a>
+                )}
+                {artist.social_links?.twitter && (
+                  <a
+                    href={`https://twitter.com/${artist.social_links.twitter.replace('@', '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-sky-500/80 transition-colors text-sm text-white/80 hover:text-white"
+                  >
+                    <Twitter className="w-4 h-4" />
+                    Twitter
+                  </a>
+                )}
+                {artist.social_links?.youtube && (
+                  <a
+                    href={artist.social_links.youtube.startsWith('http') ? artist.social_links.youtube : `https://youtube.com/${artist.social_links.youtube}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-red-600/80 transition-colors text-sm text-white/80 hover:text-white"
+                  >
+                    <Youtube className="w-4 h-4" />
+                    YouTube
+                  </a>
+                )}
+                {artist.social_links?.facebook && (
+                  <a
+                    href={artist.social_links.facebook.startsWith('http') ? artist.social_links.facebook : `https://facebook.com/${artist.social_links.facebook}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-blue-600/80 transition-colors text-sm text-white/80 hover:text-white"
+                  >
+                    <Facebook className="w-4 h-4" />
+                    Facebook
+                  </a>
+                )}
+                {artist.social_links?.spotify && (
+                  <a
+                    href={artist.social_links.spotify}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-green-600/80 transition-colors text-sm text-white/80 hover:text-white"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Spotify
+                  </a>
+                )}
+                {artist.social_links?.appleMusic && (
+                  <a
+                    href={artist.social_links.appleMusic}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-pink-500/80 transition-colors text-sm text-white/80 hover:text-white"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Apple Music
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </section>

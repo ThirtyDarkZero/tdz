@@ -75,7 +75,7 @@ export const ArtistProfileEditor = () => {
           soundcloud: links.soundcloud || '',
           instagram: links.instagram || '',
           twitter: links.twitter || '',
-          website: links.website || ''
+          website: data.website || links.website || '' // Prefer dedicated column
         });
         
         // Check if discography is linked
@@ -238,6 +238,7 @@ export const ArtistProfileEditor = () => {
         profile_image_path: profileImageUrl,
         banner_image_path: bannerImageUrl,
         social_links: socialLinks,
+        website: socialLinks.website || null, // Also store website in dedicated column
       };
 
       // Include ID if profile exists for proper update
