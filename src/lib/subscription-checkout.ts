@@ -1,12 +1,10 @@
-// Square hosted checkout URLs for subscription plans
-export const SQUARE_CHECKOUT_URLS = {
-  starter: "https://checkout.square.site/merchant/MLV6RRYQWCN3T/checkout/U5DGPKX4JCLCOB4D5NJMUA2E",
-  pro: "https://checkout.square.site/merchant/MLV6RRYQWCN3T/checkout/NOY5QGNAQP3L3A3NAEZXXVRE",
-  enterprise: "https://checkout.square.site/merchant/MLV6RRYQWCN3T/checkout/34AKT2GSTNO3BQIZIAOELSON",
-  fan: "https://checkout.square.site/merchant/MLV6RRYQWCN3T/checkout/BU5Z6ATDAPDQMGMQCJEK5I3U",
-} as const;
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-export type CheckoutPlan = keyof typeof SQUARE_CHECKOUT_URLS;
+// Valid subscription plans
+export type CheckoutPlan = "starter" | "pro" | "enterprise" | "fan";
+
+const VALID_PLANS: CheckoutPlan[] = ["starter", "pro", "enterprise", "fan"];
 
 export function getAppBaseUrl(): string {
   // Always use production URL for Square redirects
@@ -16,17 +14,46 @@ export function getAppBaseUrl(): string {
   return window.location.origin;
 }
 
-export function openSquareCheckout(plan: CheckoutPlan) {
-  const baseUrl = SQUARE_CHECKOUT_URLS[plan];
-  const redirectUrl = `${getAppBaseUrl()}/subscription-success?plan=${plan}`;
+export async function openSquareCheckout(plan: CheckoutPlan): Promise<void> {
+  const loadingToast = toast.loading("Preparing checkout...");
   
-  // Square checkout supports redirect_url parameter
-  const checkoutUrl = `${baseUrl}?redirect_url=${encodeURIComponent(redirectUrl)}`;
-  
-  // Open in same window for better redirect experience
-  window.location.href = checkoutUrl;
+  try {
+    const redirectUrl = `${getAppBaseUrl()}/subscription-success?plan=${plan}`;
+    
+    const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+      body: { plan, redirectUrl },
+    });
+
+    toast.dismiss(loadingToast);
+
+    if (error) {
+      console.error('Checkout error:', error);
+      toast.error("Failed to start checkout", { 
+        description: error.message || "Please try again later" 
+      });
+      return;
+    }
+
+    if (!data?.checkoutUrl) {
+      console.error('No checkout URL returned:', data);
+      toast.error("Payment system error", { 
+        description: data?.error || "Could not create checkout session" 
+      });
+      return;
+    }
+
+    // Redirect to Square checkout
+    window.location.href = data.checkoutUrl;
+    
+  } catch (err) {
+    toast.dismiss(loadingToast);
+    console.error('Checkout exception:', err);
+    toast.error("Checkout failed", { 
+      description: "Please try again or contact support" 
+    });
+  }
 }
 
 export function isCheckoutPlan(plan: string): plan is CheckoutPlan {
-  return plan in SQUARE_CHECKOUT_URLS;
+  return VALID_PLANS.includes(plan as CheckoutPlan);
 }
