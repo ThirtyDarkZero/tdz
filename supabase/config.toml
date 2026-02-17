@@ -143,3 +143,9 @@ verify_jwt = false
 
 [functions.square-account-balance]
 verify_jwt = true
+
+[functions.generate-mood-mix]
+verify_jwt = false
+
+[functions.create-tip-session]
+verify_jwt = true

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { YouTubeVideo } from "@/hooks/useYouTubePlayer";
+import { ArtistTipJar } from "@/components/ArtistTipJar";
 import tdzLogo from "@/assets/tdz-logo.png";
 
 type ArtistSource = 'tdz' | 'youtube';
@@ -486,6 +487,11 @@ export default function UnifiedArtistProfile() {
                 <Button variant="ghost" size="icon">
                   <MoreHorizontal className="w-5 h-5" />
                 </Button>
+
+                {/* Tip Jar */}
+                {artistSource === 'tdz' && artist?.id && (
+                  <ArtistTipJar artistId={artist.id} artistName={artist.name} />
+                )}
               </div>
             </div>
           </div>

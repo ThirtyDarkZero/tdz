@@ -25,6 +25,7 @@ import { UserPlaylistsSection } from "@/components/discovery/UserPlaylistsSectio
 import { GenreTop50Section } from "@/components/discovery/GenreTop50Section";
 import { EditorialPlaylistsSection } from "@/components/discovery/EditorialPlaylistsSection";
 import { PlaylistManager } from "@/components/PlaylistManager";
+import { MoodMixGenerator } from "@/components/discovery/MoodMixGenerator";
 
 export default function Discover() {
   const navigate = useNavigate();
@@ -387,6 +388,15 @@ export default function Discover() {
                     if (showTrending) setShowTrending(false);
                   }}
                 />
+              </ErrorBoundary>
+            </div>
+          );
+
+        case 'ai-mix':
+          return (
+            <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+              <ErrorBoundary fallback={<div className="p-4">AI Mix unavailable</div>}>
+                <MoodMixGenerator />
               </ErrorBoundary>
             </div>
           );
