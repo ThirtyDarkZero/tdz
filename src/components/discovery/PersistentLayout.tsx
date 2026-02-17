@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { 
   Menu, Search, X, Flame, Library, TrendingUp, 
   Users, ListMusic, ShoppingBag, Mic2, Settings, Heart,
-  ChevronLeft, Globe
+  ChevronLeft, Globe, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ interface PersistentLayoutProps {
 
 const NAV_ITEMS = [
   { id: "discover", label: "Discover", icon: Flame },
+  { id: "ai-mix", label: "AI Mix", icon: Sparkles },
   { id: "trending", label: "Trending", icon: TrendingUp },
   { id: "library", label: "Global Library", icon: Globe },
   { id: "artists", label: "Artists", icon: Users },

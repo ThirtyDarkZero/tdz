@@ -469,6 +469,45 @@ export type Database = {
         }
         Relationships: []
       }
+      artist_tips: {
+        Row: {
+          amount: number
+          artist_id: string
+          created_at: string
+          currency: string
+          id: string
+          message: string | null
+          square_payment_id: string | null
+          status: string
+          tipper_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          artist_id: string
+          created_at?: string
+          currency?: string
+          id?: string
+          message?: string | null
+          square_payment_id?: string | null
+          status?: string
+          tipper_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          artist_id?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          message?: string | null
+          square_payment_id?: string | null
+          status?: string
+          tipper_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -599,6 +638,54 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collaboration_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_resolved: boolean
+          timestamp_seconds: number | null
+          track_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_resolved?: boolean
+          timestamp_seconds?: number | null
+          track_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_resolved?: boolean
+          timestamp_seconds?: number | null
+          track_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaboration_comments_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "published_tracks_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaboration_comments_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
         ]
@@ -2873,6 +2960,54 @@ export type Database = {
           },
           {
             foreignKeyName: "track_likes_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      track_lyrics_sync: {
+        Row: {
+          created_at: string
+          id: string
+          is_published: boolean
+          lyrics_data: Json
+          track_id: string
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          lyrics_data?: Json
+          track_id: string
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          lyrics_data?: Json
+          track_id?: string
+          updated_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_lyrics_sync_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "published_tracks_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_lyrics_sync_track_id_fkey"
             columns: ["track_id"]
             isOneToOne: false
             referencedRelation: "tracks"
