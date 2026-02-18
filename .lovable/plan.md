@@ -1,51 +1,83 @@
 
-I've analyzed your current platform and identified several high-impact "New Improvements" that will elevate the experience for both Artists and Fans. These improvements build upon your existing AI and payment infrastructure.
 
-### 1. AI-Powered "Mood Mix" Generator (Listener Experience)
-We will introduce a new **AI Curation** tab in the Discovery section. Instead of just searching for songs, fans can describe their current vibe (e.g., "Late night drive through a neon city" or "High-energy workout mix with heavy bass").
-*   **How it works:** A new backend function will process the prompt, analyze track metadata (BPM, Mood, Genre) across the database and YouTube, and generate a personalized "Mood Mix" on the fly.
-*   **Value:** Levels up the discovery experience to compete with top-tier streaming platforms.
+## Phase 2: Smart AI Lyrics Sync + Interactive 3D Visualizer Themes
 
-### 2. Artist "Tip Jar" & Fan Rewards (Monetization & Engagement)
-We will enable direct monetization for artists by allowing fans to send tips through your existing Square integration.
-*   **Artist Profile:** A "Tip Artist" button will appear on profiles.
-*   **Fan Badges:** To encourage support, fans will receive exclusive "Supporter" badges on their profiles based on their contributions.
-*   **Top Supporters:** A new section on the Artist Profile will highlight the biggest fans, driving community competition and engagement.
+### Feature A: Smart Lyrics Sync Editor (Studio Tool)
 
-### 3. Smart AI Lyrics Sync (Artist Tools)
-While you already have lyrics support, we will add a visual **Sync Editor** in the Studio.
-*   **Studio Tool:** Artists can listen to their track and "tap to sync" each line of lyrics.
-*   **Player Enhancement:** The Global Music Player will be updated to show synchronized, highlighted lyrics that move in real-time with the music.
+A new **"Lyrics Sync"** tab will be added to the Studio Music section. Artists can:
 
-### 4. Interactive 3D Visualizer Themes (Visual Experience)
-We will expand the 3D visualizer with dynamic themes that automatically adjust based on the music's genre or mood.
-*   **Themes:** "Neon City" for Electronic/Pop, "Retro Vinyl" for Hip-Hop/Lo-Fi, and "Deep Space" for Ambient/Atmospheric.
-*   **AI Integration:** The system will use your existing audio analysis to "pick" the best theme for the track being played.
+1. **Paste or type lyrics** line by line
+2. **Play their track** and tap a "Sync" button to stamp each line's timestamp in real-time
+3. **Fine-tune** timestamps with +/- adjustment buttons
+4. **Save & Publish** the synced lyrics to the `track_lyrics_sync` table (already created in Phase 1)
 
-### 5. Collaborative Project Notes (Studio Collaboration)
-For artists and labels, we will add a "Collaboration Hub" for tracks in production.
-*   **Timed Comments:** Collaborators can leave notes directly on the track's waveform at specific timestamps (e.g., "Increase bass at 0:45").
-*   **Multi-Artist Splits:** A clearer interface for managing revenue splits between multiple collaborators before publishing.
+**Player Enhancement:** The existing `LyricsPanel` and `FloatingPlayer` lyrics sheet will be upgraded to:
+- Load synced lyrics from `track_lyrics_sync` (falling back to the old `lyric_alignments` table)
+- Display real-time highlighted, karaoke-style scrolling lyrics during playback
+- Show a smooth gradient fade on past/future lines
+
+#### Files to create/modify:
+- **New:** `src/components/studio/LyricsSyncEditor.tsx` -- The tap-to-sync UI with audio playback, line editor, and timestamp controls
+- **Modified:** `src/components/studio/StudioMusic.tsx` -- Add a "Lyrics Sync" tab alongside Releases, Library, Rights, Gallery
+- **Modified:** `src/components/LyricsPanel.tsx` -- Load from `track_lyrics_sync` first, then fall back to `lyric_alignments`; improve the visual styling with karaoke-style highlighting
+- **Modified:** `src/components/FloatingPlayer.tsx` -- Wire the Lyrics button to the upgraded `LyricsPanel` component instead of the placeholder sheet
 
 ---
 
-### Technical Implementation Details
+### Feature B: Interactive 3D Visualizer Themes
 
-#### Frontend Updates:
-- **Discover Page:** Add the "AI Curation" interface and result grid.
-- **Studio Dashboard:** Implement the Lyrics Syncing UI and waveform commenting.
-- **Artist Profile:** Add the Tip Jar UI and Superfan leaderboard.
-- **Music Player:** Update the lyrics panel for synchronized scrolling and integrate 3D theme switching.
+The existing `AudioVisualizer3D` component (which has 5 modes: Aurora, Waves, Sphere, Terrain, Pulse) will be expanded with **3 genre-aware themes** that auto-select based on the track's metadata:
 
-#### Backend (Lovable Cloud) Updates:
-- **New Tables:** `track_lyrics_sync` (for timestamps), `artist_tips` (for tracking contributions), and `collaboration_comments`.
-- **New Edge Functions:**
-    - `generate-mood-mix`: AI-driven track selection.
-    - `create-tip-session`: Dynamic Square checkout for one-time tips.
-- **RLS Policies:** Ensure fans can see synchronized lyrics and badges, but only collaborators can see project notes.
+| Theme | Target Genres | Color Palette | Visual Style |
+|-------|--------------|---------------|--------------|
+| Neon City | Electronic, Pop, Dance | Magenta, Cyan, Hot Pink | Glowing grid lines, pulsing neon rings |
+| Retro Vinyl | Hip-Hop, Lo-Fi, R&B | Warm amber, gold, sepia | Spinning vinyl disc with grooves that react to bass |
+| Deep Space | Ambient, Classical, Atmospheric | Deep blue, violet, white | Nebula particles, slow-moving star field |
+
+**Auto-Theme Logic:** When a track starts playing, the system reads `genre` and `mood` from the track's metadata. A mapping function selects the best theme. Users can still manually override.
+
+#### Files to create/modify:
+- **Modified:** `src/components/3D/AudioVisualizer3D.tsx` -- Add 3 new visualizer components (NeonCityVisualizer, RetroVinylVisualizer, DeepSpaceVisualizer) and an auto-theme selector
+- **Modified:** `src/components/MusicPlayer.tsx` -- Pass current track genre/mood to the visualizer so it can auto-select themes
+- **Modified:** `src/contexts/PlayerContext.tsx` -- No changes needed (genre/mood already available on Track interface via `ai_tags`)
 
 ---
-### Next Steps
-1.  **Phase 1:** Implement the **AI Mood Mix** and **Artist Tip Jar** (Highest impact).
-2.  **Phase 2:** Launch the **Smart Lyrics Sync** and **3D Visualizer Themes**.
-3.  **Phase 3:** Roll out the **Collaboration Hub** for Pro/Enterprise users.
+
+### Technical Details
+
+#### Lyrics Sync Editor Data Format
+The `track_lyrics_sync.lyrics_data` JSONB column will store:
+```text
+{
+  "lines": [
+    { "time": 0.0, "text": "First line of the song" },
+    { "time": 4.2, "text": "Second line of the song" },
+    ...
+  ],
+  "version": 1
+}
+```
+
+#### Auto-Theme Mapping Function
+```text
+genre contains "electronic|edm|pop|dance|synth" -> "neon"
+genre contains "hip-hop|rap|lofi|r&b|soul"      -> "vinyl"  
+genre contains "ambient|classical|chill|atmospheric" -> "space"
+fallback -> current user-selected mode (aurora, waves, etc.)
+```
+
+#### No database changes needed
+The `track_lyrics_sync` table was already created in Phase 1. No new migrations required.
+
+#### No new edge functions needed
+All lyrics sync operations use direct database reads/writes via the existing RLS policies (artist can write their own track lyrics, anyone can read published lyrics).
+
+---
+
+### Implementation Order
+1. Create `LyricsSyncEditor.tsx` and integrate into Studio Music tabs
+2. Upgrade `LyricsPanel.tsx` to load from `track_lyrics_sync` with karaoke styling
+3. Wire `FloatingPlayer.tsx` lyrics button to the real `LyricsPanel`
+4. Add 3 new 3D visualizer theme components to `AudioVisualizer3D.tsx`
+5. Add auto-theme selection logic based on track genre/mood
+6. Pass track metadata through `MusicPlayer.tsx` to the visualizer
