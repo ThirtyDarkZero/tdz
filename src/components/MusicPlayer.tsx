@@ -586,7 +586,7 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
         {/* 3D Visualizer Section */}
         {showVisualizer && (
           <div className="border-b border-border/50">
-            <AudioVisualizer3D audioElement={audioRef.current} isPlaying={isPlaying} />
+            <AudioVisualizer3D audioElement={audioRef.current} isPlaying={isPlaying} genre={currentTrack?.album?.title} mood={(currentTrack?.ai_tags as any)?.mood} />
           </div>
         )}
         
