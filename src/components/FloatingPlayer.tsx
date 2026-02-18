@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { MusicPlayer } from '@/components/MusicPlayer';
+import { LyricsPanel } from '@/components/LyricsPanel';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -28,6 +29,10 @@ export function FloatingPlayer() {
   const [showLyrics, setShowLyrics] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [infinitePlay, setInfinitePlay] = useState(false);
+  const [playerCurrentTime, setPlayerCurrentTime] = useState(0);
+  
+  // Track current time from audio for lyrics sync
+  const audioTimeRef = useRef<number>(0);
   
   const isArtist = role === 'artist' || role === 'verified_artist' || role === 'manager';
   const hasUnlimitedStreaming = hasFeature('unlimitedStreaming') || isArtist;
@@ -192,15 +197,14 @@ export function FloatingPlayer() {
         </SheetContent>
       </Sheet>
 
-      {/* Lyrics Sheet */}
-      <Sheet open={showLyrics} onOpenChange={setShowLyrics}>
-        <SheetContent side="right" className="w-full max-w-md p-0">
-          <div className="p-4">
-            <h2 className="text-xl font-bold mb-4">Lyrics</h2>
-            <p className="text-muted-foreground">Lyrics for "{playerTrack.title}"</p>
-          </div>
-        </SheetContent>
-      </Sheet>
+      {/* Lyrics Panel */}
+      <LyricsPanel
+        open={showLyrics}
+        onClose={() => setShowLyrics(false)}
+        trackId={currentTrack?.id || null}
+        currentTime={playerCurrentTime}
+        audioPath={playerTrack.file_path}
+      />
 
       <SubscriptionModal
         open={showSubscriptionModal}

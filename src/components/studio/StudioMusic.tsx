@@ -4,6 +4,7 @@ import { ReleaseManager } from "@/components/ReleaseManager";
 import { ArtistGalleryManager } from "@/components/ArtistGalleryManager";
 import { TerritoryRightsHub } from "@/components/TerritoryRightsHub";
 import { FeatureGate } from "@/components/FeatureGate";
+import { LyricsSyncEditor } from "@/components/studio/LyricsSyncEditor";
 
 interface Track {
   id: string;
@@ -44,6 +45,9 @@ export const StudioMusic = ({ onPlayTrack }: StudioMusicProps) => {
           <TabsTrigger value="gallery" className="data-[state=active]:bg-background">
             Gallery
           </TabsTrigger>
+          <TabsTrigger value="lyrics-sync" className="data-[state=active]:bg-background">
+            Lyrics Sync
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="releases" className="mt-0">
@@ -62,6 +66,10 @@ export const StudioMusic = ({ onPlayTrack }: StudioMusicProps) => {
 
         <TabsContent value="gallery" className="mt-0">
           <ArtistGalleryManager />
+        </TabsContent>
+
+        <TabsContent value="lyrics-sync" className="mt-0">
+          <LyricsSyncEditor />
         </TabsContent>
       </Tabs>
     </div>

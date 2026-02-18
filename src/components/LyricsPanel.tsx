@@ -45,7 +45,25 @@ export const LyricsPanel = ({ open, onClose, trackId, currentTime, audioPath }: 
   const loadLyrics = async (id: string) => {
     setLoading(true);
     try {
-      // First check if we have stored lyrics in lyric_alignments
+      // 1. Try track_lyrics_sync first (new synced lyrics)
+      const { data: syncData } = await supabase
+        .from('track_lyrics_sync')
+        .select('lyrics_data')
+        .eq('track_id', id)
+        .eq('is_published', true)
+        .order('version', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (syncData?.lyrics_data) {
+        const parsed = syncData.lyrics_data as any;
+        if (parsed?.lines?.length) {
+          setLyrics(parsed.lines);
+          return;
+        }
+      }
+
+      // 2. Fall back to lyric_alignments
       const { data: alignments, error } = await supabase
         .from('lyric_alignments')
         .select('*')
@@ -54,7 +72,6 @@ export const LyricsPanel = ({ open, onClose, trackId, currentTime, audioPath }: 
         .order('word_index', { ascending: true });
 
       if (!error && alignments && alignments.length > 0) {
-        // Group words by line
         const lineMap = new Map<number, { time: number; words: string[] }>();
         alignments.forEach(a => {
           if (!lineMap.has(a.line_index)) {
@@ -65,16 +82,12 @@ export const LyricsPanel = ({ open, onClose, trackId, currentTime, audioPath }: 
 
         const parsedLyrics = Array.from(lineMap.entries())
           .sort(([a], [b]) => a - b)
-          .map(([_, data]) => ({
-            time: data.time,
-            text: data.words.join(' ')
-          }));
+          .map(([_, data]) => ({ time: data.time, text: data.words.join(' ') }));
 
         setLyrics(parsedLyrics);
         return;
       }
 
-      // No stored lyrics - show placeholder
       setLyrics([]);
     } catch (error) {
       console.error('Error loading lyrics:', error);
@@ -88,26 +101,20 @@ export const LyricsPanel = ({ open, onClose, trackId, currentTime, audioPath }: 
       toast.error("No audio file available");
       return;
     }
-
     setExtracting(true);
     try {
       const { data, error } = await supabase.functions.invoke('extract-lyrics', {
         body: { audioPath }
       });
-
       if (error) throw error;
-
       if (data?.lyrics) {
-        // Parse extracted lyrics into timed lines (basic timing estimation)
         const lines = data.lyrics.split('\n').filter((l: string) => l.trim());
-        const estimatedDuration = 180; // 3 minutes default
+        const estimatedDuration = 180;
         const timePerLine = estimatedDuration / lines.length;
-
         const timedLyrics = lines.map((text: string, i: number) => ({
           time: i * timePerLine,
           text: text.trim()
         }));
-
         setLyrics(timedLyrics);
         toast.success("Lyrics extracted successfully!");
       } else {
@@ -123,9 +130,7 @@ export const LyricsPanel = ({ open, onClose, trackId, currentTime, audioPath }: 
 
   const getCurrentLineIndex = () => {
     for (let i = lyrics.length - 1; i >= 0; i--) {
-      if (currentTime >= lyrics[i].time) {
-        return i;
-      }
+      if (currentTime >= lyrics[i].time) return i;
     }
     return 0;
   };
@@ -150,22 +155,29 @@ export const LyricsPanel = ({ open, onClose, trackId, currentTime, audioPath }: 
             </div>
           ) : lyrics.length > 0 ? (
             <ScrollArea className="h-full pr-4">
-              <div className="space-y-6 py-4">
-                {lyrics.map((line, index) => (
-                  <p
-                    key={index}
-                    data-line={index}
-                    className={`text-lg leading-relaxed transition-all duration-500 cursor-pointer hover:text-foreground ${
-                      index === currentLineIndex
-                        ? 'text-foreground font-bold text-xl scale-105 text-primary'
-                        : index < currentLineIndex
-                        ? 'text-muted-foreground/40'
-                        : 'text-muted-foreground/70'
-                    }`}
-                  >
-                    {line.text}
-                  </p>
-                ))}
+              <div className="space-y-4 py-8">
+                {lyrics.map((line, index) => {
+                  const isCurrent = index === currentLineIndex;
+                  const isPast = index < currentLineIndex;
+                  return (
+                    <p
+                      key={index}
+                      data-line={index}
+                      className={`text-lg leading-relaxed transition-all duration-500 cursor-pointer hover:text-foreground ${
+                        isCurrent
+                          ? 'text-primary font-bold text-xl scale-[1.03] origin-left'
+                          : isPast
+                          ? 'text-muted-foreground/30'
+                          : 'text-muted-foreground/60'
+                      }`}
+                      style={{
+                        textShadow: isCurrent ? '0 0 20px hsl(var(--primary) / 0.4)' : 'none',
+                      }}
+                    >
+                      {line.text}
+                    </p>
+                  );
+                })}
               </div>
             </ScrollArea>
           ) : (
@@ -178,21 +190,11 @@ export const LyricsPanel = ({ open, onClose, trackId, currentTime, audioPath }: 
                 </p>
               </div>
               {audioPath && (
-                <Button 
-                  onClick={extractLyrics} 
-                  disabled={extracting}
-                  className="gap-2"
-                >
+                <Button onClick={extractLyrics} disabled={extracting} className="gap-2">
                   {extracting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Extracting...
-                    </>
+                    <><Loader2 className="h-4 w-4 animate-spin" />Extracting...</>
                   ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4" />
-                      Auto-detect Lyrics
-                    </>
+                    <><RefreshCw className="h-4 w-4" />Auto-detect Lyrics</>
                   )}
                 </Button>
               )}
