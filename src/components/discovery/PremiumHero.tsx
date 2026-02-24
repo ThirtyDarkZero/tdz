@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Play, Shuffle, Sparkles, TrendingUp, Headphones } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
 
@@ -8,12 +7,10 @@ interface PremiumHeroProps {
   featuredTrack?: any;
 }
 
-// Premium BPM Supreme-style hero with bold typography
 export function PremiumHero({ tracks, featuredTrack }: PremiumHeroProps) {
   const navigate = useNavigate();
   const { playTrack } = usePlayer();
 
-  const heroTrack = featuredTrack || tracks[0];
   const hasContent = tracks.length > 0;
 
   const normalizeTrack = (t: any) => ({
@@ -39,22 +36,13 @@ export function PremiumHero({ tracks, featuredTrack }: PremiumHeroProps) {
   };
 
   return (
-    <div className="relative w-full min-h-[60vh] overflow-hidden bg-[#030303]">
-      {/* Abstract gradient background */}
+    <div className="relative w-full min-h-[60vh] overflow-hidden" style={{ background: "#030303" }}>
+      {/* Gradient background */}
       <div className="absolute inset-0">
-        {/* Primary gradient layers */}
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-950/40 via-[#030303] to-purple-950/30" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#030303] via-transparent to-[#030303]/50" />
-        
-        {/* Animated gradient orbs */}
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1.5s' }} />
-        <div className="absolute top-1/3 right-1/3 w-[400px] h-[400px] bg-amber-500/5 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: '2.5s' }} />
-        
-        {/* Noise texture overlay */}
-        <div className="absolute inset-0 opacity-[0.015]" style={{ 
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-        }} />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(0,30,40,0.4) 0%, #030303 50%, rgba(20,0,40,0.3) 100%)" }} />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to top, #030303 0%, transparent 50%, rgba(0,0,0,0.5) 100%)" }} />
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full blur-[120px] animate-pulse" style={{ background: "rgba(0,207,255,0.08)" }} />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full blur-[100px] animate-pulse" style={{ background: "rgba(139,92,246,0.06)", animationDelay: "1.5s" }} />
       </div>
 
       {/* Content */}
@@ -63,71 +51,64 @@ export function PremiumHero({ tracks, featuredTrack }: PremiumHeroProps) {
           {/* Stats bar */}
           <div className="flex items-center gap-8 mb-8">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-              <span className="text-white/50 text-sm font-medium uppercase tracking-wider">Live</span>
+              <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#22C55E" }} />
+              <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#22C55E", fontWeight: 500, letterSpacing: "0.15em", textTransform: "uppercase" }}>Live</span>
             </div>
-            <div className="flex items-center gap-2 text-white/40 text-sm">
-              <TrendingUp className="w-4 h-4 text-green-400" />
-              <span>{tracks.length}+ Tracks</span>
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" style={{ color: "#22C55E" }} />
+              <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#666" }}>{tracks.length}+ Tracks</span>
             </div>
-            <div className="flex items-center gap-2 text-white/40 text-sm">
-              <Headphones className="w-4 h-4 text-cyan-400" />
-              <span>$1/Stream</span>
+            <div className="flex items-center gap-2">
+              <Headphones className="w-4 h-4" style={{ color: "#00CFFF" }} />
+              <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#666" }}>$1/Stream</span>
             </div>
           </div>
 
-          {/* Main headline - BPM Supreme style massive type */}
-          <h1 className="font-display text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black text-white leading-[0.85] tracking-tight mb-6">
-            <span className="block">discover</span>
-            <span className="block bg-gradient-to-r from-cyan-400 via-cyan-300 to-cyan-500 bg-clip-text text-transparent">
-              new TDZ releases
-            </span>
+          {/* Headline */}
+          <h1 style={{ fontFamily: "'Six Caps', sans-serif", lineHeight: 0.9, letterSpacing: "0.04em" }}>
+            <span className="block" style={{ fontSize: "clamp(60px, 10vw, 140px)", color: "#fff" }}>DISCOVER</span>
+            <span className="block" style={{ fontSize: "clamp(60px, 10vw, 140px)", color: "#00CFFF" }}>NEW TDZ RELEASES</span>
           </h1>
 
-          {/* Subtitle */}
-          <p className="text-white/60 text-lg md:text-xl max-w-xl mb-10 leading-relaxed font-light">
+          <p className="mt-6 max-w-xl" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 16, color: "#777", lineHeight: 1.7, fontWeight: 300 }}>
             Stream unlimited music from independent artists worldwide. 
             Every play directly supports creators.
           </p>
 
-          {/* Action buttons */}
+          {/* Buttons */}
           {hasContent && (
-            <div className="flex flex-wrap items-center gap-4">
-              <Button
+            <div className="flex flex-wrap items-center gap-4 mt-10">
+              <button
                 onClick={handlePlayAll}
-                size="lg"
-                className="bg-white text-black hover:bg-white/90 font-bold px-8 py-6 text-base rounded-full transition-all duration-300 hover:scale-105 shadow-2xl shadow-white/20"
+                className="flex items-center gap-2 px-8 py-3 rounded-full font-semibold hover:scale-105 transition-all shadow-2xl"
+                style={{ background: "#fff", color: "#000", fontFamily: "'Raleway', sans-serif", fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase" }}
               >
-                <Play className="w-5 h-5 mr-2" fill="currentColor" />
+                <Play className="w-5 h-5" fill="currentColor" />
                 Play All
-              </Button>
-              
-              <Button
+              </button>
+              <button
                 onClick={handleShuffle}
-                size="lg"
-                variant="outline"
-                className="border-white/20 bg-white/5 text-white hover:bg-white/10 hover:border-white/40 px-8 py-6 rounded-full backdrop-blur-sm transition-all duration-300 hover:scale-105"
+                className="flex items-center gap-2 px-8 py-3 rounded-full hover:scale-105 transition-all"
+                style={{ border: "1px solid #333", color: "#888", background: "rgba(255,255,255,0.03)", fontFamily: "'Raleway', sans-serif", fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase", backdropFilter: "blur(8px)" }}
               >
-                <Shuffle className="w-5 h-5 mr-2" />
+                <Shuffle className="w-5 h-5" />
                 Shuffle
-              </Button>
-              
-              <Button
+              </button>
+              <button
                 onClick={() => navigate('/studio')}
-                size="lg"
-                variant="ghost"
-                className="text-white/60 hover:text-white hover:bg-white/5 px-6 py-6 rounded-full transition-all duration-300"
+                className="flex items-center gap-2 px-6 py-3 rounded-full hover:text-white transition-all"
+                style={{ color: "#666", fontFamily: "'Raleway', sans-serif", fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase" }}
               >
-                <Sparkles className="w-5 h-5 mr-2" />
+                <Sparkles className="w-5 h-5" />
                 Upload Music
-              </Button>
+              </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Decorative bottom line */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      {/* Bottom line */}
+      <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: "linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent)" }} />
     </div>
   );
 }
