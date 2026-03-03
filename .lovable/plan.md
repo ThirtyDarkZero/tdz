@@ -1,83 +1,103 @@
+## Fix: Singles vs Album Tracks Categorization + Discovery Competitive Advantages
 
+### Problem
 
-## Phase 2: Smart AI Lyrics Sync + Interactive 3D Visualizer Themes
+When an album is released, each song on that album shows up individually in Discovery as if it were a standalone single. The platform needs to distinguish:
 
-### Feature A: Smart Lyrics Sync Editor (Studio Tool)
+- **True singles**: tracks with `release_type = 'single'` OR tracks with no `album_id` (not part of any album)
+- **Album tracks**: tracks with an `album_id` — these should NOT appear as individual items in "New Releases" lists; the album itself should represent them
 
-A new **"Lyrics Sync"** tab will be added to the Studio Music section. Artists can:
+### Fix 1: Categorization Logic in `useDiscoveryData.ts`
 
-1. **Paste or type lyrics** line by line
-2. **Play their track** and tap a "Sync" button to stamp each line's timestamp in real-time
-3. **Fine-tune** timestamps with +/- adjustment buttons
-4. **Save & Publish** the synced lyrics to the `track_lyrics_sync` table (already created in Phase 1)
+**File: `src/hooks/useDiscoveryData.ts**`
 
-**Player Enhancement:** The existing `LyricsPanel` and `FloatingPlayer` lyrics sheet will be upgraded to:
-- Load synced lyrics from `track_lyrics_sync` (falling back to the old `lyric_alignments` table)
-- Display real-time highlighted, karaoke-style scrolling lyrics during playback
-- Show a smooth gradient fade on past/future lines
+- After loading tracks, split them into two sets:
+  - `singles`: tracks where `album_id IS NULL` (true standalone singles)
+  - `albumTracks`: tracks where `album_id IS NOT NULL` (belong to an album, shown only via album cards)
+- The `tracks` array returned to consumers will only include singles for the main track list
+- Export a new `albumTracks` map keyed by album_id for album detail views
 
-#### Files to create/modify:
-- **New:** `src/components/studio/LyricsSyncEditor.tsx` -- The tap-to-sync UI with audio playback, line editor, and timestamp controls
-- **Modified:** `src/components/studio/StudioMusic.tsx` -- Add a "Lyrics Sync" tab alongside Releases, Library, Rights, Gallery
-- **Modified:** `src/components/LyricsPanel.tsx` -- Load from `track_lyrics_sync` first, then fall back to `lyric_alignments`; improve the visual styling with karaoke-style highlighting
-- **Modified:** `src/components/FloatingPlayer.tsx` -- Wire the Lyrics button to the upgraded `LyricsPanel` component instead of the placeholder sheet
+**File: `src/pages/Discover.tsx**`
 
----
+- "New TDZ Releases" (`PremiumTrackList`) will only show singles (no album_id)
+- "TDZ Albums" section already shows albums correctly — no change needed
+- The 3D carousel should show albums AND singles with cover art (already works)
 
-### Feature B: Interactive 3D Visualizer Themes
+**File: `src/pages/ArtistProfile.tsx**`
 
-The existing `AudioVisualizer3D` component (which has 5 modes: Aurora, Waves, Sphere, Terrain, Pulse) will be expanded with **3 genre-aware themes** that auto-select based on the track's metadata:
+- Fix the singles filter: instead of `total_tracks === 1`, use `release_type === 'single'` only
+- Albums with 1 track that are release_type `album` should stay in albums section
 
-| Theme | Target Genres | Color Palette | Visual Style |
-|-------|--------------|---------------|--------------|
-| Neon City | Electronic, Pop, Dance | Magenta, Cyan, Hot Pink | Glowing grid lines, pulsing neon rings |
-| Retro Vinyl | Hip-Hop, Lo-Fi, R&B | Warm amber, gold, sepia | Spinning vinyl disc with grooves that react to bass |
-| Deep Space | Ambient, Classical, Atmospheric | Deep blue, violet, white | Nebula particles, slow-moving star field |
+**File: `src/pages/Landing.tsx**`
 
-**Auto-Theme Logic:** When a track starts playing, the system reads `genre` and `mood` from the track's metadata. A mapping function selects the best theme. Users can still manually override.
+- "Latest Releases" carousel: show albums + singles, not individual album tracks
 
-#### Files to create/modify:
-- **Modified:** `src/components/3D/AudioVisualizer3D.tsx` -- Add 3 new visualizer components (NeonCityVisualizer, RetroVinylVisualizer, DeepSpaceVisualizer) and an auto-theme selector
-- **Modified:** `src/components/MusicPlayer.tsx` -- Pass current track genre/mood to the visualizer so it can auto-select themes
-- **Modified:** `src/contexts/PlayerContext.tsx` -- No changes needed (genre/mood already available on Track interface via `ai_tags`)
+### Fix 2: Discovery Competitive Advantages
 
----
+Add features that Spotify and Apple Music don't offer:
+
+#### A. **$1/Stream Earnings Transparency Badge** (unique differentiator)
+
+- Show a small "$1 earned" counter on each track card — fans see exactly how much their play contributes
+- File: `src/components/discovery/PremiumTrackList.tsx` — add earnings indicator per track
+
+#### B. **Direct Artist Tipping from Discovery** (no competitor has this inline)
+
+- Add a "Tip" button on track cards in Discovery so fans can tip artists without leaving the feed
+- File: `src/components/discovery/PremiumTrackList.tsx` — add tip icon button
+
+#### C. **Fan Impact Score** (totally unique)
+
+- Show listeners their personal impact: "You've supported 12 artists, contributed $47 in streams"
+- New component: `src/components/discovery/FanImpactCard.tsx`
+- Displayed at top of Discovery for logged-in fans
+
+#### D. **Artist Story Cards** (context Spotify lacks)
+
+- Between track rows, show "story cards" — short artist-written notes about their latest release
+- New component: `src/components/discovery/ArtistStoryCard.tsx`
+- Pulls from `artist_profiles.bio` or a new story field
+
+#### E. **Collaborative Queue** (social listening)
+
+- Allow friends to add to a shared queue — "Listen Together" feature
+- New component: `src/components/discovery/ListenTogetherBanner.tsx`
+- Uses Supabase Realtime for shared queue state
+
+#### F. **Mood-Based Discovery with AI** (already partially built via MoodMixGenerator)
+
+- Surface the existing `MoodMixGenerator` more prominently on the main Discover tab as a "How are you feeling?" prompt
+- No new component needed — just layout integration
+  &nbsp;
+- G. **In global library make sure albums and artists appear and are catagorized in all database searches just like they do in discogs search. fix the global library make the feature more visually pleasing.**
+
+### Implementation Order
+
+1. Fix track categorization in `useDiscoveryData.ts` (filter out album tracks from singles list)
+2. Update `Discover.tsx` to use filtered singles for track lists
+3. Fix `ArtistProfile.tsx` singles filter logic
+4. Fix `Landing.tsx` latest releases to show albums + true singles only
+5. Add earnings transparency badge to `PremiumTrackList`
+6. Add `FanImpactCard` component to Discovery
+7. Add Artist Story Cards between track rows
+8. Surface MoodMixGenerator on main Discover tab
+9. **In global library make sure albums and artists appear and are catagorized in all database searches just like they do in discogs search. fix the global library** 
 
 ### Technical Details
 
-#### Lyrics Sync Editor Data Format
-The `track_lyrics_sync.lyrics_data` JSONB column will store:
+**Categorization filter (core fix):**
+
 ```text
-{
-  "lines": [
-    { "time": 0.0, "text": "First line of the song" },
-    { "time": 4.2, "text": "Second line of the song" },
-    ...
-  ],
-  "version": 1
-}
+// In useDiscoveryData loadTracks:
+const singles = enhancedTracks.filter(t => !t.album_id);
+const albumTracks = enhancedTracks.filter(t => t.album_id);
+// Return singles as main track list, keep albumTracks for detail views
 ```
 
-#### Auto-Theme Mapping Function
-```text
-genre contains "electronic|edm|pop|dance|synth" -> "neon"
-genre contains "hip-hop|rap|lofi|r&b|soul"      -> "vinyl"  
-genre contains "ambient|classical|chill|atmospheric" -> "space"
-fallback -> current user-selected mode (aurora, waves, etc.)
-```
+**No database migrations needed** — `album_id` and `release_type` columns already exist on both `tracks` and `albums` tables.
 
-#### No database changes needed
-The `track_lyrics_sync` table was already created in Phase 1. No new migrations required.
+**New components:**
 
-#### No new edge functions needed
-All lyrics sync operations use direct database reads/writes via the existing RLS policies (artist can write their own track lyrics, anyone can read published lyrics).
-
----
-
-### Implementation Order
-1. Create `LyricsSyncEditor.tsx` and integrate into Studio Music tabs
-2. Upgrade `LyricsPanel.tsx` to load from `track_lyrics_sync` with karaoke styling
-3. Wire `FloatingPlayer.tsx` lyrics button to the real `LyricsPanel`
-4. Add 3 new 3D visualizer theme components to `AudioVisualizer3D.tsx`
-5. Add auto-theme selection logic based on track genre/mood
-6. Pass track metadata through `MusicPlayer.tsx` to the visualizer
+- `src/components/discovery/FanImpactCard.tsx` — queries `listening_history` + `artist_earnings` to compute fan's total contribution
+- `src/components/discovery/ArtistStoryCard.tsx` — displays artist bio snippet with album art as contextual cards
+- &nbsp;
