@@ -186,10 +186,12 @@ export default function Landing() {
   const audioPreview = useAudioPreview();
 
   useEffect(() => {
+    // Only load true singles (tracks not part of an album) for the carousel
     supabase
       .from("tracks")
-      .select("id, title, artist_name, album_cover_path, album_cover_bucket, motion_cover_path, motion_cover_bucket, file_path, created_at, play_count, is_published")
+      .select("id, title, artist_name, album_cover_path, album_cover_bucket, motion_cover_path, motion_cover_bucket, file_path, created_at, play_count, is_published, album_id")
       .eq("is_published", true)
+      .is("album_id", null)
       .order("created_at", { ascending: false })
       .limit(12)
       .then(({ data }) => { if (data) setLatestReleases(data as Track[]); });
