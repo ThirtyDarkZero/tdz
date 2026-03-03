@@ -4,6 +4,8 @@ import { toast } from "sonner";
 
 export function useDiscoveryData() {
   const [tracks, setTracks] = useState<any[]>([]);
+  const [singles, setSingles] = useState<any[]>([]);
+  const [albumTracksMap, setAlbumTracksMap] = useState<Map<string, any[]>>(new Map());
   const [artists, setArtists] = useState<any[]>([]);
   const [albums, setAlbums] = useState<any[]>([]);
   const [playlists, setPlaylists] = useState<any[]>([]);
@@ -114,6 +116,17 @@ export function useDiscoveryData() {
         motion_cover_bucket: track.motion_cover_bucket || track.albums?.motion_cover_bucket || 'motion-covers',
       }));
 
+    // Separate singles (no album) from album tracks
+    const singles = enhancedTracks.filter(t => !t.album_id);
+    const albumTracksMap = new Map<string, typeof enhancedTracks>();
+    enhancedTracks.filter(t => t.album_id).forEach(t => {
+      const list = albumTracksMap.get(t.album_id) || [];
+      list.push(t);
+      albumTracksMap.set(t.album_id, list);
+    });
+
+    setSingles(singles);
+    setAlbumTracksMap(albumTracksMap);
     setTracks(enhancedTracks);
   };
 
@@ -272,6 +285,8 @@ export function useDiscoveryData() {
 
   return {
     tracks,
+    singles,
+    albumTracksMap,
     artists,
     albums,
     playlists,

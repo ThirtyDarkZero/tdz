@@ -26,6 +26,9 @@ import { GenreTop50Section } from "@/components/discovery/GenreTop50Section";
 import { EditorialPlaylistsSection } from "@/components/discovery/EditorialPlaylistsSection";
 import { PlaylistManager } from "@/components/PlaylistManager";
 import { MoodMixGenerator } from "@/components/discovery/MoodMixGenerator";
+import { FanImpactCard } from "@/components/discovery/FanImpactCard";
+import { ArtistStoryCard } from "@/components/discovery/ArtistStoryCard";
+import { ListenTogetherBanner } from "@/components/discovery/ListenTogetherBanner";
 
 export default function Discover() {
   const navigate = useNavigate();
@@ -39,6 +42,7 @@ export default function Discover() {
 
   const {
     tracks,
+    singles,
     artists,
     albums,
     playlists,
@@ -68,8 +72,8 @@ export default function Discover() {
     });
   }, [activeTab, searchQuery, selectedGenre, loading, tracks.length, albums.length, user?.id]);
 
-  // Filter tracks by search (safe against null/undefined fields)
-  const filteredTracks = tracks.filter((track) => {
+  // Filter singles by search (safe against null/undefined fields)
+  const filteredSingles = singles.filter((track) => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return true;
 
@@ -80,14 +84,14 @@ export default function Discover() {
   });
 
   // Filter by selected genre
-  const genreFilteredTracks = selectedGenre
-    ? filteredTracks.filter((t) => {
+  const genreFilteredSingles = selectedGenre
+    ? filteredSingles.filter((t) => {
         const g = (t.genre ?? "").toString().toLowerCase();
         const m = (t.mood ?? "").toString().toLowerCase();
         const sel = selectedGenre.toLowerCase();
         return g.includes(sel) || m.includes(sel);
       })
-    : filteredTracks;
+    : filteredSingles;
 
   const handlePlayTrack = (track: any) => {
     const normalizedTrack = {
@@ -98,7 +102,7 @@ export default function Discover() {
     };
     playTrack(
       normalizedTrack,
-      genreFilteredTracks.map(t => ({
+      genreFilteredSingles.map(t => ({
         ...t,
         duration: t.duration || 0,
         file_path: t.file_path || '',
@@ -195,9 +199,42 @@ export default function Discover() {
           // Main TDZ Releases page - focused on native content
           return (
             <div className="space-y-0">
+              {/* Fan Impact Card for logged-in users */}
+              {user && (
+                <ErrorBoundary fallback={null}>
+                  <div className="pt-6">
+                    <FanImpactCard userId={user.id} />
+                  </div>
+                </ErrorBoundary>
+              )}
+
+              {/* Mood Mix Prompt */}
+              <ErrorBoundary fallback={null}>
+                <div className="px-4 sm:px-6 lg:px-8 py-4">
+                  <div
+                    onClick={() => setActiveTab('ai-mix')}
+                    className="cursor-pointer rounded-2xl p-5 transition-all hover:-translate-y-0.5"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(0,207,255,0.06) 0%, rgba(139,92,246,0.06) 100%)",
+                      border: "1px solid rgba(0,207,255,0.12)",
+                    }}
+                  >
+                    <p className="text-white font-bold text-sm">🎵 How are you feeling?</p>
+                    <p className="text-xs mt-1" style={{ color: "#888" }}>Generate an AI-powered mood mix tailored to your vibe</p>
+                  </div>
+                </div>
+              </ErrorBoundary>
+
+              {/* Listen Together Banner */}
+              {user && (
+                <ErrorBoundary fallback={null}>
+                  <ListenTogetherBanner />
+                </ErrorBoundary>
+              )}
+
               {/* Hero Section */}
               <ErrorBoundary fallback={<div className="h-[300px] sm:h-[400px] bg-gradient-to-br from-primary/10 to-secondary/10" />}>
-                <PremiumHero tracks={genreFilteredTracks} />
+                <PremiumHero tracks={genreFilteredSingles} />
               </ErrorBoundary>
 
               {/* TDZ Releases Carousel */}
@@ -243,9 +280,9 @@ export default function Discover() {
               <ErrorBoundary fallback={null}>
                 <PremiumTrackList
                   sectionNumber={0}
-                  title={selectedGenre ? `${selectedGenre} Tracks` : "New TDZ Releases"}
-                  subtitle="Fresh from TDZ artists"
-                  tracks={genreFilteredTracks}
+                  title={selectedGenre ? `${selectedGenre} Singles` : "New TDZ Singles"}
+                  subtitle="Fresh singles from TDZ artists"
+                  tracks={genreFilteredSingles}
                   currentTrackId={currentTrack?.id}
                   likedTracks={Array.from(likedTracks)}
                   onPlayTrack={handlePlayTrack}
@@ -254,6 +291,22 @@ export default function Discover() {
                   maxTracks={10}
                 />
               </ErrorBoundary>
+
+              {/* Artist Story Cards */}
+              {artists.filter(a => a.bio).length > 0 && (
+                <ErrorBoundary fallback={null}>
+                  <div className="px-4 sm:px-6 lg:px-8 py-6">
+                    <h3 className="text-lg font-bold text-white mb-4" style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 32, letterSpacing: "0.04em" }}>
+                      ARTIST STORIES
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {artists.filter(a => a.bio).slice(0, 3).map(a => (
+                        <ArtistStoryCard key={a.user_id} artist={a} />
+                      ))}
+                    </div>
+                  </div>
+                </ErrorBoundary>
+              )}
 
               {/* Your Playlists */}
               <ErrorBoundary fallback={null}>

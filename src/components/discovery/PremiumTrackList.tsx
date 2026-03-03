@@ -1,4 +1,4 @@
-import { Play, Pause, Heart, MoreHorizontal, Clock, Plus, Music } from "lucide-react";
+import { Play, Pause, Heart, MoreHorizontal, Clock, Plus, Music, DollarSign, HandCoins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +28,8 @@ interface PremiumTrackListProps {
   onPlayTrack: (track: Track) => void;
   onToggleLike?: (trackId: string) => void;
   onAddToQueue?: (track: Track) => void;
+  onTipArtist?: (track: Track) => void;
+  showEarnings?: boolean;
   maxTracks?: number;
 }
 
@@ -48,6 +50,8 @@ export function PremiumTrackList({
   onPlayTrack,
   onToggleLike,
   onAddToQueue,
+  onTipArtist,
+  showEarnings = true,
   maxTracks = 10,
 }: PremiumTrackListProps) {
   const displayTracks = tracks.slice(0, maxTracks);
@@ -78,10 +82,11 @@ export function PremiumTrackList({
       {/* Track list */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12">
         {/* Column headers - simplified for mobile */}
-        <div className="hidden sm:grid grid-cols-[40px_1fr_1fr_100px_60px] gap-4 px-4 py-3 text-white/40 text-xs uppercase tracking-wider border-b border-white/5 mb-2">
+        <div className="hidden sm:grid grid-cols-[40px_1fr_1fr_80px_100px_60px] gap-4 px-4 py-3 text-white/40 text-xs uppercase tracking-wider border-b border-white/5 mb-2">
           <div>#</div>
           <div>Title</div>
           <div className="hidden md:block">Album</div>
+          {showEarnings && <div className="text-right hidden sm:block">Earned</div>}
           <div className="text-right hidden sm:block">
             <Clock className="w-4 h-4 inline" />
           </div>
@@ -95,10 +100,10 @@ export function PremiumTrackList({
             const isLiked = likedTracks.includes(track.id);
 
             return (
-              <div
+                <div
                 key={track.id}
                 className={`
-                  group flex sm:grid sm:grid-cols-[40px_1fr_1fr_100px_60px] gap-3 sm:gap-4 items-center px-3 sm:px-4 py-3 rounded-lg
+                  group flex sm:grid sm:grid-cols-[40px_1fr_1fr_80px_100px_60px] gap-3 sm:gap-4 items-center px-3 sm:px-4 py-3 rounded-lg
                   transition-all duration-200 cursor-pointer
                   ${isPlaying 
                     ? 'bg-white/10 text-white' 
@@ -176,6 +181,17 @@ export function PremiumTrackList({
                   </p>
                 </div>
 
+                {/* Earnings badge */}
+                {showEarnings && (
+                  <div className="text-right hidden sm:block">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                      style={{ background: "rgba(34,197,94,0.15)", color: "#22C55E" }}>
+                      <DollarSign className="w-3 h-3" />
+                      {(track.play_count || 0).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+
                 {/* Duration */}
                 <div className="text-right text-sm hidden sm:block">
                   {formatDuration(track.duration)}
@@ -196,6 +212,20 @@ export function PremiumTrackList({
                       <Heart 
                         className={`w-4 h-4 ${isLiked ? 'text-red-500 fill-red-500' : 'text-white/60'}`} 
                       />
+                    </Button>
+                  )}
+                  {onTipArtist && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="w-8 h-8 hover:bg-white/10"
+                      title="Tip artist"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onTipArtist(track);
+                      }}
+                    >
+                      <HandCoins className="w-4 h-4 text-amber-400/70 hover:text-amber-400" />
                     </Button>
                   )}
                   {onAddToQueue && (

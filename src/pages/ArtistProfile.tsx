@@ -565,7 +565,7 @@ export default function ArtistProfile() {
       )}
 
       {/* Singles Section - Show albums marked as singles or tracks without album_id */}
-      {albums.filter(a => (a as any).release_type === 'single' || a.total_tracks === 1).length > 0 && (
+      {albums.filter(a => (a as any).release_type === 'single').length > 0 && (
         <section className="px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Singles</h2>
@@ -594,7 +594,7 @@ export default function ArtistProfile() {
             className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {albums.filter(a => (a as any).release_type === 'single' || a.total_tracks === 1).map((album) => (
+            {albums.filter(a => (a as any).release_type === 'single').map((album) => (
               <div 
                 key={album.id}
                 onClick={() => navigate(`/album/${album.id}`)}
