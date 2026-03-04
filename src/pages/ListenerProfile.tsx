@@ -344,10 +344,16 @@ export default function ListenerProfile() {
     ? formData.favorite_genres 
     : ["Music Lover"];
 
+  const cosmicBg = "radial-gradient(ellipse 80% 50% at 20% 10%, rgba(139,92,246,0.08) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 80% 30%, rgba(0,207,255,0.06) 0%, transparent 55%), #030308";
+
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white pb-32">
+    <div className="min-h-screen text-white pb-32" style={{ background: cosmicBg }}>
       {/* Top Bar */}
-      <header className="sticky top-0 z-50 bg-[#0a0a0a]/95 backdrop-blur-sm border-b border-white/5">
+      <header className="sticky top-0 z-50 border-b" style={{ 
+        background: "rgba(3,3,8,0.9)", 
+        backdropFilter: "blur(20px)",
+        borderColor: "rgba(139,92,246,0.1)"
+      }}>
         <div className="flex items-center justify-between gap-4 px-4 sm:px-6 py-3">
           <div className="flex items-center gap-4">
             <Button
@@ -388,7 +394,7 @@ export default function ListenerProfile() {
 
       {/* Hero Section with Gradient */}
       <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-cyan-900/30 via-purple-900/20 to-[#0a0a0a] h-80" />
+        <div className="absolute inset-0 h-80" style={{ background: "linear-gradient(to bottom, rgba(30,10,60,0.3), rgba(20,0,40,0.2), rgba(3,3,8,1))" }} />
         
         {/* Profile Section */}
         <section className="relative px-4 sm:px-6 lg:px-8 py-8">

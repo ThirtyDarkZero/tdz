@@ -107,10 +107,13 @@ export function Premium3DCarousel({
   }
 
   return (
-    <section className="relative py-8 sm:py-12 md:py-16 overflow-hidden bg-background/50">
-      {/* Background glow */}
+    <section className="relative py-8 sm:py-12 md:py-16 overflow-hidden" style={{ background: "transparent" }}>
+      {/* Cosmic background glow */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[600px] md:w-[800px] h-[200px] sm:h-[300px] md:h-[400px] bg-primary/5 rounded-full blur-[80px] sm:blur-[100px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] sm:w-[600px] md:w-[800px] h-[200px] sm:h-[300px] md:h-[400px] rounded-full blur-[100px] sm:blur-[150px]" 
+          style={{ background: "rgba(139,92,246,0.08)" }} />
+        <div className="absolute top-1/3 left-1/3 w-[300px] h-[300px] rounded-full blur-[120px]"
+          style={{ background: "rgba(0,207,255,0.05)", animation: "cosmicCarouselPulse 10s ease-in-out infinite" }} />
       </div>
 
       {/* Header - BPM Supreme style */}
@@ -291,6 +294,13 @@ export function Premium3DCarousel({
           />
         ))}
       </div>
+
+      <style>{`
+        @keyframes cosmicCarouselPulse {
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(1.15); }
+        }
+      `}</style>
     </section>
   );
 }

@@ -221,9 +221,20 @@ export default function ArtistProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white pb-32">
+    <div className="min-h-screen text-white pb-32" style={{
+      background: `
+        radial-gradient(ellipse 80% 50% at 20% 10%, rgba(139,92,246,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 30%, rgba(0,207,255,0.06) 0%, transparent 55%),
+        radial-gradient(ellipse 70% 40% at 50% 90%, rgba(59,130,246,0.05) 0%, transparent 50%),
+        #030308
+      `
+    }}>
       {/* Top Bar */}
-      <header className="sticky top-0 z-50 bg-[#0a0a0a]/95 backdrop-blur-sm border-b border-white/5">
+      <header className="sticky top-0 z-50 border-b" style={{ 
+        background: "rgba(3,3,8,0.9)", 
+        backdropFilter: "blur(20px)",
+        borderColor: "rgba(139,92,246,0.1)"
+      }}>
         <div className="flex items-center gap-4 px-4 sm:px-6 py-3">
           <Button
             variant="ghost"
