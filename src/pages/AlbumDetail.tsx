@@ -211,7 +211,13 @@ export default function AlbumDetail() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0a0a0a] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 overflow-hidden flex flex-col" style={{
+      background: `
+        radial-gradient(ellipse 80% 50% at 30% 10%, rgba(139,92,246,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 70% 80%, rgba(0,207,255,0.06) 0%, transparent 55%),
+        #030308
+      `
+    }}>
       <Helmet>
         <title>{album ? `${album.title} - ${album.artist_name}` : 'Album'}</title>
         <meta name="description" content={album?.description || `Listen to ${album?.title} by ${album?.artist_name}`} />
@@ -220,8 +226,12 @@ export default function AlbumDetail() {
         <meta property="og:image" content={getCoverUrl(album?.cover_art_path)} />
       </Helmet>
 
-      {/* Header - RKHM Style */}
-      <div className="sticky top-0 z-10 bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/5">
+      {/* Header - Cosmic Glass */}
+      <div className="sticky top-0 z-10" style={{ 
+        background: "rgba(3,3,8,0.85)", 
+        backdropFilter: "blur(20px)",
+        borderBottom: "1px solid rgba(139,92,246,0.1)"
+      }}>
         <div className="flex items-center gap-4 px-4 md:px-6 py-3">
           <Button
             variant="ghost"

@@ -61,7 +61,7 @@ export function PremiumTrackList({
   }
 
   return (
-    <section className="relative py-8 sm:py-16 bg-[#030303]">
+    <section className="relative py-8 sm:py-16" style={{ background: "transparent" }}>
       {/* Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 mb-6 sm:mb-8">
         <div className="flex items-baseline gap-4 sm:gap-10">
@@ -106,10 +106,18 @@ export function PremiumTrackList({
                   group flex sm:grid sm:grid-cols-[40px_1fr_1fr_80px_100px_60px] gap-3 sm:gap-4 items-center px-3 sm:px-4 py-3 rounded-lg
                   transition-all duration-200 cursor-pointer
                   ${isPlaying 
-                    ? 'bg-white/10 text-white' 
-                    : 'hover:bg-white/5 text-white/70 hover:text-white'
+                    ? 'text-white' 
+                    : 'text-white/70 hover:text-white'
                   }
                 `}
+                style={{
+                  background: isPlaying 
+                    ? "rgba(139,92,246,0.1)" 
+                    : "transparent",
+                  borderBottom: "1px solid rgba(139,92,246,0.05)",
+                }}
+                onMouseEnter={(e) => { if (!isPlaying) (e.currentTarget as HTMLElement).style.background = "rgba(139,92,246,0.06)"; }}
+                onMouseLeave={(e) => { if (!isPlaying) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                 onClick={() => onPlayTrack(track)}
               >
                 {/* Number / Play icon */}
