@@ -205,6 +205,9 @@ export default function Landing() {
       <Section4Studio navigate={navigate} />
       <Ticker text="EARN REAL MONEY FOR YOUR MUSIC $1 PER STREAM.  SET YOUR OWN DOWNLOAD PRICES. KEEP 100% OF DOWNLOAD REVENUE." />
       <Section6Cards />
+      <SectionWhyTDZ navigate={navigate} />
+      <SectionHowPaymentsWork />
+      <SectionAIAgents />
       <Section7ArtistPlans navigate={navigate} />
       <Section8Releases tracks={latestReleases} audioPreview={audioPreview} navigate={navigate} />
       <Section9Discovery navigate={navigate} />
@@ -635,6 +638,149 @@ function Section6Cards() {
 }
 
 // ═══════════════════════════════════════
+// WHY TDZ — Benefits Breakdown
+// ═══════════════════════════════════════
+function SectionWhyTDZ({ navigate }: { navigate: (p: string) => void }) {
+  const features = [
+    { title: "$1 PER STREAM", desc: "Artists earn 333x more than Spotify's $0.003. Every stream = $1 directly to the creator.", color: "#22C55E", icon: "💰" },
+    { title: "100% DOWNLOAD REVENUE", desc: "Set your own download prices. Keep every cent. No middlemen, no hidden fees.", color: "#00CFFF", icon: "📥" },
+    { title: "AI MUSIC WELCOME", desc: "First major platform to embrace AI-generated music. AI artists earn the same $1/stream.", color: "#8B5CF6", icon: "🤖" },
+    { title: "ARTIST STUDIO", desc: "Upload tracks, manage albums, sync lyrics, set territory rights, collaborate with other artists—all in one dashboard.", color: "#D4A017", icon: "🎵" },
+    { title: "AI VIDEO CREATION", desc: "Generate professional music videos with AI (Kling, Runway, Sora, Veo). Reduce production costs by 95%.", color: "#00CFFF", icon: "🎬" },
+    { title: "ADVANCED ANALYTICS", desc: "Real-time streaming data, fan demographics, geographic heat maps, and revenue tracking.", color: "#22C55E", icon: "📊" },
+    { title: "FAN TIPPING", desc: "Fans can tip artists directly from Discovery. Every dollar goes straight to the creator.", color: "#D4A017", icon: "❤️" },
+    { title: "TERRITORY RIGHTS", desc: "Manage your music rights across 200+ territories. Full control over where and how your music is distributed.", color: "#8B5CF6", icon: "🌍" },
+  ];
+
+  const comparison = [
+    { feature: "Per-stream payout", tdz: "$1.00", spotify: "$0.003", apple: "$0.008" },
+    { feature: "Download revenue", tdz: "100%", spotify: "N/A", apple: "~70%" },
+    { feature: "AI music support", tdz: "✓ Full", spotify: "✗ Banned", apple: "✗ Limited" },
+    { feature: "AI video creation", tdz: "✓ Built-in", spotify: "✗", apple: "✗" },
+    { feature: "Fan tipping", tdz: "✓ Inline", spotify: "✗", apple: "✗" },
+    { feature: "Artist owns rights", tdz: "✓ 100%", spotify: "Partial", apple: "Partial" },
+    { feature: "Real-time earnings", tdz: "✓", spotify: "✗ Delayed", apple: "✗ Delayed" },
+  ];
+
+  return (
+    <section className="py-20 px-6" style={{ background: "#000" }}>
+      <Reveal><TDZBadge /><ChromeTitle className="text-center mt-4">WHY TDZ?</ChromeTitle></Reveal>
+      <Reveal delay={0.1}>
+        <p className="text-center mx-auto mt-4 mb-12" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 15, color: "#777", maxWidth: 700 }}>
+          TDZ isn't just another streaming platform. It's a revolution in how artists get paid, how fans engage, and how music is valued.
+        </p>
+      </Reveal>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-[1160px] mx-auto">
+        {features.map((f, i) => (
+          <Reveal key={i} delay={i * 0.06}>
+            <div className="p-6 rounded-2xl transition-all hover:-translate-y-1" style={{ background: "#1C1C1C", minHeight: 180 }}>
+              <span className="text-2xl">{f.icon}</span>
+              <h3 className="mt-3" style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 28, color: f.color, letterSpacing: "0.03em" }}>{f.title}</h3>
+              <p className="mt-2" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#777", lineHeight: 1.7 }}>{f.desc}</p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+
+      {/* Comparison Table */}
+      <Reveal delay={0.3}>
+        <div className="max-w-[900px] mx-auto mt-16">
+          <WhiteTitle className="text-center mb-8">TDZ VS THE COMPETITION</WhiteTitle>
+          <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #222" }}>
+            <div className="grid grid-cols-4 gap-0 text-center py-3" style={{ background: "#1A1A1A" }}>
+              <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#666", letterSpacing: "0.15em" }}>FEATURE</div>
+              <div style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 22, color: "#22C55E" }}>TDZ</div>
+              <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#666" }}>SPOTIFY</div>
+              <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#666" }}>APPLE</div>
+            </div>
+            {comparison.map((row, i) => (
+              <div key={i} className="grid grid-cols-4 gap-0 text-center py-3" style={{ background: i % 2 === 0 ? "#111" : "#141414", borderTop: "1px solid #1A1A1A" }}>
+                <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#888" }}>{row.feature}</div>
+                <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#22C55E", fontWeight: 700 }}>{row.tdz}</div>
+                <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#555" }}>{row.spotify}</div>
+                <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#555" }}>{row.apple}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Reveal>
+    </section>
+  );
+}
+
+// ═══════════════════════════════════════
+// HOW PAYMENTS WORK
+// ═══════════════════════════════════════
+function SectionHowPaymentsWork() {
+  const steps = [
+    { step: "1", title: "UPLOAD YOUR MUSIC", desc: "Upload tracks to your Artist Studio. Set download prices, add metadata, and choose territories.", color: "#00CFFF" },
+    { step: "2", title: "FANS STREAM & BUY", desc: "Every stream earns you $1. Every download purchase goes 100% to you. Fans can also tip directly.", color: "#22C55E" },
+    { step: "3", title: "REAL-TIME EARNINGS", desc: "Watch your earnings grow in real-time on your dashboard. No 90-day delays like traditional DSPs.", color: "#D4A017" },
+    { step: "4", title: "GET PAID", desc: "Cash out anytime via Square. Direct deposit to your bank. No minimum thresholds.", color: "#8B5CF6" },
+  ];
+
+  return (
+    <section className="py-20 px-6" style={{ background: "#000" }}>
+      <Reveal><TDZBadge /><ChromeTitle className="text-center mt-4">HOW PAYMENTS WORK</ChromeTitle></Reveal>
+      <div className="flex flex-col md:flex-row items-start justify-center gap-6 max-w-[1000px] mx-auto mt-12">
+        {steps.map((s, i) => (
+          <Reveal key={i} delay={i * 0.1}>
+            <div className="flex-1 text-center">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ border: `2px solid ${s.color}`, background: `${s.color}10` }}>
+                <span style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 32, color: s.color }}>{s.step}</span>
+              </div>
+              <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 24, color: "#FFF", letterSpacing: "0.03em" }}>{s.title}</h3>
+              <p className="mt-2" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#777", lineHeight: 1.7 }}>{s.desc}</p>
+              {i < steps.length - 1 && <div className="hidden md:block mx-auto mt-4 w-px h-0" />}
+            </div>
+          </Reveal>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ═══════════════════════════════════════
+// AI MUSIC AGENTS
+// ═══════════════════════════════════════
+function SectionAIAgents() {
+  const agents = [
+    { name: "QUANTUM ADVISOR", desc: "AI-powered career advisor that analyzes your data in real-time. Get actionable insights for revenue optimization, release timing, and audience growth.", icon: "🧠", color: "#8B5CF6" },
+    { name: "MOOD MIX GENERATOR", desc: "Tell the AI how you're feeling and it generates a personalized playlist from TDZ's catalog. Unique to our platform.", icon: "🎵", color: "#00CFFF" },
+    { name: "SMART PROMO", desc: "AI identifies optimal promotion windows, suggests collaboration opportunities, and automates social media scheduling.", icon: "📣", color: "#22C55E" },
+    { name: "STORYTELLING STUDIO", desc: "Generate AI music videos using Kling, Runway, Sora, and Veo. Create professional visual content in minutes, not months.", icon: "🎬", color: "#D4A017" },
+    { name: "LABEL STAFF AI", desc: "Virtual A&R, marketing manager, and distribution coordinator. Get label-quality support without the label contract.", icon: "👔", color: "#00CFFF" },
+    { name: "TERRITORY OPTIMIZER", desc: "AI analyzes global streaming patterns to recommend optimal release territories and timing for maximum impact.", icon: "🌐", color: "#8B5CF6" },
+  ];
+
+  return (
+    <section className="py-20 px-6" style={{ background: "#000" }}>
+      <Reveal><TDZBadge /><WhiteTitle className="text-center mt-4">AI MUSIC AGENTS</WhiteTitle></Reveal>
+      <Reveal delay={0.1}>
+        <p className="text-center mx-auto mt-4 mb-12" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 15, color: "#777", maxWidth: 700 }}>
+          Six AI-powered agents work for you 24/7. No other platform offers this level of intelligent artist support.
+        </p>
+      </Reveal>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-[1100px] mx-auto">
+        {agents.map((a, i) => (
+          <Reveal key={i} delay={i * 0.08}>
+            <div className="p-6 rounded-2xl transition-all hover:-translate-y-1" style={{ background: "#1C1C1C", minHeight: 200 }}>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-2xl">{a.icon}</span>
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: `${a.color}20`, color: a.color }}>AI AGENT</span>
+              </div>
+              <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 28, color: a.color, letterSpacing: "0.03em" }}>{a.name}</h3>
+              <p className="mt-2" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#777", lineHeight: 1.7 }}>{a.desc}</p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
 // SECTION 7 — ARTIST SUBSCRIPTION PLANS (with features)
 // ═══════════════════════════════════════
 function Section7ArtistPlans({ navigate }: { navigate: (p: string) => void }) {
@@ -789,105 +935,108 @@ function Section8Releases({ tracks, audioPreview, navigate }: { tracks: Track[];
 function Section9Discovery({ navigate }: { navigate: (p: string) => void }) {
   const [showVideo, setShowVideo] = useState(false);
   return (
-    <section className="py-20 px-4" style={{ background: "#000" }}>
-      <Reveal>
-        <ChromeTitle className="text-center">TDZ DISCOVERY</ChromeTitle>
-        <div className="flex justify-center gap-3 mt-4 mb-8">
-          <button onClick={() => setShowVideo(!showVideo)} className="px-4 py-2 rounded-full text-xs transition-all"
-            style={{ background: showVideo ? "#00CFFF" : "transparent", color: showVideo ? "#000" : "#00CFFF", border: "1px solid #00CFFF", fontFamily: "'Raleway', sans-serif", fontWeight: 600 }}>
-            {showVideo ? "Hide Demo" : "▶ Watch Demo"}
-          </button>
-          <button onClick={() => navigate("/discover")} className="px-4 py-2 rounded-full text-xs"
-            style={{ border: "1px solid #333", color: "#888", fontFamily: "'Raleway', sans-serif", fontWeight: 600 }}>
-            Open Discovery →
-          </button>
-        </div>
-      </Reveal>
+    <section className="py-20 px-4 relative overflow-hidden" style={{ background: "#030308" }}>
+      {/* Cosmic nebula background */}
+      <div className="absolute inset-0 pointer-events-none" style={{ opacity: 0.6 }}>
+        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 120% 80% at 20% 10%, rgba(10,0,40,0.9) 0%, transparent 60%), radial-gradient(ellipse 100% 60% at 80% 20%, rgba(0,20,50,0.7) 0%, transparent 55%)" }} />
+        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 50% 40% at 30% 30%, rgba(139,92,246,0.12) 0%, transparent 70%), radial-gradient(ellipse 40% 50% at 70% 60%, rgba(0,207,255,0.1) 0%, transparent 65%)" }} />
+      </div>
 
-      {showVideo && (
+      <div className="relative z-10">
         <Reveal>
-          <div className="mx-auto mb-8 rounded-2xl overflow-hidden" style={{ maxWidth: 900, border: "1px solid #222" }}>
-            <video src="/videos/discovery-demo.mp4" controls autoPlay muted className="w-full" style={{ background: "#000" }} />
+          <ChromeTitle className="text-center">TDZ DISCOVERY</ChromeTitle>
+          <p className="text-center mt-2" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "#888", letterSpacing: "0.15em" }}>COSMIC MUSIC EXPLORATION</p>
+          <div className="flex justify-center gap-3 mt-4 mb-8">
+            <button onClick={() => setShowVideo(!showVideo)} className="px-4 py-2 rounded-full text-xs transition-all"
+              style={{ background: showVideo ? "#00CFFF" : "transparent", color: showVideo ? "#000" : "#00CFFF", border: "1px solid #00CFFF", fontFamily: "'Raleway', sans-serif", fontWeight: 600 }}>
+              {showVideo ? "Hide Demo" : "▶ Watch Demo"}
+            </button>
+            <button onClick={() => navigate("/discover")} className="px-4 py-2 rounded-full text-xs"
+              style={{ border: "1px solid #333", color: "#888", fontFamily: "'Raleway', sans-serif", fontWeight: 600 }}>
+              Open Discovery →
+            </button>
           </div>
         </Reveal>
-      )}
 
-      <Reveal delay={0.1}>
-        <div className="mx-auto mt-4 flex overflow-hidden"
-          style={{ maxWidth: 1100, border: "1px solid #1E1E1E", borderRadius: 18, background: "#0E0E0E", minHeight: 480 }}>
-          {/* Icon sidebar */}
-          <div className="hidden sm:flex flex-col items-center gap-6 py-5 flex-shrink-0" style={{ width: 50, background: "#0A0A0A", borderRight: "1px solid #1A1A1A" }}>
-            {[
-              { Icon: Compass, active: true },
-              { Icon: BarChart3, active: false },
-              { Icon: Globe, active: false },
-              { Icon: User, active: false },
-              { Icon: MessageCircle, active: false },
-              { Icon: Bookmark, active: false },
-              { Icon: Heart, active: false },
-            ].map((n, i) => (
-              <button key={i} onClick={() => navigate("/discover")} className="transition-colors hover:opacity-80">
-                <n.Icon className="w-4 h-4" style={{ color: n.active ? "#00CFFF" : "#333" }} />
-              </button>
-            ))}
-            <div className="mt-auto">
-              <Settings className="w-4 h-4" style={{ color: "#333" }} />
+        {showVideo && (
+          <Reveal>
+            <div className="mx-auto mb-8 rounded-2xl overflow-hidden" style={{ maxWidth: 900, border: "1px solid #222" }}>
+              <video src="/videos/discovery-demo.mp4" controls autoPlay muted className="w-full" style={{ background: "#000" }} />
             </div>
-          </div>
+          </Reveal>
+        )}
 
-          {/* Main panel */}
-          <div className="flex-1 p-6 sm:p-8 lg:p-10">
-            <div className="flex flex-wrap items-center gap-5 mb-6">
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#22C55E" }} />
-                <span style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 12, color: "#22C55E", letterSpacing: "0.15em" }}>LIVE</span>
-              </div>
-              <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#666" }}>↗ 31+ Tracks</span>
-              <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#666" }}>🎧 $1/Stream</span>
-            </div>
-
-            <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 56, color: "#FFF", letterSpacing: "0.04em", lineHeight: 1 }}>DISCOVER</h3>
-            <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 56, color: "#00CFFF", letterSpacing: "0.04em", lineHeight: 1 }}>NEW TDZ RELEASES</h3>
-            <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 300, fontSize: 15, color: "#777", marginTop: 12 }}>Stream unlimited music from independent artists worldwide.</p>
-            <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 300, fontSize: 15, color: "#777", marginTop: 4 }}>Every play directly supports creators.</p>
-
-            <div className="flex flex-wrap gap-3 mt-6">
-              <button onClick={() => navigate("/discover")} className="px-6 py-2.5 rounded-full flex items-center gap-2 hover:scale-105 transition-transform"
-                style={{ background: "#FFF", color: "#000", fontFamily: "'Raleway', sans-serif", fontWeight: 600, fontSize: 13 }}>
-                <Play className="w-4 h-4" /> Play All
-              </button>
-              <button onClick={() => navigate("/discover")} className="px-6 py-2.5 rounded-full hover:border-white/30 transition-colors"
-                style={{ border: "1px solid #333", color: "#888", fontFamily: "'Raleway', sans-serif", fontWeight: 600, fontSize: 13, background: "transparent" }}>
-                ⇄ Shuffle
-              </button>
-              <button onClick={() => navigate("/studio")} className="px-6 py-2.5 rounded-full hover:border-white/30 transition-colors"
-                style={{ border: "1px solid #333", color: "#888", fontFamily: "'Raleway', sans-serif", fontWeight: 600, fontSize: 13, background: "transparent" }}>
-                <Upload className="w-4 h-4 inline mr-1" /> Upload Music
-              </button>
-            </div>
-
-            <div className="mt-10">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 11, color: "#AAA", letterSpacing: "0.2em" }}>TOP TDZ RELEASES</p>
-                  <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#555", marginTop: 2 }}>8 Releases</p>
-                </div>
-                <span onClick={() => navigate("/discover")} className="px-3 py-1 rounded-full text-[10px] cursor-pointer hover:border-white/30 transition-colors"
-                  style={{ border: "1px solid #333", color: "#888", fontFamily: "'Raleway', sans-serif" }}>ALL</span>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-4">
-                {["All", "Pop", "Hip-Hop", "R&B", "Electronic"].map((g, i) => (
-                  <span key={g} className="px-4 py-1.5 rounded-full text-xs cursor-pointer transition-colors hover:opacity-80"
-                    style={{ background: i === 0 ? "#FFF" : "transparent", color: i === 0 ? "#000" : "#666",
-                      border: i === 0 ? "none" : "1px solid #333", fontFamily: "'Raleway', sans-serif", fontWeight: i === 0 ? 600 : 400 }}>
-                    {g}
-                  </span>
+        <Reveal delay={0.1}>
+          <div className="mx-auto mt-4 overflow-hidden" style={{ maxWidth: 1100, borderRadius: 18, border: "1px solid rgba(139,92,246,0.2)", background: "rgba(5,5,15,0.85)", backdropFilter: "blur(20px)", minHeight: 480 }}>
+            <div className="flex">
+              {/* Cosmic sidebar */}
+              <div className="hidden sm:flex flex-col items-center gap-6 py-5 flex-shrink-0" style={{ width: 50, background: "rgba(5,5,15,0.9)", borderRight: "1px solid rgba(139,92,246,0.15)" }}>
+                {[
+                  { Icon: Compass, active: true },
+                  { Icon: BarChart3, active: false },
+                  { Icon: Globe, active: false },
+                  { Icon: User, active: false },
+                  { Icon: Heart, active: false },
+                ].map((n, i) => (
+                  <button key={i} onClick={() => navigate("/discover")} className="transition-colors hover:opacity-80">
+                    <n.Icon className="w-4 h-4" style={{ color: n.active ? "#00CFFF" : "#333" }} />
+                  </button>
                 ))}
+                <div className="mt-auto"><Settings className="w-4 h-4" style={{ color: "#333" }} /></div>
+              </div>
+
+              {/* Main cosmic content */}
+              <div className="flex-1 p-6 sm:p-8 lg:p-10">
+                {/* Top nav tabs */}
+                <div className="flex items-center gap-6 mb-6 pb-3" style={{ borderBottom: "1px solid rgba(139,92,246,0.1)" }}>
+                  {["HOME", "EXPLORE", "LIBRARY", "RADIO"].map((tab, i) => (
+                    <span key={tab} className="text-xs font-semibold tracking-widest cursor-pointer"
+                      style={{ fontFamily: "'Raleway', sans-serif", color: i === 0 ? "#fff" : "#555", borderBottom: i === 0 ? "2px solid #00CFFF" : "none", paddingBottom: 4, letterSpacing: "0.15em" }}>
+                      {tab}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-5 mb-4">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#22C55E" }} />
+                    <span style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 12, color: "#22C55E", letterSpacing: "0.15em" }}>LIVE</span>
+                  </div>
+                  <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#666" }}>🎧 $1/Stream</span>
+                </div>
+
+                <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 56, color: "#FFF", letterSpacing: "0.04em", lineHeight: 1, textShadow: "0 0 30px rgba(139,92,246,0.3)" }}>DISCOVER</h3>
+                <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 56, letterSpacing: "0.04em", lineHeight: 1, background: "linear-gradient(135deg, #00CFFF, #8B5CF6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>NEW TDZ RELEASES</h3>
+                <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 300, fontSize: 15, color: "#777", marginTop: 12 }}>Stream unlimited music. Every play directly supports creators.</p>
+
+                <div className="flex flex-wrap gap-3 mt-6">
+                  <button onClick={() => navigate("/discover")} className="px-6 py-2.5 rounded-full flex items-center gap-2 hover:scale-105 transition-transform"
+                    style={{ background: "linear-gradient(135deg, #fff, #e0e0e0)", color: "#000", fontFamily: "'Raleway', sans-serif", fontWeight: 600, fontSize: 13, boxShadow: "0 0 20px rgba(255,255,255,0.1)" }}>
+                    <Play className="w-4 h-4" /> Play All
+                  </button>
+                  <button onClick={() => navigate("/discover")} className="px-6 py-2.5 rounded-full hover:border-white/30 transition-colors"
+                    style={{ border: "1px solid rgba(139,92,246,0.3)", color: "#888", fontFamily: "'Raleway', sans-serif", fontWeight: 600, fontSize: 13, background: "rgba(139,92,246,0.05)" }}>
+                    ⇄ Shuffle
+                  </button>
+                </div>
+
+                {/* Orbital category bubbles */}
+                <div className="flex items-center gap-8 mt-8">
+                  {["Moodscapes", "Genre Odysseys", "Artist Portals"].map((cat, i) => (
+                    <div key={cat} className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => navigate("/discover")}>
+                      <div className="w-12 h-12 rounded-full flex items-center justify-center transition-all group-hover:scale-110"
+                        style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(0,207,255,0.2)", backdropFilter: "blur(8px)" }}>
+                        <span className="text-lg">{["🌌", "🎸", "👤"][i]}</span>
+                      </div>
+                      <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 9, color: "#666", letterSpacing: "0.12em", textTransform: "uppercase" as const }}>{cat}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </Reveal>
+        </Reveal>
+      </div>
     </section>
   );
 }
