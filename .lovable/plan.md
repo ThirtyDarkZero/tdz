@@ -1,128 +1,185 @@
 
 
-## Comprehensive Update Plan: Landing Page Benefits, Discovery Cosmic Redesign, Investor Mockups, and Scroll Effects
+# TDZ Master Build v3 — Implementation Plan
 
-This is a large, multi-file update touching the Landing page, Investor page, and the entire Discovery visual layer. The reference image shows a cosmic/space-themed Discovery interface with nebula backgrounds, 3D album carousels, hexagonal album art grids, orbital category navigation, and a gramophone icon. We will adapt this to TDZ branding (not Sonos Capture).
-
----
-
-### Overview of Changes
-
-**1. Landing Page — Add Back All Benefits & Feature Breakdowns**
-- Add a new "WHY TDZ" section between Section 6 (Music Is More Than Data) and Section 7 (Artist Plans) that breaks down:
-  - How $1/stream works (comparison with Spotify's $0.003)
-  - Studio features (AI video, territory rights, collaboration, analytics)
-  - AI Music Agents (Quantum Advisor, Mood Mix, Smart Promo)
-  - Fan engagement tools (tipping, impact scores, story cards)
-  - Full feature comparison table vs Spotify/Apple Music
-- Add a "HOW PAYMENTS WORK" visual section with step-by-step flow
-- Ensure all buttons are wired (already mostly done, verify Subscribe, Watch Demo, Open Studio/Discovery)
-
-**2. Discovery — Cosmic Space Theme (from reference image)**
-All Discovery pages get an immersive cosmic nebula background with animated stars/particles.
-
-Files to update:
-- `src/components/discovery/PersistentLayout.tsx` — Add animated cosmic background (CSS gradients + particle canvas or CSS stars), update sidebar to have translucent cosmic glass effect
-- `src/components/discovery/PremiumHero.tsx` — Replace flat dark gradient with cosmic nebula background, animated aurora-like cosmic glow, gramophone-style featured album display
-- `src/components/discovery/Premium3DCarousel.tsx` — Add cosmic background glow behind carousel, floating orbital category bubbles instead of flat pills
-- `src/components/discovery/MinimalArtistGrid.tsx` & `MinimalArtistCard` — Circular artist avatars with orbital ring effects (matching reference "Artist Portals" section)
-- `src/components/discovery/MinimalAlbumGrid.tsx` & `MinimalAlbumCard` — Hexagonal album art frames (matching reference "Your Cosmic Collection")
-- `src/components/discovery/PremiumTrackList.tsx` — Cosmic glass-morphism track rows
-- `src/pages/ArtistProfile.tsx` — Cosmic background header, nebula gradient behind artist banner
-- `src/pages/AlbumDetail.tsx` — Cosmic background, glass-card track list
-- `src/pages/ListenerProfile.tsx` — Cosmic themed user profile
-- `src/pages/Discover.tsx` — Add cosmic background wrapper, update tab sections
-
-New components:
-- `src/components/discovery/CosmicBackground.tsx` — Reusable animated cosmic nebula background (CSS-only, no Three.js for performance: radial gradients + animated star dots + floating particles via CSS keyframes)
-- `src/components/discovery/CosmicNav.tsx` — Orbital bubble navigation for category sections (Moodscapes, Genre Odysseys, Artist Portals) matching reference
-
-**3. Investor Page — Updated Phone Mockups + Scroll Effects**
-- Replace `StudioPhoneMockups`, `MusicPlayerPhoneMockups`, `DiscoveryPhoneMockups` components used on investor page with the same `PhoneFrame` + interactive demo mockups from Landing page (the 3-phone perspective layout)
-- Update the Discovery mockup to show the new cosmic-themed UI
-- Add parallax scroll effects: sections slide in with staggered reveals, counter animations on financial numbers, subtle background parallax on hero
-
-**4. Landing Page — Update Discovery Preview Section**
-- Section 9 (TDZ Discovery) mockup panel should reflect the new cosmic Discovery look — nebula background, cosmic nav elements, orbital categories
-
-**5. Scroll Effects — New and Innovative**
-- **Parallax depth layers**: Background elements scroll at different speeds
-- **Counter animations**: Financial numbers count up when scrolled into view
-- **Staggered card reveals**: Cards fly in from different directions (not just translateY)
-- **Section wipe transitions**: Sections reveal with a wipe/clip-path animation
-- **Floating elements**: Small decorative elements (stars, music notes) float with parallax
-- Create a shared `src/hooks/useScrollEffects.ts` with: `useParallax`, `useCountUp`, `useStaggerReveal`, `useWipeReveal`
-
-**6. Testing**
-- Test Discovery page functionality (all tabs, carousel, track playback, search, artist/album navigation)
-- Test Landing page buttons and navigation
-- Test Investor page graphs and mockups
+This is a large multi-part update covering: Landing page fixes, Discovery complete space rebuild, Global Library uniformity, universal search/result components, and Fan Settings page.
 
 ---
 
-### Implementation Order
+## Part 1: Landing Page Fixes (Quick Wins)
 
-1. **Create `CosmicBackground.tsx`** — Pure CSS animated cosmic nebula (radial gradients with purple/blue/teal nebula colors, animated CSS star particles, floating glow orbs)
+**Files:** `src/pages/Landing.tsx`
 
-2. **Create `useScrollEffects.ts`** — Shared scroll animation hooks (parallax, count-up, stagger, wipe)
+1. **Fix subscription plan text colors** — In `Section7ArtistPlans` and `Section10FanPlan`, plan name labels and prices use `#BBB`/`#FFF` which blends into the gradient cards. Change plan names at top (dark area) to `#FFFFFF`, and ensure any text at the bright bottom uses `#111111`.
 
-3. **Update `PersistentLayout.tsx`** — Wrap main content area with CosmicBackground, glass-morphism sidebar
+2. **Add floating crystal diamonds to hero aurora** — In `Section1Hero`, scatter 8-12 small diamond shapes (CSS `clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)`) with `floatDiamond` animation in the aurora gradient area.
 
-4. **Update `PremiumHero.tsx`** — Cosmic hero with nebula gradient, orbital stats display
-
-5. **Update `Premium3DCarousel.tsx`** — Cosmic glow behind carousel, orbital category bubbles
-
-6. **Update `MinimalAlbumGrid.tsx` + `MinimalAlbumCard.tsx`** — Hexagonal album frames with cosmic borders
-
-7. **Update `MinimalArtistGrid.tsx` + `MinimalArtistCard.tsx`** — Orbital ring artist avatars
-
-8. **Update `PremiumTrackList.tsx`** — Cosmic glass track rows
-
-9. **Update `ArtistProfile.tsx`** — Cosmic header background
-
-10. **Update `AlbumDetail.tsx`** — Cosmic background + glass track list
-
-11. **Update `Landing.tsx`** — Add WHY TDZ benefits section, update Section 9 Discovery preview to cosmic look, add scroll effects
-
-12. **Update `Investors.tsx`** — Replace phone mockups with Landing-style interactive demos, add scroll effects (parallax, counters), update Discovery preview
-
-13. **Functional testing** via browser tools
+3. **Add subtle nebula/star backgrounds to sections** — Apply faint radial-gradient nebula overlays + tiny star dots to:
+   - Section 8 (Latest Releases): purple/blue nebula wisps behind black bg
+   - Section 9 (TDZ Discovery): already has nebula, enhance it
+   - Remove word "COSMIC" from Section 9 subtitle
 
 ---
 
-### Technical Details
+## Part 2: Discovery Complete Space Rebuild
 
-**Cosmic Background (CSS-only for performance):**
-```text
-- Base: radial-gradient with #0a0020, #1a0040, #000820 stops
-- Nebula clouds: 3-4 positioned radial-gradient overlays with purple/teal/blue
-- Stars: CSS box-shadow technique (hundreds of 1px white dots)
-- Animation: slow rotation/drift via @keyframes
-- Particles: 20-30 absolutely positioned divs with float animation
-```
+This is the core overhaul. All Discovery pages get the deep space environment.
 
-**Hexagonal Album Cards:**
-```text
-- clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)
-- Glow border via drop-shadow filter
-- Hover: scale + increased glow
-```
+### 2A: SpaceBackground Component
+**File:** `src/components/discovery/SpaceBackground.tsx` (new, replaces CosmicBackground)
 
-**Orbital Category Navigation:**
-```text
-- Circular arrangement using CSS transforms
-- Each category is a glass-morphism circle with icon + label
-- Connected by subtle SVG orbital lines
-- Galaxy/spiral image in center
-```
+- Fixed position, z-index 0, pointer-events none
+- Layer 1: Deep space base gradient (`#0A0A2E` → `#050510` → `#000`)
+- Layer 2: 4 nebula clouds with `nebulaDrift` animation (purple, blue, teal)
+- Layer 3: 150 star dots (random positions, sizes 1-3px, twinkle animation)
+- Layer 4: 6-10 floating crystal diamonds with `crystalFloat` animation
 
-**Scroll Effects Hooks:**
-```text
-useParallax(speed): returns ref + transform style for parallax offset
-useCountUp(target, duration): returns animated number value
-useStaggerReveal(count): returns array of refs with staggered delays
-useWipeReveal(): returns ref + clip-path animation state
-```
+### 2B: Discovery Navigation Bar
+**File:** `src/components/discovery/CosmicTopBar.tsx` (rewrite)
 
-**No database changes needed.** All updates are purely frontend visual/UX.
+- Fixed top, 64px, glass blur background
+- Layout: `[TDZ Logo] HOME EXPLORE LIBRARY RADIO [Search Bar] [Avatar]`
+- Active link: white text + 2px cyan underline
+- Search bar: pill-shaped, expands on focus from 220px → 300px
+
+### 2C: Discovery Home Tab
+**File:** `src/pages/Discover.tsx` — rewrite `discover` case
+
+- **Hero:** Swiper coverflow carousel (actual album art from DB), center slide has glow, side slides dimmed. Right side shows artist name + play button.
+- **Moodscapes:** 5 bubble sphere clusters (CHILL/HYPE/FOCUS/VIBES/LATE NIGHT) with SVG connecting lines
+- **Genre Pathways:** Constellation node map (8 genres as connected nodes)
+- **Artist Portals:** Glowing circular rings with profile photos (use ArtistAvatar fallback), horizontal scroll
+- **New This Week:** Horizontal scroll release cards (180px wide)
+- **Editorial Picks:** Grid of editorial cards with overlay text
+
+### 2D: Discovery Library Tab ("YOUR COLLECTION")
+**File:** `src/pages/Discover.tsx` — rewrite `library` case
+
+- Remove ALL "cosmic" wording → "YOUR COLLECTION"
+- Hexagonal grid layout for albums/playlists
+- Filter tabs: PLAYLISTS | ALBUMS | ARTISTS | SONGS | DOWNLOADED | RECENTLY ADDED
+- Smart Library sidebar (280px right) with recommendation cards
+
+### 2E: Discovery Explore Tab
+**File:** `src/pages/Discover.tsx` — rewrite `trending` case
+
+- "EXPLORE TDZ" header with chrome gradient
+- Category grid (3 cols desktop, responsive)
+- Glass morphism category cards
+
+### 2F: Player Bar
+**File:** `src/components/discovery/CosmicPlayerBar.tsx` (rewrite)
+
+- 80px height, 3-column grid layout
+- Left: track art (48px, rounded-8) + title/artist
+- Center: transport controls + progress bar (cyan→purple gradient fill)
+- Right: volume + extra controls
+
+### 2G: Remove "Cosmic" Language Everywhere
+Search-and-replace across all Discovery components:
+- "Your Cosmic Collection" → "Your Collection"
+- "New Galaxies This Week" → "New This Week"
+- "Editorial Constellations" → "Editorial Picks"
+- "Cosmic Orbital Navigation" → remove label
+- "Artist Portals" → keep (it's descriptive, not "cosmic")
+
+### 2H: Artist Profile Image Fix
+**File:** `src/components/discovery/ArtistAvatar.tsx` (new)
+
+Universal avatar component with:
+- `src` field mapping: tries `profileImageUrl`, `image`, `avatarUrl`, `profile_image_path`
+- `onError` fallback to gradient + initials
+- Used everywhere: cards, rows, playlists, search results
+
+---
+
+## Part 3: Universal Search & Result Components
+
+### 3A: SongRow Component
+**File:** `src/components/discovery/SongRow.tsx` (new)
+
+- 6-column grid: # | art(44px) | title+artist | album | duration | actions
+- Hover: show play button over index, show like/more actions
+- Playing state: cyan background tint
+- Used consistently for ALL track displays across the platform
+
+### 3B: ArtistCard Component  
+**File:** `src/components/discovery/ArtistCard.tsx` (new)
+
+- 160px wide card with ArtistAvatar (120px), name, follower count, follow button
+- Cyan orbital ring around image
+- Follow button toggles state (green when following)
+
+### 3C: AlbumCard Component
+**File:** `src/components/discovery/AlbumCard.tsx` (new)
+
+- 180px wide, square art with rounded corners
+- Hover: dim art + show white play circle overlay
+- Below: title, artist, year + track count
+
+### 3D: Universal Search Results Panel
+**File:** `src/components/discovery/UniversalSearchResults.tsx` (new)
+
+- Floating panel below search bar (glass, blurred, z-300)
+- Filter tabs: ALL | SONGS | ARTISTS | ALBUMS | PLAYLISTS
+- "TOP RESULT" featured card + sectioned results using SongRow/ArtistCard/AlbumCard
+- Empty state: telescope emoji + "No results found"
+
+---
+
+## Part 4: Fan Settings Page
+
+**File:** `src/pages/FanSettings.tsx` (new) + route in `App.tsx`
+
+- Space background, glass card panel layout
+- Left sidebar (220px): category nav with sections (ACCOUNT, SUBSCRIPTION, LISTENING, PRIVACY, CONNECTED APPS, SUPPORT, DANGER ZONE)
+- Right panel: renders selected settings category
+- Panels: Profile (avatar + fields), Password & Security (2FA toggle), My Plan (current subscription card), Audio Quality (radio buttons + sliders), Privacy (toggles), Delete Account (red danger zone)
+- All inputs use space-themed glass styling
+
+---
+
+## Part 5: PersistentLayout Update
+**File:** `src/components/discovery/PersistentLayout.tsx`
+
+- Replace CosmicBackground with SpaceBackground
+- Sidebar uses space glass colors (#050510 bg, purple border accents)
+
+---
+
+## Part 6: Global Rules
+
+- Create `/public/placeholder-album.jpg` and `/public/placeholder-artist.jpg` (dark gradient placeholders)
+- Add custom scrollbar CSS to `src/index.css` for Discovery
+- All Discovery content at z-index 1+, SpaceBackground at z-index 0
+- Responsive: single column on mobile, horizontals become scrollable rows
+
+---
+
+## Implementation Order
+
+| Step | Task | Files |
+|------|------|-------|
+| 1 | Create SpaceBackground + ArtistAvatar components | 2 new files |
+| 2 | Create SongRow, ArtistCard, AlbumCard universal components | 3 new files |
+| 3 | Rewrite CosmicTopBar as Discovery nav bar | 1 file |
+| 4 | Rewrite CosmicPlayerBar | 1 file |
+| 5 | Rewrite Discover.tsx (all tabs: Home, Explore, Library) | 1 file |
+| 6 | Update PersistentLayout with SpaceBackground | 1 file |
+| 7 | Create UniversalSearchResults | 1 new file |
+| 8 | Create FanSettings page + route | 2 files |
+| 9 | Fix Landing.tsx (plan text colors, crystals, nebula bgs, remove "cosmic") | 1 file |
+| 10 | Remove "cosmic" wording from all components | Multiple files |
+| 11 | Create placeholder images | 2 assets |
+| 12 | Test Discovery functionality end-to-end | Browser tools |
+
+---
+
+## Technical Notes
+
+- No database migrations needed — all changes are frontend visual/UX
+- Swiper.js already installed for coverflow carousel
+- All existing Discovery functionality (playback, likes, queue, search, library sources) is preserved — only the visual presentation changes
+- The CosmicNav orbital navigation is replaced by the Moodscapes bubble clusters + Genre Pathways constellation
+- PremiumTrackList is replaced by the universal SongRow component for consistency
 
