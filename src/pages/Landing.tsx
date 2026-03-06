@@ -811,8 +811,8 @@ function Section7ArtistPlans({ navigate }: { navigate: (p: string) => void }) {
               {p.popular && <span className="mb-2 px-3 py-1 rounded-full text-[10px] font-bold" style={{ background: "#22C55E", color: "#000" }}>MOST POPULAR</span>}
               <div className="flex flex-col justify-start items-center pt-8 w-full relative"
                 style={{ background: "linear-gradient(180deg, #2a2a2a 0%, #5a5a5a 40%, #b0b0b0 75%, #d8d8d8 100%)", borderRadius: 28, width: 310, minHeight: 460, padding: "30px 26px" }}>
-                <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 15, color: "#BBB", letterSpacing: "0.2em", textTransform: "uppercase" as const }}>{p.name}</p>
-                <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 68, color: "#FFF", letterSpacing: "0.04em", marginTop: 8 }}>{p.price}</p>
+                <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 16, color: "#FFFFFF", letterSpacing: "0.2em", textTransform: "uppercase" as const }}>{p.name}</p>
+                <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 68, color: "#FFFFFF", letterSpacing: "0.04em", marginTop: 8 }}>{p.price}</p>
                 <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#999", marginTop: 4 }}>/month</p>
                 <div className="mt-6 space-y-2 w-full">
                   {p.features.map((f, fi) => (
@@ -945,7 +945,7 @@ function Section9Discovery({ navigate }: { navigate: (p: string) => void }) {
       <div className="relative z-10">
         <Reveal>
           <ChromeTitle className="text-center">TDZ DISCOVERY</ChromeTitle>
-          <p className="text-center mt-2" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "#888", letterSpacing: "0.15em" }}>COSMIC MUSIC EXPLORATION</p>
+          <p className="text-center mt-2" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "#888", letterSpacing: "0.15em" }}>IMMERSIVE MUSIC EXPLORATION</p>
           <div className="flex justify-center gap-3 mt-4 mb-8">
             <button onClick={() => setShowVideo(!showVideo)} className="px-4 py-2 rounded-full text-xs transition-all"
               style={{ background: showVideo ? "#00CFFF" : "transparent", color: showVideo ? "#000" : "#00CFFF", border: "1px solid #00CFFF", fontFamily: "'Raleway', sans-serif", fontWeight: 600 }}>
