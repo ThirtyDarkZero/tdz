@@ -141,7 +141,7 @@ function SubscribeButton({ onClick, label = "SUBSCRIBE ›" }: { onClick: () => 
 function useAudioPreview() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const play = useCallback((trackId: string, filePath: string | null) => {
     // Stop current

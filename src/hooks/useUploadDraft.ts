@@ -277,7 +277,7 @@ export function useAutoSaveDraft(
 ) {
   const { saveDraft, clearDraft } = useUploadDraft();
   const lastSaveRef = useRef<number>(0);
-  const saveIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const saveIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounced save function
   const debouncedSave = useCallback(async () => {

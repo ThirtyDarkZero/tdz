@@ -44,7 +44,7 @@ export function MinimalHeader({ onMenuClick, searchQuery, onSearchChange }: Mini
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<NodeJS.Timeout>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Search when query changes
   useEffect(() => {
