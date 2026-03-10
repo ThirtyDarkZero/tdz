@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Users, MessageCircle, Play, Palette, Heart, Star, SkipBack, SkipForward, Shuffle, Compass, BarChart3, Globe, User, Bookmark, Settings, Moon, Crown, Music, Upload, TrendingUp, LayoutDashboard, BookOpen, Zap, Check, Pause, Volume2 } from "lucide-react";
 import tdzLogo from "@/assets/tdz-logo.png";
