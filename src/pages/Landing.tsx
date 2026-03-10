@@ -859,7 +859,8 @@ function Section8Releases({ tracks, audioPreview, navigate }: { tracks: Track[];
   const [activeSlide, setActiveSlide] = useState(0);
 
   return (
-    <section className="py-20 px-4" style={{ background: "#000" }}>
+    <section className="py-20 px-4 relative overflow-hidden" style={{ background: "#000" }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 60% 40% at 15% 50%, rgba(59,15,107,0.18) 0%, transparent 70%), radial-gradient(ellipse 50% 60% at 85% 30%, rgba(14,42,92,0.2) 0%, transparent 70%)" }} />
       <Reveal><TDZBadge /><WhiteTitle className="text-center mt-4">LATEST RELEASES FROM TDZ ARTISTS</WhiteTitle></Reveal>
       <Reveal delay={0.1}>
         <div className="mt-12 max-w-[900px] mx-auto">
