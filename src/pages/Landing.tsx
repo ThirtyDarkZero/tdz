@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Users, MessageCircle, Play, Palette, Heart, Star, SkipBack, SkipForward, Shuffle, Compass, BarChart3, Globe, User, Bookmark, Settings, Moon, Crown, Music, Upload, TrendingUp, LayoutDashboard, BookOpen, Zap, Check, Pause, Volume2 } from "lucide-react";
 import tdzLogo from "@/assets/tdz-logo.png";
@@ -141,7 +141,7 @@ function SubscribeButton({ onClick, label = "SUBSCRIBE ›" }: { onClick: () => 
 function useAudioPreview() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const play = useCallback((trackId: string, filePath: string | null) => {
     // Stop current
@@ -218,6 +218,7 @@ export default function Landing() {
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
         .animate-marquee { animation: marquee 45s linear infinite; }
         @keyframes auroraShift { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+        @keyframes floatDiamond { 0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.6; } 50% { transform: translateY(-12px) rotate(45deg); opacity: 1; } }
       `}</style>
     </div>
   );
@@ -227,6 +228,11 @@ export default function Landing() {
 // SECTION 1 — HERO
 // ═══════════════════════════════════════
 function Section1Hero() {
+  const crystals = useMemo(() => Array.from({ length: 10 }, (_, i) => ({
+    id: i, left: `${10 + Math.random() * 80}%`, top: `${10 + Math.random() * 60}%`,
+    size: 6 + Math.random() * 10, duration: 5 + Math.random() * 4, delay: Math.random() * 4,
+  })), []);
+
   return (
     <section>
       <div className="relative flex flex-col items-center justify-start pt-12 pb-0"
@@ -236,6 +242,14 @@ function Section1Hero() {
           backgroundSize: "200% 200%", animation: "auroraShift 8s ease-in-out infinite alternate",
           maskImage: "linear-gradient(to bottom, black 70%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, black 70%, transparent 100%)",
         }}>
+        {crystals.map(c => (
+          <div key={c.id} className="absolute pointer-events-none" style={{
+            left: c.left, top: c.top, width: c.size, height: c.size,
+            background: "linear-gradient(135deg, rgba(125,211,252,0.7), rgba(192,132,252,0.5))",
+            clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
+            animation: `floatDiamond ${c.duration}s ease-in-out ${c.delay}s infinite`, filter: "blur(0.3px)",
+          }} />
+        ))}
         <img src={tdzLogo} alt="TDZ Distribution" className="w-24 sm:w-28 h-auto mb-6 drop-shadow-2xl" />
         <NavPill />
       </div>
@@ -717,7 +731,7 @@ function SectionHowPaymentsWork() {
     { step: "1", title: "UPLOAD YOUR MUSIC", desc: "Upload tracks to your Artist Studio. Set download prices, add metadata, and choose territories.", color: "#00CFFF" },
     { step: "2", title: "FANS STREAM & BUY", desc: "Every stream earns you $1. Every download purchase goes 100% to you. Fans can also tip directly.", color: "#22C55E" },
     { step: "3", title: "REAL-TIME EARNINGS", desc: "Watch your earnings grow in real-time on your dashboard. No 90-day delays like traditional DSPs.", color: "#D4A017" },
-    { step: "4", title: "GET PAID", desc: "Cash out anytime via Square. Direct deposit to your bank. No minimum thresholds.", color: "#8B5CF6" },
+    { step: "4", title: "GET PAID", desc: "Cash out via Square once you reach the $50 minimum payout threshold. Direct deposit to your bank.", color: "#8B5CF6" },
   ];
 
   return (
@@ -845,7 +859,8 @@ function Section8Releases({ tracks, audioPreview, navigate }: { tracks: Track[];
   const [activeSlide, setActiveSlide] = useState(0);
 
   return (
-    <section className="py-20 px-4" style={{ background: "#000" }}>
+    <section className="py-20 px-4 relative overflow-hidden" style={{ background: "#000" }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 60% 40% at 15% 50%, rgba(59,15,107,0.18) 0%, transparent 70%), radial-gradient(ellipse 50% 60% at 85% 30%, rgba(14,42,92,0.2) 0%, transparent 70%)" }} />
       <Reveal><TDZBadge /><WhiteTitle className="text-center mt-4">LATEST RELEASES FROM TDZ ARTISTS</WhiteTitle></Reveal>
       <Reveal delay={0.1}>
         <div className="mt-12 max-w-[900px] mx-auto">
@@ -1057,11 +1072,11 @@ function Section10FanPlan({ navigate }: { navigate: (p: string) => void }) {
           <div className="flex flex-col items-center pt-10"
             style={{ background: "linear-gradient(180deg, #2a2a2a 0%, #5a5a5a 40%, #b0b0b0 75%, #d8d8d8 100%)",
               borderRadius: 28, width: 380, maxWidth: "100%", minHeight: 520, padding: "36px 32px" }}>
-            <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 15, color: "#BBB", letterSpacing: "0.18em", textTransform: "uppercase" as const, textAlign: "center" }}>
+            <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 16, color: "#FFFFFF", letterSpacing: "0.2em", textTransform: "uppercase" as const, textAlign: "center" }}>
               UNLIMITED STREAMING
             </p>
-            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 78, color: "#FFF", letterSpacing: "0.04em", marginTop: 12 }}>$12.00</p>
-            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#999", marginTop: 4 }}>/month</p>
+            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 78, color: "#FFFFFF", letterSpacing: "0.04em", marginTop: 12 }}>$12.00</p>
+            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#888", marginTop: 4 }}>/month</p>
             <div className="mt-8 space-y-2 w-full">
               {fanFeatures.map((f, i) => (
                 <div key={i} className="flex items-start gap-2">

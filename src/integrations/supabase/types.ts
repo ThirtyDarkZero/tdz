@@ -288,46 +288,64 @@ export type Database = {
       }
       artist_narrative: {
         Row: {
+          artist_mission: string | null
+          brand_voice: string | null
           color_palette: Json | null
           created_at: string
           current_chapter: string | null
           defining_moment: string | null
+          emotional_core: string | null
           future_vision: string | null
           id: string
+          key_phrases: string[] | null
           narrative_arc: string | null
           narrative_strength: number | null
           origin_story: string | null
+          target_audience: string | null
           typography: Json | null
+          unique_value_prop: string | null
           updated_at: string
           user_id: string
           visual_style: string | null
         }
         Insert: {
+          artist_mission?: string | null
+          brand_voice?: string | null
           color_palette?: Json | null
           created_at?: string
           current_chapter?: string | null
           defining_moment?: string | null
+          emotional_core?: string | null
           future_vision?: string | null
           id?: string
+          key_phrases?: string[] | null
           narrative_arc?: string | null
           narrative_strength?: number | null
           origin_story?: string | null
+          target_audience?: string | null
           typography?: Json | null
+          unique_value_prop?: string | null
           updated_at?: string
           user_id: string
           visual_style?: string | null
         }
         Update: {
+          artist_mission?: string | null
+          brand_voice?: string | null
           color_palette?: Json | null
           created_at?: string
           current_chapter?: string | null
           defining_moment?: string | null
+          emotional_core?: string | null
           future_vision?: string | null
           id?: string
+          key_phrases?: string[] | null
           narrative_arc?: string | null
           narrative_strength?: number | null
           origin_story?: string | null
+          target_audience?: string | null
           typography?: Json | null
+          unique_value_prop?: string | null
           updated_at?: string
           user_id?: string
           visual_style?: string | null
@@ -1310,6 +1328,66 @@ export type Database = {
           super_fans_count?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      inner_circle_config: {
+        Row: {
+          artist_id: string
+          created_at: string
+          id: string
+          is_enabled: boolean | null
+          monthly_price: number | null
+          perks: string[] | null
+          updated_at: string
+          welcome_message: string | null
+        }
+        Insert: {
+          artist_id: string
+          created_at?: string
+          id?: string
+          is_enabled?: boolean | null
+          monthly_price?: number | null
+          perks?: string[] | null
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Update: {
+          artist_id?: string
+          created_at?: string
+          id?: string
+          is_enabled?: boolean | null
+          monthly_price?: number | null
+          perks?: string[] | null
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Relationships: []
+      }
+      inner_circle_members: {
+        Row: {
+          artist_id: string
+          expires_at: string | null
+          fan_id: string
+          id: string
+          joined_at: string
+          status: string | null
+        }
+        Insert: {
+          artist_id: string
+          expires_at?: string | null
+          fan_id: string
+          id?: string
+          joined_at?: string
+          status?: string | null
+        }
+        Update: {
+          artist_id?: string
+          expires_at?: string | null
+          fan_id?: string
+          id?: string
+          joined_at?: string
+          status?: string | null
         }
         Relationships: []
       }
@@ -2604,6 +2682,41 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      smart_link_clicks: {
+        Row: {
+          clicked_at: string
+          country: string | null
+          id: string
+          platform: string | null
+          smart_link_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          clicked_at?: string
+          country?: string | null
+          id?: string
+          platform?: string | null
+          smart_link_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          clicked_at?: string
+          country?: string | null
+          id?: string
+          platform?: string | null
+          smart_link_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "smart_link_clicks_smart_link_id_fkey"
+            columns: ["smart_link_id"]
+            isOneToOne: false
+            referencedRelation: "smart_links"
             referencedColumns: ["id"]
           },
         ]

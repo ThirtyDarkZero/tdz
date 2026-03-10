@@ -174,7 +174,7 @@ export const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout | null = null;
+  let timeout: ReturnType<typeof setTimeout> | null = null;
 
   return (...args: Parameters<T>) => {
     if (timeout) clearTimeout(timeout);
@@ -203,7 +203,7 @@ export const logSecurityEvent = (
   event: string,
   details?: Record<string, any>
 ): void => {
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     console.warn('[Security Event]', event, details);
   }
   // In production, this should send to a logging service

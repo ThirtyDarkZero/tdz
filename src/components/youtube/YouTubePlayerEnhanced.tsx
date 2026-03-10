@@ -79,7 +79,7 @@ export function YouTubePlayerEnhanced({
   const [showSleepTimer, setShowSleepTimer] = useState(false);
   const [sleepTimerMinutes, setSleepTimerMinutes] = useState(30);
   
-  const sleepTimerRef = useRef<NodeJS.Timeout>();
+  const sleepTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const { toast } = useToast();
   const { setYoutubePlayer, setCurrentTime: setContextTime } = usePlayer();
   

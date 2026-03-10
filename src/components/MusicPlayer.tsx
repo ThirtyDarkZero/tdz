@@ -90,7 +90,7 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
   const [streamRecorded, setStreamRecorded] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement>(null);
-  const sleepTimerRef = useRef<NodeJS.Timeout>();
+  const sleepTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const { toast } = useToast();
 
   // Focus tracking for fraud-resistant stream counting

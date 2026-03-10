@@ -1,211 +1,128 @@
 
 
-# TDZ Super Prompt Sprint — Full Implementation Plan
+## Comprehensive Update Plan: Landing Page Benefits, Discovery Cosmic Redesign, Investor Mockups, and Scroll Effects
 
-This is a 33-page sprint covering 13 sections. I'll fix the existing build errors first, then work through each section in dependency order.
-
----
-
-## Phase 0: Fix Existing Build Errors (Immediate)
-
-The `NodeJS.Timeout` type errors across 7 files need fixing by replacing `NodeJS.Timeout` with `ReturnType<typeof setTimeout>`. Files: `Landing.tsx`, `MusicPlayer.tsx`, `DiscoveryHeader.tsx`, `MinimalHeader.tsx`, `YouTubePlayerEnhanced.tsx`, `useCrossfade.tsx`, `useUploadDraft.ts`, `security.ts`.
+This is a large, multi-file update touching the Landing page, Investor page, and the entire Discovery visual layer. The reference image shows a cosmic/space-themed Discovery interface with nebula backgrounds, 3D album carousels, hexagonal album art grids, orbital category navigation, and a gramophone icon. We will adapt this to TDZ branding (not Sonos Capture).
 
 ---
 
-## Phase 1: Database Migrations
+### Overview of Changes
 
-New tables and columns needed (some already exist like `support_tickets`, `smart_links`):
+**1. Landing Page — Add Back All Benefits & Feature Breakdowns**
+- Add a new "WHY TDZ" section between Section 6 (Music Is More Than Data) and Section 7 (Artist Plans) that breaks down:
+  - How $1/stream works (comparison with Spotify's $0.003)
+  - Studio features (AI video, territory rights, collaboration, analytics)
+  - AI Music Agents (Quantum Advisor, Mood Mix, Smart Promo)
+  - Fan engagement tools (tipping, impact scores, story cards)
+  - Full feature comparison table vs Spotify/Apple Music
+- Add a "HOW PAYMENTS WORK" visual section with step-by-step flow
+- Ensure all buttons are wired (already mostly done, verify Subscribe, Watch Demo, Open Studio/Discovery)
 
-- `support_articles` (id, title, body, category, updated_at)
-- `artist_contacts` (id, artist_id, email, first_name, last_name, city, source, imported_at)
-- `conversations` + `messages` (for DMs with Realtime)
-- `artist_narrative` (artist_id, origin_story, artist_mission, target_audience, emotional_core, unique_value_prop, brand_voice, key_phrases, updated_at)
-- `artist_content` (id, artist_id, type, media_url, caption, tags, published_at, status, performance_score, explore_featured)
-- `content_likes`, `content_comments`, `content_saves`
-- `content_schedule` (for calendar)
-- `tour_dates` (id, artist_id, venue, city, state, country, date_time, ticket_url, status)
-- `inner_circle_config` + `inner_circle_members`
-- `user_privacy_settings`
-- `smart_link_clicks` (smart_link_id, platform, user_agent, country, timestamp)
-- `payout_ledger` (if not exists)
+**2. Discovery — Cosmic Space Theme (from reference image)**
+All Discovery pages get an immersive cosmic nebula background with animated stars/particles.
 
-Check existing schema against what's needed, only create what's missing.
+Files to update:
+- `src/components/discovery/PersistentLayout.tsx` — Add animated cosmic background (CSS gradients + particle canvas or CSS stars), update sidebar to have translucent cosmic glass effect
+- `src/components/discovery/PremiumHero.tsx` — Replace flat dark gradient with cosmic nebula background, animated aurora-like cosmic glow, gramophone-style featured album display
+- `src/components/discovery/Premium3DCarousel.tsx` — Add cosmic background glow behind carousel, floating orbital category bubbles instead of flat pills
+- `src/components/discovery/MinimalArtistGrid.tsx` & `MinimalArtistCard` — Circular artist avatars with orbital ring effects (matching reference "Artist Portals" section)
+- `src/components/discovery/MinimalAlbumGrid.tsx` & `MinimalAlbumCard` — Hexagonal album art frames (matching reference "Your Cosmic Collection")
+- `src/components/discovery/PremiumTrackList.tsx` — Cosmic glass-morphism track rows
+- `src/pages/ArtistProfile.tsx` — Cosmic background header, nebula gradient behind artist banner
+- `src/pages/AlbumDetail.tsx` — Cosmic background, glass-card track list
+- `src/pages/ListenerProfile.tsx` — Cosmic themed user profile
+- `src/pages/Discover.tsx` — Add cosmic background wrapper, update tab sections
 
----
+New components:
+- `src/components/discovery/CosmicBackground.tsx` — Reusable animated cosmic nebula background (CSS-only, no Three.js for performance: radial gradients + animated star dots + floating particles via CSS keyframes)
+- `src/components/discovery/CosmicNav.tsx` — Orbital bubble navigation for category sections (Moodscapes, Genre Odysseys, Artist Portals) matching reference
 
-## Phase 2: Artist Settings Complete Buildout (Section 1)
+**3. Investor Page — Updated Phone Mockups + Scroll Effects**
+- Replace `StudioPhoneMockups`, `MusicPlayerPhoneMockups`, `DiscoveryPhoneMockups` components used on investor page with the same `PhoneFrame` + interactive demo mockups from Landing page (the 3-phone perspective layout)
+- Update the Discovery mockup to show the new cosmic-themed UI
+- Add parallax scroll effects: sections slide in with staggered reveals, counter animations on financial numbers, subtle background parallax on hero
 
-**1A — Support Center** (`/studio/settings/support`)
-- 3-tab interface: Help Center (searchable FAQ from `support_articles`), Submit Ticket (form → `support_tickets`), Live Chat (Tawk.to embed)
-- File: `src/components/studio/StudioSettings.tsx` — add support sub-route
+**4. Landing Page — Update Discovery Preview Section**
+- Section 9 (TDZ Discovery) mockup panel should reflect the new cosmic Discovery look — nebula background, cosmic nav elements, orbital categories
 
-**1B — Payouts: Square Integration**
-- Already partially built. Ensure $50 minimum threshold is enforced in UI and logic
-- Show connected status, disconnect option
-- Admin payout approval queue in CEO Dashboard
+**5. Scroll Effects — New and Innovative**
+- **Parallax depth layers**: Background elements scroll at different speeds
+- **Counter animations**: Financial numbers count up when scrolled into view
+- **Staggered card reveals**: Cards fly in from different directions (not just translateY)
+- **Section wipe transitions**: Sections reveal with a wipe/clip-path animation
+- **Floating elements**: Small decorative elements (stars, music notes) float with parallax
+- Create a shared `src/hooks/useScrollEffects.ts` with: `useParallax`, `useCountUp`, `useStaggerReveal`, `useWipeReveal`
 
-**1C — Collaborator Invites via Email**
-- Role selector + email input → `collaboration_invites` table
-- Edge function to send invite email
-
-**1D — Export Data**
-- 6 export buttons, each calls an edge function that queries DB and returns CSV/ZIP
-- Edge functions: `export-analytics`, `export-catalog`, `export-fans`, `export-payouts`, `export-calendar`, `export-backup`
-
-**1E — Google Sign-In**
-- Configure Google OAuth provider via `configure_auth` tool
-- Add "Continue with Google" button to Auth page
-
-**1F — Privacy Settings**
-- Full privacy panel with toggles → `user_privacy_settings` table
-- Blocked users list
-
----
-
-## Phase 3: Promote Suite (Section 2)
-
-**2A — CSV Fan Import** — PapaParse client-side, column mapping UI, insert to `artist_contacts`
-
-**2B — Email Campaign Generator** — Two modes (Fan Email + Press Release), AI generation via Lovable AI edge function
-
-**2C — Mass Email** — Resend.com integration via edge function (campaigns@thirtydarkzero.net)
-
-**2D — Fan Direct Messaging** — Supabase Realtime conversations, chat bubble UI on both artist and fan sides
-
-**2E — Smart Links** — Builder UI + public `/link/:slug` page with blurred artwork background, click tracking
-
-**2F — Shopify/Squarespace Merch** — OAuth connection, product fetch, display on artist profile MERCH tab
-
-**2G — TDZ Store in Discovery** — Add "STORE" tab to Discovery nav, connect to TDZ's own Shopify store
-
-**2H — Tour Dates** — Artist input form, public TOUR tab on artist profile
-
-**2I — Inner Circle Superfan Program** — Configuration, subscription flow, exclusive content feed, perks
-
-**2J — Community Hub** — Real-time counters, engagement feed, metrics dashboard
+**6. Testing**
+- Test Discovery page functionality (all tabs, carousel, track playback, search, artist/album navigation)
+- Test Landing page buttons and navigation
+- Test Investor page graphs and mockups
 
 ---
 
-## Phase 4: Storytelling Studio Data Architecture (Section 3)
+### Implementation Order
 
-- `artist_narrative` table with all fields
-- "Save & Apply" state on each field
-- Feed narrative data to email campaigns, smart links, community hub
-- Active connections panel showing what's powered by narrative data
+1. **Create `CosmicBackground.tsx`** — Pure CSS animated cosmic nebula (radial gradients with purple/blue/teal nebula colors, animated CSS star particles, floating glow orbs)
 
----
+2. **Create `useScrollEffects.ts`** — Shared scroll animation hooks (parallax, count-up, stagger, wipe)
 
-## Phase 5: Content Library Rebuild (Section 4)
+3. **Update `PersistentLayout.tsx`** — Wrap main content area with CosmicBackground, glass-morphism sidebar
 
-**4A** — Content types (Photo, Video, Reel, Blog, etc.) push to artist profile POSTS tab
-**4B** — Performance scoring algorithm (edge function cron every 15 min) → Explore page
-**4C** — Remove Visual Identity System entirely
-**4D** — Content Calendar with push notifications + iCal export
+4. **Update `PremiumHero.tsx`** — Cosmic hero with nebula gradient, orbital stats display
 
----
+5. **Update `Premium3DCarousel.tsx`** — Cosmic glow behind carousel, orbital category bubbles
 
-## Phase 6: Landing Page Fixes (Section 5)
+6. **Update `MinimalAlbumGrid.tsx` + `MinimalAlbumCard.tsx`** — Hexagonal album frames with cosmic borders
 
-**5A** — Find/replace all "No minimum threshold" → "$50 minimum payout threshold"
-**5B** — Subscription card text: `#FFFFFF` at top (dark area), `#111111` at bottom (light silver area)
-**5C** — GSAP ScrollTrigger scroll effects (install `gsap`):
-  - Word clip reveal (large background text)
-  - Section title scale-down on scroll
-  - Phone mockup animate-in
-  - Pricing cards stagger
-**5D** — Floating crystal diamonds in hero aurora, nebula backgrounds on sections
+7. **Update `MinimalArtistGrid.tsx` + `MinimalArtistCard.tsx`** — Orbital ring artist avatars
 
----
+8. **Update `PremiumTrackList.tsx`** — Cosmic glass track rows
 
-## Phase 7: Artist Studio Redesign (Section 6)
+9. **Update `ArtistProfile.tsx`** — Cosmic header background
 
-- Background: `#141414` with subtle cyan radial gradient
-- Sidebar: `#111111`, 260px, profile block + stats + quick actions
-- Main: Greeting + 4 metric cards (IMPACT/RELEASES/EARNINGS/COMMUNITY)
-- "YOUR STORY SO FAR" track list, notifications panel
-- Apply to all Studio sub-pages
+10. **Update `AlbumDetail.tsx`** — Cosmic background + glass track list
+
+11. **Update `Landing.tsx`** — Add WHY TDZ benefits section, update Section 9 Discovery preview to cosmic look, add scroll effects
+
+12. **Update `Investors.tsx`** — Replace phone mockups with Landing-style interactive demos, add scroll effects (parallax, counters), update Discovery preview
+
+13. **Functional testing** via browser tools
 
 ---
 
-## Phase 8: YouTube API Fix (Section 8)
+### Technical Details
 
-- Move all YouTube API calls to edge function (already have `youtube-search`)
-- Ensure proper error handling (quota exceeded → graceful fallback)
-- Normalize YouTube results to universal Track/Artist format
+**Cosmic Background (CSS-only for performance):**
+```text
+- Base: radial-gradient with #0a0020, #1a0040, #000820 stops
+- Nebula clouds: 3-4 positioned radial-gradient overlays with purple/teal/blue
+- Stars: CSS box-shadow technique (hundreds of 1px white dots)
+- Animation: slow rotation/drift via @keyframes
+- Particles: 20-30 absolutely positioned divs with float animation
+```
 
----
+**Hexagonal Album Cards:**
+```text
+- clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)
+- Glow border via drop-shadow filter
+- Hover: scale + increased glow
+```
 
-## Phase 9: Global Library Uniform UI (Section 9)
+**Orbital Category Navigation:**
+```text
+- Circular arrangement using CSS transforms
+- Each category is a glass-morphism circle with icon + label
+- Connected by subtle SVG orbital lines
+- Galaxy/spiral image in center
+```
 
-- Search returns Artist Profiles first, not song lists
-- Universal Artist Profile page for external artists (`/discovery/artist/ext/:source/:id`)
-- `createUniversalArtist` normalization function
-- All results use SongRow/ArtistCard/AlbumCard consistently
+**Scroll Effects Hooks:**
+```text
+useParallax(speed): returns ref + transform style for parallax offset
+useCountUp(target, duration): returns animated number value
+useStaggerReveal(count): returns array of refs with staggered delays
+useWipeReveal(): returns ref + clip-path animation state
+```
 
----
-
-## Phase 10: Discovery Organization (Section 11)
-
-- **11A** — Change "New TDZ Releases" limit from 9 to 10
-- **11B** — Moodscapes change entire app theme (CSS custom properties + MoodContext)
-  - Each mood has nebula colors + accent color
-  - SpaceBackground transitions, player bar gradient changes
-  - 1.2s CSS transition on all color changes
-- **11C** — Consistent page padding (80px top, 100px bottom), section spacing (64px)
-
----
-
-## Phase 11: Minimizable Music Player (Section 12)
-
-- 3 states: Full (80px bar), Mini (floating pill, 200px), Hidden
-- Mini: draggable, shows tiny art + title + play/pause
-- Transitions: CSS animations (300ms cubic-bezier)
-- Minimize/expand/close buttons
-
----
-
-## Phase 12: AI Features (Section 10)
-
-- Smart Release Recommendations (after upload, AI suggests release timing)
-- Auto-Tagging (genre, mood, BPM from upload metadata)
-- Personalized Discovery (hero filtered by listening history)
-- Email Subject Line Optimizer
-- Community Hub AI Weekly Insights
-- Narrative Strength Score (0-100)
-- Smart Link Copy AI
-- Quantum Label Dashboard AI analysis
-
-All AI calls through Lovable AI edge functions (no API keys needed).
-
----
-
-## Phase 13: Fan Settings Page
-
-- Route: `/settings` (or `/fan-settings`)
-- Space background, glass panels
-- Categories: Account, Subscription, Listening, Privacy, Connected Apps, Support, Danger Zone
-- All settings save to DB with optimistic updates
-
----
-
-## Implementation Priority
-
-I'll work through these in this order, grouping by what can be done in parallel:
-
-1. **Fix build errors** (immediate, unblocks everything)
-2. **Database migrations** (foundation for all features)
-3. **Landing page fixes** (Section 5 — quick visual wins including GSAP install)
-4. **Discovery organization + Moodscape themes** (Section 11)
-5. **Minimizable player** (Section 12)
-6. **Artist Settings** (Section 1)
-7. **Studio redesign** (Section 6)
-8. **Promote suite** (Section 2 — largest section)
-9. **Content Library** (Section 4)
-10. **Storytelling Studio** (Section 3)
-11. **Global Library + YouTube fix** (Sections 8-9)
-12. **AI features** (Section 10)
-13. **Fan Settings** (Section 4 from original prompt)
-14. **Production audit** (Section 7 + 13)
-
-This is a very large sprint. I'll implement each phase sequentially, writing all necessary files without stopping for approval.
+**No database changes needed.** All updates are purely frontend visual/UX.
 

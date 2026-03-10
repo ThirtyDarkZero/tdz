@@ -10,7 +10,7 @@ export function useCrossfade(options: CrossfadeOptions = { duration: 3 }) {
   const { duration = 3 } = options;
   const [isCrossfading, setIsCrossfading] = useState(false);
   const fadeIntervalRef = useRef<number | null>(null);
-  const crossfadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const crossfadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Fade out the current player volume over the crossfade duration
   const startCrossfade = useCallback((
