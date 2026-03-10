@@ -227,6 +227,11 @@ export default function Landing() {
 // SECTION 1 — HERO
 // ═══════════════════════════════════════
 function Section1Hero() {
+  const crystals = useMemo(() => Array.from({ length: 10 }, (_, i) => ({
+    id: i, left: `${10 + Math.random() * 80}%`, top: `${10 + Math.random() * 60}%`,
+    size: 6 + Math.random() * 10, duration: 5 + Math.random() * 4, delay: Math.random() * 4,
+  })), []);
+
   return (
     <section>
       <div className="relative flex flex-col items-center justify-start pt-12 pb-0"
@@ -236,6 +241,14 @@ function Section1Hero() {
           backgroundSize: "200% 200%", animation: "auroraShift 8s ease-in-out infinite alternate",
           maskImage: "linear-gradient(to bottom, black 70%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, black 70%, transparent 100%)",
         }}>
+        {crystals.map(c => (
+          <div key={c.id} className="absolute pointer-events-none" style={{
+            left: c.left, top: c.top, width: c.size, height: c.size,
+            background: "linear-gradient(135deg, rgba(125,211,252,0.7), rgba(192,132,252,0.5))",
+            clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
+            animation: `floatDiamond ${c.duration}s ease-in-out ${c.delay}s infinite`, filter: "blur(0.3px)",
+          }} />
+        ))}
         <img src={tdzLogo} alt="TDZ Distribution" className="w-24 sm:w-28 h-auto mb-6 drop-shadow-2xl" />
         <NavPill />
       </div>
