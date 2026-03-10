@@ -1057,11 +1057,11 @@ function Section10FanPlan({ navigate }: { navigate: (p: string) => void }) {
           <div className="flex flex-col items-center pt-10"
             style={{ background: "linear-gradient(180deg, #2a2a2a 0%, #5a5a5a 40%, #b0b0b0 75%, #d8d8d8 100%)",
               borderRadius: 28, width: 380, maxWidth: "100%", minHeight: 520, padding: "36px 32px" }}>
-            <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 15, color: "#BBB", letterSpacing: "0.18em", textTransform: "uppercase" as const, textAlign: "center" }}>
+            <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 16, color: "#FFFFFF", letterSpacing: "0.2em", textTransform: "uppercase" as const, textAlign: "center" }}>
               UNLIMITED STREAMING
             </p>
-            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 78, color: "#FFF", letterSpacing: "0.04em", marginTop: 12 }}>$12.00</p>
-            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#999", marginTop: 4 }}>/month</p>
+            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 78, color: "#FFFFFF", letterSpacing: "0.04em", marginTop: 12 }}>$12.00</p>
+            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#888", marginTop: 4 }}>/month</p>
             <div className="mt-8 space-y-2 w-full">
               {fanFeatures.map((f, i) => (
                 <div key={i} className="flex items-start gap-2">
