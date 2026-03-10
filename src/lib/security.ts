@@ -203,7 +203,7 @@ export const logSecurityEvent = (
   event: string,
   details?: Record<string, any>
 ): void => {
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     console.warn('[Security Event]', event, details);
   }
   // In production, this should send to a logging service
