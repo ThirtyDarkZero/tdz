@@ -717,7 +717,7 @@ function SectionHowPaymentsWork() {
     { step: "1", title: "UPLOAD YOUR MUSIC", desc: "Upload tracks to your Artist Studio. Set download prices, add metadata, and choose territories.", color: "#00CFFF" },
     { step: "2", title: "FANS STREAM & BUY", desc: "Every stream earns you $1. Every download purchase goes 100% to you. Fans can also tip directly.", color: "#22C55E" },
     { step: "3", title: "REAL-TIME EARNINGS", desc: "Watch your earnings grow in real-time on your dashboard. No 90-day delays like traditional DSPs.", color: "#D4A017" },
-    { step: "4", title: "GET PAID", desc: "Cash out anytime via Square. Direct deposit to your bank. No minimum thresholds.", color: "#8B5CF6" },
+    { step: "4", title: "GET PAID", desc: "Cash out via Square once you reach the $50 minimum payout threshold. Direct deposit to your bank.", color: "#8B5CF6" },
   ];
 
   return (
