@@ -218,6 +218,7 @@ export default function Landing() {
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
         .animate-marquee { animation: marquee 45s linear infinite; }
         @keyframes auroraShift { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+        @keyframes floatDiamond { 0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.6; } 50% { transform: translateY(-12px) rotate(45deg); opacity: 1; } }
       `}</style>
     </div>
   );
