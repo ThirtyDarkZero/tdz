@@ -37,7 +37,7 @@ export function TourDatesManager() {
 
   const loadDates = async () => {
     if (!user) return;
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from("tour_dates")
       .select("*")
       .eq("artist_id", user.id)
