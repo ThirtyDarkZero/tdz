@@ -52,7 +52,7 @@ export function SmartLinkBuilder() {
     const platformMap: Record<string, string> = {};
     platforms.forEach(p => { if (p.url) platformMap[p.name] = p.url; });
 
-    const { error } = await supabase.from("smart_links").insert({
+    const { error } = await (supabase as any).from("smart_links").insert({
       artist_id: user.id,
       slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
       title,

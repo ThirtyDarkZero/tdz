@@ -68,7 +68,7 @@ export function TourDatesManager() {
   };
 
   const handleDelete = async (id: string) => {
-    await supabase.from("tour_dates").delete().eq("id", id);
+    await (supabase as any).from("tour_dates").delete().eq("id", id);
     toast.success("Tour date removed");
     loadDates();
   };

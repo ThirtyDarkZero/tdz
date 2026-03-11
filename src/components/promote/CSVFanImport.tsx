@@ -77,7 +77,7 @@ export function CSVFanImport() {
     // Batch insert in chunks of 100
     for (let i = 0; i < contacts.length; i += 100) {
       const chunk = contacts.slice(i, i + 100);
-      const { error } = await supabase.from("artist_contacts").insert(chunk as any);
+      const { error } = await (supabase as any).from("artist_contacts").insert(chunk);
       if (!error) count += chunk.length;
     }
 
