@@ -37,12 +37,12 @@ export function SmartLinkBuilder() {
 
   const loadLinks = async () => {
     if (!user) return;
-    const { data } = await supabase
+    const { data } = await (supabase as any)
       .from("smart_links")
       .select("*")
       .eq("artist_id", user.id)
       .order("created_at", { ascending: false });
-    setLinks((data as any[]) || []);
+    setLinks((data as SmartLink[]) || []);
   };
 
   const handleCreate = async () => {
