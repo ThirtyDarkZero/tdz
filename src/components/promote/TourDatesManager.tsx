@@ -48,7 +48,7 @@ export function TourDatesManager() {
   const handleAdd = async () => {
     if (!user || !venue || !city || !dateTime) { toast.error("Venue, city, and date are required"); return; }
     setSaving(true);
-    const { error } = await supabase.from("tour_dates").insert({
+    const { error } = await (supabase as any).from("tour_dates").insert({
       artist_id: user.id,
       venue, city,
       state: state || null,
