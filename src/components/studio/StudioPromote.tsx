@@ -6,6 +6,11 @@ import { MerchStore } from "@/components/MerchStore";
 import { PreSaveCampaignManager } from "@/components/PreSaveCampaignManager";
 import { FeatureGate } from "@/components/FeatureGate";
 import { LabelStaff } from "@/components/LabelStaff";
+import { CSVFanImport } from "@/components/promote/CSVFanImport";
+import { EmailCampaignGenerator } from "@/components/promote/EmailCampaignGenerator";
+import { SmartLinkBuilder } from "@/components/promote/SmartLinkBuilder";
+import { TourDatesManager } from "@/components/promote/TourDatesManager";
+import { FanDirectMessages } from "@/components/promote/FanDirectMessages";
 
 export const StudioPromote = () => {
   return (
@@ -20,11 +25,26 @@ export const StudioPromote = () => {
           <TabsTrigger value="ai-assistant" className="data-[state=active]:bg-background">
             AI Assistant
           </TabsTrigger>
+          <TabsTrigger value="smart-links" className="data-[state=active]:bg-background">
+            Smart Links
+          </TabsTrigger>
+          <TabsTrigger value="email" className="data-[state=active]:bg-background">
+            Email Campaigns
+          </TabsTrigger>
+          <TabsTrigger value="messages" className="data-[state=active]:bg-background">
+            Fan Messages
+          </TabsTrigger>
+          <TabsTrigger value="import" className="data-[state=active]:bg-background">
+            Import Fans
+          </TabsTrigger>
+          <TabsTrigger value="tour" className="data-[state=active]:bg-background">
+            Tour Dates
+          </TabsTrigger>
           <TabsTrigger value="presave" className="data-[state=active]:bg-background">
             Pre-Save
           </TabsTrigger>
           <TabsTrigger value="fans" className="data-[state=active]:bg-background">
-            Fan Engagement
+            Fan Hub
           </TabsTrigger>
           <TabsTrigger value="storytelling" className="data-[state=active]:bg-background">
             Storytelling
@@ -39,6 +59,26 @@ export const StudioPromote = () => {
 
         <TabsContent value="ai-assistant" className="mt-0">
           <LabelStaff />
+        </TabsContent>
+
+        <TabsContent value="smart-links" className="mt-0">
+          <SmartLinkBuilder />
+        </TabsContent>
+
+        <TabsContent value="email" className="mt-0">
+          <EmailCampaignGenerator />
+        </TabsContent>
+
+        <TabsContent value="messages" className="mt-0">
+          <FanDirectMessages />
+        </TabsContent>
+
+        <TabsContent value="import" className="mt-0">
+          <CSVFanImport />
+        </TabsContent>
+
+        <TabsContent value="tour" className="mt-0">
+          <TourDatesManager />
         </TabsContent>
 
         <TabsContent value="presave" className="mt-0">

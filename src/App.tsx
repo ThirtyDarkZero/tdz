@@ -35,6 +35,7 @@ import Checkout from "./pages/Checkout";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import SquareOAuthCallback from "./pages/SquareOAuthCallback";
 import Browse from "./pages/Browse";
+import FanSettings from "./pages/FanSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -88,6 +89,7 @@ const App = () => (
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/subscription-success" element={<SubscriptionSuccess />} />
               <Route path="/square-callback" element={<SquareOAuthCallback />} />
+              <Route path="/settings" element={<FanSettings />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <GlobalMusicPlayer />
