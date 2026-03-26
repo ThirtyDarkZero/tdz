@@ -66,7 +66,6 @@ const navGroups = [
   {
     id: "tools",
     items: [
-      { id: "learn", icon: GraduationCap, label: "Academy" },
       { id: "settings", icon: Settings2, label: "Settings" },
     ]
   },

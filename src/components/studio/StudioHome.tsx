@@ -162,7 +162,7 @@ export const StudioHome = ({ artistName, onNavigate, onUploadClick }: StudioHome
               <h2 className="text-xl font-bold" style={{ color: "#fff" }}>Your Story So Far</h2>
               <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.4)" }}>Recent releases and performance</p>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => onNavigate("music")} className="gap-1 text-white/40 hover:text-white">
+            <Button variant="ghost" size="sm" onClick={() => onNavigate("insights")} className="gap-1 text-white/40 hover:text-white">
               View All <ArrowRight className="w-4 h-4" />
             </Button>
           </div>
