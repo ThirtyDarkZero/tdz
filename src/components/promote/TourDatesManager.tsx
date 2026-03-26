@@ -7,12 +7,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { MapPin, Plus, Calendar, Trash2, ExternalLink, Ticket, Loader2, Users, DollarSign, BarChart3, Eye } from "lucide-react";
+import {
+  MapPin, Plus, Calendar, Trash2, ExternalLink, Ticket, Loader2,
+  Users, DollarSign, BarChart3, Copy, Globe, Eye, ShoppingCart,
+  Pencil, HelpCircle, Percent, Tag
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { format } from "date-fns";
+
+import { EventEditDialog } from "./eventbrite/EventEditDialog";
+import { OrdersDialog } from "./eventbrite/OrdersDialog";
+import { QuestionsDialog } from "./eventbrite/QuestionsDialog";
+import { DiscountDialog } from "./eventbrite/DiscountDialog";
+import { TicketManagerDialog } from "./eventbrite/TicketManagerDialog";
+import { VenueDialog } from "./eventbrite/VenueDialog";
 
 interface TourDate {
   id: string;
@@ -37,10 +49,13 @@ interface EventStats {
     price: number;
     revenue: number;
     free: boolean;
+    donation?: boolean;
+    on_sale_status?: string;
   }>;
   currency: string;
 }
 
+// ── Event Stats Dialog ──
 function EventStatsDialog({ eventId }: { eventId: string }) {
   const [stats, setStats] = useState<EventStats | null>(null);
   const [loading, setLoading] = useState(false);
@@ -102,15 +117,20 @@ function EventStatsDialog({ eventId }: { eventId: string }) {
                 <p className="text-xs text-muted-foreground">Revenue</p>
               </div>
             </div>
-
             {stats.ticket_breakdown.length > 0 && (
               <div className="space-y-2">
                 <h4 className="text-sm font-semibold">Ticket Breakdown</h4>
                 {stats.ticket_breakdown.map((tc, idx) => (
                   <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-muted/20 text-sm">
-                    <div>
+                    <div className="flex items-center gap-1">
                       <span className="font-medium">{tc.name}</span>
-                      {tc.free && <Badge variant="outline" className="ml-2 text-xs">Free</Badge>}
+                      {tc.free && <Badge variant="outline" className="text-xs">Free</Badge>}
+                      {tc.donation && <Badge variant="secondary" className="text-xs">Donation</Badge>}
+                      {tc.on_sale_status && (
+                        <Badge variant={tc.on_sale_status === "AVAILABLE" ? "default" : "outline"} className="text-xs">
+                          {tc.on_sale_status}
+                        </Badge>
+                      )}
                     </div>
                     <div className="text-right">
                       <span className="font-mono">{tc.sold}/{tc.total}</span>
@@ -129,23 +149,25 @@ function EventStatsDialog({ eventId }: { eventId: string }) {
   );
 }
 
+// ── Attendee List Dialog ──
 function AttendeeListDialog({ eventId }: { eventId: string }) {
   const [attendees, setAttendees] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("");
 
   useEffect(() => {
     if (!open || !eventId) return;
     setLoading(true);
     supabase.functions.invoke("eventbrite-api", {
-      body: { action: "list_attendees", event_id: eventId },
+      body: { action: "list_attendees", event_id: eventId, ...(statusFilter ? { status: statusFilter } : {}) },
     }).then(({ data, error }) => {
       if (!error && data?.success) {
         setAttendees(data.data.attendees || []);
       }
       setLoading(false);
     });
-  }, [open, eventId]);
+  }, [open, eventId, statusFilter]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -154,18 +176,31 @@ function AttendeeListDialog({ eventId }: { eventId: string }) {
           <Users className="w-4 h-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md max-h-[70vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg max-h-[70vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-primary" /> Attendees
+            <Users className="w-5 h-5 text-primary" /> Attendees ({attendees.length})
           </DialogTitle>
         </DialogHeader>
+        <div className="flex gap-2 mb-3">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All</SelectItem>
+              <SelectItem value="attending">Checked In</SelectItem>
+              <SelectItem value="not_attending">Not Checked In</SelectItem>
+              <SelectItem value="unpaid">Unpaid</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         {loading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         ) : attendees.length === 0 ? (
-          <p className="text-muted-foreground text-center py-4">No attendees yet</p>
+          <p className="text-muted-foreground text-center py-4">No attendees found</p>
         ) : (
           <div className="space-y-2">
             {attendees.map((a: any, i: number) => (
@@ -173,11 +208,17 @@ function AttendeeListDialog({ eventId }: { eventId: string }) {
                 <div>
                   <p className="font-medium text-sm">{a.profile?.name || a.profile?.first_name || "Anonymous"}</p>
                   <p className="text-xs text-muted-foreground">{a.profile?.email}</p>
+                  {a.ticket_class_name && (
+                    <p className="text-xs text-muted-foreground mt-0.5">Ticket: {a.ticket_class_name}</p>
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={a.checked_in ? "default" : "outline"} className="text-xs">
-                    {a.checked_in ? "Checked In" : a.status || "Attending"}
+                <div className="flex flex-col items-end gap-1">
+                  <Badge variant={a.checked_in ? "default" : a.cancelled ? "destructive" : "outline"} className="text-xs">
+                    {a.checked_in ? "Checked In" : a.cancelled ? "Cancelled" : a.refunded ? "Refunded" : a.status || "Attending"}
                   </Badge>
+                  {a.costs?.gross?.display && a.costs.gross.value > 0 && (
+                    <span className="text-xs font-mono">{a.costs.gross.display}</span>
+                  )}
                 </div>
               </div>
             ))}
@@ -188,6 +229,7 @@ function AttendeeListDialog({ eventId }: { eventId: string }) {
   );
 }
 
+// ── Main TourDatesManager ──
 export function TourDatesManager() {
   const { user } = useAuth();
   const [dates, setDates] = useState<TourDate[]>([]);
@@ -199,6 +241,7 @@ export function TourDatesManager() {
 
   // Form state
   const [venue, setVenue] = useState("");
+  const [venueId, setVenueId] = useState<string | null>(null);
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [country, setCountry] = useState("US");
@@ -207,10 +250,19 @@ export function TourDatesManager() {
   const [ticketUrl, setTicketUrl] = useState("");
   const [eventName, setEventName] = useState("");
   const [eventDescription, setEventDescription] = useState("");
-  const [ticketPrice, setTicketPrice] = useState("");
-  const [ticketQuantity, setTicketQuantity] = useState("100");
-  const [vipPrice, setVipPrice] = useState("");
-  const [vipQuantity, setVipQuantity] = useState("50");
+  const [eventSummary, setEventSummary] = useState("");
+  const [isOnlineEvent, setIsOnlineEvent] = useState(false);
+  const [isInviteOnly, setIsInviteOnly] = useState(false);
+  const [showRemaining, setShowRemaining] = useState(false);
+  const [eventPassword, setEventPassword] = useState("");
+  const [eventCapacity, setEventCapacity] = useState("");
+  const [currency, setCurrency] = useState("USD");
+
+  // Ticket classes
+  const [ticketClasses, setTicketClasses] = useState<Array<{
+    name: string; price: string; quantity: string; donation: boolean; hidden: boolean;
+    salesStart: string; salesEnd: string;
+  }>>([{ name: "General Admission", price: "", quantity: "100", donation: false, hidden: false, salesStart: "", salesEnd: "" }]);
 
   useEffect(() => { if (user) loadDates(); }, [user]);
 
@@ -251,15 +303,36 @@ export function TourDatesManager() {
   };
 
   const resetForm = () => {
-    setVenue(""); setCity(""); setState(""); setDateTime(""); setEndDateTime("");
-    setTicketUrl(""); setEventName(""); setEventDescription("");
-    setTicketPrice(""); setTicketQuantity("100"); setVipPrice(""); setVipQuantity("50");
+    setVenue(""); setVenueId(null); setCity(""); setState(""); setDateTime(""); setEndDateTime("");
+    setTicketUrl(""); setEventName(""); setEventDescription(""); setEventSummary("");
+    setIsOnlineEvent(false); setIsInviteOnly(false); setShowRemaining(false);
+    setEventPassword(""); setEventCapacity(""); setCurrency("USD");
+    setTicketClasses([{ name: "General Admission", price: "", quantity: "100", donation: false, hidden: false, salesStart: "", salesEnd: "" }]);
     setShowForm(false);
   };
 
+  const addTicketClass = () => {
+    setTicketClasses([...ticketClasses, { name: "", price: "", quantity: "50", donation: false, hidden: false, salesStart: "", salesEnd: "" }]);
+  };
+
+  const updateTicketClass = (idx: number, field: string, value: any) => {
+    const updated = [...ticketClasses];
+    (updated[idx] as any)[field] = value;
+    setTicketClasses(updated);
+  };
+
+  const removeTicketClass = (idx: number) => {
+    if (ticketClasses.length <= 1) return;
+    setTicketClasses(ticketClasses.filter((_, i) => i !== idx));
+  };
+
   const handleAdd = async () => {
-    if (!user || !city || !dateTime) {
-      toast.error("City and date are required");
+    if (!user || !dateTime) {
+      toast.error("Date/time is required");
+      return;
+    }
+    if (!isOnlineEvent && !city) {
+      toast.error("City is required for in-person events");
       return;
     }
 
@@ -274,25 +347,39 @@ export function TourDatesManager() {
         const body: any = {
           action: "create_event",
           organization_id: orgId,
-          name: eventName || `${venue || "Show"} — ${city}`,
+          name: eventName || `${venue || "Show"} — ${city || "Online"}`,
           description: eventDescription,
+          summary: eventSummary || undefined,
           start_utc: startUtc,
           end_utc: endUtc,
           venue_name: venue || "TBA",
-          city,
+          city: city || (isOnlineEvent ? "Online" : "TBA"),
           state: state || null,
           country,
-          ticket_name: "General Admission",
-          ticket_price: ticketPrice ? parseFloat(ticketPrice) : 0,
-          ticket_quantity: parseInt(ticketQuantity) || 100,
+          currency,
+          online_event: isOnlineEvent,
+          invite_only: isInviteOnly,
+          show_remaining: showRemaining,
+          listed: true,
           publish: true,
+          capacity: eventCapacity ? parseInt(eventCapacity) : undefined,
         };
 
-        if (vipPrice && parseFloat(vipPrice) > 0) {
-          body.vip_ticket_price = parseFloat(vipPrice);
-          body.vip_ticket_quantity = parseInt(vipQuantity) || 50;
-          body.vip_ticket_name = "VIP";
-        }
+        if (venueId) body.venue_id = venueId;
+        if (eventPassword) body.password = eventPassword;
+
+        // Build ticket classes array
+        const tcs = ticketClasses.filter(tc => tc.name.trim()).map(tc => ({
+          name: tc.name,
+          price: tc.price ? parseFloat(tc.price) : 0,
+          quantity_total: parseInt(tc.quantity) || 100,
+          donation: tc.donation,
+          hidden: tc.hidden,
+          free: !tc.price || parseFloat(tc.price) === 0,
+          sales_start: tc.salesStart ? new Date(tc.salesStart).toISOString().replace(".000Z", "Z") : undefined,
+          sales_end: tc.salesEnd ? new Date(tc.salesEnd).toISOString().replace(".000Z", "Z") : undefined,
+        }));
+        if (tcs.length > 0) body.ticket_classes = tcs;
 
         const { data, error } = await supabase.functions.invoke("eventbrite-api", { body });
         if (error || !data?.success) throw new Error(data?.error || "Eventbrite creation failed");
@@ -301,7 +388,7 @@ export function TourDatesManager() {
         const { error } = await (supabase as any).from("tour_dates").insert({
           artist_id: user.id,
           venue: venue || "TBA",
-          city,
+          city: city || "TBA",
           state: state || null,
           country,
           date_time: new Date(dateTime).toISOString(),
@@ -338,6 +425,18 @@ export function TourDatesManager() {
     loadDates();
   };
 
+  const handleCopyEvent = async (eventId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("eventbrite-api", {
+        body: { action: "copy_event", event_id: eventId },
+      });
+      if (error || !data?.success) throw new Error(data?.error || "Copy failed");
+      toast.success("Event duplicated! Edit it on Eventbrite to update details.");
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     await (supabase as any).from("tour_dates").delete().eq("id", id);
     toast.success("Tour date removed");
@@ -355,7 +454,7 @@ export function TourDatesManager() {
             <CardTitle className="flex items-center gap-2">
               <MapPin className="w-5 h-5 text-primary" /> Tour Dates
             </CardTitle>
-            <CardDescription>Manage shows & sell tickets via Eventbrite</CardDescription>
+            <CardDescription>Create events, sell tickets, manage attendees & orders via Eventbrite</CardDescription>
           </div>
           <Button size="sm" onClick={() => setShowForm(!showForm)} className="gap-1">
             <Plus className="w-3 h-3" /> Add Date
@@ -371,7 +470,7 @@ export function TourDatesManager() {
                 <Ticket className="w-4 h-4 text-primary" />
                 <div>
                   <p className="text-sm font-medium">Sell tickets via Eventbrite</p>
-                  <p className="text-xs text-muted-foreground">Creates a real event with ticketing</p>
+                  <p className="text-xs text-muted-foreground">Creates a live event with full ticketing</p>
                 </div>
               </div>
               <Switch checked={useEventbrite} onCheckedChange={handleEventbriteToggle} disabled={loadingOrg} />
@@ -384,87 +483,230 @@ export function TourDatesManager() {
             )}
 
             {useEventbrite && orgId && (
-              <div className="space-y-3">
-                <div>
-                  <Label>Event Name</Label>
-                  <Input value={eventName} onChange={(e) => setEventName(e.target.value)} className="mt-1" placeholder="My Concert Night" />
-                </div>
-                <div>
-                  <Label>Event Description</Label>
-                  <Textarea value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} className="mt-1" placeholder="Tell fans what to expect..." rows={2} />
-                </div>
-              </div>
+              <Tabs defaultValue="details" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="details">Event Details</TabsTrigger>
+                  <TabsTrigger value="tickets">Tickets</TabsTrigger>
+                  <TabsTrigger value="settings">Settings</TabsTrigger>
+                </TabsList>
+
+                {/* TAB: Event Details */}
+                <TabsContent value="details" className="space-y-3 mt-3">
+                  <div>
+                    <Label>Event Name</Label>
+                    <Input value={eventName} onChange={(e) => setEventName(e.target.value)} className="mt-1" placeholder="My Concert Night" />
+                  </div>
+                  <div>
+                    <Label>Summary <span className="text-xs text-muted-foreground">(max 140 chars, shows in search)</span></Label>
+                    <Input value={eventSummary} onChange={(e) => setEventSummary(e.target.value.slice(0, 140))} className="mt-1" placeholder="A brief event summary..." />
+                  </div>
+                  <div>
+                    <Label>Description</Label>
+                    <Textarea value={eventDescription} onChange={(e) => setEventDescription(e.target.value)} className="mt-1" placeholder="Tell fans what to expect..." rows={3} />
+                  </div>
+
+                  {/* Online event toggle */}
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-muted/10">
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-primary" />
+                      <Label className="text-sm">Online / Virtual Event</Label>
+                    </div>
+                    <Switch checked={isOnlineEvent} onCheckedChange={setIsOnlineEvent} />
+                  </div>
+
+                  {!isOnlineEvent && (
+                    <>
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        <div>
+                          <Label>Venue</Label>
+                          <Input value={venue} onChange={(e) => setVenue(e.target.value)} className="mt-1" placeholder="The Roxy" />
+                        </div>
+                        <div className="flex items-end gap-2">
+                          <div className="flex-1">
+                            <Label>City *</Label>
+                            <Input value={city} onChange={(e) => setCity(e.target.value)} className="mt-1" placeholder="Los Angeles" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        <div>
+                          <Label>State</Label>
+                          <Input value={state} onChange={(e) => setState(e.target.value)} className="mt-1" placeholder="CA" />
+                        </div>
+                        <div>
+                          <Label>Country</Label>
+                          <Select value={country} onValueChange={setCountry}>
+                            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="US">United States</SelectItem>
+                              <SelectItem value="CA">Canada</SelectItem>
+                              <SelectItem value="GB">United Kingdom</SelectItem>
+                              <SelectItem value="AU">Australia</SelectItem>
+                              <SelectItem value="DE">Germany</SelectItem>
+                              <SelectItem value="FR">France</SelectItem>
+                              <SelectItem value="JP">Japan</SelectItem>
+                              <SelectItem value="BR">Brazil</SelectItem>
+                              <SelectItem value="MX">Mexico</SelectItem>
+                              <SelectItem value="NL">Netherlands</SelectItem>
+                              <SelectItem value="ES">Spain</SelectItem>
+                              <SelectItem value="IT">Italy</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      {/* Venue selector */}
+                      <VenueDialog orgId={orgId} onVenueSelect={(vId, vName) => {
+                        setVenueId(vId);
+                        setVenue(vName);
+                      }} />
+                    </>
+                  )}
+
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label>Start Date & Time *</Label>
+                      <Input type="datetime-local" value={dateTime} onChange={(e) => setDateTime(e.target.value)} className="mt-1" />
+                    </div>
+                    <div>
+                      <Label>End Date & Time</Label>
+                      <Input type="datetime-local" value={endDateTime} onChange={(e) => setEndDateTime(e.target.value)} className="mt-1" />
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* TAB: Tickets */}
+                <TabsContent value="tickets" className="space-y-3 mt-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-semibold">Ticket Classes</Label>
+                    <div className="flex gap-2">
+                      <Select value={currency} onValueChange={setCurrency}>
+                        <SelectTrigger className="w-20 h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="USD">USD</SelectItem>
+                          <SelectItem value="EUR">EUR</SelectItem>
+                          <SelectItem value="GBP">GBP</SelectItem>
+                          <SelectItem value="CAD">CAD</SelectItem>
+                          <SelectItem value="AUD">AUD</SelectItem>
+                          <SelectItem value="JPY">JPY</SelectItem>
+                          <SelectItem value="BRL">BRL</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button variant="outline" size="sm" onClick={addTicketClass} className="gap-1 h-8 text-xs">
+                        <Plus className="w-3 h-3" /> Add Tier
+                      </Button>
+                    </div>
+                  </div>
+
+                  {ticketClasses.map((tc, idx) => (
+                    <div key={idx} className="p-3 rounded-lg bg-muted/10 border border-border/20 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-muted-foreground">Tier {idx + 1}</span>
+                        {ticketClasses.length > 1 && (
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeTicketClass(idx)}>
+                            <Trash2 className="w-3 h-3 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <Label className="text-xs">Name</Label>
+                          <Input value={tc.name} onChange={(e) => updateTicketClass(idx, "name", e.target.value)} className="mt-0.5 h-8 text-sm" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Price ($) <span className="text-muted-foreground">(0=free)</span></Label>
+                          <Input type="number" value={tc.price} onChange={(e) => updateTicketClass(idx, "price", e.target.value)} className="mt-0.5 h-8 text-sm" min="0" step="0.01" disabled={tc.donation} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Quantity</Label>
+                          <Input type="number" value={tc.quantity} onChange={(e) => updateTicketClass(idx, "quantity", e.target.value)} className="mt-0.5 h-8 text-sm" min="1" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">Sales Start</Label>
+                          <Input type="datetime-local" value={tc.salesStart} onChange={(e) => updateTicketClass(idx, "salesStart", e.target.value)} className="mt-0.5 h-8 text-sm" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Sales End</Label>
+                          <Input type="datetime-local" value={tc.salesEnd} onChange={(e) => updateTicketClass(idx, "salesEnd", e.target.value)} className="mt-0.5 h-8 text-sm" />
+                        </div>
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="flex items-center gap-1.5">
+                          <Switch checked={tc.donation} onCheckedChange={(v) => updateTicketClass(idx, "donation", v)} />
+                          <Label className="text-xs">Donation</Label>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Switch checked={tc.hidden} onCheckedChange={(v) => updateTicketClass(idx, "hidden", v)} />
+                          <Label className="text-xs">Hidden</Label>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </TabsContent>
+
+                {/* TAB: Settings */}
+                <TabsContent value="settings" className="space-y-3 mt-3">
+                  <div>
+                    <Label>Capacity <span className="text-xs text-muted-foreground">(max total tickets)</span></Label>
+                    <Input type="number" value={eventCapacity} onChange={(e) => setEventCapacity(e.target.value)} className="mt-1" min="1" placeholder="Leave empty for no limit" />
+                  </div>
+                  <div>
+                    <Label>Event Password <span className="text-xs text-muted-foreground">(optional)</span></Label>
+                    <Input value={eventPassword} onChange={(e) => setEventPassword(e.target.value)} className="mt-1" placeholder="Require password to view" />
+                  </div>
+                  <div className="space-y-3 pt-1">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Show remaining tickets</Label>
+                      <Switch checked={showRemaining} onCheckedChange={setShowRemaining} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">Invite only</Label>
+                      <Switch checked={isInviteOnly} onCheckedChange={setIsInviteOnly} />
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             )}
 
-            <div className="grid sm:grid-cols-2 gap-3">
-              <div>
-                <Label>Venue</Label>
-                <Input value={venue} onChange={(e) => setVenue(e.target.value)} className="mt-1" placeholder="The Roxy" />
-              </div>
-              <div>
-                <Label>City *</Label>
-                <Input value={city} onChange={(e) => setCity(e.target.value)} className="mt-1" placeholder="Los Angeles" />
-              </div>
-              <div>
-                <Label>State</Label>
-                <Input value={state} onChange={(e) => setState(e.target.value)} className="mt-1" placeholder="CA" />
-              </div>
-              <div>
-                <Label>Country</Label>
-                <Select value={country} onValueChange={setCountry}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="US">United States</SelectItem>
-                    <SelectItem value="CA">Canada</SelectItem>
-                    <SelectItem value="GB">United Kingdom</SelectItem>
-                    <SelectItem value="AU">Australia</SelectItem>
-                    <SelectItem value="DE">Germany</SelectItem>
-                    <SelectItem value="FR">France</SelectItem>
-                    <SelectItem value="JP">Japan</SelectItem>
-                    <SelectItem value="BR">Brazil</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Start Date & Time *</Label>
-                <Input type="datetime-local" value={dateTime} onChange={(e) => setDateTime(e.target.value)} className="mt-1" />
-              </div>
-              {useEventbrite ? (
+            {/* Non-Eventbrite fields */}
+            {!useEventbrite && (
+              <div className="grid sm:grid-cols-2 gap-3">
                 <div>
-                  <Label>End Date & Time</Label>
-                  <Input type="datetime-local" value={endDateTime} onChange={(e) => setEndDateTime(e.target.value)} className="mt-1" />
+                  <Label>Venue</Label>
+                  <Input value={venue} onChange={(e) => setVenue(e.target.value)} className="mt-1" placeholder="The Roxy" />
                 </div>
-              ) : (
+                <div>
+                  <Label>City *</Label>
+                  <Input value={city} onChange={(e) => setCity(e.target.value)} className="mt-1" placeholder="Los Angeles" />
+                </div>
+                <div>
+                  <Label>State</Label>
+                  <Input value={state} onChange={(e) => setState(e.target.value)} className="mt-1" placeholder="CA" />
+                </div>
+                <div>
+                  <Label>Country</Label>
+                  <Select value={country} onValueChange={setCountry}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="US">United States</SelectItem>
+                      <SelectItem value="CA">Canada</SelectItem>
+                      <SelectItem value="GB">United Kingdom</SelectItem>
+                      <SelectItem value="AU">Australia</SelectItem>
+                      <SelectItem value="DE">Germany</SelectItem>
+                      <SelectItem value="FR">France</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Date & Time *</Label>
+                  <Input type="datetime-local" value={dateTime} onChange={(e) => setDateTime(e.target.value)} className="mt-1" />
+                </div>
                 <div>
                   <Label>Ticket URL</Label>
                   <Input value={ticketUrl} onChange={(e) => setTicketUrl(e.target.value)} className="mt-1" placeholder="https://..." />
                 </div>
-              )}
-            </div>
-
-            {useEventbrite && orgId && (
-              <>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <div>
-                    <Label>GA Ticket Price ($)</Label>
-                    <Input type="number" value={ticketPrice} onChange={(e) => setTicketPrice(e.target.value)} className="mt-1" placeholder="0 = free" min="0" step="0.01" />
-                  </div>
-                  <div>
-                    <Label>GA Tickets Available</Label>
-                    <Input type="number" value={ticketQuantity} onChange={(e) => setTicketQuantity(e.target.value)} className="mt-1" placeholder="100" min="1" />
-                  </div>
-                </div>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <div>
-                    <Label>VIP Ticket Price ($) <span className="text-muted-foreground text-xs">(optional)</span></Label>
-                    <Input type="number" value={vipPrice} onChange={(e) => setVipPrice(e.target.value)} className="mt-1" placeholder="Leave empty for no VIP" min="0" step="0.01" />
-                  </div>
-                  <div>
-                    <Label>VIP Tickets Available</Label>
-                    <Input type="number" value={vipQuantity} onChange={(e) => setVipQuantity(e.target.value)} className="mt-1" placeholder="50" min="1" />
-                  </div>
-                </div>
-              </>
+              </div>
             )}
 
             <div className="flex gap-2">
@@ -477,7 +719,7 @@ export function TourDatesManager() {
           </div>
         )}
 
-        {/* Upcoming */}
+        {/* Tour Date List */}
         {upcomingDates.length === 0 && pastDates.length === 0 ? (
           <div className="text-center py-8">
             <Calendar className="w-10 h-10 mx-auto mb-3 text-muted-foreground/30" />
@@ -489,16 +731,15 @@ export function TourDatesManager() {
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Upcoming</h3>
                 {upcomingDates.map((d) => (
-                  <TourDateRow key={d.id} date={d} onDelete={handleDelete} onCancel={handleCancel} />
+                  <TourDateRow key={d.id} date={d} orgId={orgId} onDelete={handleDelete} onCancel={handleCancel} onCopy={handleCopyEvent} onRefresh={loadDates} />
                 ))}
               </div>
             )}
-
             {pastDates.length > 0 && (
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mt-4">Past / Cancelled</h3>
                 {pastDates.map((d) => (
-                  <TourDateRow key={d.id} date={d} onDelete={handleDelete} onCancel={handleCancel} isPast />
+                  <TourDateRow key={d.id} date={d} orgId={orgId} onDelete={handleDelete} onCancel={handleCancel} onCopy={handleCopyEvent} onRefresh={loadDates} isPast />
                 ))}
               </div>
             )}
@@ -509,10 +750,14 @@ export function TourDatesManager() {
   );
 }
 
-function TourDateRow({ date: d, onDelete, onCancel, isPast }: { 
-  date: TourDate; 
-  onDelete: (id: string) => void; 
+// ── Tour Date Row ──
+function TourDateRow({ date: d, orgId, onDelete, onCancel, onCopy, onRefresh, isPast }: {
+  date: TourDate;
+  orgId: string | null;
+  onDelete: (id: string) => void;
   onCancel: (d: TourDate) => void;
+  onCopy: (eventId: string) => void;
+  onRefresh: () => void;
   isPast?: boolean;
 }) {
   return (
@@ -537,11 +782,19 @@ function TourDateRow({ date: d, onDelete, onCancel, isPast }: {
           </div>
         </div>
       </div>
-      <div className="flex gap-1">
+      <div className="flex gap-0.5 flex-wrap justify-end">
         {d.eventbrite_event_id && (
           <>
             <EventStatsDialog eventId={d.eventbrite_event_id} />
             <AttendeeListDialog eventId={d.eventbrite_event_id} />
+            <OrdersDialog eventId={d.eventbrite_event_id} />
+            <TicketManagerDialog eventId={d.eventbrite_event_id} />
+            <EventEditDialog eventId={d.eventbrite_event_id} onUpdated={onRefresh} />
+            <QuestionsDialog eventId={d.eventbrite_event_id} />
+            {orgId && <DiscountDialog eventId={d.eventbrite_event_id} orgId={orgId} />}
+            <Button variant="ghost" size="icon" onClick={() => onCopy(d.eventbrite_event_id!)} title="Duplicate Event">
+              <Copy className="w-4 h-4" />
+            </Button>
           </>
         )}
         {d.ticket_url && (
