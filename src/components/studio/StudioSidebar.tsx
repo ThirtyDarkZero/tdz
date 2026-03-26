@@ -203,19 +203,17 @@ export const StudioSidebar = ({
         />
       )}
 
-      {/* Main Sidebar - PHP Admin Style */}
+      {/* Main Sidebar — #111111 dark theme */}
       <div 
         className={cn(
           "fixed left-0 top-0 h-screen z-50 flex flex-col transition-all duration-300 ease-out",
-          "bg-card/95 backdrop-blur-xl border-r border-border/30",
-          // Mobile: slide in/out, narrower width
+          "backdrop-blur-xl border-r border-white/[0.06]",
           "w-[200px] md:w-[110px]",
           collapsed && !isHovering && "md:w-[72px]",
-          // Mobile: hide completely when collapsed
           collapsed ? "-translate-x-full" : "translate-x-0",
-          // Desktop: always visible
           "md:translate-x-0"
         )}
+        style={{ background: "#111111" }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
