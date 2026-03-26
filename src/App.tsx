@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,37 +8,48 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppErrorFallback } from "@/components/AppErrorFallback";
 import { GlobalErrorTrap } from "@/components/GlobalErrorTrap";
 import { CommandPalette } from "@/components/CommandPalette";
-// SmartFAB removed - Command K is the primary navigation method
 import { PlayerProvider } from "@/contexts/PlayerContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { MoodProvider } from "@/contexts/MoodContext";
 import { GlobalMusicPlayer } from "@/components/GlobalMusicPlayer";
+
+// Eagerly loaded lightweight pages
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
-import Studio from "./pages/Studio";
-import RoleSelection from "./pages/RoleSelection";
-import Discover from "./pages/Discover";
-import ArtistProfile from "./pages/ArtistProfile";
-import UnifiedArtistProfile from "./pages/UnifiedArtistProfile";
-import ListenerProfile from "./pages/ListenerProfile";
-import LikedSongs from "./pages/LikedSongs";
-import TrackDetail from "./pages/TrackDetail";
-import AlbumDetail from "./pages/AlbumDetail";
-import PlaylistDetail from "./pages/PlaylistDetail";
-import Investors from "./pages/Investors";
-import CEODashboard from "./pages/CEODashboard";
-import FAQ from "./pages/FAQ";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
-import Support from "./pages/Support";
-import Pricing from "./pages/Pricing";
-import Checkout from "./pages/Checkout";
-import SubscriptionSuccess from "./pages/SubscriptionSuccess";
-import SquareOAuthCallback from "./pages/SquareOAuthCallback";
-import Browse from "./pages/Browse";
-import FanSettings from "./pages/FanSettings";
 import NotFound from "./pages/NotFound";
 
+// Lazy-loaded heavy pages for code splitting
+const Studio = lazy(() => import("./pages/Studio"));
+const Discover = lazy(() => import("./pages/Discover"));
+const RoleSelection = lazy(() => import("./pages/RoleSelection"));
+const ArtistProfile = lazy(() => import("./pages/ArtistProfile"));
+const UnifiedArtistProfile = lazy(() => import("./pages/UnifiedArtistProfile"));
+const ListenerProfile = lazy(() => import("./pages/ListenerProfile"));
+const LikedSongs = lazy(() => import("./pages/LikedSongs"));
+const TrackDetail = lazy(() => import("./pages/TrackDetail"));
+const AlbumDetail = lazy(() => import("./pages/AlbumDetail"));
+const PlaylistDetail = lazy(() => import("./pages/PlaylistDetail"));
+const Investors = lazy(() => import("./pages/Investors"));
+const CEODashboard = lazy(() => import("./pages/CEODashboard"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Support = lazy(() => import("./pages/Support"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
+const SquareOAuthCallback = lazy(() => import("./pages/SquareOAuthCallback"));
+const Browse = lazy(() => import("./pages/Browse"));
+const FanSettings = lazy(() => import("./pages/FanSettings"));
+
 const queryClient = new QueryClient();
+
+// Minimal loading fallback
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
