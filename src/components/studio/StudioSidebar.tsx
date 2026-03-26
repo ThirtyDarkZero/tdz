@@ -354,15 +354,15 @@ export const StudioSidebar = ({
         </div>
       </div>
 
-      {/* Highlights Panel - PHP Admin Style Secondary Sidebar - Desktop Only */}
+      {/* Highlights Panel — dark theme */}
       <div 
         className={cn(
           "fixed top-0 h-screen z-40 transition-all duration-300 ease-out",
-          "bg-muted/50 backdrop-blur-xl border-r border-border/20",
-          // Desktop only - hidden on mobile
+          "backdrop-blur-xl border-r border-white/[0.04]",
           "hidden md:block",
           showHighlights && shouldExpand ? "left-[110px] w-[240px] opacity-100" : "left-[72px] w-0 opacity-0 overflow-hidden"
         )}
+        style={{ background: "#0D0D0D" }}
       >
         <div className="p-6 h-full flex flex-col">
           {/* Profile Section */}
