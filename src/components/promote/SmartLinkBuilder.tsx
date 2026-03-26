@@ -31,6 +31,8 @@ export function SmartLinkBuilder() {
     { name: "YouTube", url: "" },
   ]);
   const [creating, setCreating] = useState(false);
+  const [aiCopy, setAiCopy] = useState<any>(null);
+  const copyAI = useAIFeature("smart-link-copy");
 
   useEffect(() => {
     if (user) loadLinks();
