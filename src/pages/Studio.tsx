@@ -150,7 +150,7 @@ function StudioContent() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen" style={{ background: "#141414" }}>
         {/* Sidebar */}
         <StudioSidebar
           activeSection={activeSection}
@@ -162,18 +162,16 @@ function StudioContent() {
           onCollapsedChange={setSidebarCollapsed}
         />
 
-        {/* Main Content - Dynamic margin based on sidebar state */}
+        {/* Main Content */}
         <main className={cn(
           "transition-all duration-300 min-h-screen pb-32",
-          // Mobile: no margin, sidebar overlays
           "ml-0",
-          // Desktop: dynamic margin based on collapsed state
           sidebarCollapsed ? "md:ml-16" : "md:ml-[350px]"
         )}>
-          {/* Background Effects */}
+          {/* Subtle cyan radial gradient */}
           <div className="fixed inset-0 pointer-events-none z-0">
-            <div className="absolute top-0 right-0 w-[600px] h-[400px] bg-primary/5 rounded-full blur-[120px]" />
-            <div className="absolute bottom-1/3 left-1/4 w-[400px] h-[400px] bg-primary/3 rounded-full blur-[100px]" />
+            <div className="absolute top-0 right-0 w-[600px] h-[400px] rounded-full blur-[120px]" style={{ background: "rgba(0,207,255,0.04)" }} />
+            <div className="absolute bottom-1/3 left-1/4 w-[400px] h-[400px] rounded-full blur-[100px]" style={{ background: "rgba(139,92,246,0.03)" }} />
           </div>
 
           <div className="relative z-10 p-4 pt-16 md:pt-6 md:p-8 lg:p-10 max-w-7xl mx-auto">
