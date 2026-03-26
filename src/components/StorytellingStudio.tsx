@@ -11,11 +11,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { 
   BookOpen, Sparkles, Calendar, Image, Video, 
   FileText, TrendingUp, Target, Lightbulb, Plus,
-  Check, Upload, Palette, Type, Save, Trash2, X, Eye
+  Check, Upload, Palette, Type, Save, Trash2, X, Eye, Loader2, Brain
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
+import { useAIFeature } from "@/hooks/useAIFeature";
 
 interface ContentItem {
   id: string;
@@ -43,6 +44,8 @@ export const StorytellingStudio = () => {
   const [narrative, setNarrative] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+  const narrativeAI = useAIFeature<{ score: number; strengths: string[]; improvements: string[]; summary: string }>("narrative-score");
   const [selectedArc, setSelectedArc] = useState<string | null>(null);
   const [originStory, setOriginStory] = useState("");
   const [definingMoment, setDefiningMoment] = useState("");
@@ -515,6 +518,39 @@ export const StorytellingStudio = () => {
             <Progress value={Math.min(100, calendarEvents.length * 10)} className="h-2" />
           </div>
         </CardContent>
+        <div className="px-6 pb-6 flex gap-3">
+          <Button variant="outline" className="gap-2 border-primary/30 hover:bg-primary/10" disabled={narrativeAI.loading}
+            onClick={async () => {
+              const res = await narrativeAI.invoke({ origin_story: originStory, artist_mission: artistMission, emotional_core: emotionalCore, unique_value_prop: uniqueValueProp, brand_voice: brandVoice, target_audience: targetAudience, key_phrases: keyPhrases });
+              if (res) setAiAnalysis(res);
+            }}>
+            {narrativeAI.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
+            AI Narrative Analysis
+          </Button>
+        </div>
+        {aiAnalysis && (
+          <div className="px-6 pb-6">
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold flex items-center gap-2"><Brain className="w-4 h-4 text-primary" />AI Score</span>
+                  <Badge className="bg-primary/20 text-primary text-lg px-3">{aiAnalysis.score}/100</Badge>
+                </div>
+                <p className="text-sm italic text-muted-foreground">{aiAnalysis.summary}</p>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-green-500 mb-1">Strengths</p>
+                    <ul className="text-sm space-y-1">{aiAnalysis.strengths?.map((s: string, i: number) => (<li key={i} className="flex items-start gap-1"><Check className="w-3 h-3 text-green-500 mt-1 flex-shrink-0" />{s}</li>))}</ul>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-yellow-500 mb-1">Improvements</p>
+                    <ul className="text-sm space-y-1">{aiAnalysis.improvements?.map((s: string, i: number) => (<li key={i} className="flex items-start gap-1"><Target className="w-3 h-3 text-yellow-500 mt-1 flex-shrink-0" />{s}</li>))}</ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </Card>
 
       <Tabs defaultValue="narrative" className="space-y-6">
