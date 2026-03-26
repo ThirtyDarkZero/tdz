@@ -262,6 +262,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         queue,
         currentIndex,
         isPlaying,
+        playerView,
+        setPlayerView,
         playTrack,
         pauseTrack,
         resumeTrack,
