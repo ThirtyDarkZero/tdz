@@ -175,12 +175,17 @@ export const StorytellingStudio = () => {
 
   const calculateNarrativeStrength = () => {
     let strength = 0;
-    if (selectedArc) strength += 25;
-    if (originStory.length > 50) strength += 25;
-    if (definingMoment.length > 50) strength += 15;
-    if (currentChapter.length > 50) strength += 15;
-    if (futureVision.length > 50) strength += 10;
-    if (visualStyle) strength += 10;
+    if (selectedArc) strength += 15;
+    if (originStory.length > 50) strength += 15;
+    if (definingMoment.length > 50) strength += 10;
+    if (currentChapter.length > 50) strength += 10;
+    if (futureVision.length > 50) strength += 5;
+    if (visualStyle) strength += 5;
+    if (artistMission.length > 20) strength += 10;
+    if (emotionalCore.length > 20) strength += 10;
+    if (uniqueValueProp.length > 20) strength += 10;
+    if (brandVoice.length > 20) strength += 5;
+    if (keyPhrases.length > 0) strength += 5;
     return Math.min(100, strength);
   };
 
