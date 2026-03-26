@@ -154,13 +154,13 @@ function AttendeeListDialog({ eventId }: { eventId: string }) {
   const [attendees, setAttendees] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
     if (!open || !eventId) return;
     setLoading(true);
     supabase.functions.invoke("eventbrite-api", {
-      body: { action: "list_attendees", event_id: eventId, ...(statusFilter ? { status: statusFilter } : {}) },
+      body: { action: "list_attendees", event_id: eventId, ...(statusFilter && statusFilter !== "all" ? { status: statusFilter } : {}) },
     }).then(({ data, error }) => {
       if (!error && data?.success) {
         setAttendees(data.data.attendees || []);
@@ -188,7 +188,7 @@ function AttendeeListDialog({ eventId }: { eventId: string }) {
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All</SelectItem>
+              <SelectItem value="all">All</SelectItem>
               <SelectItem value="attending">Checked In</SelectItem>
               <SelectItem value="not_attending">Not Checked In</SelectItem>
               <SelectItem value="unpaid">Unpaid</SelectItem>

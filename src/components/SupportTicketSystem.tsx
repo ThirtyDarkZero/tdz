@@ -431,12 +431,12 @@ export const SupportTicketSystem = () => {
                     <Music className="w-4 h-4" />
                     Related Track
                   </Label>
-                  <Select value={newTicket.track_id} onValueChange={(v) => setNewTicket({ ...newTicket, track_id: v })}>
+                  <Select value={newTicket.track_id || "__none__"} onValueChange={(v) => setNewTicket({ ...newTicket, track_id: v === "__none__" ? "" : v })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Optional" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="__none__">None</SelectItem>
                       {tracks.map(t => (
                         <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>
                       ))}
@@ -448,12 +448,12 @@ export const SupportTicketSystem = () => {
                     <Album className="w-4 h-4" />
                     Related Album
                   </Label>
-                  <Select value={newTicket.album_id} onValueChange={(v) => setNewTicket({ ...newTicket, album_id: v })}>
+                  <Select value={newTicket.album_id || "__none__"} onValueChange={(v) => setNewTicket({ ...newTicket, album_id: v === "__none__" ? "" : v })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Optional" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="__none__">None</SelectItem>
                       {albums.map(a => (
                         <SelectItem key={a.id} value={a.id}>{a.title}</SelectItem>
                       ))}

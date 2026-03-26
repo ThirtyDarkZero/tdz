@@ -399,12 +399,12 @@ export const PreSaveCampaignManager = () => {
                     <Music className="w-4 h-4" />
                     Link to Track
                   </Label>
-                  <Select value={newCampaign.track_id} onValueChange={(v) => setNewCampaign({ ...newCampaign, track_id: v, album_id: "" })}>
+                  <Select value={newCampaign.track_id || "__none__"} onValueChange={(v) => setNewCampaign({ ...newCampaign, track_id: v === "__none__" ? "" : v, album_id: "" })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Optional" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="__none__">None</SelectItem>
                       {tracks.map(t => (
                         <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>
                       ))}
@@ -416,12 +416,12 @@ export const PreSaveCampaignManager = () => {
                     <Globe className="w-4 h-4" />
                     Link to Album
                   </Label>
-                  <Select value={newCampaign.album_id} onValueChange={(v) => setNewCampaign({ ...newCampaign, album_id: v, track_id: "" })}>
+                  <Select value={newCampaign.album_id || "__none__"} onValueChange={(v) => setNewCampaign({ ...newCampaign, album_id: v === "__none__" ? "" : v, track_id: "" })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Optional" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="__none__">None</SelectItem>
                       {albums.map(a => (
                         <SelectItem key={a.id} value={a.id}>{a.title}</SelectItem>
                       ))}
