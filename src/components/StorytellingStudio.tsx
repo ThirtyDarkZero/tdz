@@ -49,6 +49,13 @@ export const StorytellingStudio = () => {
   const [currentChapter, setCurrentChapter] = useState("");
   const [futureVision, setFutureVision] = useState("");
   const [visualStyle, setVisualStyle] = useState("");
+  const [artistMission, setArtistMission] = useState("");
+  const [emotionalCore, setEmotionalCore] = useState("");
+  const [uniqueValueProp, setUniqueValueProp] = useState("");
+  const [brandVoice, setBrandVoice] = useState("");
+  const [keyPhrases, setKeyPhrases] = useState<string[]>([]);
+  const [targetAudience, setTargetAudience] = useState("");
+  const [newPhrase, setNewPhrase] = useState("");
   const [contentLibrary, setContentLibrary] = useState<ContentItem[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [newEventTitle, setNewEventTitle] = useState("");
