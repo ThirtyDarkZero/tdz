@@ -12,7 +12,6 @@ import {
   Sparkles,
   BarChart3,
   Megaphone,
-  GraduationCap,
   Settings2,
   Compass,
   LifeBuoy,
@@ -27,7 +26,8 @@ import {
   DollarSign,
   Calendar,
   X,
-  Menu
+  Menu,
+  LogOut
 } from "lucide-react";
 
 interface StudioSidebarProps {
