@@ -58,11 +58,10 @@ export const StudioPromote = () => {
           </FeatureGate>
         </TabsContent>
 
-        {/* STORYTELLING — Narrative Studio + AI Content Generator */}
+        {/* STORYTELLING — Simple story + AI generator */}
         <TabsContent value="storytelling" className="mt-0 space-y-8">
           <StorytellingStudio />
           <div className="border-t border-border/20 pt-8">
-            <h2 className="text-2xl font-display font-bold mb-4">AI Content Generator</h2>
             <StorytellingAIGenerator />
           </div>
         </TabsContent>
