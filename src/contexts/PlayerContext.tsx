@@ -46,11 +46,17 @@ interface YouTubePlayerState {
   isMuted: boolean;
 }
 
+export type PlayerViewState = 'full' | 'mini' | 'hidden';
+
 interface PlayerContextType {
   currentTrack: Track | null;
   queue: Track[];
   currentIndex: number;
   isPlaying: boolean;
+  
+  // Player view state
+  playerView: PlayerViewState;
+  setPlayerView: (view: PlayerViewState) => void;
   
   // Playback controls
   playTrack: (track: Track, newQueue?: Track[]) => void;
@@ -92,6 +98,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [queue, setQueue] = useState<Track[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playerView, setPlayerView] = useState<PlayerViewState>('full');
   const [currentTime, setCurrentTime] = useState(0);
   const [youtubePlayer, setYoutubePlayer] = useState<any>(null);
   const [youtubeState, setYoutubeState] = useState<YouTubePlayerState>({
@@ -255,6 +262,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         queue,
         currentIndex,
         isPlaying,
+        playerView,
+        setPlayerView,
         playTrack,
         pauseTrack,
         resumeTrack,
@@ -288,6 +297,8 @@ export function usePlayer() {
       queue: [],
       currentIndex: 0,
       isPlaying: false,
+      playerView: 'full' as PlayerViewState,
+      setPlayerView: () => {},
       playTrack: () => {},
       pauseTrack: () => {},
       resumeTrack: () => {},

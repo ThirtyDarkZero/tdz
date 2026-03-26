@@ -49,6 +49,13 @@ export const StorytellingStudio = () => {
   const [currentChapter, setCurrentChapter] = useState("");
   const [futureVision, setFutureVision] = useState("");
   const [visualStyle, setVisualStyle] = useState("");
+  const [artistMission, setArtistMission] = useState("");
+  const [emotionalCore, setEmotionalCore] = useState("");
+  const [uniqueValueProp, setUniqueValueProp] = useState("");
+  const [brandVoice, setBrandVoice] = useState("");
+  const [keyPhrases, setKeyPhrases] = useState<string[]>([]);
+  const [targetAudience, setTargetAudience] = useState("");
+  const [newPhrase, setNewPhrase] = useState("");
   const [contentLibrary, setContentLibrary] = useState<ContentItem[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [newEventTitle, setNewEventTitle] = useState("");
@@ -130,6 +137,12 @@ export const StorytellingStudio = () => {
         setCurrentChapter(narrativeData.current_chapter || "");
         setFutureVision(narrativeData.future_vision || "");
         setVisualStyle(narrativeData.visual_style || "");
+        setArtistMission(narrativeData.artist_mission || "");
+        setEmotionalCore(narrativeData.emotional_core || "");
+        setUniqueValueProp(narrativeData.unique_value_prop || "");
+        setBrandVoice(narrativeData.brand_voice || "");
+        setTargetAudience(narrativeData.target_audience || "");
+        setKeyPhrases((narrativeData.key_phrases as string[]) || []);
         if (narrativeData.color_palette) {
           setSelectedColors(narrativeData.color_palette as string[]);
         }
@@ -162,12 +175,17 @@ export const StorytellingStudio = () => {
 
   const calculateNarrativeStrength = () => {
     let strength = 0;
-    if (selectedArc) strength += 25;
-    if (originStory.length > 50) strength += 25;
-    if (definingMoment.length > 50) strength += 15;
-    if (currentChapter.length > 50) strength += 15;
-    if (futureVision.length > 50) strength += 10;
-    if (visualStyle) strength += 10;
+    if (selectedArc) strength += 15;
+    if (originStory.length > 50) strength += 15;
+    if (definingMoment.length > 50) strength += 10;
+    if (currentChapter.length > 50) strength += 10;
+    if (futureVision.length > 50) strength += 5;
+    if (visualStyle) strength += 5;
+    if (artistMission.length > 20) strength += 10;
+    if (emotionalCore.length > 20) strength += 10;
+    if (uniqueValueProp.length > 20) strength += 10;
+    if (brandVoice.length > 20) strength += 5;
+    if (keyPhrases.length > 0) strength += 5;
     return Math.min(100, strength);
   };
 
@@ -186,7 +204,13 @@ export const StorytellingStudio = () => {
         future_vision: futureVision,
         visual_style: visualStyle,
         color_palette: selectedColors,
-        narrative_strength: calculateNarrativeStrength()
+        narrative_strength: calculateNarrativeStrength(),
+        artist_mission: artistMission,
+        emotional_core: emotionalCore,
+        unique_value_prop: uniqueValueProp,
+        brand_voice: brandVoice,
+        key_phrases: keyPhrases,
+        target_audience: targetAudience,
       };
 
       if (narrative?.id) {
@@ -598,10 +622,136 @@ export const StorytellingStudio = () => {
                   onChange={(e) => setFutureVision(e.target.value)}
                 />
               </div>
+
+              {/* New narrative fields */}
+              <div className="pt-4 border-t border-border/30">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Target className="w-4 h-4 text-primary" />
+                  Brand Identity
+                </h4>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Artist Mission</Label>
+                    <Textarea 
+                      placeholder="What is your mission as an artist? Why does your music exist?"
+                      rows={2}
+                      className="mt-2"
+                      value={artistMission}
+                      onChange={(e) => setArtistMission(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Emotional Core</Label>
+                    <Textarea 
+                      placeholder="What core emotion drives your music? (e.g., resilience, nostalgia, euphoria)"
+                      rows={2}
+                      className="mt-2"
+                      value={emotionalCore}
+                      onChange={(e) => setEmotionalCore(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Unique Value Proposition</Label>
+                    <Textarea 
+                      placeholder="What makes you different from every other artist? Your unfair advantage."
+                      rows={2}
+                      className="mt-2"
+                      value={uniqueValueProp}
+                      onChange={(e) => setUniqueValueProp(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Brand Voice</Label>
+                    <Textarea 
+                      placeholder="How do you speak to your audience? (e.g., raw & honest, playful & witty, poetic & abstract)"
+                      rows={2}
+                      className="mt-2"
+                      value={brandVoice}
+                      onChange={(e) => setBrandVoice(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Target Audience</Label>
+                    <Textarea 
+                      placeholder="Who is your ideal listener? Age range, interests, lifestyle..."
+                      rows={2}
+                      className="mt-2"
+                      value={targetAudience}
+                      onChange={(e) => setTargetAudience(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Key Phrases / Taglines</Label>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        placeholder="Add a key phrase..."
+                        value={newPhrase}
+                        onChange={(e) => setNewPhrase(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && newPhrase.trim()) {
+                            setKeyPhrases([...keyPhrases, newPhrase.trim()]);
+                            setNewPhrase("");
+                          }
+                        }}
+                      />
+                      <Button size="sm" variant="outline" onClick={() => {
+                        if (newPhrase.trim()) {
+                          setKeyPhrases([...keyPhrases, newPhrase.trim()]);
+                          setNewPhrase("");
+                        }
+                      }}>
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {keyPhrases.map((phrase, i) => (
+                        <Badge key={i} variant="secondary" className="gap-1">
+                          {phrase}
+                          <button onClick={() => setKeyPhrases(keyPhrases.filter((_, idx) => idx !== i))}>
+                            <X className="w-3 h-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <Button className="w-full" onClick={saveNarrative} disabled={saving}>
                 <Save className="w-4 h-4 mr-2" />
-                {saving ? "Saving..." : "Save Story Arc"}
+                {saving ? "Saving..." : "Save & Apply Narrative"}
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Active Connections Panel */}
+          <Card className="glass-card border-green-500/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-500">
+                <Sparkles className="w-5 h-5" />
+                Active Connections
+              </CardTitle>
+              <CardDescription>
+                Your narrative data powers these features across TDZ
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {[
+                  { name: "Email Campaigns", status: brandVoice ? "Connected" : "Needs Brand Voice", active: !!brandVoice },
+                  { name: "Smart Link Copy", status: uniqueValueProp ? "Connected" : "Needs Value Prop", active: !!uniqueValueProp },
+                  { name: "Community Hub Bio", status: originStory ? "Connected" : "Needs Origin Story", active: !!originStory },
+                  { name: "AI Release Strategy", status: emotionalCore ? "Connected" : "Needs Emotional Core", active: !!emotionalCore },
+                  { name: "Press Kit Generator", status: artistMission ? "Connected" : "Needs Mission", active: !!artistMission },
+                ].map((conn) => (
+                  <div key={conn.name} className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border/20">
+                    <span className="text-sm font-medium">{conn.name}</span>
+                    <Badge variant={conn.active ? "default" : "secondary"} className={conn.active ? "bg-green-500/10 text-green-500 border-green-500/30" : ""}>
+                      {conn.status}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
