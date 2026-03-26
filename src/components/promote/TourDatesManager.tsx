@@ -188,7 +188,7 @@ function AttendeeListDialog({ eventId }: { eventId: string }) {
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All</SelectItem>
+              <SelectItem value="all">All</SelectItem>
               <SelectItem value="attending">Checked In</SelectItem>
               <SelectItem value="not_attending">Not Checked In</SelectItem>
               <SelectItem value="unpaid">Unpaid</SelectItem>
