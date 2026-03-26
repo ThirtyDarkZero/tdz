@@ -98,6 +98,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [queue, setQueue] = useState<Track[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playerView, setPlayerView] = useState<PlayerViewState>('full');
   const [currentTime, setCurrentTime] = useState(0);
   const [youtubePlayer, setYoutubePlayer] = useState<any>(null);
   const [youtubeState, setYoutubeState] = useState<YouTubePlayerState>({
