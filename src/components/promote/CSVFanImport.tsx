@@ -124,7 +124,7 @@ export function CSVFanImport() {
                   <Select value={mapping[field] || ""} onValueChange={(v) => setMapping(prev => ({ ...prev, [field]: v }))}>
                     <SelectTrigger className="w-48"><SelectValue placeholder="Select column" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">— Skip —</SelectItem>
+                      <SelectItem value="__skip__">— Skip —</SelectItem>
                       {headers.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}
                     </SelectContent>
                   </Select>
