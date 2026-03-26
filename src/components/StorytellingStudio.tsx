@@ -44,6 +44,8 @@ export const StorytellingStudio = () => {
   const [narrative, setNarrative] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+  const narrativeAI = useAIFeature<{ score: number; strengths: string[]; improvements: string[]; summary: string }>("narrative-score");
   const [selectedArc, setSelectedArc] = useState<string | null>(null);
   const [originStory, setOriginStory] = useState("");
   const [definingMoment, setDefiningMoment] = useState("");
