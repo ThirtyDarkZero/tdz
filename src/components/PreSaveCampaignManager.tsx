@@ -416,7 +416,7 @@ export const PreSaveCampaignManager = () => {
                     <Globe className="w-4 h-4" />
                     Link to Album
                   </Label>
-                  <Select value={newCampaign.album_id} onValueChange={(v) => setNewCampaign({ ...newCampaign, album_id: v, track_id: "" })}>
+                  <Select value={newCampaign.album_id || "__none__"} onValueChange={(v) => setNewCampaign({ ...newCampaign, album_id: v === "__none__" ? "" : v, track_id: "" })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Optional" />
                     </SelectTrigger>
