@@ -297,6 +297,8 @@ export function usePlayer() {
       queue: [],
       currentIndex: 0,
       isPlaying: false,
+      playerView: 'full' as PlayerViewState,
+      setPlayerView: () => {},
       playTrack: () => {},
       pauseTrack: () => {},
       resumeTrack: () => {},
