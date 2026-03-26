@@ -134,7 +134,9 @@ function StudioContent() {
       case "promote":
         return <StudioPromote />;
       case "learn":
-        return <StudioLearn />;
+        // Academy removed — redirect to home
+        setActiveSection("home");
+        return null;
       case "settings":
         return <StudioSettings />;
       default:
