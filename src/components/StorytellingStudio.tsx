@@ -137,6 +137,12 @@ export const StorytellingStudio = () => {
         setCurrentChapter(narrativeData.current_chapter || "");
         setFutureVision(narrativeData.future_vision || "");
         setVisualStyle(narrativeData.visual_style || "");
+        setArtistMission(narrativeData.artist_mission || "");
+        setEmotionalCore(narrativeData.emotional_core || "");
+        setUniqueValueProp(narrativeData.unique_value_prop || "");
+        setBrandVoice(narrativeData.brand_voice || "");
+        setTargetAudience(narrativeData.target_audience || "");
+        setKeyPhrases((narrativeData.key_phrases as string[]) || []);
         if (narrativeData.color_palette) {
           setSelectedColors(narrativeData.color_palette as string[]);
         }
