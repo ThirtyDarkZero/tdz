@@ -412,7 +412,7 @@ Return a JSON object with exactly these fields:
                 <div className="flex items-center justify-between">
                   <Label className="text-sm flex items-center gap-2">
                     <Zap className="w-4 h-4 text-primary" />
-                    Personalization ({{first_name}})
+                    Personalization ({"{{first_name}}"})
                   </Label>
                   <Switch checked={usePersonalization} onCheckedChange={setUsePersonalization} />
                 </div>
