@@ -11,11 +11,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { 
   BookOpen, Sparkles, Calendar, Image, Video, 
   FileText, TrendingUp, Target, Lightbulb, Plus,
-  Check, Upload, Palette, Type, Save, Trash2, X, Eye
+  Check, Upload, Palette, Type, Save, Trash2, X, Eye, Loader2, Brain
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
+import { useAIFeature } from "@/hooks/useAIFeature";
 
 interface ContentItem {
   id: string;
