@@ -453,7 +453,7 @@ export const SupportTicketSystem = () => {
                       <SelectValue placeholder="Optional" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="__none__">None</SelectItem>
                       {albums.map(a => (
                         <SelectItem key={a.id} value={a.id}>{a.title}</SelectItem>
                       ))}

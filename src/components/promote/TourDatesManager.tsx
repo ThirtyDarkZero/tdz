@@ -160,7 +160,7 @@ function AttendeeListDialog({ eventId }: { eventId: string }) {
     if (!open || !eventId) return;
     setLoading(true);
     supabase.functions.invoke("eventbrite-api", {
-      body: { action: "list_attendees", event_id: eventId, ...(statusFilter ? { status: statusFilter } : {}) },
+      body: { action: "list_attendees", event_id: eventId, ...(statusFilter && statusFilter !== "all" ? { status: statusFilter } : {}) },
     }).then(({ data, error }) => {
       if (!error && data?.success) {
         setAttendees(data.data.attendees || []);
