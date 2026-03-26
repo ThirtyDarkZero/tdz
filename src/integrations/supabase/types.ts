@@ -187,6 +187,51 @@ export type Database = {
           },
         ]
       }
+      artist_contacts: {
+        Row: {
+          artist_id: string
+          city: string | null
+          created_at: string | null
+          email: string
+          first_name: string | null
+          id: string
+          imported_at: string | null
+          last_name: string | null
+          phone: string | null
+          source: string | null
+          subscribed: boolean | null
+          tags: string[] | null
+        }
+        Insert: {
+          artist_id: string
+          city?: string | null
+          created_at?: string | null
+          email: string
+          first_name?: string | null
+          id?: string
+          imported_at?: string | null
+          last_name?: string | null
+          phone?: string | null
+          source?: string | null
+          subscribed?: boolean | null
+          tags?: string[] | null
+        }
+        Update: {
+          artist_id?: string
+          city?: string | null
+          created_at?: string | null
+          email?: string
+          first_name?: string | null
+          id?: string
+          imported_at?: string | null
+          last_name?: string | null
+          phone?: string | null
+          source?: string | null
+          subscribed?: boolean | null
+          tags?: string[] | null
+        }
+        Relationships: []
+      }
       artist_earnings: {
         Row: {
           artist_id: string
@@ -285,6 +330,38 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      artist_milestones: {
+        Row: {
+          achieved_at: string | null
+          artist_id: string
+          id: string
+          milestone_id: string | null
+          play_count_at_time: number | null
+        }
+        Insert: {
+          achieved_at?: string | null
+          artist_id: string
+          id?: string
+          milestone_id?: string | null
+          play_count_at_time?: number | null
+        }
+        Update: {
+          achieved_at?: string | null
+          artist_id?: string
+          id?: string
+          milestone_id?: string | null
+          play_count_at_time?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_milestones_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "milestone_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       artist_narrative: {
         Row: {
@@ -1824,6 +1901,36 @@ export type Database = {
         }
         Relationships: []
       }
+      milestone_definitions: {
+        Row: {
+          card_color: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          label: string
+          threshold: number | null
+          type: string | null
+        }
+        Insert: {
+          card_color?: string | null
+          description?: string | null
+          icon?: string | null
+          id: string
+          label: string
+          threshold?: number | null
+          type?: string | null
+        }
+        Update: {
+          card_color?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          label?: string
+          threshold?: number | null
+          type?: string | null
+        }
+        Relationships: []
+      }
       milestones: {
         Row: {
           achieved: boolean
@@ -2796,6 +2903,57 @@ export type Database = {
         }
         Relationships: []
       }
+      stream_events: {
+        Row: {
+          artist_id: string
+          city: string | null
+          country_code: string | null
+          device_type: string | null
+          duration_seconds: number | null
+          id: string
+          latitude: number | null
+          listener_id: string | null
+          longitude: number | null
+          platform: string | null
+          region: string | null
+          session_id: string | null
+          streamed_at: string | null
+          track_id: string | null
+        }
+        Insert: {
+          artist_id: string
+          city?: string | null
+          country_code?: string | null
+          device_type?: string | null
+          duration_seconds?: number | null
+          id?: string
+          latitude?: number | null
+          listener_id?: string | null
+          longitude?: number | null
+          platform?: string | null
+          region?: string | null
+          session_id?: string | null
+          streamed_at?: string | null
+          track_id?: string | null
+        }
+        Update: {
+          artist_id?: string
+          city?: string | null
+          country_code?: string | null
+          device_type?: string | null
+          duration_seconds?: number | null
+          id?: string
+          latitude?: number | null
+          listener_id?: string | null
+          longitude?: number | null
+          platform?: string | null
+          region?: string | null
+          session_id?: string | null
+          streamed_at?: string | null
+          track_id?: string | null
+        }
+        Relationships: []
+      }
       stream_fraud_detection: {
         Row: {
           created_at: string
@@ -3427,6 +3585,27 @@ export type Database = {
           },
         ]
       }
+      upload_drafts: {
+        Row: {
+          artist_id: string
+          draft_data: Json | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          artist_id: string
+          draft_data?: Json | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          artist_id?: string
+          draft_data?: Json | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       upload_rate_limits: {
         Row: {
           id: string
@@ -3800,6 +3979,16 @@ export type Database = {
       }
     }
     Views: {
+      artist_earnings_summary: {
+        Row: {
+          artist_id: string | null
+          streams_this_month: number | null
+          streams_this_week: number | null
+          total_earnings_dollars: number | null
+          total_streams: number | null
+        }
+        Relationships: []
+      }
       artist_payout_info: {
         Row: {
           account_holder_name: string | null

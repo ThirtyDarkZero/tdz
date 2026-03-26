@@ -12,7 +12,6 @@ import {
   Sparkles,
   BarChart3,
   Megaphone,
-  GraduationCap,
   Settings2,
   Compass,
   LifeBuoy,
@@ -27,7 +26,8 @@ import {
   DollarSign,
   Calendar,
   X,
-  Menu
+  Menu,
+  LogOut
 } from "lucide-react";
 
 interface StudioSidebarProps {
@@ -66,7 +66,6 @@ const navGroups = [
   {
     id: "tools",
     items: [
-      { id: "learn", icon: GraduationCap, label: "Academy" },
       { id: "settings", icon: Settings2, label: "Settings" },
     ]
   },
@@ -350,6 +349,27 @@ export const StudioSidebar = ({
               </button>
             </TooltipTrigger>
             <TooltipContent side="right">Support</TooltipContent>
+          </Tooltip>
+
+          {/* Logout Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={async () => {
+                  Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('tdz_draft_') || key.startsWith('tdz_')) {
+                      localStorage.removeItem(key);
+                    }
+                  });
+                  await supabase.auth.signOut();
+                  navigate("/auth");
+                }}
+                className="w-full flex justify-center items-center p-2 rounded-xl text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-all"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Sign Out</TooltipContent>
           </Tooltip>
         </div>
       </div>
