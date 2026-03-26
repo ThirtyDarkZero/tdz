@@ -204,7 +204,13 @@ export const StorytellingStudio = () => {
         future_vision: futureVision,
         visual_style: visualStyle,
         color_palette: selectedColors,
-        narrative_strength: calculateNarrativeStrength()
+        narrative_strength: calculateNarrativeStrength(),
+        artist_mission: artistMission,
+        emotional_core: emotionalCore,
+        unique_value_prop: uniqueValueProp,
+        brand_voice: brandVoice,
+        key_phrases: keyPhrases,
+        target_audience: targetAudience,
       };
 
       if (narrative?.id) {
