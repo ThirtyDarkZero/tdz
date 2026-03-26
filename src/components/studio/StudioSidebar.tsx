@@ -350,6 +350,27 @@ export const StudioSidebar = ({
             </TooltipTrigger>
             <TooltipContent side="right">Support</TooltipContent>
           </Tooltip>
+
+          {/* Logout Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={async () => {
+                  Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('tdz_draft_') || key.startsWith('tdz_')) {
+                      localStorage.removeItem(key);
+                    }
+                  });
+                  await supabase.auth.signOut();
+                  navigate("/auth");
+                }}
+                className="w-full flex justify-center items-center p-2 rounded-xl text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-all"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Sign Out</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
