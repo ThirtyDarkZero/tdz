@@ -46,11 +46,17 @@ interface YouTubePlayerState {
   isMuted: boolean;
 }
 
+export type PlayerViewState = 'full' | 'mini' | 'hidden';
+
 interface PlayerContextType {
   currentTrack: Track | null;
   queue: Track[];
   currentIndex: number;
   isPlaying: boolean;
+  
+  // Player view state
+  playerView: PlayerViewState;
+  setPlayerView: (view: PlayerViewState) => void;
   
   // Playback controls
   playTrack: (track: Track, newQueue?: Track[]) => void;
