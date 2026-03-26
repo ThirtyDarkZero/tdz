@@ -121,7 +121,7 @@ export function CSVFanImport() {
               {FIELDS.map(field => (
                 <div key={field} className="flex items-center gap-4">
                   <span className="w-24 text-sm capitalize text-muted-foreground">{field.replace("_", " ")}</span>
-                  <Select value={mapping[field] || ""} onValueChange={(v) => setMapping(prev => ({ ...prev, [field]: v }))}>
+                  <Select value={mapping[field] || "__skip__"} onValueChange={(v) => setMapping(prev => ({ ...prev, [field]: v === "__skip__" ? "" : v }))}>
                     <SelectTrigger className="w-48"><SelectValue placeholder="Select column" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__skip__">— Skip —</SelectItem>
