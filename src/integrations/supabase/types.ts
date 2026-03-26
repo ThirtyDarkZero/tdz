@@ -564,6 +564,36 @@ export type Database = {
         }
         Relationships: []
       }
+      artist_shopify_config: {
+        Row: {
+          artist_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          store_domain: string
+          storefront_token: string
+          updated_at: string | null
+        }
+        Insert: {
+          artist_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          store_domain: string
+          storefront_token: string
+          updated_at?: string | null
+        }
+        Update: {
+          artist_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          store_domain?: string
+          storefront_token?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       artist_tips: {
         Row: {
           amount: number
@@ -3138,6 +3168,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tour_dates: {
+        Row: {
+          artist_id: string
+          city: string
+          country: string | null
+          created_at: string | null
+          date_time: string
+          eventbrite_event_id: string | null
+          id: string
+          state: string | null
+          status: string | null
+          ticket_url: string | null
+          updated_at: string | null
+          venue: string
+        }
+        Insert: {
+          artist_id: string
+          city: string
+          country?: string | null
+          created_at?: string | null
+          date_time: string
+          eventbrite_event_id?: string | null
+          id?: string
+          state?: string | null
+          status?: string | null
+          ticket_url?: string | null
+          updated_at?: string | null
+          venue: string
+        }
+        Update: {
+          artist_id?: string
+          city?: string
+          country?: string | null
+          created_at?: string | null
+          date_time?: string
+          eventbrite_event_id?: string | null
+          id?: string
+          state?: string | null
+          status?: string | null
+          ticket_url?: string | null
+          updated_at?: string | null
+          venue?: string
+        }
+        Relationships: []
       }
       tour_recommendations: {
         Row: {
