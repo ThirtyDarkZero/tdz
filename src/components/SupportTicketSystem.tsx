@@ -431,7 +431,7 @@ export const SupportTicketSystem = () => {
                     <Music className="w-4 h-4" />
                     Related Track
                   </Label>
-                  <Select value={newTicket.track_id} onValueChange={(v) => setNewTicket({ ...newTicket, track_id: v })}>
+                  <Select value={newTicket.track_id || "__none__"} onValueChange={(v) => setNewTicket({ ...newTicket, track_id: v === "__none__" ? "" : v })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Optional" />
                     </SelectTrigger>
