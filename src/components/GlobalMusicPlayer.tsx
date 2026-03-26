@@ -3,6 +3,7 @@ import { usePlayer, Track as PlayerTrack } from "@/contexts/PlayerContext";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { YouTubePlayerEnhanced } from "@/components/youtube/YouTubePlayerEnhanced";
 import { SpotifyPreviewPlayer } from "@/components/SpotifyPreviewPlayer";
+import { CosmicPlayerBar } from "@/components/discovery/CosmicPlayerBar";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -16,7 +17,7 @@ export function GlobalMusicPlayer() {
   const { user } = useAuth();
   const { role } = useUserRole(user);
   const { hasFeature } = useSubscription(user);
-  const { currentTrack, queue, nextTrack, previousTrack, setIsPlaying, isPlaying, playTrack, addToQueue } = usePlayer();
+  const { currentTrack, queue, nextTrack, previousTrack, setIsPlaying, isPlaying, playTrack, playerView } = usePlayer();
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [youtubeErrorCount, setYoutubeErrorCount] = useState(0);
   const [useSpotifyFallback, setUseSpotifyFallback] = useState(false);
@@ -34,43 +35,29 @@ export function GlobalMusicPlayer() {
     }
   }, [currentTrack?.id]);
   
-  // Handle YouTube errors - fallback to Spotify preview if available
   const handleYouTubeError = useCallback(() => {
     setYoutubeErrorCount(prev => {
       const newCount = prev + 1;
       if (newCount >= 2 && currentTrack?.spotifyPreviewUrl) {
-        console.log('[GlobalMusicPlayer] YouTube failed, falling back to Spotify preview');
         setUseSpotifyFallback(true);
         toast.info("Using Spotify preview for this track");
       } else if (newCount >= 2) {
-        // No Spotify fallback available - try next track
-        console.log('[GlobalMusicPlayer] YouTube failed, no Spotify fallback, skipping');
         nextTrack();
       }
       return newCount;
     });
   }, [currentTrack?.spotifyPreviewUrl, nextTrack]);
 
-  // Auto-continue with same artist when queue ends
   const loadMoreFromArtist = useCallback(async (artistName: string) => {
     if (!artistName) return;
-    
     try {
-      // Try to get more tracks from the same artist via YouTube
       const { data } = await supabase.functions.invoke('youtube-search', {
-        body: { 
-          query: `${artistName} official audio`, 
-          maxResults: 10,
-          officialOnly: true 
-        }
+        body: { query: `${artistName} official audio`, maxResults: 10, officialOnly: true }
       });
-
       if (data?.results?.length > 0) {
-        // Get a random track to continue with
         const randomIndex = Math.floor(Math.random() * data.results.length);
         const nextVideo = data.results[randomIndex];
-        
-        const nextTrack = {
+        const track = {
           id: `yt-${nextVideo.id}`,
           title: nextVideo.title,
           artist_name: artistName,
@@ -81,8 +68,6 @@ export function GlobalMusicPlayer() {
           youtubeId: nextVideo.id,
           thumbnail: nextVideo.thumbnail,
         };
-        
-        // Add all results to queue for continuous playback
         const queueTracks = data.results.map((video: any) => ({
           id: `yt-${video.id}`,
           title: video.title,
@@ -94,8 +79,7 @@ export function GlobalMusicPlayer() {
           youtubeId: video.id,
           thumbnail: video.thumbnail,
         }));
-        
-        playTrack(nextTrack, queueTracks);
+        playTrack(track, queueTracks);
         toast.success(`Playing more by ${artistName}`);
       }
     } catch (error) {
@@ -104,14 +88,11 @@ export function GlobalMusicPlayer() {
   }, [playTrack]);
 
   const handleTrackEnd = useCallback(() => {
-    // Check if we have more tracks in queue
     const currentIndex = queue.findIndex(t => t.id === currentTrack?.id);
     const hasMoreInQueue = currentIndex >= 0 && currentIndex < queue.length - 1;
-    
     if (hasMoreInQueue) {
       nextTrack();
     } else if (currentTrack?.artist_name) {
-      // Queue exhausted - load more from same artist
       loadMoreFromArtist(currentTrack.artist_name);
     }
   }, [currentTrack, queue, nextTrack, loadMoreFromArtist]);
@@ -122,16 +103,21 @@ export function GlobalMusicPlayer() {
     toast.info("Preview ended - Subscribe for unlimited streaming!");
   };
 
-  // Only render if there's a track
-  if (!currentTrack) {
-    return null;
+  if (!currentTrack) return null;
+
+  // When in mini or hidden mode, use CosmicPlayerBar (handles its own visibility)
+  if (playerView === 'mini' || playerView === 'hidden') {
+    return (
+      <>
+        <CosmicPlayerBar />
+        <SubscriptionModal open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal} />
+      </>
+    );
   }
 
-  // Check if this is a YouTube track
+  // Full player mode
   const isYouTubeTrack = currentTrack.source === 'youtube' || currentTrack.youtubeId;
-  const isSpotifyTrack = currentTrack.source === 'spotify' || useSpotifyFallback;
 
-  // Use Spotify preview player if we're in fallback mode and have a preview URL
   if (useSpotifyFallback && currentTrack.spotifyPreviewUrl) {
     return (
       <>
@@ -148,10 +134,7 @@ export function GlobalMusicPlayer() {
             />
           </div>
         </div>
-        <SubscriptionModal
-          open={showSubscriptionModal}
-          onOpenChange={setShowSubscriptionModal}
-        />
+        <SubscriptionModal open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal} />
       </>
     );
   }
@@ -173,30 +156,19 @@ export function GlobalMusicPlayer() {
             />
           </div>
         </div>
-        <SubscriptionModal
-          open={showSubscriptionModal}
-          onOpenChange={setShowSubscriptionModal}
-        />
+        <SubscriptionModal open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal} />
       </>
     );
   }
 
-  // Cast to the expected type since we ensure required fields in PlayerContext
   const playerTrack = currentTrack as unknown as {
-    id: string;
-    title: string;
-    artist_name: string;
-    duration: number;
-    file_path: string;
-    play_count: number;
-    album_cover_path?: string;
-    album_cover_bucket?: string;
-    motion_cover_path?: string;
+    id: string; title: string; artist_name: string; duration: number;
+    file_path: string; play_count: number; album_cover_path?: string;
+    album_cover_bucket?: string; motion_cover_path?: string;
     motion_cover_bucket?: string;
-    album?: { title: string; cover_art_path?: string; };
-    ai_tags?: { metadata?: { isMotionCover?: boolean; artworkUrl?: string; }; };
+    album?: { title: string; cover_art_path?: string };
+    ai_tags?: { metadata?: { isMotionCover?: boolean; artworkUrl?: string } };
   };
-
   const playerQueue = queue as unknown as typeof playerTrack[];
 
   return (
@@ -214,11 +186,7 @@ export function GlobalMusicPlayer() {
           />
         </div>
       </div>
-
-      <SubscriptionModal
-        open={showSubscriptionModal}
-        onOpenChange={setShowSubscriptionModal}
-      />
+      <SubscriptionModal open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal} />
     </>
   );
 }
