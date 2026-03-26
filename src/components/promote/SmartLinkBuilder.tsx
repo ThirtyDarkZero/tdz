@@ -125,9 +125,36 @@ export function SmartLinkBuilder() {
             </Button>
           </div>
 
-          <Button onClick={handleCreate} disabled={creating} className="gap-2">
-            {creating ? "Creating..." : "Create Smart Link"}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleCreate} disabled={creating} className="gap-2">
+              {creating ? "Creating..." : "Create Smart Link"}
+            </Button>
+            <Button
+              variant="outline"
+              disabled={copyAI.loading || !title}
+              onClick={async () => {
+                const res = await copyAI.invoke({ title, artist_name: user?.email?.split("@")[0] || "Artist" });
+                if (res) setAiCopy(res);
+              }}
+              className="gap-2"
+            >
+              {copyAI.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              AI Copy
+            </Button>
+          </div>
+          {aiCopy && (
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="p-4 space-y-2">
+                <p className="font-semibold text-sm">{aiCopy.headline}</p>
+                <p className="text-sm text-muted-foreground">{aiCopy.subheadline}</p>
+                <p className="text-xs"><span className="font-medium">CTA:</span> {aiCopy.cta_text}</p>
+                <p className="text-xs"><span className="font-medium">Social:</span> {aiCopy.social_caption}</p>
+                <Button variant="ghost" size="sm" onClick={() => { navigator.clipboard.writeText(aiCopy.social_caption); toast.success("Copied!"); }}>
+                  <Copy className="w-3 h-3 mr-1" /> Copy Caption
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </CardContent>
       </Card>
 
