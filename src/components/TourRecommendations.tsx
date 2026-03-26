@@ -2,13 +2,28 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Users, TrendingUp, Star } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { MapPin, Calendar, Users, TrendingUp, Star, Ticket, Loader2, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const TourRecommendations = () => {
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [bookingRec, setBookingRec] = useState<any | null>(null);
+  const [orgId, setOrgId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  // Booking form
+  const [eventName, setEventName] = useState("");
+  const [eventDesc, setEventDesc] = useState("");
+  const [dateTime, setDateTime] = useState("");
+  const [endDateTime, setEndDateTime] = useState("");
+  const [ticketPrice, setTicketPrice] = useState("0");
+  const [ticketQty, setTicketQty] = useState("100");
 
   useEffect(() => {
     loadRecommendations();
@@ -29,9 +44,74 @@ export const TourRecommendations = () => {
       setRecommendations(data || []);
     } catch (error) {
       console.error("Error loading recommendations:", error);
-      toast.error("Failed to load tour recommendations");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const ensureOrg = async () => {
+    if (orgId) return orgId;
+    try {
+      const { data, error } = await supabase.functions.invoke("eventbrite-api", {
+        body: { action: "get_organizations" },
+      });
+      if (error) throw error;
+      const orgs = data?.data?.organizations;
+      if (orgs?.[0]?.id) {
+        setOrgId(orgs[0].id);
+        return orgs[0].id;
+      }
+    } catch {}
+    return null;
+  };
+
+  const openBooking = async (rec: any) => {
+    setBookingRec(rec);
+    setEventName(`Live at ${rec.venues?.[0] || rec.city}`);
+    setEventDesc(`Don't miss this show in ${rec.city}!`);
+    setTicketPrice("0");
+    setTicketQty("100");
+    setDateTime("");
+    setEndDateTime("");
+    await ensureOrg();
+  };
+
+  const handleCreateEvent = async () => {
+    if (!dateTime) { toast.error("Pick a date"); return; }
+    const org = orgId || await ensureOrg();
+    if (!org) { toast.error("Eventbrite not connected"); return; }
+
+    setCreating(true);
+    try {
+      const startUtc = new Date(dateTime).toISOString().replace(".000Z", "Z");
+      const endUtc = endDateTime
+        ? new Date(endDateTime).toISOString().replace(".000Z", "Z")
+        : new Date(new Date(dateTime).getTime() + 3 * 60 * 60 * 1000).toISOString().replace(".000Z", "Z");
+
+      const { data, error } = await supabase.functions.invoke("eventbrite-api", {
+        body: {
+          action: "create_event",
+          organization_id: org,
+          name: eventName,
+          description: eventDesc,
+          start_utc: startUtc,
+          end_utc: endUtc,
+          venue_name: bookingRec?.venues?.[0] || "TBA",
+          city: bookingRec?.city || "",
+          ticket_name: "General Admission",
+          ticket_price: parseFloat(ticketPrice) || 0,
+          ticket_quantity: parseInt(ticketQty) || 100,
+          publish: true,
+        },
+      });
+
+      if (error || !data?.success) throw new Error(data?.error || "Failed");
+      toast.success("Event created on Eventbrite! Tickets are live.");
+      setBookingRec(null);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -51,7 +131,7 @@ export const TourRecommendations = () => {
         <div>
           <h2 className="text-2xl font-display font-bold">Tour Recommendations</h2>
           <p className="text-sm text-muted-foreground">
-            AI-powered venue suggestions based on your listener data
+            AI-powered venue suggestions — book directly via Eventbrite
           </p>
         </div>
       </div>
@@ -79,7 +159,7 @@ export const TourRecommendations = () => {
                     <h3 className="font-semibold text-lg flex items-center gap-2 group-hover:text-primary transition-colors">
                       <MapPin className="w-5 h-5 text-primary group-hover:scale-125 transition-transform" />
                       {rec.city}
-                      <Badge className="bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border-primary/30 group-hover:scale-110 transition-transform">
+                      <Badge className="bg-gradient-to-r from-primary/20 to-secondary/20 text-primary border-primary/30">
                         <Star className="w-3 h-3 mr-1" />
                         {rec.match_score}% Match
                       </Badge>
@@ -89,19 +169,19 @@ export const TourRecommendations = () => {
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+                  <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-accent/10">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                       <Users className="w-4 h-4 text-white" />
                     </div>
                     <span className="font-medium">{rec.audience_size}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+                  <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-accent/10">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
                       <Calendar className="w-4 h-4 text-white" />
                     </div>
                     <span className="font-medium">{rec.best_month}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+                  <div className="flex items-center gap-2 text-sm p-2 rounded-lg bg-accent/10">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
                       <MapPin className="w-4 h-4 text-white" />
                     </div>
@@ -119,9 +199,12 @@ export const TourRecommendations = () => {
               </div>
 
               <div className="flex flex-col gap-2">
-                <Button className="bg-gradient-to-r from-primary to-secondary group-hover:scale-110 transition-transform shadow-lg">
-                  <Star className="w-4 h-4 mr-2 animate-pulse" />
-                  Book Venue
+                <Button 
+                  onClick={() => openBooking(rec)}
+                  className="bg-gradient-to-r from-primary to-secondary shadow-lg gap-2"
+                >
+                  <Ticket className="w-4 h-4" />
+                  Book & Sell Tickets
                 </Button>
                 <Button variant="outline" size="sm" className="group-hover:border-primary group-hover:text-primary transition-colors">
                   View Details
@@ -140,11 +223,60 @@ export const TourRecommendations = () => {
             <h4 className="font-semibold mb-2">Pro Tip</h4>
             <p className="text-sm text-muted-foreground">
               Plan your tour 3-4 months in advance for better venue availability. 
-              Connect your social media accounts for more personalized recommendations.
+              Click "Book & Sell Tickets" to create an Eventbrite event instantly.
             </p>
           </div>
         </div>
       </Card>
+
+      {/* Booking Dialog */}
+      <Dialog open={!!bookingRec} onOpenChange={(o) => !o && setBookingRec(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Ticket className="w-5 h-5 text-primary" />
+              Create Eventbrite Event — {bookingRec?.city}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Event Name</Label>
+              <Input value={eventName} onChange={(e) => setEventName(e.target.value)} className="mt-1" />
+            </div>
+            <div>
+              <Label>Description</Label>
+              <Textarea value={eventDesc} onChange={(e) => setEventDesc(e.target.value)} className="mt-1" rows={2} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Start Date & Time *</Label>
+                <Input type="datetime-local" value={dateTime} onChange={(e) => setDateTime(e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label>End Date & Time</Label>
+                <Input type="datetime-local" value={endDateTime} onChange={(e) => setEndDateTime(e.target.value)} className="mt-1" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Ticket Price ($)</Label>
+                <Input type="number" value={ticketPrice} onChange={(e) => setTicketPrice(e.target.value)} className="mt-1" min="0" step="0.01" placeholder="0 = free" />
+              </div>
+              <div>
+                <Label>Tickets Available</Label>
+                <Input type="number" value={ticketQty} onChange={(e) => setTicketQty(e.target.value)} className="mt-1" min="1" />
+              </div>
+            </div>
+            {!orgId && (
+              <p className="text-sm text-destructive">⚠ Eventbrite not connected. Make sure your API token is set.</p>
+            )}
+            <Button onClick={handleCreateEvent} disabled={creating || !orgId} className="w-full gap-2">
+              {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              {creating ? "Creating..." : "Create Event & Sell Tickets"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-}
+};
