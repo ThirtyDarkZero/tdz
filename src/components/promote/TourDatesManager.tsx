@@ -154,7 +154,7 @@ function AttendeeListDialog({ eventId }: { eventId: string }) {
   const [attendees, setAttendees] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
     if (!open || !eventId) return;
