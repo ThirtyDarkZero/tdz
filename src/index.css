@@ -6,19 +6,19 @@
 
 @layer base {
   :root {
-    --background: 220 20% 4%;
+    --background: 0 0% 5%;
     --foreground: 0 0% 98%;
 
-    --card: 220 15% 8%;
+    --card: 0 0% 8%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 220 18% 6%;
+    --popover: 0 0% 7%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 14 100% 63%;
+    --primary: 11 100% 62%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 14 100% 72%;
-    --primary-dark: 14 100% 42%;
+    --primary-glow: 11 100% 72%;
+    --primary-dark: 11 100% 45%;
 
     --secondary: 280 100% 65%;
     --secondary-foreground: 0 0% 98%;
@@ -27,69 +27,59 @@
     --tertiary: 200 100% 60%;
     --tertiary-glow: 200 100% 70%;
 
-    --coral: 14 100% 63%;
+    --coral: 11 100% 62%;
     --coral-foreground: 0 0% 100%;
 
-    --muted: 220 15% 15%;
-    --muted-foreground: 220 10% 60%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 55%;
 
-    --accent: 200 100% 60%;
-    --accent-foreground: 0 0% 0%;
-    --accent-glow: 200 100% 70%;
+    --accent: 11 100% 62%;
+    --accent-foreground: 0 0% 100%;
+    --accent-glow: 11 100% 72%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 220 15% 18%;
-    --input: 220 15% 12%;
-    --ring: 200 100% 60%;
-    
-    /* Softer focus ring for better UX */
-    --focus-ring: 200 100% 60%;
+    --border: 0 0% 16%;
+    --input: 0 0% 11%;
+    --ring: 11 100% 62%;
+    --focus-ring: 11 100% 62%;
 
     --radius: 1rem;
 
-    /* Aurora-inspired gradients */
-    --gradient-aurora: linear-gradient(135deg, 
-      hsl(127 100% 60% / 0.4) 0%, 
-      hsl(200 100% 60% / 0.3) 25%,
-      hsl(280 100% 65% / 0.4) 50%, 
-      hsl(330 100% 60% / 0.3) 75%,
-      hsl(127 100% 60% / 0.4) 100%);
-    --gradient-aurora-soft: linear-gradient(180deg, 
-      hsl(127 100% 60% / 0.15) 0%, 
-      hsl(280 100% 65% / 0.1) 50%, 
-      hsl(200 100% 60% / 0.15) 100%);
-    --gradient-mesh: 
-      radial-gradient(at 40% 20%, hsl(127 100% 60% / 0.25) 0%, transparent 50%),
-      radial-gradient(at 80% 0%, hsl(280 100% 65% / 0.2) 0%, transparent 50%),
-      radial-gradient(at 0% 50%, hsl(200 100% 60% / 0.15) 0%, transparent 50%),
-      radial-gradient(at 80% 50%, hsl(330 100% 60% / 0.1) 0%, transparent 50%),
-      radial-gradient(at 0% 100%, hsl(127 100% 60% / 0.2) 0%, transparent 50%),
-      radial-gradient(at 80% 100%, hsl(280 100% 65% / 0.15) 0%, transparent 50%);
-    --gradient-primary: linear-gradient(135deg, hsl(127 100% 60%) 0%, hsl(280 100% 65%) 50%, hsl(200 100% 60%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(220 20% 4%) 0%, hsl(127 100% 60% / 0.12) 30%, hsl(280 100% 65% / 0.1) 70%, hsl(220 20% 4%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(220 15% 12% / 0.9) 0%, hsl(220 15% 6% / 0.8) 100%);
-    --gradient-glass: linear-gradient(145deg, hsl(220 15% 15% / 0.6) 0%, hsl(220 15% 8% / 0.4) 100%);
-    --gradient-glass-strong: linear-gradient(145deg, hsl(220 15% 18% / 0.85) 0%, hsl(220 15% 10% / 0.7) 100%);
-    --gradient-neon: linear-gradient(135deg, hsl(127 100% 60% / 0.35) 0%, hsl(280 100% 65% / 0.35) 50%, hsl(200 100% 60% / 0.35) 100%);
-    --gradient-radial: radial-gradient(ellipse at 50% 0%, hsl(127 100% 60% / 0.25) 0%, hsl(280 100% 65% / 0.15) 40%, transparent 70%);
-    
-    /* Premium shadows */
-    --shadow-glow: 0 0 50px hsl(127 100% 60% / 0.5), 0 0 100px hsl(127 100% 60% / 0.3), 0 0 150px hsl(280 100% 65% / 0.2);
-    --shadow-glow-lg: 0 0 80px hsl(127 100% 60% / 0.6), 0 0 160px hsl(280 100% 65% / 0.4), 0 0 240px hsl(200 100% 60% / 0.25);
-    --shadow-glow-xl: 0 0 120px hsl(127 100% 60% / 0.7), 0 0 200px hsl(280 100% 65% / 0.5), 0 0 300px hsl(200 100% 60% / 0.3);
-    --shadow-card: 0 30px 80px -20px hsl(0 0% 0% / 0.8), 0 15px 40px -15px hsl(127 100% 60% / 0.15);
-    --shadow-card-hover: 0 50px 100px -20px hsl(0 0% 0% / 0.9), 0 0 80px hsl(127 100% 60% / 0.35), 0 0 120px hsl(280 100% 65% / 0.25);
-    --shadow-3d: 0 20px 50px hsl(0 0% 0% / 0.6), 0 8px 20px hsl(0 0% 0% / 0.4);
-    --shadow-3d-lg: 0 35px 70px hsl(0 0% 0% / 0.7), 0 15px 35px hsl(0 0% 0% / 0.5);
-    --shadow-inner-glow: inset 0 1px 2px hsl(0 0% 100% / 0.1), inset 0 -1px 2px hsl(0 0% 0% / 0.2);
-    
-    /* Smooth transitions */
-    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    --transition-spring: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-    --transition-ultra: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    --gradient-aurora: linear-gradient(135deg, hsl(11 100% 62% / 0.4), hsl(280 100% 65% / 0.3), hsl(200 100% 60% / 0.2));
+    --gradient-aurora-soft: linear-gradient(180deg, hsl(11 100% 62% / 0.1), hsl(280 100% 65% / 0.06));
+    --gradient-mesh: radial-gradient(at 40% 20%, hsl(11 100% 62% / 0.15) 0%, transparent 50%), radial-gradient(at 80% 0%, hsl(280 100% 65% / 0.1) 0%, transparent 50%);
+    --gradient-primary: linear-gradient(135deg, hsl(11 100% 62%), hsl(11 100% 45%));
+    --gradient-hero: linear-gradient(180deg, #0D0D0D, hsl(11 100% 62% / 0.06) 50%, #0D0D0D);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 10% / 0.9), hsl(0 0% 6% / 0.8));
+    --gradient-glass: linear-gradient(145deg, hsl(0 0% 14% / 0.6), hsl(0 0% 8% / 0.4));
+    --gradient-glass-strong: linear-gradient(145deg, hsl(0 0% 16% / 0.85), hsl(0 0% 10% / 0.7));
+    --gradient-neon: linear-gradient(135deg, hsl(11 100% 62% / 0.3), hsl(280 100% 65% / 0.2));
+    --gradient-radial: radial-gradient(ellipse at 50% 0%, hsl(11 100% 62% / 0.15), transparent 70%);
+
+    --shadow-glow: 0 0 40px hsl(11 100% 62% / 0.3);
+    --shadow-glow-lg: 0 0 80px hsl(11 100% 62% / 0.4);
+    --shadow-glow-xl: 0 0 120px hsl(11 100% 62% / 0.5);
+    --shadow-card: 0 20px 60px -15px hsl(0 0% 0% / 0.7);
+    --shadow-card-hover: 0 30px 80px -15px hsl(0 0% 0% / 0.8), 0 0 40px hsl(11 100% 62% / 0.15);
+    --shadow-3d: 0 20px 50px hsl(0 0% 0% / 0.5);
+    --shadow-3d-lg: 0 35px 70px hsl(0 0% 0% / 0.6);
+    --shadow-inner-glow: inset 0 1px 2px hsl(0 0% 100% / 0.06);
+
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --transition-spring: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 11 100% 62%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 0 0% 14%;
+    --sidebar-ring: 11 100% 62%;
   }
 }
 
@@ -100,16 +90,15 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    background: #121212;
-    background-attachment: fixed;
-    font-family: 'Inter', 'SF Pro Display', system-ui, sans-serif;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    background: #0D0D0D;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, h4, h5, h6, .font-display {
-    font-family: 'Bebas Neue', 'Impact', system-ui, sans-serif;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    letter-spacing: -0.01em;
   }
   
   /* Fix focus rings - use subtle accent color instead of primary green */
