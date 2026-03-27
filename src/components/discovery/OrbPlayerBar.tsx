@@ -179,7 +179,7 @@ export function OrbPlayerBar() {
 
   if (!currentTrack) return null;
 
-  const cover = currentTrack.album_cover_path || currentTrack.thumbnail || null;
+  const cover = coverUrl;
   const isFullScreen = playerView === "full";
 
   /* ─── PILL ─── */
