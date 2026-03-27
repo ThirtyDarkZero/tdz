@@ -92,13 +92,13 @@ function HexCell({ image, label, onClick }: { image: string | null; label: strin
   return (
     <div
       className="relative cursor-pointer transition-all duration-200 active:brightness-130"
-      style={{ clipPath: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)", aspectRatio: "1", background: "hsl(var(--bg-surface))", maxWidth: 100 }}
+      style={{ clipPath: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)", aspectRatio: "1", background: "hsl(var(--bg-surface))" }}
       onClick={onClick}
     >
       {image && <img src={image} alt="" className="w-full h-full object-cover" />}
       <div className="absolute left-0 right-0 text-center font-body" style={{
-        bottom: "22%", fontSize: 8, fontWeight: 700, color: "white",
-        textShadow: "0 2px 8px rgba(0,0,0,0.9)", padding: "0 4px",
+        bottom: "22%", fontSize: 7, fontWeight: 700, color: "white",
+        textShadow: "0 2px 8px rgba(0,0,0,0.9)", padding: "0 2px",
         whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
       }}>
         {label}
@@ -335,10 +335,10 @@ export default function Discover() {
                     <Swiper
                       modules={[EffectCoverflow, Autoplay]}
                       effect="coverflow"
-                      coverflowEffect={{ rotate: 8, stretch: 30, depth: 120, modifier: 1, slideShadows: false }}
+                      coverflowEffect={{ rotate: 4, stretch: 80, depth: 100, modifier: 1, slideShadows: false }}
                       centeredSlides={true}
-                      slidesPerView={2.4}
-                      spaceBetween={-10}
+                      slidesPerView={3.2}
+                      spaceBetween={-30}
                       loop={forYouItems.length > 3}
                       autoplay={{ delay: 3500, disableOnInteraction: false }}
                       className="w-full"
@@ -597,13 +597,62 @@ export default function Discover() {
                   </div>
                 )}
 
-                {/* ── TOP CHARTS sub-view ── */}
+                {/* ── TOP CHARTS sub-view (Billboard-style 50 songs) ── */}
                 {!searchQuery.trim() && exploreView === "charts" && (
                   <div className="space-y-4">
                     <button onClick={() => setExploreView("main")} className="flex items-center gap-1 font-body" style={{ fontSize: 12, color: "#00CFFF" }}>
                       ← Back to Explore
                     </button>
-                    <ErrorBoundary fallback={null}><GenreTop50Section onViewAll={() => setActiveTab("library")} /></ErrorBoundary>
+                    <h2 className="font-display" style={{ fontSize: 40, color: "var(--text-1)" }}>TDZ TOP 50</h2>
+                    <p className="font-body" style={{ fontSize: 13, color: "var(--text-3)" }}>The official TDZ charts — updated weekly</p>
+                    <div className="rounded-[var(--radius-md)] overflow-hidden" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)", borderTop: "2px solid #22C55E" }}>
+                      {/* Chart header */}
+                      <div className="flex items-center px-4 py-2.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                        <span className="font-body w-10 text-center" style={{ fontSize: 9, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.1em" }}>#</span>
+                        <span className="font-body flex-1" style={{ fontSize: 9, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.1em" }}>TITLE</span>
+                        <span className="font-body w-20 text-right" style={{ fontSize: 9, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.1em" }}>PLAYS</span>
+                      </div>
+                      {trendingSingles.slice(0, 50).map((track, i) => {
+                        const isTop3 = i < 3;
+                        const coverUrl = track.album_cover_path
+                          ? supabase.storage.from(track.album_cover_bucket || "album-covers").getPublicUrl(track.album_cover_path).data.publicUrl
+                          : null;
+                        return (
+                          <div
+                            key={track.id}
+                            className="flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors hover:bg-white/[0.03] active:bg-white/[0.06]"
+                            style={{ borderBottom: i < 49 ? "1px solid rgba(255,255,255,0.03)" : "none" }}
+                            onClick={() => handlePlayFromList(track, trendingSingles.slice(0, 50))}
+                          >
+                            {/* Chart position */}
+                            <span className="font-display w-10 text-center flex-shrink-0" style={{
+                              fontSize: isTop3 ? 28 : 18,
+                              color: isTop3 ? "#22C55E" : "var(--text-4)",
+                            }}>
+                              {i + 1}
+                            </span>
+                            {/* Artwork */}
+                            <div className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0" style={{ background: "var(--glass-2)" }}>
+                              {coverUrl ? (
+                                <img src={coverUrl} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center"><Music className="w-4 h-4" style={{ color: "var(--text-4)" }} /></div>
+                              )}
+                            </div>
+                            {/* Info */}
+                            <div className="min-w-0 flex-1">
+                              <p className="font-body truncate" style={{ fontSize: 13, fontWeight: 600, color: currentTrack?.id === track.id ? "#00CFFF" : "var(--text-1)" }}>{track.title}</p>
+                              <p className="font-body truncate" style={{ fontSize: 11, color: "var(--text-3)" }}>{track.artist_name}</p>
+                            </div>
+                            {/* Play count */}
+                            <span className="font-body flex-shrink-0 w-20 text-right" style={{ fontSize: 11, color: "var(--text-4)" }}>
+                              {(track.play_count || 0).toLocaleString()}
+                            </span>
+                            <Play className="w-3.5 h-3.5 flex-shrink-0 opacity-30" style={{ color: "var(--text-2)" }} />
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
@@ -624,7 +673,7 @@ export default function Discover() {
 
                 {/* Hexagonal grid for albums — smaller cells */}
                 {(libraryFilter === "ALBUMS" || libraryFilter === "PLAYLISTS" || libraryFilter === "DOWNLOADED" || libraryFilter === "RECENT") && albums.length > 0 && (
-                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-1 px-1">
+                  <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-8 gap-[2px]">
                     {albums.map(album => (
                       <HexCell
                         key={album.id}
@@ -664,16 +713,75 @@ export default function Discover() {
           return (
             <div>
               <CosmicTopBar activeTab={activeTab} onTabChange={setActiveTab} searchQuery={searchQuery} onSearchChange={setSearchQuery} userProfile={userProfile} />
-              <div className="px-5 sm:px-6 lg:px-8 py-5">
-                <div className="flex flex-col items-center justify-center py-20 gap-4">
-                  <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)" }}>
-                    <span style={{ fontSize: 28 }}>💬</span>
+              <div className="px-5 sm:px-6 lg:px-8 py-5 space-y-5">
+                {user ? (
+                  <>
+                    {/* Fan Profile Card */}
+                    <div className="rounded-[var(--radius-lg)] overflow-hidden" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)" }}>
+                      <div className="relative h-28" style={{ background: "linear-gradient(135deg, rgba(0,207,255,0.15), rgba(139,92,246,0.15))" }}>
+                        <div className="absolute -bottom-10 left-5">
+                          <div className="w-20 h-20 rounded-full overflow-hidden" style={{ border: "3px solid var(--bg-deep)", background: "var(--glass-2)" }}>
+                            {userProfile?.profile_image_path ? (
+                              <img src={supabase.storage.from("listener-images").getPublicUrl(userProfile.profile_image_path).data.publicUrl} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center font-display" style={{ fontSize: 28, color: "var(--text-3)" }}>
+                                {user.email?.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="pt-12 pb-5 px-5">
+                        <h3 className="font-display" style={{ fontSize: 26, color: "var(--text-1)" }}>
+                          {userProfile?.display_name || userProfile?.artist_name || user.email?.split("@")[0]?.toUpperCase()}
+                        </h3>
+                        <p className="font-body" style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>{user.email}</p>
+                        <div className="flex gap-6 mt-4">
+                          {[
+                            { label: "FOLLOWING", value: followedArtists.size },
+                            { label: "LIKED", value: likedTracks.size },
+                            { label: "PLAYLISTS", value: playlists.length },
+                          ].map(s => (
+                            <div key={s.label}>
+                              <span className="font-body block" style={{ fontSize: 18, fontWeight: 800, color: "var(--text-1)" }}>{s.value}</span>
+                              <span className="font-body" style={{ fontSize: 9, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.1em" }}>{s.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Recently played / liked tracks */}
+                    <Section title="LIKED TRACKS">
+                      <div className="rounded-[var(--radius-md)] overflow-hidden" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)" }}>
+                        {singles.filter(t => likedTracks.has(t.id)).slice(0, 10).map((track, i) => (
+                          <SongRow key={track.id} track={track} index={i + 1} isPlaying={currentTrack?.id === track.id} isLiked={true} onPlay={handlePlayTrack} onToggleLike={toggleLike} onAddToQueue={handleAddToQueue} />
+                        ))}
+                        {likedTracks.size === 0 && (
+                          <div className="py-10 text-center">
+                            <Heart className="w-8 h-8 mx-auto mb-2" style={{ color: "var(--text-4)" }} />
+                            <p className="font-body" style={{ fontSize: 13, color: "var(--text-3)" }}>No liked tracks yet</p>
+                          </div>
+                        )}
+                      </div>
+                    </Section>
+
+                    {/* Your Playlists */}
+                    <ErrorBoundary fallback={null}>
+                      <UserPlaylistsSection onPlaylistClick={id => navigate(`/playlist/${id}`)} onViewAll={() => { setActiveTab("library"); setLibraryFilter("PLAYLISTS"); }} />
+                    </ErrorBoundary>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-20 gap-4">
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)" }}>
+                      <Heart className="w-7 h-7" style={{ color: "var(--text-4)" }} />
+                    </div>
+                    <h2 className="font-display" style={{ fontSize: 32, color: "var(--text-1)" }}>YOUR PROFILE</h2>
+                    <p className="font-body text-center" style={{ fontSize: 14, color: "var(--text-3)", maxWidth: 280 }}>
+                      Sign in to see your profile, liked tracks, and playlists.
+                    </p>
                   </div>
-                  <h2 className="font-display" style={{ fontSize: 32, color: "var(--text-1)" }}>SOCIAL FEED</h2>
-                  <p className="font-body text-center" style={{ fontSize: 14, color: "var(--text-3)", maxWidth: 280 }}>
-                    Connect with fans, share tracks, and discover what your community is listening to.
-                  </p>
-                </div>
+                )}
               </div>
             </div>
           );
