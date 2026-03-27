@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Play, Heart, Plus, MoreHorizontal } from "lucide-react";
+import { useState, memo } from "react";
+import { Play, MoreHorizontal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface SongRowProps {
@@ -12,7 +12,7 @@ interface SongRowProps {
   onAddToQueue?: (track: any) => void;
 }
 
-export function SongRow({ track, index, isPlaying, isLiked, onPlay, onToggleLike, onAddToQueue }: SongRowProps) {
+export const SongRow = memo(function SongRow({ track, index, isPlaying, onPlay }: SongRowProps) {
   const [imgError, setImgError] = useState(false);
 
   const getCoverUrl = () => {
@@ -29,7 +29,6 @@ export function SongRow({ track, index, isPlaying, isLiked, onPlay, onToggleLike
   };
 
   const coverSrc = getCoverUrl();
-
   const fmtDur = (s?: number) => {
     if (!s) return "—";
     return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
@@ -37,26 +36,30 @@ export function SongRow({ track, index, isPlaying, isLiked, onPlay, onToggleLike
 
   return (
     <div
-      className="group flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-150"
+      className="group flex items-center gap-3 rounded-[var(--radius-sm)] cursor-pointer transition-all duration-150"
       style={{
-        background: isPlaying ? "hsl(var(--primary) / 0.08)" : "transparent",
+        padding: "10px 20px",
+        background: isPlaying ? "var(--glass-1)" : "transparent",
       }}
       onClick={() => onPlay?.(track)}
-      onMouseEnter={(e) => { if (!isPlaying) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
-      onMouseLeave={(e) => { if (!isPlaying) e.currentTarget.style.background = "transparent"; }}
+      onMouseEnter={(e) => { if (!isPlaying) (e.currentTarget.style.background = "var(--glass-1)"); }}
+      onMouseLeave={(e) => { if (!isPlaying) (e.currentTarget.style.background = "transparent"); }}
     >
-      {/* Index / Play overlay */}
-      <div className="relative w-8 text-center flex-shrink-0">
-        <span className="group-hover:hidden text-xs" style={{ color: isPlaying ? "hsl(var(--primary))" : "rgba(255,255,255,0.3)", fontWeight: 500 }}>
-          {isPlaying ? "♫" : index}
-        </span>
-        <button className="hidden group-hover:flex absolute inset-0 items-center justify-center" onClick={(e) => { e.stopPropagation(); onPlay?.(track); }}>
-          <Play className="w-3.5 h-3.5 text-white" fill="white" />
-        </button>
-      </div>
+      {/* Number */}
+      <span className="w-5 text-center flex-shrink-0 font-body" style={{
+        fontSize: 13, color: isPlaying ? "#00CFFF" : "var(--text-4)", fontWeight: 500,
+      }}>
+        {isPlaying ? "♫" : index}
+      </span>
 
-      {/* Album art */}
-      <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0" style={{ background: "rgba(255,255,255,0.05)" }}>
+      {/* Art — 52x52 */}
+      <div
+        className="w-[52px] h-[52px] rounded-[10px] overflow-hidden flex-shrink-0 transition-shadow duration-200"
+        style={{
+          background: "hsl(var(--bg-surface))",
+          boxShadow: isPlaying ? "0 0 16px #00CFFF" : "none",
+        }}
+      >
         {coverSrc ? (
           <img src={coverSrc} alt="" className="w-full h-full object-cover" onError={() => setImgError(true)} loading="lazy" />
         ) : (
@@ -64,38 +67,41 @@ export function SongRow({ track, index, isPlaying, isLiked, onPlay, onToggleLike
         )}
       </div>
 
-      {/* Title + Artist */}
+      {/* Info */}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-medium" style={{ color: isPlaying ? "hsl(var(--primary))" : "#fff" }}>{track.title}</p>
-        <p className="truncate text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>
+        <p className="truncate font-body" style={{ fontSize: 14, fontWeight: 700, color: isPlaying ? "#00CFFF" : "var(--text-1)" }}>
+          {track.title}
+        </p>
+        <p className="truncate font-body" style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>
           {track.artist_name || "Unknown Artist"}
         </p>
       </div>
 
       {/* Duration */}
-      <span className="hidden sm:block text-xs flex-shrink-0" style={{ color: "rgba(255,255,255,0.25)" }}>{fmtDur(track.duration)}</span>
+      <span className="hidden sm:block font-body flex-shrink-0" style={{ fontSize: 12, color: "var(--text-4)" }}>
+        {fmtDur(track.duration)}
+      </span>
 
-      {/* Actions */}
-      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-        <button onClick={(e) => { e.stopPropagation(); onToggleLike?.(track.id); }} className="p-1.5 rounded-full transition-colors hover:bg-white/10">
-          <Heart className="w-3.5 h-3.5" style={{ color: isLiked ? "hsl(var(--primary))" : "rgba(255,255,255,0.35)" }} fill={isLiked ? "hsl(var(--primary))" : "none"} />
-        </button>
-        <button onClick={(e) => { e.stopPropagation(); onAddToQueue?.(track); }} className="p-1.5 rounded-full transition-colors hover:bg-white/10">
-          <Plus className="w-3.5 h-3.5" style={{ color: "rgba(255,255,255,0.35)" }} />
-        </button>
-      </div>
+      {/* Menu */}
+      <button
+        onClick={(e) => { e.stopPropagation(); }}
+        className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 flex-shrink-0"
+        style={{ color: "var(--text-3)" }}
+      >
+        <MoreHorizontal className="w-[18px] h-[18px]" />
+      </button>
     </div>
   );
-}
+});
 
 export function SongListHeader() {
   return (
-    <div className="flex items-center gap-3 px-3 py-2 mb-1" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-      <span className="w-8 text-center" style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.2)", letterSpacing: "0.1em" }}>#</span>
-      <span className="w-10" />
-      <span className="flex-1" style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.2)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Title</span>
-      <span className="hidden sm:block text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>Time</span>
-      <span className="w-16" />
+    <div className="flex items-center gap-3 py-2 mb-1 font-body" style={{ padding: "8px 20px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+      <span className="w-5 text-center" style={{ fontSize: 10, fontWeight: 600, color: "var(--text-4)", letterSpacing: "0.1em" }}>#</span>
+      <span className="w-[52px]" />
+      <span className="flex-1" style={{ fontSize: 10, fontWeight: 600, color: "var(--text-4)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Title</span>
+      <span className="hidden sm:block" style={{ fontSize: 10, color: "var(--text-4)" }}>Time</span>
+      <span className="w-8" />
     </div>
   );
 }
