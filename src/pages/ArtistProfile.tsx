@@ -664,7 +664,7 @@ export default function ArtistProfile() {
       {/* About Section */}
       {artist.bio && (
         <section className="px-4 sm:px-6 lg:px-8 py-6">
-          <h2 className="text-2xl sm:text-3xl font-black mb-4 tracking-tight">ABOUT</h2>
+          <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(28px, 4vw, 40px)", letterSpacing: "0.04em", textTransform: "uppercase", background: "linear-gradient(180deg, #FFFFFF 0%, #999999 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>ABOUT</h2>
           <p className="text-white/70 leading-relaxed max-w-3xl">{artist.bio}</p>
         </section>
       )}
