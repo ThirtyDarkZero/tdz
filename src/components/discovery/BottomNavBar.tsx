@@ -9,7 +9,7 @@ const NAV_ITEMS = [
   { id: "discover", label: "HOME", icon: Home },
   { id: "explore", label: "EXPLORE", icon: Compass },
   { id: "library", label: "LIBRARY", icon: LayoutGrid },
-  { id: "feed", label: "FEED", icon: MessageCircle },
+  { id: "feed", label: "PROFILE", icon: User },
   { id: "store", label: "STORE", icon: ShoppingBag },
 ];
 
