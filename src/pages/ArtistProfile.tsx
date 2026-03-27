@@ -1,14 +1,15 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { 
-  Play, Bell, BellOff, ArrowLeft, MoreHorizontal, 
-  Music, ChevronLeft, ChevronRight, MessageCircle, Share2, UserPlus, UserCheck,
-  Globe, Instagram, Twitter, Youtube, Facebook, ExternalLink
+import {
+  Play, ArrowLeft, MoreHorizontal,
+  Music, MessageCircle, Share2, UserPlus, UserCheck,
+  Globe, Instagram, Twitter, Youtube, Facebook, ExternalLink,
+  Bell, BellOff, ChevronDown, Heart, Loader2, Camera
 } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { DirectMessagePanel } from "@/components/DirectMessagePanel";
@@ -27,12 +28,11 @@ export default function ArtistProfile() {
   const [albums, setAlbums] = useState<any[]>([]);
   const [gallery, setGallery] = useState<any[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [presavedTracks, setPresavedTracks] = useState<Set<string>>(new Set());
   const [user, setUser] = useState<any>(null);
   const [showMessages, setShowMessages] = useState(false);
-  const albumScrollRef = useRef<HTMLDivElement>(null);
-  
-  const { playTrack, currentTrack } = usePlayer();
+  const [loading, setLoading] = useState(true);
+
+  const { playTrack, currentTrack, isPlaying } = usePlayer();
 
   useEffect(() => {
     if (!artistId || artistId === ":artistId" || !isValidUUID(artistId)) {
@@ -51,21 +51,16 @@ export default function ArtistProfile() {
     }
   }, [artistId]);
 
-  const isValidUUID = (str: string) => {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(str);
-  };
+  const isValidUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 
   const loadUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setUser(user);
-    if (user) {
-      checkIfFollowing(user.id);
-      loadPresaves(user.id);
-    }
+    if (user) checkIfFollowing(user.id);
   };
 
   const loadArtist = async () => {
+    setLoading(true);
     const { data, error } = await supabase
       .from("artist_profiles")
       .select("*")
@@ -78,47 +73,41 @@ export default function ArtistProfile() {
       return;
     }
     setArtist(data);
+    setLoading(false);
   };
 
   const loadTracks = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("tracks")
       .select("*, albums(*)")
       .eq("user_id", artistId)
       .eq("is_published", true)
       .order("created_at", { ascending: false });
 
-    if (!error && data) {
-      const publishedTracks = data.filter(track => 
-        !track.albums || track.albums.is_published !== false
-      );
-      setTracks(publishedTracks);
+    if (data) {
+      setTracks(data.filter(t => !t.albums || t.albums.is_published !== false));
     }
   };
 
   const loadAlbums = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("albums")
       .select("*")
       .eq("user_id", artistId)
       .eq("is_published", true)
       .order("release_date", { ascending: false });
 
-    if (!error && data) {
-      setAlbums(data);
-    }
+    if (data) setAlbums(data);
   };
 
   const loadGallery = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("artist_gallery")
       .select("*")
       .eq("artist_id", artistId)
       .order("display_order", { ascending: true });
 
-    if (!error && data) {
-      setGallery(data);
-    }
+    if (data) setGallery(data);
   };
 
   const checkIfFollowing = async (userId: string) => {
@@ -131,24 +120,10 @@ export default function ArtistProfile() {
     setIsFollowing(!!data);
   };
 
-  const loadPresaves = async (userId: string) => {
-    const { data } = await supabase
-      .from("track_presaves")
-      .select("track_id")
-      .eq("user_id", userId);
-    if (data) {
-      setPresavedTracks(new Set(data.map(p => p.track_id)));
-    }
-  };
-
   const toggleFollow = async () => {
-    if (!user) {
-      toast.error("Please sign in to follow artists");
-      return;
-    }
+    if (!user) { toast.error("Please sign in to follow artists"); return; }
     if (isFollowing) {
-      await supabase.from("artist_follows").delete()
-        .eq("follower_id", user.id).eq("artist_id", artistId);
+      await supabase.from("artist_follows").delete().eq("follower_id", user.id).eq("artist_id", artistId);
       toast.success("Unfollowed artist");
     } else {
       await supabase.from("artist_follows").insert({ follower_id: user.id, artist_id: artistId });
@@ -157,525 +132,320 @@ export default function ArtistProfile() {
     setIsFollowing(!isFollowing);
   };
 
-  const togglePresave = async (trackId: string) => {
-    if (!user) {
-      toast.error("Please sign in to presave tracks");
-      return;
-    }
-    const isPresaved = presavedTracks.has(trackId);
-    if (isPresaved) {
-      await supabase.from("track_presaves").delete()
-        .eq("user_id", user.id).eq("track_id", trackId);
-      setPresavedTracks(prev => { const next = new Set(prev); next.delete(trackId); return next; });
-      toast.success("Presave removed");
-    } else {
-      await supabase.from("track_presaves").insert({ user_id: user.id, track_id: trackId, artist_id: artistId });
-      setPresavedTracks(prev => new Set(prev).add(trackId));
-      toast.success("Track presaved!");
-    }
-  };
-
   const handlePlayAll = () => {
     if (tracks.length === 0) return;
-    const normalizedTracks = tracks.map(t => ({
-      ...t, duration: t.duration || 0, file_path: t.file_path || '', play_count: t.play_count || 0,
-    }));
-    playTrack(normalizedTracks[0], normalizedTracks);
+    const q = tracks.map(t => ({ ...t, duration: t.duration || 0, file_path: t.file_path || '', play_count: t.play_count || 0 }));
+    playTrack(q[0], q);
   };
 
   const handlePlayTrack = (track: any) => {
-    const normalizedTrack = { ...track, duration: track.duration || 0, file_path: track.file_path || '', play_count: track.play_count || 0 };
-    const normalizedQueue = tracks.map(t => ({ ...t, duration: t.duration || 0, file_path: t.file_path || '', play_count: t.play_count || 0 }));
-    playTrack(normalizedTrack, normalizedQueue);
+    const n = { ...track, duration: track.duration || 0, file_path: track.file_path || '', play_count: track.play_count || 0 };
+    const q = tracks.map(t => ({ ...t, duration: t.duration || 0, file_path: t.file_path || '', play_count: t.play_count || 0 }));
+    playTrack(n, q);
   };
 
-  const getImageUrl = (path: string): string => {
+  const getImageUrl = (path: string) => {
     if (!path) return '';
     if (path.startsWith('http')) return path;
     return supabase.storage.from('artist-images').getPublicUrl(path).data.publicUrl;
   };
 
-  const getAlbumCover = (album: any): string => {
+  const getAlbumCover = (album: any) => {
     if (!album.cover_art_path) return '';
     return supabase.storage.from('album-covers').getPublicUrl(album.cover_art_path).data.publicUrl;
   };
 
-  const scrollAlbums = (direction: 'left' | 'right') => {
-    if (albumScrollRef.current) {
-      const scrollAmount = direction === 'left' ? -300 : 300;
-      albumScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Extract genres from tracks
   const genres = [...new Set(tracks.map(t => t.genre).filter(Boolean))].slice(0, 3);
-  const lastRelease = tracks[0]?.created_at ? new Date(tracks[0].created_at) : null;
-  const isRecent = lastRelease && (Date.now() - lastRelease.getTime()) < 30 * 24 * 60 * 60 * 1000;
 
-  if (!artist) {
+  const profileImage = useMemo(() => {
+    if (!artist?.profile_image_path) return null;
+    return getImageUrl(artist.profile_image_path);
+  }, [artist]);
+
+  if (loading || !artist) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+      <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "hsl(var(--bg-void))" }}>
+        <Loader2 className="w-10 h-10 animate-spin" style={{ color: "hsl(var(--coral))" }} />
       </div>
     );
   }
 
+  // Social links helper
+  const socialLinks = artist.social_links || {};
+  const hasSocials = artist.website || Object.values(socialLinks).some(Boolean);
+
   return (
-    <div className="min-h-screen text-white pb-32" style={{
-      background: `
-        radial-gradient(ellipse 80% 50% at 20% 10%, rgba(139,92,246,0.08) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 40% at 80% 30%, rgba(0,207,255,0.06) 0%, transparent 55%),
-        radial-gradient(ellipse 70% 40% at 50% 90%, rgba(59,130,246,0.05) 0%, transparent 50%),
-        #030308
-      `
-    }}>
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: "hsl(var(--bg-void))" }}>
+      {/* Blurred background */}
+      {profileImage && (
+        <div className="absolute inset-0 pointer-events-none" style={{
+          backgroundImage: `url(${profileImage})`,
+          backgroundSize: "cover", backgroundPosition: "center",
+          filter: "blur(100px) saturate(1.5) brightness(0.15)",
+          transform: "scale(1.2)",
+        }} />
+      )}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: "linear-gradient(to bottom, hsl(var(--bg-void) / 0.6) 0%, hsl(var(--bg-void) / 0.9) 60%, hsl(var(--bg-void) / 0.98) 100%)",
+      }} />
+
       {/* Top Bar */}
-      <header className="sticky top-0 z-50 border-b" style={{ 
-        background: "rgba(3,3,8,0.9)", 
-        backdropFilter: "blur(20px)",
-        borderColor: "rgba(139,92,246,0.1)"
-      }}>
-        <div className="flex items-center gap-4 px-4 sm:px-6 py-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="h-10 w-10 rounded-full bg-white/5 hover:bg-white/10 text-white"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <Button
-            size="icon"
-            onClick={handlePlayAll}
-            disabled={tracks.length === 0}
-            className="h-10 w-10 rounded-full bg-cyan-500 hover:bg-cyan-400 text-black"
-          >
-            <Play className="w-5 h-5" fill="currentColor" />
-          </Button>
-          <span className="font-bold text-lg truncate">{artist.artist_name}</span>
-        </div>
-      </header>
+      <div className="relative z-10 flex items-center justify-between px-4 md:px-6 py-3 flex-shrink-0" style={{ borderBottom: "1px solid var(--glass-border)" }}>
+        <button onClick={() => navigate(-1)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+          <ChevronDown className="w-5 h-5" style={{ color: "var(--text-2)" }} />
+        </button>
+        <p className="font-body" style={{ fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--text-3)" }}>
+          ARTIST
+        </p>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="p-2 hover:bg-white/5 rounded-full transition-colors">
+              <MoreHorizontal className="w-5 h-5" style={{ color: "var(--text-2)" }} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="backdrop-blur-xl bg-black/80 border-white/10 min-w-[200px]">
+            <DropdownMenuItem onClick={() => setShowMessages(true)} className="text-white/80 hover:text-white hover:bg-white/10 gap-2">
+              <MessageCircle className="w-4 h-4" /> Message
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              navigator.clipboard.writeText(`${window.location.origin}/artist/${artistId}`);
+              toast.success("Profile link copied");
+            }} className="text-white/80 hover:text-white hover:bg-white/10 gap-2">
+              <Share2 className="w-4 h-4" /> Share Profile
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
-      {/* Profile Section */}
-      <section className="px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8">
-          {/* Circular Avatar */}
-          <div className="relative flex-shrink-0">
-            <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full overflow-hidden bg-gradient-to-br from-indigo-600 to-purple-700 flex items-center justify-center ring-4 ring-white/10">
-              {artist.profile_image_path ? (
-                <img
-                  src={getImageUrl(artist.profile_image_path)}
-                  alt={artist.artist_name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-6xl sm:text-7xl font-bold text-white/80">
-                  {artist.artist_name?.charAt(0)?.toUpperCase() || 'A'}
-                </span>
-              )}
-            </div>
-          </div>
+      {/* 3-Column Layout */}
+      <div className="relative z-10 flex-1 overflow-auto">
+        <div className="flex flex-col lg:flex-row min-h-full">
 
-          {/* Info */}
-          <div className="flex-1 text-center sm:text-left">
-            {/* Type + Genre Tags */}
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-3">
-              <span className="text-white/60 text-sm">Artist</span>
-              {genres.map((genre: string) => (
-                <Badge 
-                  key={genre} 
-                  variant="outline" 
-                  className="bg-white/5 border-white/20 text-white/80 text-xs px-3 py-1 rounded-full"
+          {/* LEFT: Discography / Tracklist */}
+          <div className="lg:w-[30%] flex flex-col p-4 md:p-6 lg:p-8 order-2 lg:order-1">
+            <div className="mb-4 lg:mb-6 text-center lg:text-left">
+              <p className="font-body" style={{ fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-3)" }}>
+                {tracks.length} tracks · {albums.length} releases
+              </p>
+              <h2 className="font-display" style={{ fontSize: "clamp(24px, 3vw, 36px)", lineHeight: 1.1, color: "var(--text-1)" }}>
+                Discography
+              </h2>
+
+              <div className="flex items-center justify-center lg:justify-start gap-2 mt-3">
+                <button
+                  onClick={handlePlayAll}
+                  className="inline-flex items-center gap-2 px-5 py-2 rounded-full font-body transition-all hover:scale-105"
+                  style={{ fontSize: 12, fontWeight: 600, background: "hsl(var(--coral))", color: "#000", boxShadow: "0 4px 20px hsl(var(--coral) / 0.4)" }}
                 >
-                  {genre}
-                </Badge>
-              ))}
+                  <Play className="w-3.5 h-3.5" fill="currentColor" />
+                  PLAY ALL
+                </button>
+                <button
+                  onClick={toggleFollow}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-body transition-all hover:scale-105"
+                  style={{ fontSize: 12, fontWeight: 600, background: "var(--glass-2)", color: "var(--text-1)", border: "1px solid var(--glass-border)" }}
+                >
+                  {isFollowing ? <UserCheck className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
+                  {isFollowing ? 'Following' : 'Follow'}
+                </button>
+              </div>
             </div>
 
-            {/* Name */}
-            <h1 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(48px, 8vw, 80px)", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1, color: "#FFFFFF" }}>
-              {artist.artist_name}
-            </h1>
-
-            {/* Stats */}
-            <div className="flex items-center justify-center sm:justify-start gap-1 text-sm text-white/60 mb-6">
-              <span>Last release:</span>
-              <span className={isRecent ? "text-cyan-400" : "text-white/80"}>
-                {isRecent ? "Recently" : lastRelease ? new Date(lastRelease).getFullYear() : "—"}
-              </span>
-              <span className="mx-2">•</span>
-              <span>Albums: <strong className="text-white">{albums.length}</strong></span>
-              <span className="mx-2">•</span>
-              <span>Tracks: <strong className="text-white">{tracks.length}</strong></span>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center justify-center sm:justify-start gap-3">
-              <Button 
-                onClick={handlePlayAll}
-                disabled={tracks.length === 0}
-                className="bg-white text-black hover:bg-white/90 font-semibold px-6 h-11 rounded-full gap-2"
-              >
-                <Play className="w-5 h-5" fill="currentColor" />
-                PLAY
-              </Button>
-              <Button
-                variant="outline"
-                onClick={toggleFollow}
-                className="border-white/30 text-white hover:bg-white/10 font-semibold px-6 h-11 rounded-full gap-2"
-              >
-                {isFollowing ? (
-                  <>
-                    <UserCheck className="w-5 h-5" />
-                    Following
-                  </>
-                ) : (
-                  <>
-                    <Bell className="w-5 h-5" />
-                    Subscribe
-                  </>
-                )}
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-11 w-11 rounded-full border border-white/20 hover:bg-white/10"
-                  >
-                    <MoreHorizontal className="w-5 h-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-[#1a1a1a] border-white/10">
-                  <DropdownMenuItem onClick={() => setShowMessages(true)} className="text-white hover:bg-white/10">
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Message
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="text-white hover:bg-white/10">
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Share
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
-            {/* Social Links & Website */}
-            {(artist.social_links || artist.website) && (
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-4">
-                {artist.website && (
-                  <a
-                    href={artist.website.startsWith('http') ? artist.website : `https://${artist.website}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-sm text-white/80 hover:text-white"
-                  >
-                    <Globe className="w-4 h-4" />
-                    Website
-                  </a>
-                )}
-                {artist.social_links?.instagram && (
-                  <a
-                    href={`https://instagram.com/${artist.social_links.instagram.replace('@', '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500 transition-all text-sm text-white/80 hover:text-white"
-                  >
-                    <Instagram className="w-4 h-4" />
-                    Instagram
-                  </a>
-                )}
-                {artist.social_links?.twitter && (
-                  <a
-                    href={`https://twitter.com/${artist.social_links.twitter.replace('@', '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-sky-500/80 transition-colors text-sm text-white/80 hover:text-white"
-                  >
-                    <Twitter className="w-4 h-4" />
-                    Twitter
-                  </a>
-                )}
-                {artist.social_links?.youtube && (
-                  <a
-                    href={artist.social_links.youtube.startsWith('http') ? artist.social_links.youtube : `https://youtube.com/${artist.social_links.youtube}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-red-600/80 transition-colors text-sm text-white/80 hover:text-white"
-                  >
-                    <Youtube className="w-4 h-4" />
-                    YouTube
-                  </a>
-                )}
-                {artist.social_links?.facebook && (
-                  <a
-                    href={artist.social_links.facebook.startsWith('http') ? artist.social_links.facebook : `https://facebook.com/${artist.social_links.facebook}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-blue-600/80 transition-colors text-sm text-white/80 hover:text-white"
-                  >
-                    <Facebook className="w-4 h-4" />
-                    Facebook
-                  </a>
-                )}
-                {artist.social_links?.spotify && (
-                  <a
-                    href={artist.social_links.spotify}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-green-600/80 transition-colors text-sm text-white/80 hover:text-white"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Spotify
-                  </a>
-                )}
-                {artist.social_links?.appleMusic && (
-                  <a
-                    href={artist.social_links.appleMusic}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-pink-500/80 transition-colors text-sm text-white/80 hover:text-white"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Apple Music
-                  </a>
-                )}
+            {/* Albums list */}
+            {albums.length > 0 && (
+              <div className="mb-4">
+                <p className="font-body mb-2" style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-4)" }}>RELEASES</p>
+                <div className="space-y-2">
+                  {albums.map(album => (
+                    <button
+                      key={album.id}
+                      onClick={() => navigate(`/album/${album.id}`)}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all hover:bg-white/5"
+                      style={{ border: "1px solid transparent" }}
+                    >
+                      <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0" style={{ background: "var(--glass-2)" }}>
+                        {album.cover_art_path ? (
+                          <img src={getAlbumCover(album)} alt={album.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center"><Music className="w-4 h-4" style={{ color: "var(--text-4)" }} /></div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="truncate font-body" style={{ fontWeight: 600, fontSize: 13, color: "var(--text-1)" }}>{album.title}</p>
+                        <p className="font-body" style={{ fontSize: 11, color: "var(--text-4)" }}>
+                          {album.release_type || 'Album'} · {album.release_date ? new Date(album.release_date).getFullYear() : '—'}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
-          </div>
-        </div>
-      </section>
 
-      {/* Tracks Section */}
-      {tracks.length > 0 && (
-        <section className="px-4 sm:px-6 lg:px-8 py-6">
-          <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(28px, 4vw, 40px)", letterSpacing: "0.04em", textTransform: "uppercase", background: "linear-gradient(180deg, #FFFFFF 0%, #999999 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>TRACKS</h2>
-          <div className="space-y-2">
-            {tracks.slice(0, 10).map((track, idx) => (
-              <div 
-                key={track.id}
-                onClick={() => handlePlayTrack(track)}
-                className={`flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-colors ${
-                  currentTrack?.id === track.id ? 'bg-cyan-500/10' : 'hover:bg-white/5'
-                }`}
-              >
-                <span className="w-6 text-center text-white/40 text-sm">{idx + 1}</span>
-                <div className="w-12 h-12 rounded-lg overflow-hidden bg-white/5 flex-shrink-0">
-                  {(track.album_cover_path || track.albums?.cover_art_path) ? (
-                    <img 
-                      src={supabase.storage.from(track.album_cover_bucket || 'album-covers').getPublicUrl(track.album_cover_path || track.albums?.cover_art_path).data.publicUrl}
-                      alt={track.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Music className="w-5 h-5 text-white/30" />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`font-medium truncate ${currentTrack?.id === track.id ? 'text-cyan-400' : 'text-white'}`}>
-                    {track.title}
-                  </p>
-                  <p className="text-sm text-white/50 truncate">{track.artist_name}</p>
-                </div>
-                {track.release_date && new Date(track.release_date) > new Date() && (
-                  <Button
-                    size="sm"
-                    variant={presavedTracks.has(track.id) ? "default" : "outline"}
-                    onClick={(e) => { e.stopPropagation(); togglePresave(track.id); }}
-                    className="rounded-full"
+            {/* Tracks list */}
+            <p className="font-body mb-2" style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-4)" }}>TRACKS</p>
+            <div className="space-y-0.5">
+              {tracks.slice(0, 20).map((track, index) => {
+                const isActive = currentTrack?.id === track.id;
+                return (
+                  <button
+                    key={track.id}
+                    onClick={() => handlePlayTrack(track)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all"
+                    style={{
+                      background: isActive ? "var(--glass-2)" : "transparent",
+                      border: isActive ? "1px solid var(--glass-border-lit)" : "1px solid transparent",
+                      backdropFilter: isActive ? "blur(20px)" : "none",
+                    }}
                   >
-                    {presavedTracks.has(track.id) ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Albums Section - Filter by release_type */}
-      {albums.filter(a => (a as any).release_type === 'album' || (!(a as any).release_type && !a.title?.toLowerCase().includes('single') && !a.title?.toLowerCase().includes('ep'))).length > 0 && (
-        <section className="px-4 sm:px-6 lg:px-8 py-6">
-          <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(28px, 4vw, 40px)", letterSpacing: "0.04em", textTransform: "uppercase", background: "linear-gradient(180deg, #FFFFFF 0%, #999999 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>ALBUMS</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {albums.filter(a => (a as any).release_type === 'album' || (!(a as any).release_type && !a.title?.toLowerCase().includes('single') && !a.title?.toLowerCase().includes('ep'))).map((album) => (
-              <div 
-                key={album.id}
-                onClick={() => navigate(`/album/${album.id}`)}
-                className="cursor-pointer group"
-              >
-                <div className="aspect-square rounded-lg overflow-hidden bg-white/5 mb-3 relative shadow-lg">
-                  {album.cover_art_path ? (
-                    <img
-                      src={getAlbumCover(album)}
-                      alt={album.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Music className="w-12 h-12 text-white/20" />
+                    <span className="font-body" style={{ fontSize: 13, color: isActive ? 'hsl(var(--coral))' : 'var(--text-4)', width: 20, textAlign: 'center', flexShrink: 0 }}>
+                      {isActive && isPlaying ? '▸' : index + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate font-body" style={{ fontWeight: 600, fontSize: 14, color: isActive ? 'hsl(var(--coral))' : 'var(--text-1)' }}>
+                        {track.title}
+                      </p>
                     </div>
-                  )}
-                  {/* Play overlay on hover */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <div className="w-12 h-12 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
-                      <Play className="w-5 h-5 text-black ml-0.5" fill="currentColor" />
-                    </div>
-                  </div>
-                </div>
-                <p className="font-semibold text-white truncate">{album.title}</p>
-                <p className="text-sm text-white/50 flex items-center gap-1">
-                  <span className="text-xs bg-white/10 px-1.5 py-0.5 rounded">Album</span>
-                  {album.release_date ? new Date(album.release_date).getFullYear() : '—'}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* EPs Section */}
-      {albums.filter(a => (a as any).release_type === 'ep').length > 0 && (
-        <section className="px-4 sm:px-6 lg:px-8 py-6">
-          <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(28px, 4vw, 40px)", letterSpacing: "0.04em", textTransform: "uppercase", background: "linear-gradient(180deg, #FFFFFF 0%, #999999 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>EPS</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {albums.filter(a => (a as any).release_type === 'ep').map((album) => (
-              <div 
-                key={album.id}
-                onClick={() => navigate(`/album/${album.id}`)}
-                className="cursor-pointer group"
-              >
-                <div className="aspect-square rounded-lg overflow-hidden bg-white/5 mb-3 relative shadow-lg">
-                  {album.cover_art_path ? (
-                    <img
-                      src={getAlbumCover(album)}
-                      alt={album.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Music className="w-12 h-12 text-white/20" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <div className="w-12 h-12 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
-                      <Play className="w-5 h-5 text-black ml-0.5" fill="currentColor" />
-                    </div>
-                  </div>
-                </div>
-                <p className="font-semibold text-white truncate">{album.title}</p>
-                <p className="text-sm text-white/50 flex items-center gap-1">
-                  <span className="text-xs bg-purple-500/30 text-purple-300 px-1.5 py-0.5 rounded">EP</span>
-                  {album.release_date ? new Date(album.release_date).getFullYear() : '—'}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Singles Section - Show albums marked as singles or tracks without album_id */}
-      {albums.filter(a => (a as any).release_type === 'single').length > 0 && (
-        <section className="px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(28px, 4vw, 40px)", letterSpacing: "0.04em", textTransform: "uppercase", background: "linear-gradient(180deg, #FFFFFF 0%, #999999 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>SINGLES</h2>
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => scrollAlbums('left')}
-                className="h-8 w-8 rounded-full border border-white/20 hover:bg-white/10"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => scrollAlbums('right')}
-                className="h-8 w-8 rounded-full border border-white/20 hover:bg-white/10"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </Button>
+                    <span className="font-body" style={{ fontSize: 12, color: "var(--text-4)" }}>
+                      {formatDuration(track.duration || 0)}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
-          
-          <div 
-            ref={albumScrollRef}
-            className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            {albums.filter(a => (a as any).release_type === 'single').map((album) => (
-              <div 
-                key={album.id}
-                onClick={() => navigate(`/album/${album.id}`)}
-                className="flex-shrink-0 w-40 sm:w-48 cursor-pointer group"
+
+          {/* CENTER: Artist Photo */}
+          <div className="lg:w-[40%] flex items-center justify-center p-4 md:p-8 order-1 lg:order-2 flex-shrink-0">
+            <div className="relative" style={{ width: "min(380px, 80vw)", aspectRatio: "1" }}>
+              <div className="absolute -inset-8 rounded-full" style={{ background: "hsl(var(--coral) / 0.12)", filter: "blur(60px)" }} />
+              <div
+                className="relative w-full h-full rounded-full overflow-hidden"
+                style={{
+                  boxShadow: "0 20px 60px hsl(0 0% 0% / 0.6), 0 0 80px hsl(var(--coral) / 0.08)",
+                  border: "1px solid var(--glass-border)",
+                }}
               >
-                <div className="aspect-square rounded-lg overflow-hidden bg-white/5 mb-3 relative shadow-lg">
-                  {album.cover_art_path ? (
-                    <img
-                      src={getAlbumCover(album)}
-                      alt={album.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Music className="w-12 h-12 text-white/20" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <div className="w-12 h-12 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
-                      <Play className="w-5 h-5 text-black ml-0.5" fill="currentColor" />
+                {profileImage ? (
+                  <img src={profileImage} alt={artist.artist_name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(var(--coral) / 0.3), hsl(var(--secondary) / 0.3))" }}>
+                    <span className="font-display" style={{ fontSize: 80, color: "var(--text-2)" }}>
+                      {artist.artist_name?.charAt(0)?.toUpperCase() || 'A'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT: Bio, Gallery, Socials */}
+          <div className="lg:w-[30%] flex flex-col p-4 md:p-6 lg:p-8 order-3">
+            <div className="mb-4 lg:mb-6 text-center lg:text-left">
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 mb-2">
+                {genres.map((g: string) => (
+                  <span key={g} className="font-body px-2 py-0.5 rounded-full" style={{ fontSize: 10, background: "var(--glass-2)", color: "var(--text-3)", border: "1px solid var(--glass-border)" }}>{g}</span>
+                ))}
+                {artist.verified && (
+                  <span className="font-body px-2 py-0.5 rounded-full" style={{ fontSize: 10, background: "hsl(var(--coral) / 0.2)", color: "hsl(var(--coral))" }}>✓ Verified</span>
+                )}
+              </div>
+              <h2 className="font-display" style={{ fontSize: "clamp(28px, 3vw, 48px)", lineHeight: 1.1, color: "var(--text-1)" }}>
+                {artist.artist_name}
+              </h2>
+            </div>
+
+            <ScrollArea className="flex-1 min-h-0">
+              <div className="pr-2 space-y-6">
+                {/* Bio */}
+                {artist.bio && (
+                  <div>
+                    <p className="font-body mb-1" style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-4)" }}>ABOUT</p>
+                    <p className="font-body" style={{ fontSize: 13, lineHeight: 1.8, color: "var(--text-2)", whiteSpace: "pre-wrap" }}>
+                      {artist.bio}
+                    </p>
+                  </div>
+                )}
+
+                {/* Social Links */}
+                {hasSocials && (
+                  <div>
+                    <p className="font-body mb-2" style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-4)" }}>LINKS</p>
+                    <div className="flex flex-wrap gap-2">
+                      {artist.website && (
+                        <a href={artist.website.startsWith('http') ? artist.website : `https://${artist.website}`} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-body text-xs transition-all hover:scale-105"
+                          style={{ background: "var(--glass-2)", color: "var(--text-2)", border: "1px solid var(--glass-border)" }}>
+                          <Globe className="w-3 h-3" /> Website
+                        </a>
+                      )}
+                      {socialLinks.instagram && (
+                        <a href={`https://instagram.com/${socialLinks.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-body text-xs transition-all hover:scale-105"
+                          style={{ background: "var(--glass-2)", color: "var(--text-2)", border: "1px solid var(--glass-border)" }}>
+                          <Instagram className="w-3 h-3" /> Instagram
+                        </a>
+                      )}
+                      {socialLinks.twitter && (
+                        <a href={`https://twitter.com/${socialLinks.twitter.replace('@', '')}`} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-body text-xs transition-all hover:scale-105"
+                          style={{ background: "var(--glass-2)", color: "var(--text-2)", border: "1px solid var(--glass-border)" }}>
+                          <Twitter className="w-3 h-3" /> Twitter
+                        </a>
+                      )}
+                      {socialLinks.youtube && (
+                        <a href={socialLinks.youtube.startsWith('http') ? socialLinks.youtube : `https://youtube.com/${socialLinks.youtube}`} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-body text-xs transition-all hover:scale-105"
+                          style={{ background: "var(--glass-2)", color: "var(--text-2)", border: "1px solid var(--glass-border)" }}>
+                          <Youtube className="w-3 h-3" /> YouTube
+                        </a>
+                      )}
+                      {socialLinks.facebook && (
+                        <a href={socialLinks.facebook.startsWith('http') ? socialLinks.facebook : `https://facebook.com/${socialLinks.facebook}`} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-body text-xs transition-all hover:scale-105"
+                          style={{ background: "var(--glass-2)", color: "var(--text-2)", border: "1px solid var(--glass-border)" }}>
+                          <Facebook className="w-3 h-3" /> Facebook
+                        </a>
+                      )}
                     </div>
                   </div>
-                </div>
-                <p className="font-semibold text-white truncate">{album.title}</p>
-                <p className="text-sm text-white/50 flex items-center gap-1">
-                  <span className="text-xs bg-cyan-500/30 text-cyan-300 px-1.5 py-0.5 rounded">Single</span>
-                  {album.release_date ? new Date(album.release_date).getFullYear() : '—'}
-                </p>
+                )}
+
+                {/* Gallery */}
+                {gallery.length > 0 && (
+                  <div>
+                    <p className="font-body mb-2" style={{ fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-4)" }}>GALLERY</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {gallery.map(item => (
+                        <div key={item.id} className="aspect-square rounded-xl overflow-hidden group cursor-pointer" style={{ border: "1px solid var(--glass-border)" }}>
+                          <img
+                            src={supabase.storage.from('artist-gallery').getPublicUrl(item.image_path).data.publicUrl}
+                            alt={item.caption || 'Gallery'}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            ))}
+            </ScrollArea>
           </div>
-        </section>
-      )}
+        </div>
+      </div>
 
-      {/* Photo Gallery Section */}
-      {gallery.length > 0 && (
-        <section className="px-4 sm:px-6 lg:px-8 py-6">
-          <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(28px, 4vw, 40px)", letterSpacing: "0.04em", textTransform: "uppercase", background: "linear-gradient(180deg, #FFFFFF 0%, #999999 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>GALLERY</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {gallery.map((item) => (
-              <div 
-                key={item.id}
-                className="aspect-square rounded-lg overflow-hidden bg-white/5 cursor-pointer group"
-              >
-                <img
-                  src={supabase.storage.from('artist-gallery').getPublicUrl(item.image_path).data.publicUrl}
-                  alt={item.caption || 'Gallery image'}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* About Section */}
-      {artist.bio && (
-        <section className="px-4 sm:px-6 lg:px-8 py-6">
-          <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(28px, 4vw, 40px)", letterSpacing: "0.04em", textTransform: "uppercase", background: "linear-gradient(180deg, #FFFFFF 0%, #999999 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>ABOUT</h2>
-          <p className="text-white/70 leading-relaxed max-w-3xl">{artist.bio}</p>
-        </section>
-      )}
-
-      {/* Direct Message Panel */}
       <DirectMessagePanel
         open={showMessages}
         onClose={() => setShowMessages(false)}
         recipientId={artist.user_id}
         recipientName={artist.artist_name}
-        recipientAvatar={artist.profile_image_path ? getImageUrl(artist.profile_image_path) : undefined}
+        recipientAvatar={profileImage || undefined}
       />
     </div>
   );
