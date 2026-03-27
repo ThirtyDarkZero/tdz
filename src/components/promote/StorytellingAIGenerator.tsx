@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Sparkles, Copy, Check, RotateCcw, Loader2, BookOpen } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Sparkles, Copy, Check, RotateCcw, Loader2, BookOpen, Zap, Calendar, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useArtistNarrativeContext, serializeNarrativeContext } from "@/hooks/useArtistNarrativeContext";
 
 const OUTPUT_TYPES = [
   { id: "caption", label: "📱 Caption", desc: "Instagram / TikTok" },
@@ -13,14 +15,18 @@ const OUTPUT_TYPES = [
   { id: "press-release", label: "📰 Press", desc: "Press release" },
   { id: "email", label: "📧 Email", desc: "Fan newsletter" },
   { id: "announcement", label: "📢 Drop", desc: "Release announcement" },
+  { id: "release-plan", label: "🗓️ Release Plan", desc: "Full cycle campaign" },
+  { id: "smart-link-copy", label: "🔗 Smart Link", desc: "Link page copy" },
+  { id: "tour-promo", label: "🎪 Tour Promo", desc: "Show promotion" },
 ];
 
-interface NarrativeData {
-  origin_story: string;
-  artist_mission: string;
-  emotional_core: string;
-  target_audience: string;
-  brand_voice: string;
+interface ReleasePlan {
+  release_title: string;
+  campaign_theme: string;
+  pre_release: { week: string; actions: string[]; content_pieces: string[]; email_subject?: string }[];
+  release_week: { day: string; actions: string[]; content_pieces: string[] }[];
+  post_release: { week: string; actions: string[]; content_pieces: string[] }[];
+  key_milestones: string[];
 }
 
 export function StorytellingAIGenerator() {
@@ -28,40 +34,12 @@ export function StorytellingAIGenerator() {
   const [selectedOutput, setSelectedOutput] = useState("caption");
   const [generating, setGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<string | null>(null);
+  const [releasePlan, setReleasePlan] = useState<ReleasePlan | null>(null);
   const [copied, setCopied] = useState(false);
-  const [narrative, setNarrative] = useState<NarrativeData | null>(null);
-  const [loadingNarrative, setLoadingNarrative] = useState(true);
+  const [showPlanDetails, setShowPlanDetails] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    loadNarrative();
-  }, []);
-
-  const loadNarrative = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase
-        .from("artist_narrative")
-        .select("origin_story, artist_mission, emotional_core, target_audience, brand_voice")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (data) {
-        setNarrative({
-          origin_story: data.origin_story || "",
-          artist_mission: data.artist_mission || "",
-          emotional_core: data.emotional_core || "",
-          target_audience: data.target_audience || "",
-          brand_voice: data.brand_voice || "",
-        });
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingNarrative(false);
-    }
-  };
-
-  const narrativeComplete = narrative && Object.values(narrative).some(v => v.trim().length > 0);
+  const ctx = useArtistNarrativeContext();
+  const narrativeComplete = ctx.identity.origin_story || ctx.identity.artist_mission || ctx.identity.brand_voice;
 
   const handleGenerate = async () => {
     if (!narrativeComplete) {
@@ -70,24 +48,42 @@ export function StorytellingAIGenerator() {
     }
     setGenerating(true);
     setGeneratedContent(null);
+    setReleasePlan(null);
+
+    const serialized = serializeNarrativeContext(ctx);
+
     try {
-      const { data, error } = await supabase.functions.invoke("ai-music-features", {
-        body: {
-          type: "storytelling-content",
-          data: {
-            content_type: selectedOutput,
-            origin_story: narrative?.origin_story || "",
-            artist_mission: narrative?.artist_mission || "",
-            emotional_core: narrative?.emotional_core || "",
-            target_audience: narrative?.target_audience || "",
-            brand_voice: narrative?.brand_voice || "",
+      if (selectedOutput === "release-plan") {
+        // Use campaign-brain for release plans
+        const { data, error } = await supabase.functions.invoke("campaign-brain", {
+          body: {
+            action: "release-cycle-plan",
+            narrative_context: serialized,
+            release_phase: ctx.releaseCycle.phase,
             extra_context: extraContext.trim(),
           },
-        },
-      });
-      if (error) throw error;
-      const result = data?.result;
-      setGeneratedContent(typeof result === "string" ? result : JSON.stringify(result, null, 2));
+        });
+        if (error) throw error;
+        if (data?.result && typeof data.result === "object") {
+          setReleasePlan(data.result);
+        } else {
+          setGeneratedContent(typeof data?.result === "string" ? data.result : JSON.stringify(data?.result, null, 2));
+        }
+      } else {
+        // Use campaign-brain for all content types
+        const { data, error } = await supabase.functions.invoke("campaign-brain", {
+          body: {
+            action: "generate-content",
+            narrative_context: serialized,
+            content_type: selectedOutput,
+            release_phase: ctx.releaseCycle.phase,
+            extra_context: extraContext.trim(),
+          },
+        });
+        if (error) throw error;
+        const result = data?.result;
+        setGeneratedContent(typeof result === "string" ? result : JSON.stringify(result, null, 2));
+      }
     } catch (err: any) {
       toast.error(err.message || "Generation failed");
     } finally {
@@ -96,14 +92,17 @@ export function StorytellingAIGenerator() {
   };
 
   const handleCopy = () => {
-    if (!generatedContent) return;
-    navigator.clipboard.writeText(generatedContent);
+    const text = releasePlan ? JSON.stringify(releasePlan, null, 2) : generatedContent;
+    if (!text) return;
+    navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
     toast.success("Copied!");
   };
 
-  const filledFields = narrative ? Object.values(narrative).filter(v => v.trim().length > 0).length : 0;
+  const togglePlanSection = (key: string) => {
+    setShowPlanDetails(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
   return (
     <div className="space-y-6">
@@ -113,15 +112,21 @@ export function StorytellingAIGenerator() {
           <BookOpen className={`w-5 h-5 ${narrativeComplete ? "text-primary" : "text-destructive"}`} />
           <div className="flex-1">
             <p className="text-sm font-semibold">
-              {narrativeComplete ? `Your Story is loaded (${filledFields}/5 fields)` : "Your Story is empty"}
+              {narrativeComplete ? "Story + Activity Loaded" : "Your Story is empty"}
             </p>
             <p className="text-xs text-muted-foreground">
               {narrativeComplete
-                ? "AI will use your saved story to write content that sounds like YOU"
-                : "Go to 'Your Story' tab and fill it out first — AI needs your voice to write for you"}
+                ? `AI knows your voice, ${ctx.activity.total_tracks} tracks, ${ctx.activity.total_albums} releases, and your ${ctx.releaseCycle.phase.replace("-", " ")} status`
+                : "Go to 'Your Story' tab and fill it out first"}
             </p>
           </div>
-          {loadingNarrative && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+          {ctx.loading && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+          {ctx.releaseCycle.phase !== "no-release" && (
+            <Badge variant="outline" className="text-[10px] gap-1">
+              <Zap className="w-3 h-3" />
+              {ctx.releaseCycle.phase.replace("-", " ")}
+            </Badge>
+          )}
         </div>
       </Card>
 
@@ -143,6 +148,7 @@ export function StorytellingAIGenerator() {
               onClick={() => {
                 setSelectedOutput(type.id);
                 setGeneratedContent(null);
+                setReleasePlan(null);
               }}
             >
               <span className="text-lg block">{type.label}</span>
@@ -152,7 +158,7 @@ export function StorytellingAIGenerator() {
         </div>
       </div>
 
-      {/* Step 2: Extra context (optional) */}
+      {/* Step 2: Extra context */}
       <div className="space-y-2">
         <h3 className="text-lg font-bold flex items-center gap-2">
           <span className="w-7 h-7 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-bold">2</span>
@@ -160,13 +166,15 @@ export function StorytellingAIGenerator() {
         </h3>
         <Textarea
           rows={3}
-          placeholder="e.g. 'I just dropped a new single called Midnight Run' or 'I'm performing at SXSW next month'"
+          placeholder={selectedOutput === "release-plan"
+            ? "e.g. 'My new EP drops March 15th, 5 tracks, called Midnight Sessions'"
+            : "e.g. 'I just dropped a new single called Midnight Run'"}
           value={extraContext}
           onChange={(e) => setExtraContext(e.target.value)}
           className="bg-background/50 border-border/50 resize-y text-base"
         />
         <p className="text-xs text-muted-foreground">
-          Add specific details about what you're promoting. Your saved story handles the rest.
+          AI already knows your story, metrics, releases, and tour dates. Add specific details here.
         </p>
       </div>
 
@@ -185,14 +193,103 @@ export function StorytellingAIGenerator() {
       {/* Loading skeleton */}
       {generating && (
         <div className="space-y-2">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-4 rounded bg-muted/30 animate-pulse" style={{ width: i === 3 ? "60%" : "100%" }} />
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-4 rounded bg-muted/30 animate-pulse" style={{ width: i === 4 ? "40%" : i === 3 ? "70%" : "100%" }} />
           ))}
         </div>
       )}
 
-      {/* Result */}
-      {generatedContent && (
+      {/* Release Plan Result */}
+      {releasePlan && (
+        <Card className="p-5 bg-card/50 border-primary/20 space-y-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs text-primary font-semibold">✦ AI Release Cycle Plan</span>
+              <h3 className="text-lg font-bold mt-1">{releasePlan.release_title}</h3>
+              <p className="text-sm text-muted-foreground italic">{releasePlan.campaign_theme}</p>
+            </div>
+            <Button size="sm" variant="outline" onClick={handleCopy} className="gap-1">
+              {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+              {copied ? "Copied" : "Copy"}
+            </Button>
+          </div>
+
+          {/* Key Milestones */}
+          <div className="flex flex-wrap gap-2">
+            {releasePlan.key_milestones.map((m, i) => (
+              <Badge key={i} variant="outline" className="text-xs">{m}</Badge>
+            ))}
+          </div>
+
+          {/* Pre-Release */}
+          <div>
+            <button onClick={() => togglePlanSection("pre")} className="flex items-center gap-2 w-full text-left">
+              <Calendar className="w-4 h-4 text-yellow-500" />
+              <span className="font-semibold text-sm">Pre-Release ({releasePlan.pre_release.length} weeks)</span>
+              {showPlanDetails["pre"] ? <ChevronUp className="w-4 h-4 ml-auto" /> : <ChevronDown className="w-4 h-4 ml-auto" />}
+            </button>
+            {showPlanDetails["pre"] && (
+              <div className="mt-3 space-y-3 pl-6 border-l-2 border-yellow-500/20">
+                {releasePlan.pre_release.map((w, i) => (
+                  <div key={i} className="space-y-1">
+                    <p className="text-xs font-bold text-yellow-500">{w.week}</p>
+                    {w.actions.map((a, j) => <p key={j} className="text-xs text-muted-foreground">• {a}</p>)}
+                    {w.content_pieces.map((c, j) => <p key={j} className="text-xs text-foreground/80">📝 {c}</p>)}
+                    {w.email_subject && <p className="text-xs text-primary">📧 Email: {w.email_subject}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Release Week */}
+          <div>
+            <button onClick={() => togglePlanSection("release")} className="flex items-center gap-2 w-full text-left">
+              <Zap className="w-4 h-4 text-primary" />
+              <span className="font-semibold text-sm">Release Week ({releasePlan.release_week.length} days)</span>
+              {showPlanDetails["release"] ? <ChevronUp className="w-4 h-4 ml-auto" /> : <ChevronDown className="w-4 h-4 ml-auto" />}
+            </button>
+            {showPlanDetails["release"] && (
+              <div className="mt-3 space-y-3 pl-6 border-l-2 border-primary/20">
+                {releasePlan.release_week.map((d, i) => (
+                  <div key={i} className="space-y-1">
+                    <p className="text-xs font-bold text-primary">{d.day}</p>
+                    {d.actions.map((a, j) => <p key={j} className="text-xs text-muted-foreground">• {a}</p>)}
+                    {d.content_pieces.map((c, j) => <p key={j} className="text-xs text-foreground/80">📝 {c}</p>)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Post-Release */}
+          <div>
+            <button onClick={() => togglePlanSection("post")} className="flex items-center gap-2 w-full text-left">
+              <TrendingUp className="w-4 h-4 text-blue-500" />
+              <span className="font-semibold text-sm">Post-Release ({releasePlan.post_release.length} weeks)</span>
+              {showPlanDetails["post"] ? <ChevronUp className="w-4 h-4 ml-auto" /> : <ChevronDown className="w-4 h-4 ml-auto" />}
+            </button>
+            {showPlanDetails["post"] && (
+              <div className="mt-3 space-y-3 pl-6 border-l-2 border-blue-500/20">
+                {releasePlan.post_release.map((w, i) => (
+                  <div key={i} className="space-y-1">
+                    <p className="text-xs font-bold text-blue-500">{w.week}</p>
+                    {w.actions.map((a, j) => <p key={j} className="text-xs text-muted-foreground">• {a}</p>)}
+                    {w.content_pieces.map((c, j) => <p key={j} className="text-xs text-foreground/80">📝 {c}</p>)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <Button size="sm" variant="outline" onClick={handleGenerate} className="gap-2 w-full">
+            <RotateCcw className="w-4 h-4" /> Regenerate Plan
+          </Button>
+        </Card>
+      )}
+
+      {/* Text Result */}
+      {generatedContent && !releasePlan && (
         <Card className="p-5 bg-card/50 border-primary/20 space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-xs text-primary font-semibold">✦ AI Generated — {OUTPUT_TYPES.find(t => t.id === selectedOutput)?.desc}</span>
