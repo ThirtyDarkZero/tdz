@@ -485,7 +485,7 @@ function Section4Studio({ navigate }: { navigate: (p: string) => void }) {
 
       <Reveal delay={0.1}>
         <div className="mx-auto overflow-hidden flex flex-col lg:flex-row"
-          style={{ maxWidth: 1100, border: "1px solid #222", borderRadius: 20, background: "#141414", minHeight: 520 }}>
+          style={{ maxWidth: 1100, border: "1px solid #222", borderRadius: 20, background: "#141414", minHeight: "auto" }}>
           {/* Sidebar */}
           <div className="w-full lg:w-64 flex-shrink-0 p-4 flex flex-col" style={{ background: "#1A1A1A", borderRight: "1px solid #222" }}>
             <div className="flex items-center justify-between mb-4">
