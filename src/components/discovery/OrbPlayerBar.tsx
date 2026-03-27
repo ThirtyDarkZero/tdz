@@ -129,9 +129,9 @@ export function OrbPlayerBar() {
   const [showQueue, setShowQueue] = useState(false);
   const [isPill, setIsPill] = useState(false);
   const [fullView, setFullView] = useState<FullView>("artwork");
+  const [visTheme, setVisTheme] = useState<VisTheme>("bars");
   const [eqValues, setEqValues] = useState([0, 0, 0, 0, 0, 0, 0]);
   const [isLiked, setIsLiked] = useState(false);
-  const [isShuffle, setIsShuffle] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>();
 
@@ -140,34 +140,36 @@ export function OrbPlayerBar() {
   const pct = dur > 0 ? Math.min((currentTime / dur) * 100, 100) : 0;
   const circumference = 2 * Math.PI * 62;
 
-  // Visualizer
+  // Resolve cover URL from storage path
+  const coverUrl = useMemo(() => {
+    if (!currentTrack) return null;
+    const raw = currentTrack.album_cover_path || currentTrack.thumbnail || null;
+    if (!raw) return null;
+    if (raw.startsWith("http") || raw.startsWith("data:") || raw.startsWith("blob:")) return raw;
+    const bucket = currentTrack.album_cover_bucket || "album-covers";
+    return supabase.storage.from(bucket).getPublicUrl(raw).data.publicUrl;
+  }, [currentTrack]);
+
+  // Visualizer with multiple themes
   useEffect(() => {
-    if (fullView !== "visualizer" || !canvasRef.current || !isPlaying) {
+    if (fullView !== "visualizer" || !canvasRef.current) {
       if (animRef.current) cancelAnimationFrame(animRef.current);
       return;
     }
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    const renderers: Record<VisTheme, (ctx: CanvasRenderingContext2D, w: number, h: number, t: number) => void> = {
+      bars: drawBars, aurora: drawAurora, waves: drawWaves, sphere: drawSphere, pulse: drawPulse,
+    };
+    const render = renderers[visTheme] || drawBars;
     const draw = () => {
       animRef.current = requestAnimationFrame(draw);
-      ctx.fillStyle = "rgba(3,3,15,0.12)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      const bars = 48;
-      const gap = canvas.width / bars;
-      const barW = gap * 0.65;
-      for (let i = 0; i < bars; i++) {
-        const h = (Math.sin(Date.now() * 0.003 + i * 0.4) * 0.3 + 0.5 + Math.random() * 0.2) * canvas.height * 0.8;
-        const g = ctx.createLinearGradient(0, canvas.height - h, 0, canvas.height);
-        g.addColorStop(0, "#00CFFF");
-        g.addColorStop(1, "#8B5CF6");
-        ctx.fillStyle = g;
-        ctx.fillRect(i * gap + (gap - barW) / 2, canvas.height - h, barW, h);
-      }
+      render(ctx, canvas.width, canvas.height, Date.now());
     };
     draw();
     return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
-  }, [fullView, isPlaying]);
+  }, [fullView, visTheme, isPlaying]);
 
   // Lyrics from track
   const lyricsLines = useMemo(() => {
