@@ -316,8 +316,27 @@ export function OrbPlayerBar() {
 
           {/* Visualizer */}
           {fullView === "visualizer" && (
-            <div className="w-full flex items-center justify-center">
-              <canvas ref={canvasRef} width={500} height={320} className="w-full rounded-2xl" style={{ maxWidth: 500, maxHeight: 320 }} />
+            <div className="w-full flex flex-col items-center gap-4">
+              {/* Theme selector */}
+              <div className="flex gap-1.5 p-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                {VIS_THEMES.map(({ id, label, icon: Icon }) => (
+                  <button
+                    key={id}
+                    onClick={() => setVisTheme(id)}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-full font-body transition-all"
+                    style={{
+                      fontSize: 10, fontWeight: 600,
+                      background: visTheme === id ? CORAL : "transparent",
+                      color: visTheme === id ? "#000" : "var(--text-3)",
+                    }}
+                  >
+                    <Icon className="h-3 w-3" />
+                    <span className="hidden sm:inline">{label}</span>
+                  </button>
+                ))}
+              </div>
+              {/* Canvas */}
+              <canvas ref={canvasRef} width={500} height={300} className="w-full rounded-2xl" style={{ maxWidth: 500, maxHeight: 300, border: "1px solid rgba(255,255,255,0.04)" }} />
             </div>
           )}
 
