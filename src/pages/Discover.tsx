@@ -624,7 +624,7 @@ export default function Discover() {
 
                 {/* Hexagonal grid for albums — smaller cells */}
                 {(libraryFilter === "ALBUMS" || libraryFilter === "PLAYLISTS" || libraryFilter === "DOWNLOADED" || libraryFilter === "RECENT") && albums.length > 0 && (
-                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-1 px-1">
+                  <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-8 gap-[2px]">
                     {albums.map(album => (
                       <HexCell
                         key={album.id}
