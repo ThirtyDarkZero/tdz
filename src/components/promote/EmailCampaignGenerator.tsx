@@ -149,18 +149,20 @@ export function EmailCampaignGenerator() {
     if (!context.trim()) { toast.error("Add some context first"); return; }
     setGeneratingSubject(true);
     try {
-      const res = await supabase.functions.invoke("exec-agent-chat", {
+      const serialized = serializeNarrativeContext(narrativeCtx);
+      const { data, error } = await supabase.functions.invoke("campaign-brain", {
         body: {
-          messages: [
-            { role: "system", content: "You are an expert email subject line writer for musicians. Generate 1 compelling subject line. Return ONLY the subject line text, nothing else. No quotes." },
-            { role: "user", content: `Campaign type: ${campaignType}\nTone: ${tone}\nContext: ${context}` },
-          ],
+          action: "generate-content",
+          narrative_context: serialized,
+          content_type: "caption",
+          release_phase: narrativeCtx.releaseCycle.phase,
+          extra_context: `Generate 1 email subject line for a ${campaignType} campaign with ${tone} tone. Context: ${context}. Return ONLY the subject line text, nothing else.`,
         },
       });
-      if (res.error) throw res.error;
-      const line = (res.data?.response || res.data?.content || "").trim().replace(/^["']|["']$/g, "");
+      if (error) throw error;
+      const line = (typeof data?.result === "string" ? data.result : "").trim().replace(/^["']|["']$/g, "");
       setSubject(line);
-      toast.success("Subject line generated");
+      toast.success("Subject line generated from your story");
     } catch { toast.error("Failed to generate subject"); }
     finally { setGeneratingSubject(false); }
   };
