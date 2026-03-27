@@ -6,10 +6,9 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Zap, TrendingUp, TrendingDown, Activity, Target,
-  Calendar, CheckCircle2, AlertCircle, Flame, Award, Plus
+  Calendar, CheckCircle2, AlertCircle, Flame, Award, Plus, Sparkles, Loader2
 } from "lucide-react";
 import {
   AreaChart, Area,
@@ -17,6 +16,7 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useArtistNarrativeContext, serializeNarrativeContext } from "@/hooks/useArtistNarrativeContext";
 
 export const MomentumTracker = () => {
   const [momentumScore, setMomentumScore] = useState<any>(null);
@@ -26,6 +26,14 @@ export const MomentumTracker = () => {
   const [newMilestoneTitle, setNewMilestoneTitle] = useState("");
   const [newMilestoneTarget, setNewMilestoneTarget] = useState("");
   const [newMilestoneImpact, setNewMilestoneImpact] = useState("10");
+
+  // AI Insights
+  const [aiInsight, setAiInsight] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiActions, setAiActions] = useState<string | null>(null);
+  const [aiActionsLoading, setAiActionsLoading] = useState(false);
+
+  const ctx = useArtistNarrativeContext();
 
   useEffect(() => {
     loadMomentumData();
@@ -220,6 +228,78 @@ export const MomentumTracker = () => {
     }
   };
 
+  // AI-Powered Insight Generation
+  const generateAIInsight = async () => {
+    setAiLoading(true);
+    setAiInsight(null);
+    try {
+      const serialized = serializeNarrativeContext(ctx);
+      const { data, error } = await supabase.functions.invoke("campaign-brain", {
+        body: {
+          action: "generate-content",
+          narrative_context: serialized,
+          content_type: "caption",
+          release_phase: ctx.releaseCycle.phase,
+          extra_context: `Analyze this artist's momentum data and provide a strategic career assessment:
+
+MOMENTUM SCORE: ${momentumScore?.score || 0}/100
+- Release Velocity: ${momentumScore?.release_velocity || 0}
+- Engagement Rate: ${(momentumScore?.engagement_rate || 0).toFixed(1)}
+- Content Consistency: ${momentumScore?.content_consistency || 0}
+- Fan Growth: ${momentumScore?.fan_growth || 0}
+- Activity Streak: ${momentumScore?.streak_days || 0} days
+
+Milestones: ${milestones.length} set, ${milestones.filter(m => m.achieved).length} achieved
+
+Provide 3-4 paragraphs of strategic analysis:
+1. Current momentum assessment (what the numbers tell us)
+2. Biggest opportunity right now based on their release cycle
+3. Critical risk or gap that needs attention
+4. Specific next action (one thing to do THIS WEEK)
+
+Write like a label A&R meeting — direct, strategic, data-backed. Reference their actual metrics.`,
+        },
+      });
+      if (error) throw error;
+      setAiInsight(typeof data?.result === "string" ? data.result : JSON.stringify(data?.result));
+    } catch (err: any) {
+      toast.error(err.message || "Failed to generate insight");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const generateAIActions = async () => {
+    setAiActionsLoading(true);
+    setAiActions(null);
+    try {
+      const serialized = serializeNarrativeContext(ctx);
+      const { data, error } = await supabase.functions.invoke("campaign-brain", {
+        body: {
+          action: "generate-content",
+          narrative_context: serialized,
+          content_type: "caption",
+          release_phase: ctx.releaseCycle.phase,
+          extra_context: `Based on this artist's current momentum (score: ${momentumScore?.score || 0}/100), generate 5 SPECIFIC, actionable momentum boosters ranked by impact.
+
+For each action, provide:
+- The specific action (not generic — reference their actual releases, metrics, audience)
+- Expected momentum impact (High/Medium/Low)
+- Effort level (Low/Medium/High)
+- WHY this action matters for them specifically right now
+
+Format as a numbered list. Be direct and tactical — think label marketing meeting, not motivational poster.`,
+        },
+      });
+      if (error) throw error;
+      setAiActions(typeof data?.result === "string" ? data.result : JSON.stringify(data?.result));
+    } catch (err: any) {
+      toast.error(err.message || "Failed to generate actions");
+    } finally {
+      setAiActionsLoading(false);
+    }
+  };
+
   const performAction = async (action: string, impact: number) => {
     toast.success(`${action} - +${impact} momentum!`);
     // In a real implementation, this would trigger the actual action
@@ -228,7 +308,7 @@ export const MomentumTracker = () => {
 
   if (loading) {
     return (
-      <Card className="glass-card p-12 text-center">
+      <Card className="p-12 text-center bg-card/50">
         <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
         <p className="text-muted-foreground">Loading momentum data...</p>
       </Card>
@@ -252,13 +332,16 @@ export const MomentumTracker = () => {
         <div>
           <h2 className="text-2xl font-display font-bold">Momentum Dashboard</h2>
           <p className="text-sm text-muted-foreground">
-            Momentum is the new distribution - track and sustain your career growth
+            AI-powered career velocity tracking — your #1 predictor of long-term success
           </p>
         </div>
+        <Badge variant="outline" className="ml-auto gap-1 text-xs border-primary/30 text-primary">
+          <Sparkles className="w-3 h-3" /> AI Powered
+        </Badge>
       </div>
 
       {/* Momentum Score */}
-      <Card className="glass-card border-primary/30 bg-gradient-to-br from-primary/5 to-secondary/5">
+      <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-secondary/5">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
@@ -273,15 +356,12 @@ export const MomentumTracker = () => {
                 {(momentumScore?.score || 0) > 50 ? (
                   <TrendingUp className="w-3 h-3 text-green-500" />
                 ) : (
-                  <TrendingDown className="w-3 h-3 text-red-500" />
+                  <TrendingDown className="w-3 h-3 text-destructive" />
                 )}
                 {(momentumScore?.score || 0) > 50 ? "Growing" : "Needs attention"}
               </div>
             </div>
           </CardTitle>
-          <CardDescription>
-            Your career velocity - the #1 predictor of long-term success
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
@@ -322,117 +402,42 @@ export const MomentumTracker = () => {
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="factors">Factors</TabsTrigger>
           <TabsTrigger value="milestones">Milestones</TabsTrigger>
-          <TabsTrigger value="actions">Actions</TabsTrigger>
-          <TabsTrigger value="insights">Insights</TabsTrigger>
+          <TabsTrigger value="actions">AI Actions</TabsTrigger>
+          <TabsTrigger value="insights">AI Insights</TabsTrigger>
         </TabsList>
 
-        {/* Momentum Factors */}
+        {/* Factors Tab */}
         <TabsContent value="factors" className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-green-500" />
-                  Release Velocity
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Score</span>
-                  <Badge className="bg-green-500/20 text-green-500">
-                    {(momentumScore?.release_velocity || 0).toFixed(0)}
-                  </Badge>
-                </div>
-                <Progress value={momentumScore?.release_velocity || 0} className="h-2" />
-                <p className="text-xs text-muted-foreground">
-                  Tracks released in last 30 days × 20
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Target className="w-4 h-4 text-blue-500" />
-                  Engagement Rate
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Score</span>
-                  <Badge className="bg-blue-500/20 text-blue-500">
-                    {(momentumScore?.engagement_rate || 0).toFixed(1)}
-                  </Badge>
-                </div>
-                <Progress value={momentumScore?.engagement_rate || 0} className="h-2" />
-                <p className="text-xs text-muted-foreground">
-                  Likes ÷ Plays ratio
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-purple-500" />
-                  Content Consistency
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Score</span>
-                  <Badge className="bg-purple-500/20 text-purple-500">
-                    {(momentumScore?.content_consistency || 0).toFixed(0)}
-                  </Badge>
-                </div>
-                <Progress value={momentumScore?.content_consistency || 0} className="h-2" />
-                <p className="text-xs text-muted-foreground">
-                  Scheduled content events
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-orange-500" />
-                  Fan Growth
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Followers</span>
-                  <Badge className="bg-orange-500/20 text-orange-500">
-                    {momentumScore?.fan_growth || 0}
-                  </Badge>
-                </div>
-                <Progress value={Math.min(100, momentumScore?.fan_growth || 0)} className="h-2" />
-                <p className="text-xs text-muted-foreground">
-                  Total follower count
-                </p>
-              </CardContent>
-            </Card>
+            {[
+              { label: "Release Velocity", value: momentumScore?.release_velocity || 0, icon: Activity, color: "text-green-500", desc: "Tracks released in last 30 days × 20" },
+              { label: "Engagement Rate", value: momentumScore?.engagement_rate || 0, icon: Target, color: "text-blue-500", desc: "Likes ÷ Plays ratio" },
+              { label: "Content Consistency", value: momentumScore?.content_consistency || 0, icon: Calendar, color: "text-purple-500", desc: "Scheduled content events" },
+              { label: "Fan Growth", value: momentumScore?.fan_growth || 0, icon: Zap, color: "text-orange-500", desc: "Total follower count" },
+            ].map((factor) => (
+              <Card key={factor.label} className="bg-card/50 border-border/30">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <factor.icon className={`w-4 h-4 ${factor.color}`} />
+                    {factor.label}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Score</span>
+                    <Badge variant="outline">{factor.value.toFixed(0)}</Badge>
+                  </div>
+                  <Progress value={Math.min(100, factor.value)} className="h-2" />
+                  <p className="text-xs text-muted-foreground">{factor.desc}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-
-          <Card className="glass-card p-4 bg-primary/10 border-primary/30">
-            <div className="flex gap-2 items-start">
-              <Flame className="w-5 h-5 text-orange-500 mt-0.5" />
-              <div>
-                <h4 className="font-semibold mb-1">Momentum Formula</h4>
-                <p className="text-sm text-muted-foreground">
-                  Momentum = (Release Velocity × 0.3) + (Engagement × 0.25) + (Consistency × 0.25) + (Growth × 0.2)
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Careers die not from lack of talent, but from lack of momentum. Stay consistent.
-                </p>
-              </div>
-            </div>
-          </Card>
         </TabsContent>
 
-        {/* Milestones */}
+        {/* Milestones Tab */}
         <TabsContent value="milestones" className="space-y-4">
-          <Card className="glass-card">
+          <Card className="bg-card/50 border-border/30">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
@@ -440,13 +445,9 @@ export const MomentumTracker = () => {
                   Career Milestones
                 </span>
                 <Button size="sm" onClick={() => setShowAddMilestone(true)}>
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add Milestone
+                  <Plus className="w-4 h-4 mr-1" /> Add Milestone
                 </Button>
               </CardTitle>
-              <CardDescription>
-                Each milestone compounds your momentum
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {showAddMilestone && (
@@ -462,7 +463,7 @@ export const MomentumTracker = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <Label>Target Value (optional)</Label>
+                        <Label>Target Value</Label>
                         <Input
                           type="number"
                           placeholder="e.g., 1000"
@@ -471,7 +472,7 @@ export const MomentumTracker = () => {
                         />
                       </div>
                       <div>
-                        <Label>Momentum Impact</Label>
+                        <Label>Impact</Label>
                         <Input
                           type="number"
                           value={newMilestoneImpact}
@@ -480,12 +481,8 @@ export const MomentumTracker = () => {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button onClick={addMilestone} className="flex-1">
-                        Add Milestone
-                      </Button>
-                      <Button variant="outline" onClick={() => setShowAddMilestone(false)}>
-                        Cancel
-                      </Button>
+                      <Button onClick={addMilestone} className="flex-1">Add</Button>
+                      <Button variant="outline" onClick={() => setShowAddMilestone(false)}>Cancel</Button>
                     </div>
                   </div>
                 </Card>
@@ -494,67 +491,62 @@ export const MomentumTracker = () => {
               {milestones.length === 0 ? (
                 <div className="text-center py-8">
                   <Award className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    Set your first milestone to start tracking your progress!
-                  </p>
+                  <p className="text-sm text-muted-foreground">Set your first milestone!</p>
                 </div>
               ) : (
-                milestones.map((milestone) => (
+                milestones.map((m) => (
                   <Card 
-                    key={milestone.id} 
+                    key={m.id} 
                     className={`p-4 ${
-                      milestone.achieved 
+                      m.achieved 
                         ? 'border-green-500/30 bg-green-500/5' 
-                        : 'border-muted'
+                        : 'border-border/30'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          {milestone.achieved ? (
+                          {m.achieved ? (
                             <CheckCircle2 className="w-5 h-5 text-green-500" />
                           ) : (
                             <div 
                               className="w-5 h-5 rounded-full border-2 border-muted cursor-pointer hover:border-primary"
-                              onClick={() => completeMilestone(milestone.id)}
+                              onClick={() => completeMilestone(m.id)}
                             />
                           )}
-                          <h4 className="font-semibold">{milestone.title}</h4>
+                          <h4 className="font-semibold">{m.title}</h4>
                           <Badge 
-                            className={`${
-                              milestone.achieved 
-                                ? 'bg-green-500/20 text-green-500' 
-                                : 'bg-primary/20 text-primary'
-                            }`}
+                            variant="outline"
+                            className="text-xs"
                           >
-                            +{milestone.momentum_impact} momentum
+                            +{m.momentum_impact}
                           </Badge>
                         </div>
-                        {milestone.achieved ? (
+                        {m.achieved ? (
                           <p className="text-xs text-muted-foreground ml-7">
-                            Achieved {new Date(milestone.date_achieved).toLocaleDateString()}
+                            Achieved {new Date(m.date_achieved).toLocaleDateString()}
                           </p>
-                        ) : milestone.current_value !== null && milestone.target_value ? (
-                          <div className="ml-7 space-y-2">
-                            <div className="flex items-center justify-between text-sm">
+                        ) : m.target_value ? (
+                          <div className="ml-7 space-y-1">
+                            <div className="flex justify-between text-sm">
                               <span className="text-muted-foreground">
-                                {(milestone.current_value || 0).toLocaleString()} / {milestone.target_value.toLocaleString()}
+                                {(m.current_value || 0).toLocaleString()} / {m.target_value.toLocaleString()}
                               </span>
                               <span className="font-semibold">
-                                {Math.round(((milestone.current_value || 0) / milestone.target_value) * 100)}%
+                                {Math.round(((m.current_value || 0) / m.target_value) * 100)}%
                               </span>
                             </div>
                             <Progress 
-                              value={((milestone.current_value || 0) / milestone.target_value) * 100} 
+                              value={((m.current_value || 0) / m.target_value) * 100} 
                               className="h-2" 
                             />
                           </div>
-                        ) : !milestone.achieved && (
+                        ) : !m.achieved && (
                           <Button 
                             size="sm" 
                             variant="outline" 
                             className="ml-7 mt-2"
-                            onClick={() => completeMilestone(milestone.id)}
+                            onClick={() => completeMilestone(m.id)}
                           >
                             Mark Complete
                           </Button>
@@ -568,160 +560,118 @@ export const MomentumTracker = () => {
           </Card>
         </TabsContent>
 
-        {/* Action Items */}
+        {/* AI Actions Tab */}
         <TabsContent value="actions" className="space-y-4">
-          <Card className="glass-card">
+          <Card className="bg-card/50 border-border/30">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="w-5 h-5 text-primary" />
-                Momentum Boosters
+                AI Momentum Boosters
               </CardTitle>
               <CardDescription>
-                Actions ranked by momentum impact
+                Personalized actions ranked by impact on YOUR career — powered by your full story and metrics
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {[
-                { 
-                  action: "Release new single", 
-                  impact: "+25", 
-                  effort: "High", 
-                  priority: "Critical",
-                  description: "Maintain consistent release cadence"
-                },
-                { 
-                  action: "Post 3x daily on stories", 
-                  impact: "+15", 
-                  effort: "Low", 
-                  priority: "High",
-                  description: "Show your process, stay visible"
-                },
-                { 
-                  action: "Collaborate on a track", 
-                  impact: "+20", 
-                  effort: "Medium", 
-                  priority: "High",
-                  description: "Tap into another audience"
-                },
-                { 
-                  action: "Launch pre-save campaign", 
-                  impact: "+18", 
-                  effort: "Medium", 
-                  priority: "Medium",
-                  description: "Build anticipation, capture emails"
-                },
-                { 
-                  action: "Go live with fans", 
-                  impact: "+12", 
-                  effort: "Low", 
-                  priority: "Medium",
-                  description: "Direct connection strengthens bonds"
-                }
-              ].map((item, idx) => (
-                <Card key={idx} className="p-4 hover:border-primary/60 transition-all">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-semibold">{item.action}</h4>
-                        <Badge 
-                          className={`${
-                            item.priority === 'Critical' 
-                              ? 'bg-red-500/20 text-red-500' 
-                              : item.priority === 'High'
-                              ? 'bg-orange-500/20 text-orange-500'
-                              : 'bg-blue-500/20 text-blue-500'
-                          }`}
-                        >
-                          {item.priority}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {item.effort} effort
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {item.description}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <Zap className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-semibold text-primary">
-                          {item.impact} momentum
-                        </span>
-                      </div>
-                    </div>
-                    <Button 
-                      size="sm"
-                      onClick={() => performAction(item.action, parseInt(item.impact))}
-                    >
-                      Do It
-                    </Button>
+            <CardContent className="space-y-4">
+              <Button onClick={generateAIActions} disabled={aiActionsLoading} className="w-full gap-2">
+                {aiActionsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                {aiActionsLoading ? "Analyzing your momentum..." : "Generate AI Action Plan"}
+              </Button>
+
+              {aiActionsLoading && (
+                <div className="space-y-2">
+                  {[1, 2, 3].map(i => <div key={i} className="h-4 rounded bg-muted/30 animate-pulse" style={{ width: `${100 - i * 15}%` }} />)}
+                </div>
+              )}
+
+              {aiActions && (
+                <Card className="p-5 bg-primary/5 border-primary/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-semibold text-primary">AI-Generated Action Plan</span>
+                  </div>
+                  <div className="text-sm whitespace-pre-wrap leading-relaxed text-foreground/90">
+                    {aiActions}
                   </div>
                 </Card>
-              ))}
+              )}
+
+              {!aiActions && !aiActionsLoading && (
+                <p className="text-xs text-center text-muted-foreground">
+                  AI will analyze your story, releases, metrics, and release cycle to generate specific actions
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Insights */}
+        {/* AI Insights Tab */}
         <TabsContent value="insights" className="space-y-4">
-          <Card className="glass-card">
+          <Card className="bg-card/50 border-border/30">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Activity className="w-5 h-5 text-primary" />
-                Momentum Insights
+                AI Career Intelligence
               </CardTitle>
+              <CardDescription>
+                Deep analysis of your momentum, release cycle, and growth trajectory
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Card className="p-4 bg-green-500/10 border-green-500/30">
-                <h4 className="font-semibold mb-2 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-green-500" />
-                  What's Working
-                </h4>
-                <ul className="text-sm space-y-1 text-muted-foreground">
-                  {(momentumScore?.release_velocity || 0) > 40 && (
-                    <li>• Great release velocity - keep the music coming!</li>
-                  )}
-                  {(momentumScore?.engagement_rate || 0) > 30 && (
-                    <li>• Strong engagement - your fans are connecting</li>
-                  )}
-                  {(momentumScore?.streak_days || 0) > 7 && (
-                    <li>• Impressive activity streak - consistency pays off</li>
-                  )}
-                  {(momentumScore?.score || 0) === 0 && (
-                    <li>• Upload your first track to start building momentum!</li>
-                  )}
-                </ul>
-              </Card>
+              <Button onClick={generateAIInsight} disabled={aiLoading} className="w-full gap-2" variant="outline">
+                {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                {aiLoading ? "Analyzing..." : "Generate AI Career Analysis"}
+              </Button>
 
-              <Card className="p-4 bg-red-500/10 border-red-500/30">
-                <h4 className="font-semibold mb-2 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-500" />
-                  Momentum Risks
-                </h4>
-                <ul className="text-sm space-y-1 text-muted-foreground">
-                  {(momentumScore?.release_velocity || 0) < 20 && (
-                    <li>• Low release velocity - consider dropping new music</li>
-                  )}
-                  {(momentumScore?.content_consistency || 0) < 30 && (
-                    <li>• Content calendar is empty - schedule some posts</li>
-                  )}
-                  {(momentumScore?.fan_growth || 0) < 10 && (
-                    <li>• Fan base needs growth - promote your profile</li>
-                  )}
-                </ul>
-              </Card>
+              {aiLoading && (
+                <div className="space-y-2">
+                  {[1, 2, 3, 4].map(i => <div key={i} className="h-4 rounded bg-muted/30 animate-pulse" style={{ width: `${100 - i * 10}%` }} />)}
+                </div>
+              )}
 
-              <Card className="p-4 bg-primary/10 border-primary/30">
-                <h4 className="font-semibold mb-2 flex items-center gap-2">
-                  <Flame className="w-4 h-4 text-orange-500" />
-                  Momentum Truth
-                </h4>
-                <p className="text-sm text-muted-foreground italic">
-                  "The industry doesn't reward talent alone. It rewards momentum. 
-                  The artists who stay visible, stay consistent, and keep shipping work 
-                  are the ones who break through. Your momentum score isn't just a number - 
-                  it's a prediction of your future success."
-                </p>
-              </Card>
+              {aiInsight && (
+                <Card className="p-5 bg-card/80 border-primary/20 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-semibold text-primary">AI Strategic Analysis</span>
+                    <Badge variant="outline" className="text-[10px] ml-auto">
+                      Score: {momentumScore?.score || 0}/100
+                    </Badge>
+                  </div>
+                  <div className="text-sm whitespace-pre-wrap leading-relaxed text-foreground/90">
+                    {aiInsight}
+                  </div>
+                </Card>
+              )}
+
+              {!aiInsight && !aiLoading && (
+                <div className="space-y-3">
+                  <Card className="p-4 bg-green-500/5 border-green-500/20">
+                    <h4 className="font-semibold mb-2 flex items-center gap-2 text-sm">
+                      <TrendingUp className="w-4 h-4 text-green-500" /> What's Working
+                    </h4>
+                    <ul className="text-sm space-y-1 text-muted-foreground">
+                      {(momentumScore?.release_velocity || 0) > 40 && <li>• Great release velocity</li>}
+                      {(momentumScore?.engagement_rate || 0) > 30 && <li>• Strong engagement rate</li>}
+                      {(momentumScore?.streak_days || 0) > 7 && <li>• Impressive activity streak</li>}
+                      {(momentumScore?.score || 0) === 0 && <li>• Upload your first track to start!</li>}
+                    </ul>
+                  </Card>
+                  <Card className="p-4 bg-destructive/5 border-destructive/20">
+                    <h4 className="font-semibold mb-2 flex items-center gap-2 text-sm">
+                      <AlertCircle className="w-4 h-4 text-destructive" /> Risks
+                    </h4>
+                    <ul className="text-sm space-y-1 text-muted-foreground">
+                      {(momentumScore?.release_velocity || 0) < 20 && <li>• Low release velocity</li>}
+                      {(momentumScore?.content_consistency || 0) < 30 && <li>• Content calendar empty</li>}
+                      {(momentumScore?.fan_growth || 0) < 10 && <li>• Fan base needs growth</li>}
+                    </ul>
+                  </Card>
+                  <p className="text-xs text-center text-muted-foreground">
+                    Click "Generate AI Career Analysis" for a deep, personalized strategic assessment
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
