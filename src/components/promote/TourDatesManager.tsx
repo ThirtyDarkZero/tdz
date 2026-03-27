@@ -493,6 +493,50 @@ export function TourDatesManager() {
               </div>
             )}
 
+            {useEventbrite && ebConnectionError && !loadingOrg && (
+              <div className="p-4 rounded-xl border border-orange-500/30 bg-orange-500/5 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Ticket className="w-5 h-5 text-orange-400" />
+                  <p className="font-medium text-sm">
+                    {ebConnectionError === "no_token"
+                      ? "Eventbrite not connected"
+                      : ebConnectionError === "no_org"
+                      ? "No Eventbrite organization found"
+                      : "Eventbrite connection failed"}
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {ebConnectionError === "no_token"
+                    ? "To sell tickets, connect your Eventbrite account by adding your Private API Token. You can get one from your Eventbrite account under App Management → API Keys."
+                    : ebConnectionError === "no_org"
+                    ? "Your Eventbrite token is connected but no organization was found. Make sure your Eventbrite account has an active organization."
+                    : `Error: ${ebConnectionError}`}
+                </p>
+                <div className="flex gap-2">
+                  {ebConnectionError === "no_token" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 border-orange-500/30 hover:bg-orange-500/10"
+                      onClick={() => window.open("https://www.eventbrite.com/account-settings/apps", "_blank")}
+                    >
+                      <ExternalLink className="w-3 h-3" /> Get API Key
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => {
+                      setEbConnectionError(null);
+                      loadEventbriteOrg();
+                    }}
+                  >
+                    <Loader2 className="w-3 h-3" /> Retry Connection
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {useEventbrite && orgId && (
               <Tabs defaultValue="details" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
