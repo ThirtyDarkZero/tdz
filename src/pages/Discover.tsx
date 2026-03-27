@@ -675,7 +675,7 @@ export default function Discover() {
                           return (
                             <button
                               key={g}
-                              onClick={() => { setSelectedGenre(g); setActiveTab("discover"); }}
+                              onClick={() => { setExploreGenre(g.toLowerCase()); setExploreView("genre"); }}
                               className="relative overflow-hidden transition-transform duration-200 hover:scale-[1.02] active:scale-[0.97]"
                               style={{ background: color, height: 88, borderRadius: "var(--radius-md)" }}
                             >
