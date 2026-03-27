@@ -123,6 +123,7 @@ function drawPulse(ctx: CanvasRenderingContext2D, w: number, h: number, t: numbe
 }
 
 export function OrbPlayerBar() {
+  const navigate = useNavigate();
   const {
     currentTrack, queue, playTrack, isPlaying, pauseTrack, resumeTrack,
     nextTrack, previousTrack, currentTime, playerView, setPlayerView,
