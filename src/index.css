@@ -182,11 +182,11 @@
   
   .glass-card-premium {
     background: var(--gradient-glass-strong);
-    backdrop-filter: blur(40px) saturate(200%);
-    border: 1px solid hsl(var(--border) / 0.5);
+    backdrop-filter: blur(60px) saturate(220%);
+    border: 1px solid hsl(0 0% 100% / 0.1);
     box-shadow: var(--shadow-card), 
-      inset 0 1px 0 hsl(0 0% 100% / 0.08), 
-      inset 0 -1px 0 hsl(0 0% 0% / 0.25);
+      inset 0 1px 0 hsl(0 0% 100% / 0.1), 
+      inset 0 -1px 0 hsl(0 0% 0% / 0.3);
   }
   
   .glass-ultra {
