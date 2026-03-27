@@ -436,7 +436,7 @@ export default function Discover() {
                 </div>
               )}
 
-              <div className="px-5 sm:px-6 lg:px-8">
+              <div className="px-3 sm:px-5 md:px-6 lg:px-8">
                 {/* ── Featured Coverflow Carousel ── */}
                 {forYouItems.length > 0 && (
                   <div className="pt-4 pb-2">

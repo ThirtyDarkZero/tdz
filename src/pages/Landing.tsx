@@ -1072,16 +1072,16 @@ function Section10FanPlan({ navigate }: { navigate: (p: string) => void }) {
           <div className="flex flex-col items-center pt-10"
             style={{ background: "linear-gradient(180deg, #2a2a2a 0%, #5a5a5a 40%, #b0b0b0 75%, #d8d8d8 100%)",
               borderRadius: 28, width: 380, maxWidth: "100%", minHeight: 520, padding: "36px 32px" }}>
-            <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 16, color: "#FFFFFF", letterSpacing: "0.2em", textTransform: "uppercase" as const, textAlign: "center" }}>
+            <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 16, color: "#000000", letterSpacing: "0.2em", textTransform: "uppercase" as const, textAlign: "center" }}>
               UNLIMITED STREAMING
             </p>
-            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 78, color: "#FFFFFF", letterSpacing: "0.04em", marginTop: 12 }}>$12.00</p>
-            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#888", marginTop: 4 }}>/month</p>
+            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 78, color: "#000000", letterSpacing: "0.04em", marginTop: 12 }}>$12.00</p>
+            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#333", marginTop: 4 }}>/month</p>
             <div className="mt-8 space-y-2 w-full">
               {fanFeatures.map((f, i) => (
                 <div key={i} className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: "#333" }} />
-                  <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#555", lineHeight: 1.4 }}>{f}</span>
+                  <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: "#000" }} />
+                  <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#111111", lineHeight: 1.4 }}>{f}</span>
                 </div>
               ))}
             </div>
