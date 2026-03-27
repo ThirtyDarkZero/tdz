@@ -110,12 +110,12 @@ export const StudioHome = ({ artistName, onNavigate, onUploadClick }: StudioHome
                 </a>
               </div>
             </div>
-            <div className="flex gap-3">
-              <Button onClick={onUploadClick} className="gap-2" style={{ background: "linear-gradient(135deg, #00CFFF, #8B5CF6)", color: "#000", fontWeight: 700 }}>
+            <div className="flex flex-wrap gap-2 sm:gap-3">
+              <Button onClick={onUploadClick} className="gap-2 text-xs sm:text-sm" style={{ background: "linear-gradient(135deg, #00CFFF, #8B5CF6)", color: "#000", fontWeight: 700 }}>
                 <Music className="w-4 h-4" />
                 Release Music
               </Button>
-              <Button variant="outline" onClick={() => onNavigate("music")} className="gap-2 border-white/10 text-white/70 hover:text-white hover:border-white/20">
+              <Button variant="outline" onClick={() => onNavigate("music")} className="gap-2 border-white/10 text-white/70 hover:text-white hover:border-white/20 text-xs sm:text-sm">
                 View All Releases
               </Button>
             </div>
