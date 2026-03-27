@@ -152,7 +152,7 @@ function StudioContent() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen" style={{ background: "#141414" }}>
+      <div className="min-h-screen studio-fonts" style={{ background: "#141414" }}>
         {/* Sidebar */}
         <StudioSidebar
           activeSection={activeSection}
