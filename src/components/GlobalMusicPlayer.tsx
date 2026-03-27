@@ -11,6 +11,7 @@ import { SubscriptionModal } from "@/components/SubscriptionModal";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { OrbPlayerBar } from "@/components/discovery/OrbPlayerBar";
+import { useLocation as useRouterLocation } from "react-router-dom";
 
 const PREVIEW_DURATION_SECONDS = 30;
 
