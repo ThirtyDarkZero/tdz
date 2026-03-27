@@ -90,16 +90,15 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    background: #121212;
-    background-attachment: fixed;
-    font-family: 'Inter', 'SF Pro Display', system-ui, sans-serif;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    background: #0D0D0D;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, h4, h5, h6, .font-display {
-    font-family: 'Bebas Neue', 'Impact', system-ui, sans-serif;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    letter-spacing: -0.01em;
   }
   
   /* Fix focus rings - use subtle accent color instead of primary green */
