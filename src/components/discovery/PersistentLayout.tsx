@@ -11,14 +11,10 @@ interface PersistentLayoutProps {
   onToggleSearch: () => void;
 }
 
-export function PersistentLayout({
-  children,
-  activeTab,
-  onTabChange,
-}: PersistentLayoutProps) {
+export function PersistentLayout({ children, activeTab, onTabChange }: PersistentLayoutProps) {
   return (
-    <div className="min-h-screen relative" style={{ background: "#121212" }}>
-      <div className="relative z-[1] min-h-screen pb-24">
+    <div className="min-h-screen relative" style={{ background: "#0D0D0D" }}>
+      <div className="relative z-[1] min-h-screen pb-28">
         {children}
       </div>
       <BottomNavBar activeTab={activeTab} onTabChange={onTabChange} />
