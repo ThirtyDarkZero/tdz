@@ -69,8 +69,8 @@ const MOODS: Array<{ id: MoodTheme; label: string; emoji: string; color: string 
 
 /* ── Genre Colors ── */
 const GENRE_COLORS: Record<string, string> = {
-  "Hip-Hop": "#8B5CF6", "R&B": "#EC4899", "Pop": "#22C55E", "Electronic": "#06B6D4",
-  "Rock": "#EF4444", "Soul": "#F59E0B", "Latin": "#EAB308", "Alternative": "#A855F7",
+  "Hip-Hop": "#8B5CF6", "R&B": "#EC4899", "Pop": "#22C55E", "Rock": "#EF4444",
+  "Latin": "#EAB308", "Jazz": "#F59E0B", "Dance": "#06B6D4", "Afrobeats": "#F97316",
 };
 
 /* ── Filter Pill ── */
