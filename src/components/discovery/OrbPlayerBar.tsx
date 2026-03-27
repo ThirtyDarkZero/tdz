@@ -93,14 +93,21 @@ export function OrbPlayerBar() {
   const [isHovered, setIsHovered] = useState(false);
   const autoMinTimerRef = useRef<number | null>(null);
 
-  if (!currentTrack || location.pathname === "/discover") return null;
-
   const togglePlay = () => (isPlaying ? pauseTrack() : resumeTrack());
-  const duration = currentTrack.duration || 0;
+  const duration = currentTrack?.duration || 0;
   const progress = duration > 0 ? Math.min((currentTime / duration) * 100, 100) : 0;
 
   // Auto-minimize when paused (after 3s) unless hovered
   useEffect(() => {
+    if (!currentTrack || !isPlaying || playerView !== "full" || isHovered) {
+      return;
+    }
+    // Only auto-min when NOT playing
+    return () => {};
+  }, [currentTrack, isPlaying, playerView, isHovered]);
+
+  useEffect(() => {
+    if (!currentTrack) return;
     if (!isPlaying && playerView === "full" && !isHovered) {
       autoMinTimerRef.current = window.setTimeout(() => {
         setPlayerView("mini");
@@ -109,14 +116,16 @@ export function OrbPlayerBar() {
     return () => {
       if (autoMinTimerRef.current) clearTimeout(autoMinTimerRef.current);
     };
-  }, [isPlaying, playerView, isHovered, setPlayerView]);
+  }, [currentTrack, isPlaying, playerView, isHovered, setPlayerView]);
 
   // Re-expand on play
   useEffect(() => {
-    if (isPlaying && playerView === "mini") {
+    if (currentTrack && isPlaying && playerView === "mini") {
       setPlayerView("full");
     }
-  }, [isPlaying, playerView, setPlayerView]);
+  }, [currentTrack, isPlaying, playerView, setPlayerView]);
+
+  if (!currentTrack || location.pathname === "/discover") return null;
 
   /* ── Hidden state ── */
   if (playerView === "hidden") {
