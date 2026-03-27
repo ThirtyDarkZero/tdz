@@ -753,7 +753,7 @@ export function ProfileHub({ userProfile, likedTracks, followedArtists, playlist
       {selectedConversation && (
         <DirectMessagePanel
           open={true}
-          onOpenChange={open => { if (!open) setSelectedConversation(null); }}
+          onClose={() => setSelectedConversation(null)}
           recipientId={selectedConversation.user_id}
           recipientName="Artist"
         />
