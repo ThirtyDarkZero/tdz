@@ -335,29 +335,27 @@ export default function Discover() {
                     <Swiper
                       modules={[EffectCoverflow, Autoplay]}
                       effect="coverflow"
-                      coverflowEffect={{ rotate: 4, stretch: 80, depth: 100, modifier: 1, slideShadows: false }}
-                      centeredSlides={true}
-                      slidesPerView={3.2}
-                      spaceBetween={-30}
+                      grabCursor
+                      centeredSlides
+                      slidesPerView="auto"
                       loop={forYouItems.length > 3}
-                      autoplay={{ delay: 3500, disableOnInteraction: false }}
+                      autoplay={{ delay: 4000, disableOnInteraction: true }}
+                      coverflowEffect={{ rotate: 30, stretch: 0, depth: 200, modifier: 1.2, slideShadows: true }}
                       className="w-full"
                       style={{ paddingTop: 8, paddingBottom: 16, overflow: "visible" }}
                     >
                       {forYouItems.slice(0, 10).map(item => (
-                        <SwiperSlide key={item.id} className="!flex !justify-center">
+                        <SwiperSlide key={item.id} style={{ width: 200, height: 200 }}>
                           <div
-                            className="cursor-pointer transition-transform duration-200"
+                            className="relative w-full h-full cursor-pointer group"
                             onClick={() => {
                               if (item.trackData) handlePlayTrack(item.trackData);
                               else navigate(item.type === "album" ? `/album/${item.id}` : `/track/${item.id}`);
                             }}
                           >
-                            <div className="relative overflow-hidden mx-auto" style={{ width: 180, height: 180, borderRadius: 18 }}>
-                              <img src={item.image} alt="" className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity" style={{ background: "rgba(0,0,0,0.35)" }}>
-                                <Play className="h-10 w-10 text-white drop-shadow-lg" fill="white" />
-                              </div>
+                            <img src={item.image} alt="" className="w-full h-full object-cover" style={{ borderRadius: 14 }} />
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "rgba(0,0,0,0.4)", borderRadius: 14 }}>
+                              <Play className="h-10 w-10 text-white drop-shadow-lg" fill="white" />
                             </div>
                           </div>
                         </SwiperSlide>
@@ -444,7 +442,7 @@ export default function Discover() {
                 <Section title={selectedGenre ? selectedGenre.toUpperCase() : "POPULAR TRACKS"} subtitle="Top 10">
                   <div className="rounded-[var(--radius-md)] overflow-hidden" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)" }}>
                     <SongListHeader />
-                    {genreFilteredSingles.slice(0, 10).map((track, i) => (
+                    {trendingSingles.slice(0, 10).map((track, i) => (
                       <SongRow key={track.id} track={track} index={i + 1} isPlaying={currentTrack?.id === track.id} isLiked={likedTracks.has(track.id)} onPlay={handlePlayTrack} onToggleLike={toggleLike} onAddToQueue={handleAddToQueue} />
                     ))}
                   </div>
