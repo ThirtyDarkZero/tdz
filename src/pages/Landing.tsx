@@ -571,7 +571,7 @@ function Section4Studio({ navigate }: { navigate: (p: string) => void }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 mb-4 sm:mb-6">
               {[
                 { label: "IMPACT", value: "12,000", sub: "Intentional plays" },
                 { label: "RELEASES", value: "24", sub: "Total tracks" },
