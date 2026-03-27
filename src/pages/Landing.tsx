@@ -327,46 +327,46 @@ function StudioDemoMockup() {
   const [activeTab, setActiveTab] = useState("promote");
   const tabs = ["promote", "insights", "content"];
   return (
-    <div className="p-4 pt-8 h-full" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#888" }}>
-      <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 22, color: "#FFF", letterSpacing: "0.04em" }}>ARTIST STUDIO</p>
-      <div className="flex gap-1 mt-2 mb-3">
+    <div className="p-3 pt-7 h-full" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#888" }}>
+      <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 20, color: "#FFF", letterSpacing: "0.04em" }}>ARTIST STUDIO</p>
+      <div className="flex gap-1 mt-2 mb-2">
         {tabs.map(t => (
-          <button key={t} onClick={() => setActiveTab(t)} className="px-2 py-1 rounded-full text-[8px] transition-all"
+          <button key={t} onClick={() => setActiveTab(t)} className="px-2 py-0.5 rounded-full text-[7px] transition-all"
             style={{ background: activeTab === t ? "#22C55E" : "#1C1C1C", color: activeTab === t ? "#000" : "#666" }}>{t.toUpperCase()}</button>
         ))}
       </div>
       {activeTab === "promote" && (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {["AI Smart Promo", "Social Campaign", "Playlist Pitch", "Pre-Save Setup"].map((t, i) => (
-            <div key={i} className="flex items-center gap-2 p-2 rounded-lg" style={{ background: "#1C1C1C" }}>
-              <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: i === 0 ? "#8B5CF6" : "#222" }}>
-                <Zap className="w-3 h-3" style={{ color: i === 0 ? "#FFF" : "#555" }} />
+            <div key={i} className="flex items-center gap-1.5 p-1.5 rounded-md" style={{ background: "#1C1C1C" }}>
+              <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: i === 0 ? "#8B5CF6" : "#222" }}>
+                <Zap className="w-2.5 h-2.5" style={{ color: i === 0 ? "#FFF" : "#555" }} />
               </div>
-              <span style={{ color: "#AAA", fontSize: 11 }}>{t}</span>
-              {i === 0 && <span className="ml-auto px-2 py-0.5 rounded-full text-[8px]" style={{ background: "#8B5CF6", color: "#FFF" }}>AI</span>}
+              <span style={{ color: "#AAA", fontSize: 9 }}>{t}</span>
+              {i === 0 && <span className="ml-auto px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: "#8B5CF6", color: "#FFF" }}>AI</span>}
             </div>
           ))}
         </div>
       )}
       {activeTab === "insights" && (
-        <div className="space-y-2">
-          <div className="p-3 rounded-xl" style={{ background: "#1C1C1C" }}>
-            <span className="px-2 py-0.5 rounded-full text-[8px]" style={{ background: "#22C55E", color: "#000" }}>Earnings</span>
-            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 36, color: "#22C55E", lineHeight: 1.2, marginTop: 4 }}>$12,000</p>
-            <p style={{ fontSize: 9, color: "#555" }}>12,000 streams • $1/stream</p>
-          </div>
+        <div className="space-y-1.5">
           <div className="p-2 rounded-lg" style={{ background: "#1C1C1C" }}>
-            <span style={{ fontSize: 9, color: "#555" }}>Followers</span>
-            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 24, color: "#FFF" }}>9,000</p>
+            <span className="px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: "#22C55E", color: "#000" }}>Earnings</span>
+            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 30, color: "#22C55E", lineHeight: 1.2, marginTop: 3 }}>$12,000</p>
+            <p style={{ fontSize: 8, color: "#555" }}>12,000 streams • $1/stream</p>
+          </div>
+          <div className="p-1.5 rounded-md" style={{ background: "#1C1C1C" }}>
+            <span style={{ fontSize: 8, color: "#555" }}>Followers</span>
+            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 20, color: "#FFF" }}>9,000</p>
           </div>
         </div>
       )}
       {activeTab === "content" && (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {["Upload Tracks", "Manage Albums", "Lyrics Sync", "Territory Rights"].map((t, i) => (
-            <div key={i} className="p-2 rounded-lg flex items-center gap-2" style={{ background: "#1C1C1C" }}>
-              <Music className="w-4 h-4" style={{ color: "#22C55E" }} />
-              <span style={{ color: "#AAA", fontSize: 10 }}>{t}</span>
+            <div key={i} className="p-1.5 rounded-md flex items-center gap-1.5" style={{ background: "#1C1C1C" }}>
+              <Music className="w-3 h-3" style={{ color: "#22C55E" }} />
+              <span style={{ color: "#AAA", fontSize: 9 }}>{t}</span>
             </div>
           ))}
         </div>
