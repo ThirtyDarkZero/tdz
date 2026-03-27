@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Play, ChevronDown, Loader2, Music, Plus, MoreHorizontal, Heart } from "lucide-react";
+import { Play, ChevronDown, Loader2, Music, Plus, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -53,7 +53,6 @@ export function GenreTop50Section({ onViewAll }: GenreTop50SectionProps) {
   const { playTrack, addToQueue } = usePlayer();
   const { resolveTrack } = useClientYouTubeResolver();
 
-  // Fetch tracks for selected genre
   const fetchGenreTracks = useCallback(async () => {
     setLoading(true);
     try {
@@ -61,7 +60,6 @@ export function GenreTop50Section({ onViewAll }: GenreTop50SectionProps) {
       const { data, error } = await supabase.functions.invoke("genre-top50", {
         body: { genre, limit: 50, withYouTube: true },
       });
-
       if (error) throw error;
       setTracks(data?.tracks || []);
     } catch (err) {
@@ -76,146 +74,105 @@ export function GenreTop50Section({ onViewAll }: GenreTop50SectionProps) {
     fetchGenreTracks();
   }, [fetchGenreTracks]);
 
-  // Play track via YouTube
   const handlePlayTrack = async (track: TopTrack, index: number) => {
     let youtubeId = track.youtubeId;
-
-    // If no YouTube ID, search for it with fallback
     if (!youtubeId) {
       setLoadingTrack(track.id);
       try {
-        // Try edge function first
         const { data } = await supabase.functions.invoke("youtube-search", {
-          body: {
-            query: `${track.artist} ${track.title} official audio`,
-            maxResults: 1,
-            officialOnly: true,
-          },
+          body: { query: `${track.artist} ${track.title} official audio`, maxResults: 1, officialOnly: true },
         });
         youtubeId = data?.results?.[0]?.id;
       } catch (err) {
         console.log("Edge function failed, trying client resolver");
       }
-
-      // Fallback to client-side resolution if edge function fails
       if (!youtubeId) {
         const resolved = await resolveTrack(track.title, track.artist);
         youtubeId = resolved?.youtubeId;
       }
-      
       setLoadingTrack(null);
     }
+    if (!youtubeId) { toast.error("Could not find playable version"); return; }
 
-    if (!youtubeId) {
-      toast.error("Could not find playable version");
-      return;
-    }
-
-    // Build the track object for playback
-    const playerTrack = {
-      id: track.id,
-      title: track.title,
-      artist_name: track.artist,
-      duration: 0,
-      file_path: "",
-      play_count: 0,
-      source: "youtube" as const,
-      youtubeId,
-      thumbnail: track.thumbnail,
-    };
-
-    // Build queue from remaining tracks that have YouTube IDs
+    const playerTrack = { id: track.id, title: track.title, artist_name: track.artist, duration: 0, file_path: "", play_count: 0, source: "youtube" as const, youtubeId, thumbnail: track.thumbnail };
     const queueTracks = tracks.slice(index + 1, index + 15).filter(t => t.youtubeId).map((t) => ({
-      id: t.id,
-      title: t.title,
-      artist_name: t.artist,
-      duration: 0,
-      file_path: "",
-      play_count: 0,
-      source: "youtube" as const,
-      youtubeId: t.youtubeId!,
-      thumbnail: t.thumbnail,
+      id: t.id, title: t.title, artist_name: t.artist, duration: 0, file_path: "", play_count: 0, source: "youtube" as const, youtubeId: t.youtubeId!, thumbnail: t.thumbnail,
     }));
-
-    // Play with queue
     playTrack(playerTrack, [playerTrack, ...queueTracks]);
   };
 
-  // Add track to playlist
   const handleAddToPlaylist = (track: TopTrack, e: React.MouseEvent) => {
     e.stopPropagation();
-    setAddToPlaylistTrack({
-      id: track.id,
-      title: track.title,
-      artist_name: track.artist,
-      youtubeId: track.youtubeId,
-      thumbnail: track.thumbnail,
-    });
+    setAddToPlaylistTrack({ id: track.id, title: track.title, artist_name: track.artist, youtubeId: track.youtubeId, thumbnail: track.thumbnail });
   };
 
-  // Add to queue
   const handleAddToQueue = async (track: TopTrack, e: React.MouseEvent) => {
     e.stopPropagation();
     let youtubeId = track.youtubeId;
-
     if (!youtubeId) {
       try {
         const { data } = await supabase.functions.invoke("youtube-search", {
-          body: {
-            query: `${track.artist} ${track.title} official audio`,
-            maxResults: 1,
-            officialOnly: true,
-          },
+          body: { query: `${track.artist} ${track.title} official audio`, maxResults: 1, officialOnly: true },
         });
         youtubeId = data?.results?.[0]?.id;
-      } catch (err) {
-        console.error("YouTube search failed:", err);
-      }
+      } catch (err) { console.error("YouTube search failed:", err); }
     }
-
-    if (!youtubeId) {
-      toast.error("Could not find playable version");
-      return;
-    }
-
-    addToQueue({
-      id: track.id,
-      title: track.title,
-      artist_name: track.artist,
-      duration: 0,
-      file_path: "",
-      play_count: 0,
-      source: "youtube",
-      youtubeId,
-      thumbnail: track.thumbnail,
-    });
+    if (!youtubeId) { toast.error("Could not find playable version"); return; }
+    addToQueue({ id: track.id, title: track.title, artist_name: track.artist, duration: 0, file_path: "", play_count: 0, source: "youtube", youtubeId, thumbnail: track.thumbnail });
     toast.success(`Added "${track.title}" to queue`);
   };
 
-  const currentGenreLabel =
-    GENRE_OPTIONS.find((g) => g.id === selectedGenre)?.label || "All Genres";
+  const currentGenreLabel = GENRE_OPTIONS.find((g) => g.id === selectedGenre)?.label || "All Genres";
 
   return (
-    <section className="py-12 bg-[#0a0a0a]">
-      <div className="max-w-7xl mx-auto px-6 md:px-12">
-        {/* Header - BPM Supreme style */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div>
-            <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">
-              Top 50 Songs
-            </h2>
-            <p className="text-white/50 text-sm mt-1">
-              Trending tracks across all genres
-            </p>
-          </div>
+    <section className="relative py-10">
+      {/* Glassmorphic container */}
+      <div
+        className="max-w-7xl mx-auto rounded-3xl overflow-hidden"
+        style={{
+          background: "rgba(255,255,255,0.03)",
+          backdropFilter: "blur(24px)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          boxShadow: "0 8px 64px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)",
+        }}
+      >
+        <div className="px-6 md:px-10 py-8">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div>
+              <h2
+                style={{
+                  fontFamily: "'Six Caps', sans-serif",
+                  fontSize: "clamp(36px, 4vw, 52px)",
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                  lineHeight: 1,
+                  background: "linear-gradient(180deg, #FFFFFF 0%, #888888 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                TOP 50 SONGS
+              </h2>
+              <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 300, fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>
+                Trending tracks across all genres
+              </p>
+            </div>
 
-          {/* Genre Dropdown - BPM Supreme style */}
-          <div className="flex items-center gap-4">
+            {/* Genre Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-white/20 min-w-[180px] justify-between"
+                  className="min-w-[180px] justify-between rounded-xl"
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    backdropFilter: "blur(12px)",
+                    color: "#FFFFFF",
+                    fontFamily: "'Raleway', sans-serif",
+                    fontSize: 13,
+                  }}
                 >
                   {currentGenreLabel}
                   <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
@@ -223,142 +180,124 @@ export function GenreTop50Section({ onViewAll }: GenreTop50SectionProps) {
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="w-56 bg-[#1a1a1a] border-white/10"
+                className="w-56 rounded-xl"
+                style={{
+                  background: "rgba(20,20,30,0.95)",
+                  backdropFilter: "blur(24px)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
               >
                 {GENRE_OPTIONS.map((genre) => (
                   <DropdownMenuItem
                     key={genre.id}
                     onClick={() => setSelectedGenre(genre.id)}
-                    className={`cursor-pointer ${
-                      selectedGenre === genre.id
-                        ? "bg-cyan-500/20 text-cyan-400"
-                        : "text-white/80 hover:text-white hover:bg-white/5"
-                    }`}
+                    className={`cursor-pointer ${selectedGenre === genre.id ? "text-[#00CFFF]" : "text-white/70 hover:text-white"}`}
+                    style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13 }}
                   >
                     {genre.label}
-                    {selectedGenre === genre.id && (
-                      <span className="ml-auto text-cyan-400">✓</span>
-                    )}
+                    {selectedGenre === genre.id && <span className="ml-auto text-[#00CFFF]">✓</span>}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </div>
 
-        {/* Track list */}
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
-          </div>
-        ) : (
-          <ScrollArea className="h-[600px]">
-            <div className="space-y-1">
-              {tracks.map((track, index) => (
-                <div
-                  key={`${track.id}-${index}`}
-                  onClick={() => handlePlayTrack(track, index)}
-                  className="group flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
-                >
-                  {/* Position */}
-                  <div className="w-8 text-center">
-                    <span className="text-white/40 text-sm font-medium group-hover:hidden">
-                      {track.position}
-                    </span>
-                    <div className="hidden group-hover:flex items-center justify-center">
-                      {loadingTrack === track.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+          {/* Track list */}
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#00CFFF" }} />
+            </div>
+          ) : (
+            <ScrollArea className="h-[550px]">
+              <div className="space-y-0.5">
+                {tracks.map((track, index) => (
+                  <div
+                    key={`${track.id}-${index}`}
+                    onClick={() => handlePlayTrack(track, index)}
+                    className="group flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer"
+                    style={{ background: "transparent" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.backdropFilter = "blur(8px)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.backdropFilter = ""; }}
+                  >
+                    {/* Position */}
+                    <div className="w-8 text-center flex-shrink-0">
+                      <span className="group-hover:hidden" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 14, fontWeight: 700, color: track.position <= 3 ? "#00CFFF" : "rgba(255,255,255,0.3)" }}>
+                        {track.position}
+                      </span>
+                      <div className="hidden group-hover:flex items-center justify-center">
+                        {loadingTrack === track.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-[#00CFFF]" />
+                        ) : (
+                          <Play className="w-4 h-4 text-white" fill="white" />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Thumbnail */}
+                    <div className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0" style={{ background: "rgba(255,255,255,0.05)" }}>
+                      {track.thumbnail ? (
+                        <img src={track.thumbnail} alt={track.title} className="w-full h-full object-cover" loading="lazy"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                       ) : (
-                        <Play className="w-4 h-4 text-white" fill="white" />
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Music className="w-4 h-4" style={{ color: "rgba(255,255,255,0.2)" }} />
+                        </div>
                       )}
                     </div>
-                  </div>
 
-                  {/* Thumbnail */}
-                  <div className="w-12 h-12 rounded bg-white/5 overflow-hidden flex-shrink-0">
-                    {track.thumbnail ? (
-                      <img
-                        src={track.thumbnail}
-                        alt={track.title}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100&q=80";
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Music className="w-5 h-5 text-white/30" />
-                      </div>
-                    )}
-                  </div>
+                    {/* Track info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate text-white group-hover:text-[#00CFFF] transition-colors" style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 600 }}>
+                        {track.title}
+                      </p>
+                      <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "'Raleway', sans-serif" }}>
+                        {track.artist}
+                      </p>
+                    </div>
 
-                  {/* Track info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-white truncate group-hover:text-cyan-400 transition-colors">
-                      {track.title}
-                    </p>
-                    <p className="text-sm text-white/50 truncate">
-                      {track.artist}
-                    </p>
-                  </div>
-
-                  {/* Genre badge */}
-                  <span className="hidden sm:inline-block px-2 py-1 text-xs bg-white/5 text-white/50 rounded capitalize">
-                    {track.genre}
-                  </span>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-white/60 hover:text-white hover:bg-white/10"
-                      onClick={(e) => handleAddToPlaylist(track, e)}
+                    {/* Genre badge - glassmorphic */}
+                    <span
+                      className="hidden sm:inline-block px-3 py-1 text-xs rounded-full capitalize"
+                      style={{
+                        background: "rgba(255,255,255,0.04)",
+                        backdropFilter: "blur(8px)",
+                        border: "1px solid rgba(255,255,255,0.06)",
+                        color: "rgba(255,255,255,0.4)",
+                        fontFamily: "'Raleway', sans-serif",
+                        fontSize: 11,
+                      }}
                     >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-white/60 hover:text-white hover:bg-white/10"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-[#1a1a1a] border-white/10">
-                        <DropdownMenuItem
-                          onClick={(e) => handleAddToQueue(track, e as any)}
-                          className="text-white/80 hover:text-white cursor-pointer"
-                        >
-                          Add to Queue
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={(e) => handleAddToPlaylist(track, e as any)}
-                          className="text-white/80 hover:text-white cursor-pointer"
-                        >
-                          Add to Playlist
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                      {track.genre}
+                    </span>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-white/50 hover:text-white hover:bg-white/10 rounded-full"
+                        onClick={(e) => handleAddToPlaylist(track, e)}>
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-white/50 hover:text-white hover:bg-white/10 rounded-full"
+                            onClick={(e) => e.stopPropagation()}>
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" style={{ background: "rgba(20,20,30,0.95)", backdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                          <DropdownMenuItem onClick={(e) => handleAddToQueue(track, e as any)} className="text-white/80 hover:text-white cursor-pointer">Add to Queue</DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => handleAddToPlaylist(track, e as any)} className="text-white/80 hover:text-white cursor-pointer">Add to Playlist</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-        )}
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </div>
       </div>
 
-      {/* Add to Playlist Dialog */}
-      <AddToPlaylistDialog
-        open={!!addToPlaylistTrack}
-        onOpenChange={(open) => !open && setAddToPlaylistTrack(null)}
-        track={addToPlaylistTrack}
-      />
+      <AddToPlaylistDialog open={!!addToPlaylistTrack} onOpenChange={(open) => !open && setAddToPlaylistTrack(null)} track={addToPlaylistTrack} />
     </section>
   );
 }

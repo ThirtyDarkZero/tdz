@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -8,7 +8,7 @@ import { useDiscoveryData } from "@/hooks/useDiscoveryData";
 import { MerchStore } from "@/components/MerchStore";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { Play } from "lucide-react";
+import { Play, Shuffle } from "lucide-react";
 
 // Layout + nav
 import { PersistentLayout } from "@/components/discovery/PersistentLayout";
@@ -18,7 +18,6 @@ import { CosmicTopBar } from "@/components/discovery/CosmicTopBar";
 import { SongRow, SongListHeader } from "@/components/discovery/SongRow";
 import { ArtistCard } from "@/components/discovery/ArtistCard";
 import { AlbumCard } from "@/components/discovery/AlbumCard";
-import { ArtistAvatar } from "@/components/discovery/ArtistAvatar";
 import { UniversalSearchResults } from "@/components/discovery/UniversalSearchResults";
 
 // Existing functional components
@@ -45,59 +44,46 @@ function SectionHeader({ title, subtitle, action }: { title: string; subtitle?: 
   return (
     <div className="flex items-end justify-between mb-6">
       <div>
-        <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(28px, 4vw, 48px)", color: "#FFFFFF", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1 }}>{title}</h2>
-        {subtitle && <p className="mt-1" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "rgba(255,255,255,0.5)" }}>{subtitle}</p>}
+        <h2 style={{
+          fontFamily: "'Six Caps', sans-serif",
+          fontSize: "clamp(28px, 4vw, 48px)",
+          letterSpacing: "0.04em",
+          textTransform: "uppercase",
+          lineHeight: 1,
+          background: "linear-gradient(180deg, #FFFFFF 0%, #999999 100%)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+        }}>
+          {title}
+        </h2>
+        {subtitle && (
+          <p className="mt-1" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "rgba(255,255,255,0.4)" }}>
+            {subtitle}
+          </p>
+        )}
       </div>
       {action}
     </div>
   );
 }
 
-// ── Moodscape Bubble Cluster ──
-function MoodscapeCluster({ label, colors, onClick }: { label: string; colors: string[]; onClick: () => void }) {
-  const bubbles = [
-    { size: 44, x: 20, y: 5 },
-    { size: 30, x: 50, y: 0 },
-    { size: 22, x: 75, y: 12 },
-    { size: 36, x: 35, y: 35 },
-    { size: 18, x: 65, y: 40 },
-  ];
+// ── Genre Filter Pill ──
+function GenrePill({ label, isSelected, onClick }: { label: string; isSelected: boolean; onClick: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-2 cursor-pointer group transition-transform hover:scale-110" onClick={onClick}>
-      <div className="relative" style={{ width: 100, height: 70 }}>
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 70">
-          <line x1="38" y1="27" x2="62" y2="20" stroke="rgba(125,211,252,0.25)" strokeWidth="1" />
-          <line x1="55" y1="20" x2="70" y2="32" stroke="rgba(125,211,252,0.25)" strokeWidth="1" />
-          <line x1="38" y1="27" x2="50" y2="52" stroke="rgba(125,211,252,0.25)" strokeWidth="1" />
-        </svg>
-        {bubbles.map((b, i) => (
-          <div key={i} className="absolute rounded-full" style={{
-            width: b.size, height: b.size, left: `${b.x}%`, top: b.y,
-            background: `radial-gradient(circle at 35% 35%, ${colors[i % colors.length]}, rgba(0,0,0,0.2))`,
-            border: `1px solid ${colors[0]}`,
-            backdropFilter: "blur(4px)",
-            boxShadow: `inset 0 0 20px ${colors[0]}, 0 0 20px ${colors[0].replace("0.4", "0.08")}`,
-          }} />
-        ))}
-      </div>
-      <span style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 600, fontSize: 11, color: "rgba(255,255,255,0.7)", letterSpacing: "0.12em", textTransform: "uppercase" }}>{label}</span>
-    </div>
-  );
-}
-
-// ── Genre Node ──
-function GenreNode({ label, isSelected, onClick }: { label: string; isSelected: boolean; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="flex flex-col items-center gap-2 transition-all hover:scale-115">
-      <div className="w-11 h-11 rounded-full flex items-center justify-center transition-all" style={{
-        background: isSelected ? "rgba(192,132,252,0.35)" : "radial-gradient(circle, rgba(192,132,252,0.3), rgba(109,40,217,0.15))",
-        border: `1px solid ${isSelected ? "rgba(192,132,252,0.7)" : "rgba(192,132,252,0.4)"}`,
-        backdropFilter: "blur(6px)",
-        boxShadow: isSelected ? "0 0 24px rgba(192,132,252,0.4)" : "none",
-      }}>
-        <span style={{ fontSize: 16 }}>🎵</span>
-      </div>
-      <span style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 10, color: isSelected ? "#C084FC" : "rgba(255,255,255,0.65)" }}>{label}</span>
+    <button
+      onClick={onClick}
+      className="px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 whitespace-nowrap"
+      style={{
+        fontFamily: "'Raleway', sans-serif",
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+        background: isSelected ? "rgba(0,207,255,0.12)" : "rgba(255,255,255,0.03)",
+        border: isSelected ? "1px solid rgba(0,207,255,0.3)" : "1px solid rgba(255,255,255,0.06)",
+        backdropFilter: "blur(8px)",
+        color: isSelected ? "#00CFFF" : "rgba(255,255,255,0.45)",
+      }}
+    >
+      {label}
     </button>
   );
 }
@@ -145,49 +131,50 @@ export default function Discover() {
     toast.success(`Added "${track.title}" to queue`);
   };
 
+  const handleShuffleAll = () => {
+    if (genreFilteredSingles.length > 0) {
+      const normalized = genreFilteredSingles.map(t => ({ ...t, duration: t.duration || 0, file_path: t.file_path || '', play_count: t.play_count || 0 }));
+      const shuffled = [...normalized].sort(() => Math.random() - 0.5);
+      playTrack(shuffled[0], shuffled);
+    }
+  };
+
   // Build carousel data
   const tdzReleases = useMemo(() => {
-    const r: Array<{ id: string; title: string; artist: string; image: string; genre: string }> = [];
+    const r: Array<{ id: string; title: string; artist: string; image: string; genre: string; type: 'album' | 'track' }> = [];
     albums.filter(a => a.cover_art_path).forEach(album => {
       r.push({
         id: album.id, title: album.title, artist: album.artist_name,
         image: supabase.storage.from('album-covers').getPublicUrl(album.cover_art_path!).data.publicUrl,
-        genre: album.genre || 'Pop',
+        genre: album.genre || 'Music', type: 'album',
       });
     });
-    if (r.length < 8) {
-      tracks.filter(t => t.album_cover_path).slice(0, 8 - r.length).forEach(track => {
+    // Also include singles with cover art
+    if (r.length < 10) {
+      singles.filter(t => t.album_cover_path).slice(0, 10 - r.length).forEach(track => {
+        const bucket = track.album_cover_bucket || 'album-covers';
         r.push({
           id: track.id, title: track.title, artist: track.artist_name,
-          image: track.album_cover_bucket
-            ? supabase.storage.from(track.album_cover_bucket).getPublicUrl(track.album_cover_path!).data.publicUrl
-            : supabase.storage.from('album-covers').getPublicUrl(track.album_cover_path!).data.publicUrl,
-          genre: track.genre || 'Pop',
+          image: supabase.storage.from(bucket).getPublicUrl(track.album_cover_path!).data.publicUrl,
+          genre: track.genre || 'Music', type: 'track',
         });
       });
     }
     return r;
-  }, [albums, tracks]);
+  }, [albums, singles]);
+
+  const GENRES = ["Hip-Hop", "R&B", "Pop", "Electronic", "Rock", "Soul", "Latin", "Alternative"];
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#050510" }}>
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#00CFFF", borderTopColor: "transparent" }} />
-          <p style={{ color: "rgba(255,255,255,0.5)", fontFamily: "'Raleway', sans-serif", fontSize: 13 }}>Loading...</p>
+          <p style={{ color: "rgba(255,255,255,0.4)", fontFamily: "'Raleway', sans-serif", fontSize: 13 }}>Loading...</p>
         </div>
       </div>
     );
   }
-
-  const GENRES = ["Hip-Hop", "R&B", "Pop", "Electronic", "Rock", "Soul", "Latin", "Alternative"];
-  const MOODS = [
-    { label: "CHILL", colors: ["rgba(125,211,252,0.4)", "rgba(59,130,246,0.3)", "rgba(34,211,238,0.25)"] },
-    { label: "HYPE", colors: ["rgba(239,68,68,0.4)", "rgba(249,115,22,0.3)", "rgba(234,179,8,0.25)"] },
-    { label: "FOCUS", colors: ["rgba(34,197,94,0.4)", "rgba(16,185,129,0.3)", "rgba(20,184,166,0.25)"] },
-    { label: "VIBES", colors: ["rgba(192,132,252,0.4)", "rgba(139,92,246,0.3)", "rgba(168,85,247,0.25)"] },
-    { label: "LATE NIGHT", colors: ["rgba(99,102,241,0.4)", "rgba(79,70,229,0.3)", "rgba(67,56,202,0.25)"] },
-  ];
 
   const renderContent = () => {
     try {
@@ -226,9 +213,10 @@ export default function Discover() {
                   </ErrorBoundary>
                 )}
 
-                {/* ── Hero: 3D Coverflow Carousel ── */}
+                {/* ── Hero: For You - 3D Coverflow Carousel ── */}
                 {tdzReleases.length > 0 && (
                   <div className="py-8">
+                    <SectionHeader title="For You" subtitle="Your personalized releases" />
                     <div className="flex items-end gap-8">
                       <div className="flex-1">
                         <Swiper
@@ -239,73 +227,90 @@ export default function Discover() {
                           slidesPerView="auto"
                           loop={tdzReleases.length > 3}
                           autoplay={{ delay: 4000, disableOnInteraction: true }}
-                          coverflowEffect={{ rotate: 25, stretch: 10, depth: 180, modifier: 1.3, slideShadows: true }}
+                          coverflowEffect={{ rotate: 20, stretch: 10, depth: 200, modifier: 1.2, slideShadows: true }}
                           onSlideChange={(s) => setActiveSlide(s.realIndex)}
                           className="max-w-3xl"
                         >
                           {tdzReleases.map((release) => (
-                            <SwiperSlide key={release.id} style={{ width: 260, height: 260 }}>
-                              <img
-                                src={release.image}
-                                alt={release.title}
-                                className="w-full h-full object-cover rounded-xl cursor-pointer"
-                                style={{ boxShadow: "0 0 60px rgba(0,207,255,0.15)" }}
-                                onClick={() => {
-                                  const isAlbum = albums.some(a => a.id === release.id);
-                                  navigate(isAlbum ? `/album/${release.id}` : `/track/${release.id}`);
+                            <SwiperSlide key={release.id} style={{ width: 240, height: 240 }}>
+                              <div
+                                className="w-full h-full rounded-2xl overflow-hidden cursor-pointer group relative"
+                                style={{
+                                  border: "1px solid rgba(255,255,255,0.08)",
+                                  boxShadow: "0 8px 40px rgba(0,0,0,0.5), 0 0 60px rgba(0,207,255,0.08)",
                                 }}
-                                onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-album.jpg'; }}
-                              />
+                                onClick={() => navigate(release.type === 'album' ? `/album/${release.id}` : `/track/${release.id}`)}
+                              >
+                                <img
+                                  src={release.image}
+                                  alt={release.title}
+                                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                />
+                                {/* Glassmorphic info overlay on hover */}
+                                <div
+                                  className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-all duration-300"
+                                  style={{
+                                    background: "linear-gradient(to top, rgba(0,0,0,0.85), transparent)",
+                                    backdropFilter: "blur(8px)",
+                                  }}
+                                >
+                                  <p className="text-white text-sm font-bold truncate" style={{ fontFamily: "'Raleway', sans-serif" }}>{release.title}</p>
+                                  <p className="text-white/50 text-xs truncate" style={{ fontFamily: "'Raleway', sans-serif" }}>{release.artist}</p>
+                                </div>
+                              </div>
                             </SwiperSlide>
                           ))}
                         </Swiper>
                       </div>
-                      {/* Featured info */}
+                      {/* Featured info panel */}
                       {tdzReleases[activeSlide] && (
                         <div className="hidden lg:block w-64">
                           <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 42, color: "#FFFFFF", letterSpacing: "0.03em", lineHeight: 1.1 }}>
                             {tdzReleases[activeSlide].artist}
                           </p>
-                          <p className="mt-2" style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 400, fontSize: 16, color: "rgba(255,255,255,0.7)" }}>
+                          <p className="mt-2" style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 400, fontSize: 16, color: "rgba(255,255,255,0.6)" }}>
                             {tdzReleases[activeSlide].title}
                           </p>
-                          <button
-                            onClick={() => {
-                              const t = tracks.find(tr => tr.artist_name === tdzReleases[activeSlide].artist);
-                              if (t) handlePlayTrack(t);
-                            }}
-                            className="mt-4 px-6 py-2.5 rounded-full flex items-center gap-2 transition-all hover:scale-105"
-                            style={{ background: "#FFFFFF", color: "#000", fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 13 }}
-                          >
-                            <Play className="w-4 h-4" fill="black" /> Play
-                          </button>
+                          <div className="flex gap-3 mt-5">
+                            <button
+                              onClick={() => {
+                                const t = tracks.find(tr => tr.artist_name === tdzReleases[activeSlide].artist);
+                                if (t) handlePlayTrack(t);
+                              }}
+                              className="px-6 py-2.5 rounded-full flex items-center gap-2 transition-all hover:scale-105"
+                              style={{ background: "#FFFFFF", color: "#000", fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 13 }}
+                            >
+                              <Play className="w-4 h-4" fill="black" /> Play
+                            </button>
+                            <button
+                              onClick={handleShuffleAll}
+                              className="px-5 py-2.5 rounded-full flex items-center gap-2 transition-all hover:scale-105"
+                              style={{
+                                background: "rgba(255,255,255,0.06)",
+                                backdropFilter: "blur(8px)",
+                                border: "1px solid rgba(255,255,255,0.12)",
+                                color: "#FFFFFF",
+                                fontFamily: "'Raleway', sans-serif",
+                                fontWeight: 600,
+                                fontSize: 13,
+                              }}
+                            >
+                              <Shuffle className="w-4 h-4" /> Shuffle
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
                   </div>
                 )}
 
-                {/* ── Moodscapes ── */}
-                <div className="py-8">
-                  <SectionHeader title="Moodscapes" subtitle="Find your vibe" />
-                  <div className="flex items-center justify-between gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                    {MOODS.map((mood) => (
-                      <MoodscapeCluster
-                        key={mood.label}
-                        label={mood.label}
-                        colors={mood.colors}
-                        onClick={() => setActiveTab('ai-mix')}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {/* ── Genre Pathways ── */}
-                <div className="py-8">
-                  <SectionHeader title="Genre Pathways" />
-                  <div className="flex items-center gap-6 overflow-x-auto pb-4 scrollbar-hide">
+                {/* ── Genre Filters ── */}
+                <div className="py-6">
+                  <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                    <GenrePill label="All" isSelected={!selectedGenre} onClick={() => setSelectedGenre(undefined)} />
                     {GENRES.map((genre) => (
-                      <GenreNode
+                      <GenrePill
                         key={genre}
                         label={genre}
                         isSelected={selectedGenre === genre}
@@ -316,7 +321,7 @@ export default function Discover() {
                 </div>
 
                 {/* ── Artist Portals ── */}
-                <div className="py-8">
+                <div className="py-6">
                   <SectionHeader title="Artist Portals" subtitle={`${artists.length} Artists`} />
                   <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
                     {artists.slice(0, 8).map((artist) => (
@@ -331,49 +336,63 @@ export default function Discover() {
                   </div>
                 </div>
 
-                {/* ── New This Week ── */}
-                <div className="py-8">
+                {/* ── New This Week (Singles with artwork) ── */}
+                <div className="py-6">
                   <SectionHeader title="New This Week" subtitle="Fresh releases from TDZ artists" />
                   <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide">
-                    {genreFilteredSingles.slice(0, 10).map((track) => (
-                      <AlbumCard
-                        key={track.id}
-                        album={{
-                          ...track,
-                          cover_art_path: track.album_cover_path,
-                          image: track.album_cover_bucket
-                            ? supabase.storage.from(track.album_cover_bucket).getPublicUrl(track.album_cover_path || '').data.publicUrl
-                            : track.album_cover_path
-                              ? supabase.storage.from('album-covers').getPublicUrl(track.album_cover_path).data.publicUrl
-                              : null,
-                        }}
-                        onClick={() => navigate(`/track/${track.id}`)}
-                        onPlay={() => handlePlayTrack(track)}
-                      />
-                    ))}
+                    {genreFilteredSingles.slice(0, 10).map((track) => {
+                      const coverUrl = track.album_cover_path
+                        ? supabase.storage.from(track.album_cover_bucket || 'album-covers').getPublicUrl(track.album_cover_path).data.publicUrl
+                        : null;
+                      return (
+                        <AlbumCard
+                          key={track.id}
+                          album={{
+                            ...track,
+                            cover_art_path: track.album_cover_path,
+                            image: coverUrl,
+                          }}
+                          onClick={() => navigate(`/track/${track.id}`)}
+                          onPlay={() => handlePlayTrack(track)}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* ── Track list ── */}
-                <div className="py-8">
+                {/* ── TDZ Singles Track List ── */}
+                <div className="py-6">
                   <SectionHeader title={selectedGenre ? `${selectedGenre} Singles` : "TDZ Singles"} />
-                  <SongListHeader />
-                  {genreFilteredSingles.slice(0, 10).map((track, i) => (
-                    <SongRow
-                      key={track.id}
-                      track={track}
-                      index={i + 1}
-                      isPlaying={currentTrack?.id === track.id}
-                      isLiked={likedTracks.has(track.id)}
-                      onPlay={handlePlayTrack}
-                      onToggleLike={toggleLike}
-                      onAddToQueue={handleAddToQueue}
-                    />
-                  ))}
+                  {/* Glassmorphic container for track list */}
+                  <div
+                    className="rounded-2xl overflow-hidden"
+                    style={{
+                      background: "rgba(255,255,255,0.02)",
+                      backdropFilter: "blur(16px)",
+                      border: "1px solid rgba(255,255,255,0.05)",
+                      boxShadow: "0 4px 32px rgba(0,0,0,0.3)",
+                    }}
+                  >
+                    <div className="p-2">
+                      <SongListHeader />
+                      {genreFilteredSingles.slice(0, 15).map((track, i) => (
+                        <SongRow
+                          key={track.id}
+                          track={track}
+                          index={i + 1}
+                          isPlaying={currentTrack?.id === track.id}
+                          isLiked={likedTracks.has(track.id)}
+                          onPlay={handlePlayTrack}
+                          onToggleLike={toggleLike}
+                          onAddToQueue={handleAddToQueue}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 {/* ── Editorial Picks ── */}
-                <div className="py-8">
+                <div className="py-6">
                   <SectionHeader title="Editorial Picks" />
                   <ErrorBoundary fallback={null}>
                     <EditorialPlaylistsSection />
@@ -382,7 +401,7 @@ export default function Discover() {
 
                 {/* ── Albums ── */}
                 {albums.length > 0 && (
-                  <div className="py-8">
+                  <div className="py-6">
                     <SectionHeader title="TDZ Albums" />
                     <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide">
                       {albums.map((album) => (
@@ -415,25 +434,38 @@ export default function Discover() {
           return (
             <div className="space-y-0">
               <CosmicTopBar activeTab={activeTab} onTabChange={setActiveTab} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-              <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+              <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
                 <div>
                   <h2 style={{
-                    fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(40px, 5vw, 56px)", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1,
-                    background: "linear-gradient(180deg, #D0D0D0 0%, #FFFFFF 25%, #9A9A9A 55%, #404040 100%)",
-                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                  }}>EXPLORE TDZ</h2>
-                  <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 300, fontSize: 16, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>
+                    fontFamily: "'Six Caps', sans-serif",
+                    fontSize: "clamp(40px, 5vw, 56px)",
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                    lineHeight: 1,
+                    background: "linear-gradient(180deg, #FFFFFF 0%, #888888 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}>
+                    EXPLORE TDZ
+                  </h2>
+                  <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 300, fontSize: 14, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>
                     Stream independent artists worldwide. Every play pays.
                   </p>
                 </div>
 
-                {/* Category grid */}
+                {/* Category grid - Glassmorphic */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {["TRENDING NOW", "NEW RELEASES", "TOP CHARTS", "HIP-HOP", "R&B / SOUL", "ELECTRONIC", "POP", "ROCK", "LATIN"].map((cat, i) => (
                     <div
                       key={cat}
-                      className="relative rounded-2xl overflow-hidden cursor-pointer transition-all hover:scale-[1.03] group"
-                      style={{ height: 200, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                      className="relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.03] hover:-translate-y-1 group"
+                      style={{
+                        height: 180,
+                        background: "rgba(255,255,255,0.03)",
+                        backdropFilter: "blur(16px)",
+                        border: "1px solid rgba(255,255,255,0.06)",
+                        boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+                      }}
                       onClick={() => {
                         if (cat === "TRENDING NOW") setSelectedGenre(undefined);
                         else setSelectedGenre(cat.split(" / ")[0]);
@@ -442,17 +474,20 @@ export default function Discover() {
                     >
                       <div className="absolute inset-0" style={{
                         background: [
-                          "linear-gradient(135deg, rgba(0,207,255,0.15), rgba(139,92,246,0.1))",
-                          "linear-gradient(135deg, rgba(34,197,94,0.15), rgba(0,207,255,0.1))",
-                          "linear-gradient(135deg, rgba(212,160,23,0.15), rgba(239,68,68,0.1))",
-                          "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(59,130,246,0.1))",
-                          "linear-gradient(135deg, rgba(236,72,153,0.15), rgba(139,92,246,0.1))",
-                          "linear-gradient(135deg, rgba(0,207,255,0.2), rgba(34,197,94,0.1))",
-                          "linear-gradient(135deg, rgba(249,115,22,0.15), rgba(234,179,8,0.1))",
-                          "linear-gradient(135deg, rgba(239,68,68,0.15), rgba(249,115,22,0.1))",
-                          "linear-gradient(135deg, rgba(34,197,94,0.2), rgba(234,179,8,0.1))",
+                          "linear-gradient(135deg, rgba(0,207,255,0.08), rgba(139,92,246,0.06))",
+                          "linear-gradient(135deg, rgba(34,197,94,0.08), rgba(0,207,255,0.06))",
+                          "linear-gradient(135deg, rgba(212,160,23,0.08), rgba(239,68,68,0.06))",
+                          "linear-gradient(135deg, rgba(139,92,246,0.1), rgba(59,130,246,0.06))",
+                          "linear-gradient(135deg, rgba(236,72,153,0.08), rgba(139,92,246,0.06))",
+                          "linear-gradient(135deg, rgba(0,207,255,0.1), rgba(34,197,94,0.06))",
+                          "linear-gradient(135deg, rgba(249,115,22,0.08), rgba(234,179,8,0.06))",
+                          "linear-gradient(135deg, rgba(239,68,68,0.08), rgba(249,115,22,0.06))",
+                          "linear-gradient(135deg, rgba(34,197,94,0.1), rgba(234,179,8,0.06))",
                         ][i],
                       }} />
+                      {/* Glassmorphic glow on hover */}
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl"
+                        style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.08), 0 0 30px rgba(0,207,255,0.05)" }} />
                       <div className="absolute bottom-0 left-0 right-0 p-5">
                         <span style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 28, color: "#FFFFFF", letterSpacing: "0.04em" }}>{cat}</span>
                       </div>
@@ -460,10 +495,9 @@ export default function Discover() {
                   ))}
                 </div>
 
-                {/* Trending + Editorial */}
+                {/* Charts */}
                 <div className="grid lg:grid-cols-2 gap-8">
                   <div>
-                    <SectionHeader title="Genre Charts" />
                     <ErrorBoundary fallback={null}><GenreTop50Section onViewAll={() => setActiveTab('library')} /></ErrorBoundary>
                   </div>
                   <div>
@@ -487,75 +521,57 @@ export default function Discover() {
               <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
                 <SectionHeader title="Your Collection" subtitle="Global Library" />
 
-                {/* Library filter tabs */}
+                {/* Library filter pills - glassmorphic */}
                 <div className="flex gap-2 flex-wrap">
                   {["PLAYLISTS", "ALBUMS", "ARTISTS", "SONGS", "DOWNLOADED", "RECENTLY ADDED"].map((tab) => (
-                    <button key={tab} onClick={() => setLibraryFilter(tab)}
-                      className="px-4 py-1.5 rounded-full text-xs font-semibold tracking-wider uppercase transition-all"
-                      style={{
-                        fontFamily: "'Raleway', sans-serif",
-                        background: libraryFilter === tab ? "rgba(0,207,255,0.15)" : "rgba(255,255,255,0.04)",
-                        border: libraryFilter === tab ? "1px solid rgba(0,207,255,0.3)" : "1px solid rgba(255,255,255,0.06)",
-                        color: libraryFilter === tab ? "#00CFFF" : "rgba(255,255,255,0.45)",
-                        letterSpacing: "0.1em",
-                      }}
-                    >
-                      {tab}
-                    </button>
+                    <GenrePill key={tab} label={tab} isSelected={libraryFilter === tab} onClick={() => setLibraryFilter(tab)} />
                   ))}
                 </div>
 
-                {/* Hex grid for albums */}
+                {/* Albums grid - glassmorphic cards */}
                 {(libraryFilter === "ALBUMS" || libraryFilter === "PLAYLISTS") && albums.length > 0 && (
-                  <div className="grid gap-1" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}>
-                    {albums.map((album) => {
-                      const coverUrl = album.cover_art_path
-                        ? supabase.storage.from('album-covers').getPublicUrl(album.cover_art_path).data.publicUrl
-                        : null;
-                      return (
-                        <div
-                          key={album.id}
-                          className="relative cursor-pointer transition-all hover:brightness-125 hover:scale-[1.04]"
-                          style={{
-                            aspectRatio: "1",
-                            clipPath: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)",
-                            background: "rgba(255,255,255,0.04)",
-                            overflow: "hidden",
-                          }}
-                          onClick={() => navigate(`/album/${album.id}`)}
-                        >
-                          {coverUrl ? (
-                            <img src={coverUrl} alt={album.title} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-album.jpg'; }} />
-                          ) : (
-                            <div className="w-full h-full" style={{ background: "linear-gradient(135deg, #1A1A2E, #2A2A4E)" }} />
-                          )}
-                          <div className="absolute left-0 right-0 text-center px-2" style={{ bottom: "22%" }}>
-                            <span className="truncate block" style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 11, color: "#FFFFFF", textShadow: "0 2px 8px rgba(0,0,0,0.9)" }}>
-                              {album.title}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}>
+                    {albums.map((album) => (
+                      <AlbumCard
+                        key={album.id}
+                        size="sm"
+                        album={{
+                          ...album,
+                          image: album.cover_art_path
+                            ? supabase.storage.from('album-covers').getPublicUrl(album.cover_art_path).data.publicUrl
+                            : null,
+                        }}
+                        onClick={() => navigate(`/album/${album.id}`)}
+                      />
+                    ))}
                   </div>
                 )}
 
                 {/* Songs list */}
                 {libraryFilter === "SONGS" && (
-                  <div>
-                    <SongListHeader />
-                    {genreFilteredSingles.map((track, i) => (
-                      <SongRow
-                        key={track.id}
-                        track={track}
-                        index={i + 1}
-                        isPlaying={currentTrack?.id === track.id}
-                        isLiked={likedTracks.has(track.id)}
-                        onPlay={handlePlayTrack}
-                        onToggleLike={toggleLike}
-                        onAddToQueue={handleAddToQueue}
-                      />
-                    ))}
+                  <div
+                    className="rounded-2xl overflow-hidden"
+                    style={{
+                      background: "rgba(255,255,255,0.02)",
+                      backdropFilter: "blur(16px)",
+                      border: "1px solid rgba(255,255,255,0.05)",
+                    }}
+                  >
+                    <div className="p-2">
+                      <SongListHeader />
+                      {genreFilteredSingles.map((track, i) => (
+                        <SongRow
+                          key={track.id}
+                          track={track}
+                          index={i + 1}
+                          isPlaying={currentTrack?.id === track.id}
+                          isLiked={likedTracks.has(track.id)}
+                          onPlay={handlePlayTrack}
+                          onToggleLike={toggleLike}
+                          onAddToQueue={handleAddToQueue}
+                        />
+                      ))}
+                    </div>
                   </div>
                 )}
 
@@ -587,18 +603,24 @@ export default function Discover() {
                   </div>
 
                   {/* Smart Library Sidebar */}
-                  <div className="hidden lg:block space-y-4">
-                    <h3 style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 800, fontSize: 12, color: "rgba(255,255,255,0.9)", letterSpacing: "0.18em", textTransform: "uppercase" }}>SMART LIBRARY</h3>
+                  <div className="hidden lg:block space-y-3">
+                    <h3 style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 800, fontSize: 11, color: "rgba(255,255,255,0.4)", letterSpacing: "0.15em", textTransform: "uppercase" }}>
+                      SMART LIBRARY
+                    </h3>
                     {[
                       { title: "Recommended Playlists for You", color: "#00CFFF" },
                       { title: "Albums by Your Favorite Artists", color: "#8B5CF6" },
                       { title: "New Releases from Artists You Follow", color: "#22C55E" },
                       { title: "Soundtracks of Your Journey", color: "#D4A017" },
                     ].map((item, i) => (
-                      <div key={i} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all hover:bg-white/[0.08]"
-                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                        <div className="w-11 h-11 rounded-lg flex-shrink-0" style={{ background: `${item.color}20` }} />
-                        <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "rgba(255,255,255,0.75)", fontWeight: 500, lineHeight: 1.4 }}>{item.title}</span>
+                      <div key={i} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all hover:bg-white/[0.06]"
+                        style={{
+                          background: "rgba(255,255,255,0.02)",
+                          backdropFilter: "blur(8px)",
+                          border: "1px solid rgba(255,255,255,0.04)",
+                        }}>
+                        <div className="w-10 h-10 rounded-lg flex-shrink-0" style={{ background: `${item.color}15`, border: `1px solid ${item.color}20` }} />
+                        <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "rgba(255,255,255,0.65)", fontWeight: 500, lineHeight: 1.4 }}>{item.title}</span>
                       </div>
                     ))}
                   </div>
