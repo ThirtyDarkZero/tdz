@@ -9,7 +9,7 @@ import { usePlayer } from "@/contexts/PlayerContext";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { LyricsPanel } from "@/components/LyricsPanel";
 import { SongRow } from "./SongRow";
-import { supabase } from "@/integrations/supabase/client";
+
 
 function fmt(s: number) {
   const m = Math.floor(s / 60);
