@@ -117,6 +117,33 @@ Day of Week: ${new Date().toLocaleDateString('en-US', { weekday: 'long' })}`;
         break;
       }
 
+      case "storytelling-content": {
+        const contentTypePrompts: Record<string, string> = {
+          "caption": `Write a compelling social media caption (Instagram/TikTok) for this artist. Keep it under 300 characters, include relevant emoji, make it authentic to their voice. Do NOT write about a release unless specified.`,
+          "tweet": `Write a Twitter/X thread (3-5 tweets) for this artist. Each tweet under 280 chars. Make it conversational, authentic, and engaging. Do NOT treat this as a release announcement unless specified.`,
+          "bio": `Write a professional artist biography (3-4 paragraphs). Cover their origin, musical style, mission, and what makes them unique. This is a BIOGRAPHY about the artist as a person and musician — NOT a release announcement, NOT marketing copy. Write in third person.`,
+          "press-release": `Write a professional press release for this artist. Include a headline, dateline, body paragraphs covering their story, quotes, and a boilerplate. Format it like a real music industry press release.`,
+          "email": `Write a fan newsletter email. Include a warm greeting, personal update, and a call-to-action. Make it feel like a personal letter from the artist to their fans.`,
+          "announcement": `Write a release/drop announcement. Build hype, tease the content, include a clear call-to-action. Make it exciting and urgent.`,
+        };
+        const contentType = data.content_type || "caption";
+        const typePrompt = contentTypePrompts[contentType] || contentTypePrompts["caption"];
+        
+        systemPrompt = `You are a music industry copywriter who writes content that sounds authentically like the artist. You MUST follow the specific content type instructions exactly. Never confuse a biography with a release announcement.`;
+        userPrompt = `${typePrompt}
+
+Here is everything about the artist:
+- Origin Story: ${data.origin_story || "Not provided"}
+- Mission: ${data.artist_mission || "Not provided"}  
+- Emotional Core: ${data.emotional_core || "Not provided"}
+- Target Audience: ${data.target_audience || "Not provided"}
+- Brand Voice / Vibe: ${data.brand_voice || "Not provided"}
+- Additional Context: ${data.extra_context || "None"}
+
+Write the ${contentType} now. Stay true to their voice and story.`;
+        break;
+      }
+
       case "email-subject-optimize": {
         systemPrompt = "You are an email marketing expert specializing in music. Optimize email subject lines for open rates.";
         userPrompt = `Generate 5 optimized subject line variants for this email:
