@@ -345,13 +345,13 @@ export default function Discover() {
                       grabCursor
                       centeredSlides
                       slidesPerView="auto"
-                      loop={forYouItems.length > 3}
-                      autoplay={{ delay: 4000, disableOnInteraction: true }}
+                      loop={true}
+                      autoplay={{ delay: 3500, disableOnInteraction: true }}
                       coverflowEffect={{ rotate: 30, stretch: 0, depth: 200, modifier: 1.2, slideShadows: true }}
                       className="w-full"
                       style={{ paddingTop: 8, paddingBottom: 16, overflow: "visible" }}
                     >
-                      {forYouItems.slice(0, 10).map(item => (
+                      {forYouItems.map(item => (
                         <SwiperSlide key={item.id} style={{ width: 200, height: 200 }}>
                           <div
                             className="relative w-full h-full cursor-pointer group"
