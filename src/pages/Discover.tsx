@@ -409,7 +409,7 @@ export default function Discover() {
     return () => clearInterval(interval);
   }, [forYouItems.length]);
 
-  const GENRES = ["Hip-Hop", "R&B", "Pop", "Electronic", "Rock", "Soul", "Latin", "Alternative"];
+  const GENRES = ["Hip-Hop", "R&B", "Pop", "Rock", "Latin", "Jazz", "Dance", "Afrobeats"];
 
   if (loading) {
     return (
