@@ -244,7 +244,8 @@ export default function Discover() {
   const [showSearch, setShowSearch] = useState(false);
   const [libraryFilter, setLibraryFilter] = useState("PLAYLISTS");
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [exploreView, setExploreView] = useState<"main" | "trending" | "new" | "charts">("main");
+  const [exploreView, setExploreView] = useState<"main" | "trending" | "new" | "charts" | "genre">("main");
+  const [exploreGenre, setExploreGenre] = useState<string>("");
   const [carouselCenterIndex, setCarouselCenterIndex] = useState(0);
   const { mood, setMood } = useMood();
 
