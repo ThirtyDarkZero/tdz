@@ -238,6 +238,7 @@ export function TourDatesManager() {
   const [useEventbrite, setUseEventbrite] = useState(false);
   const [orgId, setOrgId] = useState<string | null>(null);
   const [loadingOrg, setLoadingOrg] = useState(false);
+  const [ebConnectionError, setEbConnectionError] = useState<string | null>(null);
 
   // Form state
   const [venue, setVenue] = useState("");
