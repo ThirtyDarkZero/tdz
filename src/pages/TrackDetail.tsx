@@ -694,13 +694,8 @@ export default function TrackDetail() {
         )}
       </div>
 
-      <MusicPlayer
-        currentTrack={currentTrack}
-        queue={currentTrack ? [currentTrack] : []}
-        onNext={() => {}}
-        onPrevious={() => {}}
-        onTrackEnd={() => {}}
-      />
+
+
     </div>
   );
 }

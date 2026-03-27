@@ -182,14 +182,8 @@ function StudioContent() {
           </div>
         </main>
 
-        {/* Music Player */}
-        <MusicPlayer
-          currentTrack={currentTrack}
-          queue={queue}
-          onNext={handleNext}
-          onPrevious={handlePrevious}
-          onTrackEnd={handleTrackEnd}
-        />
+
+
 
         {/* Upload Dialog */}
         <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
