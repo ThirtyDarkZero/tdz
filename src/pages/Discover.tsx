@@ -335,10 +335,10 @@ export default function Discover() {
                     <Swiper
                       modules={[EffectCoverflow, Autoplay]}
                       effect="coverflow"
-                      coverflowEffect={{ rotate: 8, stretch: 30, depth: 120, modifier: 1, slideShadows: false }}
+                      coverflowEffect={{ rotate: 4, stretch: 80, depth: 100, modifier: 1, slideShadows: false }}
                       centeredSlides={true}
-                      slidesPerView={2.4}
-                      spaceBetween={-10}
+                      slidesPerView={3.2}
+                      spaceBetween={-30}
                       loop={forYouItems.length > 3}
                       autoplay={{ delay: 3500, disableOnInteraction: false }}
                       className="w-full"
