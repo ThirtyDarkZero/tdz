@@ -168,7 +168,7 @@ function StudioContent() {
         <main className={cn(
           "transition-all duration-300 min-h-screen pb-32",
           "ml-0",
-          sidebarCollapsed ? "md:ml-16" : "md:ml-[350px]"
+          sidebarCollapsed ? "md:ml-16" : "md:ml-[240px] lg:ml-[350px]"
         )}>
           {/* Subtle cyan radial gradient */}
           <div className="fixed inset-0 pointer-events-none z-0">
