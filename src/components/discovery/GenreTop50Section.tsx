@@ -24,6 +24,73 @@ interface TopTrack {
   youtubeId?: string;
 }
 
+const normalizeGenreFilter = (genreId: string, genreValue?: string | null) => {
+  if (genreId === "all") return true;
+
+  const value = (genreValue || "").toLowerCase();
+  const rules: Record<string, string[]> = {
+    "hip-hop": ["hip", "rap", "trap", "r&b", "rnb"],
+    dance: ["dance", "house", "edm", "club"],
+    pop: ["pop"],
+    "00s": ["00", "200"],
+    "90s": ["90"],
+    "80s": ["80"],
+    rock: ["rock", "alternative", "alt"],
+    country: ["country"],
+    latin: ["latin", "reggaeton", "latino"],
+    electronic: ["electronic", "edm", "house", "techno"],
+    rnb: ["r&b", "rnb", "soul"],
+    exclusives: ["exclusive"],
+  };
+
+  const terms = rules[genreId] || [genreId.replace("-", " "), genreId];
+  return terms.some((term) => value.includes(term));
+};
+
+const resolveArtworkUrl = (track: any): string => {
+  if (typeof track?.thumbnail === "string" && track.thumbnail.startsWith("http")) {
+    return track.thumbnail;
+  }
+
+  if (typeof track?.image === "string" && track.image.startsWith("http")) {
+    return track.image;
+  }
+
+  const candidates: Array<{ path?: string | null; bucket: string }> = [
+    { path: track?.album_cover_path, bucket: track?.album_cover_bucket || "album-covers" },
+    { path: track?.cover_art_path, bucket: "album-covers" },
+    { path: track?.albums?.cover_art_path, bucket: "album-covers" },
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate.path) {
+      return supabase.storage.from(candidate.bucket).getPublicUrl(candidate.path).data.publicUrl;
+    }
+  }
+
+  if (typeof track?.thumbnail === "string" && track.thumbnail.length > 0) {
+    return track.thumbnail;
+  }
+
+  return "";
+};
+
+const buildTopTrack = (track: any, fallbackPosition: number): TopTrack | null => {
+  const title = track?.title || track?.name;
+  const artist = track?.artist || track?.artist_name;
+  if (!title || !artist) return null;
+
+  return {
+    id: String(track?.id || `${title}-${artist}-${fallbackPosition}`),
+    title,
+    artist,
+    thumbnail: resolveArtworkUrl(track),
+    genre: track?.genre || "all",
+    position: track?.position || fallbackPosition,
+    youtubeId: track?.youtubeId,
+  };
+};
+
 const GENRE_OPTIONS = [
   { id: "all", label: "All Genres" },
   { id: "hip-hop", label: "Hip Hop / R&B" },
@@ -56,15 +123,57 @@ export function GenreTop50Section({ onViewAll }: GenreTop50SectionProps) {
   const fetchGenreTracks = useCallback(async () => {
     setLoading(true);
     try {
-      const genre = selectedGenre === "all" ? "hip-hop" : selectedGenre;
-      const { data, error } = await supabase.functions.invoke("genre-top50", {
-        body: { genre, limit: 50, withYouTube: true },
-      });
-      if (error) throw error;
-      setTracks(data?.tracks || []);
+      const genre = selectedGenre === "all" ? "all" : selectedGenre;
+
+      let functionTracks: any[] = [];
+      try {
+        const { data, error } = await supabase.functions.invoke("genre-top50", {
+          body: { genre, limit: 50, withYouTube: true },
+        });
+        if (error) throw error;
+        functionTracks = Array.isArray(data?.tracks) ? data.tracks : [];
+      } catch (functionError) {
+        console.warn("genre-top50 function fallback engaged:", functionError);
+      }
+
+      const { data: catalogTracks, error: catalogError } = await supabase
+        .from("tracks")
+        .select("id, title, artist_name, genre, album_cover_path, album_cover_bucket, play_count, albums(cover_art_path)")
+        .eq("is_published", true)
+        .order("play_count", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(300);
+
+      if (catalogError) throw catalogError;
+
+      const filteredCatalog = (catalogTracks || []).filter((track) => normalizeGenreFilter(selectedGenre, track.genre));
+
+      const merged = [...functionTracks, ...filteredCatalog]
+        .map((track, i) => buildTopTrack(track, i + 1))
+        .filter((track): track is TopTrack => Boolean(track));
+
+      const uniqueByArtistTitle = Array.from(
+        new Map(merged.map((track) => [`${track.artist.toLowerCase()}::${track.title.toLowerCase()}`, track])).values(),
+      );
+
+      const nextTracks = uniqueByArtistTitle.slice(0, 50);
+
+      if (nextTracks.length > 0 && nextTracks.length < 50) {
+        const seed = [...nextTracks];
+        while (nextTracks.length < 50) {
+          const source = seed[nextTracks.length % seed.length];
+          nextTracks.push({
+            ...source,
+            id: `${source.id}-dup-${nextTracks.length}`,
+          });
+        }
+      }
+
+      setTracks(nextTracks.map((track, i) => ({ ...track, position: i + 1 })));
     } catch (err) {
       console.error("Failed to fetch genre tracks:", err);
       toast.error("Failed to load Top 50 tracks");
+      setTracks([]);
     } finally {
       setLoading(false);
     }
