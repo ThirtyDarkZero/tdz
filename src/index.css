@@ -175,8 +175,9 @@
 
 @layer utilities {
   .glass-card {
-    @apply bg-card/40 backdrop-blur-xl border border-border/50;
-    box-shadow: var(--shadow-card), var(--shadow-inner-glow);
+    @apply bg-card/20 backdrop-blur-2xl border border-border/30;
+    box-shadow: var(--shadow-card), var(--shadow-inner-glow), inset 0 1px 0 hsl(0 0% 100% / 0.06);
+    backdrop-filter: blur(40px) saturate(180%);
   }
   
   .glass-card-premium {
