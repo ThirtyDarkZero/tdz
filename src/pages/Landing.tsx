@@ -87,16 +87,16 @@ function NavPill() {
     { sub: "SHOP", main: "STORE", path: "/pricing" },
   ];
   return (
-    <div className="flex gap-0 mx-auto w-fit rounded-full px-2 py-2.5" style={{ background: "rgba(55,55,55,0.5)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(20px)" }}>
+    <div className="flex gap-0 mx-auto w-fit rounded-full px-1.5 sm:px-2 py-2 sm:py-2.5" style={{ background: "rgba(55,55,55,0.5)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(20px)" }}>
       {items.map((item, i) => (
         <button
           key={i}
           onClick={() => navigate(item.path)}
-          className="flex flex-col items-center gap-0.5 px-5 sm:px-7 py-2 rounded-full transition-colors"
+          className="flex flex-col items-center gap-0.5 px-3 sm:px-5 md:px-7 py-1.5 sm:py-2 rounded-full transition-colors"
           style={i === 0 ? { background: "rgba(80,80,80,0.5)" } : {}}
         >
-          <span style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: "9px", color: "#888", letterSpacing: "0.18em", textTransform: "uppercase" as const }}>{item.sub}</span>
-          <span style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "22px", color: "#FFF", letterSpacing: "0.06em" }}>{item.main}</span>
+          <span style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: "8px", color: "#888", letterSpacing: "0.18em", textTransform: "uppercase" as const }}>{item.sub}</span>
+          <span style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(16px, 4vw, 22px)", color: "#FFF", letterSpacing: "0.06em" }}>{item.main}</span>
         </button>
       ))}
     </div>
