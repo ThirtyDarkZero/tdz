@@ -14,8 +14,8 @@ export const StudioPromote = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-display font-black tracking-tight mb-2">Promote</h1>
-        <p className="text-muted-foreground">Grow your audience and engage with fans</p>
+        <h1 style={{ fontFamily: "'Six Caps', sans-serif", letterSpacing: "0.04em", fontSize: "2rem" }}>Promote</h1>
+        <p style={{ fontFamily: "'Raleway', sans-serif" }} className="text-muted-foreground">Grow your audience and engage with fans</p>
       </div>
 
       <Tabs defaultValue="fans" className="space-y-6">

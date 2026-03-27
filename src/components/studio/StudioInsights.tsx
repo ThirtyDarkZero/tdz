@@ -15,8 +15,8 @@ export const StudioInsights = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-display font-black tracking-tight mb-2">Insights</h1>
-        <p className="text-muted-foreground">Track your performance, audience, and growth</p>
+        <h1 style={{ fontFamily: "'Six Caps', sans-serif", letterSpacing: "0.04em", fontSize: "2rem" }}>Insights</h1>
+        <p style={{ fontFamily: "'Raleway', sans-serif" }} className="text-muted-foreground">Track your performance, audience, and growth</p>
       </div>
 
       <Tabs defaultValue="advanced" className="space-y-6">
