@@ -125,33 +125,56 @@ export function YouTubePlayerEnhanced({
     }
   }, [onPlayingChange, isReady]);
 
-  // Initialize YouTube player
+  // Initialize YouTube player — reuse existing player when possible for faster transitions
   useEffect(() => {
     if (lastVideoIdRef.current === videoId && playerRef.current && isReady) {
       try {
         playerRef.current.playVideo?.();
         onPlayingChange(true);
-      } catch (e) {
-        // Ignore
-      }
+      } catch (e) {}
       return;
     }
     
     if (initializingRef.current && lastVideoIdRef.current === videoId) return;
     
     initializingRef.current = true;
+    const prevVideoId = lastVideoIdRef.current;
     lastVideoIdRef.current = videoId;
     
     const initPlayer = () => {
-      // Reset readiness any time we (re)create the underlying IFrame player
       setIsReady(false);
+
+      // If we already have a player, just load the new video instead of destroying/recreating
+      if (playerRef.current && prevVideoId) {
+        try {
+          if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+          playerRef.current.loadVideoById({ videoId, startSeconds: 0 });
+          // onReady won't fire again, so handle state here
+          initializingRef.current = false;
+          setIsReady(true);
+          crossfadeTriggeredRef.current = false;
+          setCurrentTime(0);
+          setDuration(playerRef.current.getDuration?.() || 0);
+          onPlayingChange(true);
+          
+          intervalRef.current = window.setInterval(() => {
+            if (playerRef.current?.getCurrentTime) {
+              const time = playerRef.current.getCurrentTime();
+              setCurrentTime(time);
+              setContextTime(time);
+              const dur = playerRef.current.getDuration?.() || 0;
+              if (dur > 0 && duration !== dur) setDuration(dur);
+            }
+          }, 500);
+          return;
+        } catch (e) {
+          // Fall through to full init
+        }
+      }
 
       if (playerRef.current) {
         try {
-          if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
-          }
+          if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
           playerRef.current.destroy();
           playerRef.current = null;
         } catch (e) {}
