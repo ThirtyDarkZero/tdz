@@ -22,6 +22,7 @@ import { UserPlaylistsSection } from "@/components/discovery/UserPlaylistsSectio
 import { GenreTop50Section } from "@/components/discovery/GenreTop50Section";
 import { PlaylistManager } from "@/components/PlaylistManager";
 import { ProfileHub } from "@/components/discovery/ProfileHub";
+import { GenrePlaylistDetail } from "@/components/discovery/GenrePlaylistDetail";
 
 type FeaturedItem = {
   id: string;
