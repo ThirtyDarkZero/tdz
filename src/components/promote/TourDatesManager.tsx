@@ -280,19 +280,29 @@ export function TourDatesManager() {
   const loadEventbriteOrg = async () => {
     if (orgId) return;
     setLoadingOrg(true);
+    setEbConnectionError(null);
     try {
       const { data, error } = await supabase.functions.invoke("eventbrite-api", {
         body: { action: "get_organizations" },
       });
       if (error) throw error;
+      if (data?.error?.includes("EVENTBRITE_API_TOKEN")) {
+        setEbConnectionError("no_token");
+        return;
+      }
       const orgs = data?.data?.organizations;
       if (orgs && orgs.length > 0) {
         setOrgId(orgs[0].id);
       } else {
-        toast.error("No Eventbrite organization found");
+        setEbConnectionError("no_org");
       }
     } catch (err: any) {
-      toast.error("Eventbrite connection failed: " + (err.message || "Unknown error"));
+      const msg = err.message || "";
+      if (msg.includes("EVENTBRITE_API_TOKEN") || msg.includes("not configured")) {
+        setEbConnectionError("no_token");
+      } else {
+        setEbConnectionError(msg || "Connection failed");
+      }
     } finally {
       setLoadingOrg(false);
     }
