@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { MusicPlayer } from "@/components/MusicPlayer";
+
 import { MultiTrackUploader } from "@/components/MultiTrackUploader";
 import { PendingInvitesPanel } from "@/components/PendingInvitesPanel";
 import { ManagerDashboard } from "@/components/ManagerDashboard";
@@ -182,14 +182,8 @@ function StudioContent() {
           </div>
         </main>
 
-        {/* Music Player */}
-        <MusicPlayer
-          currentTrack={currentTrack}
-          queue={queue}
-          onNext={handleNext}
-          onPrevious={handlePrevious}
-          onTrackEnd={handleTrackEnd}
-        />
+
+
 
         {/* Upload Dialog */}
         <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
