@@ -176,7 +176,7 @@ function StudioContent() {
             <div className="absolute bottom-1/3 left-1/4 w-[400px] h-[400px] rounded-full blur-[100px]" style={{ background: "rgba(139,92,246,0.03)" }} />
           </div>
 
-          <div className="relative z-10 p-4 pt-16 md:pt-6 md:p-8 lg:p-10 max-w-7xl mx-auto">
+          <div className="relative z-10 p-3 pt-16 sm:p-4 sm:pt-16 md:pt-6 md:p-6 lg:p-10 max-w-7xl mx-auto">
             <PendingInvitesPanel />
             {renderContent()}
           </div>

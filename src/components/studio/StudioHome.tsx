@@ -154,7 +154,7 @@ export const StudioHome = ({ artistName, onNavigate, onUploadClick }: StudioHome
       </div>
 
       {/* Content Boxes */}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
         {/* YOUR STORY SO FAR */}
         <div className="md:col-span-2 rounded-xl overflow-hidden" style={{ background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.06)" }}>
           <div className="flex items-center justify-between p-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
