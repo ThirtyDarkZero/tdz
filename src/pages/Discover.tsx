@@ -440,7 +440,7 @@ export default function Discover() {
                 {/* ── Featured Coverflow Carousel ── */}
                 {forYouItems.length > 0 && (
                   <div className="pt-4 pb-2">
-                    <div className="grid grid-cols-7 gap-2 items-center" style={{ minHeight: 182 }}>
+                    <div className="grid grid-cols-5 sm:grid-cols-7 gap-1.5 sm:gap-2 items-center" style={{ minHeight: 120 }}>
                       {visibleCarouselItems.map(({ item, offset, index }, slotIndex) => {
                         const distance = Math.abs(offset);
                         const isCenter = offset === 0;
