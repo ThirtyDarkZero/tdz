@@ -124,7 +124,7 @@ export const StudioHome = ({ artistName, onNavigate, onUploadClick }: StudioHome
       </div>
 
       {/* 4 Metric Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-4">
         {metricCards.map((card, i) => (
           <ScrollReveal key={card.label} delay={i * 0.1}>
             <div
