@@ -361,6 +361,7 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
     if (audioRef.current && currentTrack) {
       const currentSeconds = audioRef.current.currentTime;
       setCurrentTime(currentSeconds);
+      setContextTime(currentSeconds);
       
       // Record stream when user has listened 30+ seconds OR 50%+ completion
       if (!streamRecorded) {
