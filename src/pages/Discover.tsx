@@ -361,9 +361,19 @@ export default function Discover() {
     return featured;
   }, [albums, tracks, resolveArtworkUrl]);
 
-  const topChartTracks = useMemo(() => {
+  const topChartRows = useMemo(() => {
     const ranked = [...tracks].sort((a, b) => (b.play_count || 0) - (a.play_count || 0));
-    return ranked.slice(0, 50);
+
+    if (ranked.length === 0) return [] as Array<{ rowId: string; track: any }>;
+
+    const rows = ranked.slice(0, 50).map((track, i) => ({ rowId: `rank-${i + 1}-${track.id}`, track }));
+
+    while (rows.length < 50) {
+      const source = ranked[rows.length % ranked.length];
+      rows.push({ rowId: `fill-${rows.length + 1}-${source.id}`, track: source });
+    }
+
+    return rows;
   }, [tracks]);
 
   const visibleCarouselItems = useMemo(() => {
@@ -739,15 +749,15 @@ export default function Discover() {
                         <span className="font-body flex-1" style={{ fontSize: 9, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.1em" }}>TITLE</span>
                         <span className="font-body w-20 text-right" style={{ fontSize: 9, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.1em" }}>PLAYS</span>
                       </div>
-                      {topChartTracks.map((track, i) => {
+                      {topChartRows.map(({ rowId, track }, i) => {
                         const isTop3 = i < 3;
                         const coverUrl = resolveArtworkUrl(track);
                         return (
                           <div
-                            key={track.id}
+                            key={rowId}
                             className="flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors hover:bg-white/[0.03] active:bg-white/[0.06]"
                             style={{ borderBottom: i < 49 ? "1px solid rgba(255,255,255,0.03)" : "none" }}
-                            onClick={() => handlePlayFromList(track, topChartTracks)}
+                            onClick={() => handlePlayFromList(track, topChartRows.map(row => row.track))}
                           >
                             {/* Chart position */}
                             <span className="font-display w-10 text-center flex-shrink-0" style={{
