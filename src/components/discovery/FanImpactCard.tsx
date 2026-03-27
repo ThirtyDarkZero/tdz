@@ -30,7 +30,7 @@ export function FanImpactCard({ userId }: FanImpactCardProps) {
         setStats({
           totalStreams,
           artistsSupported: uniqueArtists.size,
-          totalContribution: totalStreams, // $1 per stream
+          totalContribution: totalStreams,
         });
       }
     } catch (e) {
@@ -42,53 +42,55 @@ export function FanImpactCard({ userId }: FanImpactCardProps) {
 
   if (loading || stats.totalStreams === 0) return null;
 
-  return (
-    <div className="mx-4 sm:mx-6 lg:mx-8 mb-6">
-      <div
-        className="relative overflow-hidden rounded-2xl p-6 sm:p-8"
-        style={{
-          background: "linear-gradient(135deg, rgba(0,207,255,0.08) 0%, rgba(139,92,246,0.08) 100%)",
-          border: "1px solid rgba(0,207,255,0.15)",
-        }}
-      >
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "rgba(0,207,255,0.15)" }}>
-              <Heart className="w-6 h-6" style={{ color: "#00CFFF" }} />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-widest" style={{ color: "#888", fontFamily: "'Raleway', sans-serif" }}>
-                Your Fan Impact
-              </p>
-              <p className="text-lg font-bold text-white" style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 28, letterSpacing: "0.04em" }}>
-                YOU MAKE A DIFFERENCE
-              </p>
-            </div>
-          </div>
+  const statItems = [
+    { icon: Users, label: "Artists Supported", value: String(stats.artistsSupported), color: "#00CFFF" },
+    { icon: TrendingUp, label: "Total Streams", value: stats.totalStreams.toLocaleString(), color: "#8B5CF6" },
+    { icon: DollarSign, label: "Contributed", value: `$${stats.totalContribution.toLocaleString()}`, color: "#22C55E" },
+  ];
 
-          <div className="flex gap-6 sm:gap-10 ml-0 sm:ml-auto">
-            <div className="text-center">
-              <div className="flex items-center gap-1 justify-center">
-                <Users className="w-4 h-4" style={{ color: "#00CFFF" }} />
-                <span className="text-2xl font-black text-white">{stats.artistsSupported}</span>
-              </div>
-              <p className="text-[10px] uppercase tracking-wider" style={{ color: "#666" }}>Artists Supported</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center gap-1 justify-center">
-                <TrendingUp className="w-4 h-4" style={{ color: "#22C55E" }} />
-                <span className="text-2xl font-black text-white">{stats.totalStreams.toLocaleString()}</span>
-              </div>
-              <p className="text-[10px] uppercase tracking-wider" style={{ color: "#666" }}>Total Streams</p>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center gap-1 justify-center">
-                <DollarSign className="w-4 h-4" style={{ color: "#22C55E" }} />
-                <span className="text-2xl font-black" style={{ color: "#22C55E" }}>${stats.totalContribution.toLocaleString()}</span>
-              </div>
-              <p className="text-[10px] uppercase tracking-wider" style={{ color: "#666" }}>Contributed to Artists</p>
-            </div>
+  return (
+    <div
+      className="relative overflow-hidden rounded-2xl p-6"
+      style={{
+        background: "rgba(255,255,255,0.03)",
+        backdropFilter: "blur(24px)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        boxShadow: "0 8px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)",
+      }}
+    >
+      {/* Subtle gradient accent */}
+      <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(0,207,255,0.3), rgba(139,92,246,0.3), transparent)" }} />
+
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{
+            background: "rgba(0,207,255,0.08)",
+            border: "1px solid rgba(0,207,255,0.15)",
+          }}>
+            <Heart className="w-5 h-5" style={{ color: "#00CFFF" }} />
           </div>
+          <div>
+            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)" }}>
+              Your Impact
+            </p>
+            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 24, color: "#FFFFFF", letterSpacing: "0.04em", lineHeight: 1.1 }}>
+              YOU MAKE A DIFFERENCE
+            </p>
+          </div>
+        </div>
+
+        <div className="flex gap-6 sm:gap-8 ml-0 sm:ml-auto">
+          {statItems.map((item) => (
+            <div key={item.label} className="text-center">
+              <div className="flex items-center gap-1.5 justify-center">
+                <item.icon className="w-3.5 h-3.5" style={{ color: item.color }} />
+                <span className="text-xl font-black text-white" style={{ fontFamily: "'Raleway', sans-serif" }}>{item.value}</span>
+              </div>
+              <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 9, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginTop: 2 }}>
+                {item.label}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
