@@ -33,7 +33,7 @@ export function ArtistAvatar({ src, name, size = 48, className = "" }: ArtistAva
             color: "rgba(255,255,255,0.8)",
           }}
         >
-          {initials}
+          {fallbackLetter}
         </span>
       </div>
     );
