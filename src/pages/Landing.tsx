@@ -825,14 +825,14 @@ function Section7ArtistPlans({ navigate }: { navigate: (p: string) => void }) {
               {p.popular && <span className="mb-2 px-3 py-1 rounded-full text-[10px] font-bold" style={{ background: "#22C55E", color: "#000" }}>MOST POPULAR</span>}
               <div className="flex flex-col justify-start items-center pt-8 w-full relative"
                 style={{ background: "linear-gradient(180deg, #2a2a2a 0%, #5a5a5a 40%, #b0b0b0 75%, #d8d8d8 100%)", borderRadius: 28, width: 310, minHeight: 460, padding: "30px 26px" }}>
-                <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 16, color: "#FFFFFF", letterSpacing: "0.2em", textTransform: "uppercase" as const }}>{p.name}</p>
-                <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 68, color: "#FFFFFF", letterSpacing: "0.04em", marginTop: 8 }}>{p.price}</p>
-                <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#999", marginTop: 4 }}>/month</p>
+                <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 16, color: "#000000", letterSpacing: "0.2em", textTransform: "uppercase" as const }}>{p.name}</p>
+                <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 68, color: "#000000", letterSpacing: "0.04em", marginTop: 8 }}>{p.price}</p>
+                <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#333", marginTop: 4 }}>/month</p>
                 <div className="mt-6 space-y-2 w-full">
                   {p.features.map((f, fi) => (
                     <div key={fi} className="flex items-start gap-2">
-                      <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: "#333" }} />
-                      <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#555", lineHeight: 1.4 }}>{f}</span>
+                      <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: "#000" }} />
+                      <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#111111", lineHeight: 1.4 }}>{f}</span>
                     </div>
                   ))}
                 </div>
