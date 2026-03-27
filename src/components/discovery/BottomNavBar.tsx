@@ -1,4 +1,4 @@
-import { Home, Compass, LayoutGrid, MessageCircle, ShoppingBag } from "lucide-react";
+import { Home, Compass, LayoutGrid, User, ShoppingBag } from "lucide-react";
 
 interface BottomNavBarProps {
   activeTab: string;
