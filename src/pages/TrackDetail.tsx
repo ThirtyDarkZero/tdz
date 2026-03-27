@@ -9,7 +9,7 @@ import {
   Play, Heart, Share2, ArrowLeft, Music, Calendar, Clock, Home, Info, Radio, Activity, TrendingUp,
   MoreHorizontal, ListPlus, ListMusic, User, Plus
 } from "lucide-react";
-import { MusicPlayer } from "@/components/MusicPlayer";
+
 import { TrackAnalytics } from "@/components/TrackAnalytics";
 import { TrackAnalysisPanel } from "@/components/TrackAnalysisPanel";
 import tdzLogo from "@/assets/tdz-logo.png";
