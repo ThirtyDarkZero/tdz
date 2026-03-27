@@ -545,9 +545,12 @@ export default function Discover() {
                 {forYouItems.length > 1 && (
                   <Section title="NEW THIS WEEK" action={<SeeAll onClick={() => setActiveTab("library")} />}>
                     <div className="flex gap-3.5 overflow-x-auto pb-2 scrollbar-hide">
-                      {forYouItems.slice(0, 10).map(item => (
-                        <AlbumCard key={item.id} size="md" album={{ id: item.id, title: item.title, artist_name: item.artist, image: item.image }} onClick={() => navigate(item.type === "album" ? `/album/${item.id}` : `/track/${item.id}`)} />
-                      ))}
+                      {forYouItems.slice(0, 10).map(item => {
+                        const realId = item.id.replace(/^(album|track)-/, "");
+                        return (
+                          <AlbumCard key={item.id} size="md" album={{ id: realId, title: item.title, artist_name: item.artist, image: item.image }} onClick={() => navigate(item.type === "album" ? `/album/${realId}` : `/track/${realId}`)} />
+                        );
+                      })}
                     </div>
                   </Section>
                 )}
