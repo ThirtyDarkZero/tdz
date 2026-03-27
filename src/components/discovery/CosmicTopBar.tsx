@@ -3,6 +3,7 @@ import { useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import tdzLogo from "@/assets/tdz-logo.png";
 
 interface CosmicTopBarProps {
   activeTab: string;
@@ -47,6 +48,8 @@ export function CosmicTopBar({ activeTab, searchQuery, onSearchChange, userProfi
     setTimeout(() => inputRef.current?.focus(), 100);
   };
 
+  const currentTitle = TAB_TITLES[activeTab] || "DISCOVERY";
+
   return (
     <div
       className="sticky top-0 z-30"
@@ -90,9 +93,14 @@ export function CosmicTopBar({ activeTab, searchQuery, onSearchChange, userProfi
             <p className="font-body" style={{ fontSize: 12, fontWeight: 500, color: "var(--text-3)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
               {getGreeting()}
             </p>
-            <h1 style={{ fontSize: 28, color: "var(--text-1)", lineHeight: 1.1 }}>
-              {TAB_TITLES[activeTab] || "DISCOVERY"}
-            </h1>
+            <div className="flex items-center gap-2.5" style={{ marginTop: 2 }}>
+              {activeTab === "discover" && (
+                <img src={tdzLogo} alt="TDZ logo" className="h-8 w-auto object-contain" />
+              )}
+              <h1 style={{ fontSize: 28, color: "var(--text-1)", lineHeight: 1.1 }}>
+                {currentTitle}
+              </h1>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {/* Search button */}
