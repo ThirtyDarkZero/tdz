@@ -4,6 +4,7 @@ import {
   Shuffle, Repeat, List, Mic, MoreHorizontal, Share2, Download,
   Cast, Radio, Clock, Sliders, Award, Maximize2, AlertCircle
 } from "lucide-react";
+import { usePlayer } from "@/contexts/PlayerContext";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
