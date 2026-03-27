@@ -40,7 +40,7 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
 const SquareOAuthCallback = lazy(() => import("./pages/SquareOAuthCallback"));
 const EventbriteOAuthCallback = lazy(() => import("./pages/EventbriteOAuthCallback"));
-const Browse = lazy(() => import("./pages/Browse"));
+
 const FanSettings = lazy(() => import("./pages/FanSettings"));
 
 const queryClient = new QueryClient();
