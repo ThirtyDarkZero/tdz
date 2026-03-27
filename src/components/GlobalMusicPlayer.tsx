@@ -10,10 +10,10 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { SubscriptionModal } from "@/components/SubscriptionModal";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { OrbPlayerBar } from "@/components/discovery/OrbPlayerBar";
 
 const PREVIEW_DURATION_SECONDS = 30;
 
-// Pages where the global player should NOT appear
 const HIDDEN_ROUTES = ['/', '/auth', '/role-selection', '/pricing', '/checkout', '/terms', '/privacy', '/faq', '/support', '/investors'];
 
 export function GlobalMusicPlayer() {
@@ -21,7 +21,7 @@ export function GlobalMusicPlayer() {
   const { user } = useAuth();
   const { role } = useUserRole(user);
   const { hasFeature } = useSubscription(user);
-  const { currentTrack, queue, nextTrack, previousTrack, setIsPlaying, isPlaying, playTrack, playerView } = usePlayer();
+  const { currentTrack, queue, nextTrack, previousTrack, setIsPlaying, isPlaying, playTrack } = usePlayer();
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [youtubeErrorCount, setYoutubeErrorCount] = useState(0);
   const [useSpotifyFallback, setUseSpotifyFallback] = useState(false);
@@ -30,10 +30,8 @@ export function GlobalMusicPlayer() {
   const isArtist = role === 'artist' || role === 'verified_artist' || role === 'manager';
   const hasUnlimitedStreaming = hasFeature('unlimitedStreaming') || isArtist;
 
-  // Hide player on certain routes
   const shouldHidePlayer = HIDDEN_ROUTES.includes(location.pathname);
   
-  // Reset fallback state when track changes
   useEffect(() => {
     if (currentTrack?.id && currentTrack.id !== lastTrackIdRef.current) {
       lastTrackIdRef.current = currentTrack.id;
@@ -110,64 +108,9 @@ export function GlobalMusicPlayer() {
     toast.info("Preview ended - Subscribe for unlimited streaming!");
   };
 
-  // Don't render on hidden routes or when no track
-  if (shouldHidePlayer || !currentTrack) return null;
+  if (shouldHidePlayer) return null;
 
-  // On discover pages, the BottomNavBar handles mini player display
-  // Only render full player components for non-discover routes
-  if (playerView === 'hidden') return null;
-
-  // For mini view, render nothing here - BottomNavBar handles it on discover
-  // For other pages with mini view, render the mini pill
-  if (playerView === 'mini' && location.pathname === '/discover') {
-    return <SubscriptionModal open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal} />;
-  }
-
-  // Full player mode
-  const isYouTubeTrack = currentTrack.source === 'youtube' || currentTrack.youtubeId;
-
-  if (useSpotifyFallback && currentTrack.spotifyPreviewUrl) {
-    return (
-      <>
-        <div className="fixed bottom-0 left-0 right-0 z-50">
-          <div className="glass-ultra border-t border-white/5 shadow-3d-lg">
-            <SpotifyPreviewPlayer
-              track={currentTrack}
-              queue={queue}
-              onNext={nextTrack}
-              onPrevious={previousTrack}
-              onTrackEnd={handleTrackEnd}
-              isPlaying={isPlaying}
-              onPlayingChange={setIsPlaying}
-            />
-          </div>
-        </div>
-        <SubscriptionModal open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal} />
-      </>
-    );
-  }
-
-  if (isYouTubeTrack) {
-    return (
-      <>
-        <div className="fixed bottom-0 left-0 right-0 z-50">
-          <div className="glass-ultra border-t border-white/5 shadow-3d-lg">
-            <YouTubePlayerEnhanced
-              track={currentTrack}
-              queue={queue}
-              onNext={nextTrack}
-              onPrevious={previousTrack}
-              onTrackEnd={handleTrackEnd}
-              isPlaying={isPlaying}
-              onPlayingChange={setIsPlaying}
-              onError={handleYouTubeError}
-            />
-          </div>
-        </div>
-        <SubscriptionModal open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal} />
-      </>
-    );
-  }
+  const isYouTubeTrack = currentTrack?.source === 'youtube' || currentTrack?.youtubeId;
 
   const playerTrack = currentTrack as unknown as {
     id: string; title: string; artist_name: string; duration: number;
@@ -181,19 +124,47 @@ export function GlobalMusicPlayer() {
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 z-50">
-        <div className="glass-ultra border-t border-white/5 shadow-3d-lg">
-          <MusicPlayer
-            currentTrack={playerTrack}
-            queue={playerQueue}
-            onNext={nextTrack}
-            onPrevious={previousTrack}
-            onTrackEnd={handleTrackEnd}
-            maxDuration={!hasUnlimitedStreaming ? PREVIEW_DURATION_SECONDS : undefined}
-            onPreviewEnd={!hasUnlimitedStreaming ? handlePreviewEnd : undefined}
-          />
+      {/* Hidden audio engine - renders the actual audio/video elements but no visible UI */}
+      {currentTrack && (
+        <div className="fixed -left-[9999px] -top-[9999px] w-0 h-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          {useSpotifyFallback && currentTrack.spotifyPreviewUrl ? (
+            <SpotifyPreviewPlayer
+              track={currentTrack}
+              queue={queue}
+              onNext={nextTrack}
+              onPrevious={previousTrack}
+              onTrackEnd={handleTrackEnd}
+              isPlaying={isPlaying}
+              onPlayingChange={setIsPlaying}
+            />
+          ) : isYouTubeTrack ? (
+            <YouTubePlayerEnhanced
+              track={currentTrack}
+              queue={queue}
+              onNext={nextTrack}
+              onPrevious={previousTrack}
+              onTrackEnd={handleTrackEnd}
+              isPlaying={isPlaying}
+              onPlayingChange={setIsPlaying}
+              onError={handleYouTubeError}
+            />
+          ) : (
+            <MusicPlayer
+              currentTrack={playerTrack}
+              queue={playerQueue}
+              onNext={nextTrack}
+              onPrevious={previousTrack}
+              onTrackEnd={handleTrackEnd}
+              maxDuration={!hasUnlimitedStreaming ? PREVIEW_DURATION_SECONDS : undefined}
+              onPreviewEnd={!hasUnlimitedStreaming ? handlePreviewEnd : undefined}
+            />
+          )}
         </div>
-      </div>
+      )}
+
+      {/* Visible orb player bar */}
+      <OrbPlayerBar />
+
       <SubscriptionModal open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal} />
     </>
   );
