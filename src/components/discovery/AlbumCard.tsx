@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -9,7 +9,7 @@ interface AlbumCardProps {
   size?: "sm" | "md" | "lg";
 }
 
-export function AlbumCard({ album, onClick, onPlay, size = "md" }: AlbumCardProps) {
+export const AlbumCard = memo(function AlbumCard({ album, onClick, onPlay, size = "md" }: AlbumCardProps) {
   const [imgError, setImgError] = useState(false);
   const title = album.title || album.name || "Untitled";
   const artist = album.artist_name || album.artist || "Unknown";
@@ -27,7 +27,7 @@ export function AlbumCard({ album, onClick, onPlay, size = "md" }: AlbumCardProp
   };
 
   const coverUrl = getCoverUrl();
-  const dim = size === "sm" ? 140 : size === "lg" ? 200 : 160;
+  const dim = size === "sm" ? 140 : size === "lg" ? 200 : 150;
 
   return (
     <div
@@ -36,8 +36,8 @@ export function AlbumCard({ album, onClick, onPlay, size = "md" }: AlbumCardProp
       onClick={() => onClick?.(album)}
     >
       <div
-        className="relative rounded-2xl overflow-hidden"
-        style={{ width: dim, height: dim, background: "rgba(255,255,255,0.04)" }}
+        className="relative overflow-hidden"
+        style={{ width: dim, height: dim, background: "hsl(var(--bg-surface))", borderRadius: "var(--radius-md)" }}
       >
         {coverUrl ? (
           <img src={coverUrl} alt={title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" onError={() => setImgError(true)} loading="lazy" />
@@ -47,20 +47,20 @@ export function AlbumCard({ album, onClick, onPlay, size = "md" }: AlbumCardProp
           </div>
         )}
         {/* Play overlay */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{ background: "rgba(0,0,0,0.3)" }}>
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 active:opacity-100 transition-opacity duration-200" style={{ background: "rgba(0,0,0,0.35)" }}>
           <button
             onClick={(e) => { e.stopPropagation(); onPlay?.(album); }}
             className="w-11 h-11 rounded-full flex items-center justify-center"
-            style={{ background: "hsl(var(--primary))", boxShadow: "0 4px 20px hsl(var(--primary) / 0.4)" }}
+            style={{ background: "rgba(255,255,255,0.95)", color: "#000" }}
           >
-            <Play className="w-5 h-5 text-white ml-0.5" fill="white" />
+            <Play className="w-4 h-4 ml-0.5" fill="currentColor" />
           </button>
         </div>
       </div>
-      <div className="mt-2.5 px-0.5">
-        <p className="truncate text-[13px] font-medium" style={{ color: "#fff" }}>{title}</p>
-        <p className="truncate text-[11px] mt-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>{artist}</p>
+      <div className="mt-2 px-0.5">
+        <p className="truncate font-body" style={{ fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>{title}</p>
+        <p className="truncate font-body" style={{ fontSize: 11, color: "var(--text-3)", marginTop: 2 }}>{artist}</p>
       </div>
     </div>
   );
-}
+});
