@@ -385,7 +385,19 @@ export function OrbPlayerBar() {
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1 mr-3">
               <h2 className="font-display truncate" style={{ fontSize: 32, color: "var(--text-1)", lineHeight: 1 }}>{currentTrack.title}</h2>
-              <p className="font-body truncate mt-1" style={{ fontSize: 14, color: "var(--text-2)" }}>{currentTrack.artist_name}</p>
+              <button
+                onClick={() => {
+                  const artistId = currentTrack.artist_user_id || currentTrack.user_id;
+                  if (artistId) {
+                    setPlayerView("mini");
+                    navigate(`/artist/${artistId}`);
+                  }
+                }}
+                className="font-body truncate mt-1 hover:underline transition-colors block text-left"
+                style={{ fontSize: 14, color: "var(--text-2)" }}
+              >
+                {currentTrack.artist_name}
+              </button>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => setIsLiked(!isLiked)} className="p-1.5">

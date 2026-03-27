@@ -801,9 +801,9 @@ export default function Discover() {
 
                 {/* Hexagonal grid for albums — smaller cells */}
                 {(libraryFilter === "ALBUMS" || libraryFilter === "PLAYLISTS" || libraryFilter === "DOWNLOADED" || libraryFilter === "RECENT") && albums.length > 0 && (
-                  <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-8 gap-[2px]">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
                     {albums.map(album => (
-                      <HexCell
+                      <LibraryCard
                         key={album.id}
                         image={album.cover_art_path ? supabase.storage.from("album-covers").getPublicUrl(album.cover_art_path).data.publicUrl : null}
                         label={album.title}
