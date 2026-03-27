@@ -94,7 +94,7 @@ export const StudioHome = ({ artistName, onNavigate, onUploadClick }: StudioHome
       {/* Hero Header — dark Studio theme */}
       <div className="relative overflow-hidden rounded-2xl" style={{ background: "linear-gradient(135deg, #141414, #1a1a2e)" }}>
         <div className="absolute inset-0" style={{ background: "radial-gradient(circle at 80% 20%, rgba(0,207,255,0.08), transparent 60%)" }} />
-        <div className="relative z-10 p-8 md:p-10">
+        <div className="relative z-10 p-4 sm:p-6 md:p-10">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-2" style={{ color: "rgba(0,207,255,0.7)" }}>
