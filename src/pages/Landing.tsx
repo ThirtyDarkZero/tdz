@@ -302,9 +302,9 @@ function PhoneFrame({ children, style, className = "" }: { children: React.React
 
 function Section2Mockups() {
   return (
-    <section className="py-16 pb-20 px-4" style={{ background: "#000" }}>
+    <section className="py-10 sm:py-16 pb-14 sm:pb-20 px-4" style={{ background: "#000" }}>
       <Reveal>
-        <p className="text-center mb-8" style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 12, color: "#666", letterSpacing: "0.2em", textTransform: "uppercase" as const }}>
+        <p className="text-center mb-6 sm:mb-8" style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 12, color: "#666", letterSpacing: "0.2em", textTransform: "uppercase" as const }}>
           INTERACTIVE DEMOS — TAP TO EXPLORE
         </p>
         <div className="flex items-center justify-center gap-0" style={{ perspective: 1200 }}>
