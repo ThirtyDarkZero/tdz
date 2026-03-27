@@ -1,5 +1,4 @@
 import { ReactNode } from "react";
-import { SpaceBackground } from "./SpaceBackground";
 import { BottomNavBar } from "./BottomNavBar";
 
 interface PersistentLayoutProps {
@@ -18,9 +17,8 @@ export function PersistentLayout({
   onTabChange,
 }: PersistentLayoutProps) {
   return (
-    <div className="min-h-screen relative" style={{ background: "#050510" }}>
-      <SpaceBackground />
-      <div className="relative z-[1] min-h-screen pb-36">
+    <div className="min-h-screen relative" style={{ background: "#121212" }}>
+      <div className="relative z-[1] min-h-screen pb-24">
         {children}
       </div>
       <BottomNavBar activeTab={activeTab} onTabChange={onTabChange} />
