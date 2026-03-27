@@ -239,6 +239,8 @@ export function TourDatesManager() {
   const [orgId, setOrgId] = useState<string | null>(null);
   const [loadingOrg, setLoadingOrg] = useState(false);
   const [ebConnectionError, setEbConnectionError] = useState<string | null>(null);
+  const [ebConnected, setEbConnected] = useState(false);
+  const [connectingOAuth, setConnectingOAuth] = useState(false);
 
   // Form state
   const [venue, setVenue] = useState("");
@@ -265,7 +267,26 @@ export function TourDatesManager() {
     salesStart: string; salesEnd: string;
   }>>([{ name: "General Admission", price: "", quantity: "100", donation: false, hidden: false, salesStart: "", salesEnd: "" }]);
 
-  useEffect(() => { if (user) loadDates(); }, [user]);
+  // Check if user already has Eventbrite connected
+  useEffect(() => {
+    if (user) {
+      loadDates();
+      checkEventbriteConnection();
+    }
+  }, [user]);
+
+  const checkEventbriteConnection = async () => {
+    if (!user) return;
+    const { data } = await (supabase as any)
+      .from("artist_eventbrite_tokens")
+      .select("organization_id, organization_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (data?.organization_id) {
+      setOrgId(data.organization_id);
+      setEbConnected(true);
+    }
+  };
 
   const loadDates = async () => {
     if (!user) return;
@@ -277,6 +298,32 @@ export function TourDatesManager() {
     setDates((data as TourDate[]) || []);
   };
 
+  const connectEventbrite = async () => {
+    setConnectingOAuth(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("eventbrite-oauth-url", {
+        body: { redirectUri: window.location.origin + "/eventbrite-callback" },
+      });
+      if (error || !data?.authUrl) throw new Error(data?.error || "Failed to start Eventbrite connection");
+      window.location.href = data.authUrl;
+    } catch (err: any) {
+      toast.error(err.message || "Failed to connect Eventbrite");
+      setConnectingOAuth(false);
+    }
+  };
+
+  const disconnectEventbrite = async () => {
+    if (!user) return;
+    await (supabase as any)
+      .from("artist_eventbrite_tokens")
+      .delete()
+      .eq("user_id", user.id);
+    setOrgId(null);
+    setEbConnected(false);
+    setUseEventbrite(false);
+    toast.success("Eventbrite disconnected");
+  };
+
   const loadEventbriteOrg = async () => {
     if (orgId) return;
     setLoadingOrg(true);
@@ -286,20 +333,22 @@ export function TourDatesManager() {
         body: { action: "get_organizations" },
       });
       if (error) throw error;
-      if (data?.error?.includes("EVENTBRITE_API_TOKEN")) {
-        setEbConnectionError("no_token");
+      if (data?.error?.includes("EVENTBRITE_NOT_CONNECTED")) {
+        setEbConnectionError("not_connected");
         return;
       }
+      if (data?.error) throw new Error(data.error);
       const orgs = data?.data?.organizations;
       if (orgs && orgs.length > 0) {
         setOrgId(orgs[0].id);
+        setEbConnected(true);
       } else {
         setEbConnectionError("no_org");
       }
     } catch (err: any) {
       const msg = err.message || "";
-      if (msg.includes("EVENTBRITE_API_TOKEN") || msg.includes("not configured")) {
-        setEbConnectionError("no_token");
+      if (msg.includes("EVENTBRITE_NOT_CONNECTED") || msg.includes("not configured")) {
+        setEbConnectionError("not_connected");
       } else {
         setEbConnectionError(msg || "Connection failed");
       }
@@ -310,7 +359,10 @@ export function TourDatesManager() {
 
   const handleEventbriteToggle = async (checked: boolean) => {
     setUseEventbrite(checked);
-    if (checked) await loadEventbriteOrg();
+    if (checked) {
+      if (ebConnected && orgId) return; // Already connected
+      await loadEventbriteOrg();
+    }
   };
 
   const resetForm = () => {
