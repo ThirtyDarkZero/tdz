@@ -280,6 +280,36 @@ export type Database = {
         }
         Relationships: []
       }
+      artist_eventbrite_tokens: {
+        Row: {
+          access_token: string
+          connected_at: string | null
+          id: string
+          organization_id: string | null
+          organization_name: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          connected_at?: string | null
+          id?: string
+          organization_id?: string | null
+          organization_name?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          connected_at?: string | null
+          id?: string
+          organization_id?: string | null
+          organization_name?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       artist_follows: {
         Row: {
           artist_id: string
