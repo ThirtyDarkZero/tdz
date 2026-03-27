@@ -103,6 +103,7 @@ const App = () => (
                   <Route path="/checkout" element={<Checkout />} />
                   <Route path="/subscription-success" element={<SubscriptionSuccess />} />
                   <Route path="/square-callback" element={<SquareOAuthCallback />} />
+                  <Route path="/eventbrite-callback" element={<EventbriteOAuthCallback />} />
                   <Route path="/settings" element={<FanSettings />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
