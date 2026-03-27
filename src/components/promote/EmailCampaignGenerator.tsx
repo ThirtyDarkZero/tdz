@@ -70,6 +70,7 @@ const TONES: { value: ToneType; label: string; emoji: string }[] = [
 
 export function EmailCampaignGenerator() {
   const { user } = useAuth();
+  const narrativeCtx = useArtistNarrativeContext();
   const [step, setStep] = useState<"setup" | "audience" | "compose" | "preview">("setup");
   const [campaignType, setCampaignType] = useState<CampaignType>("fan");
   const [tone, setTone] = useState<ToneType>("warm");
