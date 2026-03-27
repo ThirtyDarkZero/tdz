@@ -231,7 +231,17 @@ export function OrbPlayerBar() {
           {/* Info */}
           <div className="min-w-0 flex-1">
             <p className="truncate font-body" style={{ fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>{currentTrack.title}</p>
-            <p className="truncate font-body" style={{ fontSize: 11, color: "var(--text-3)" }}>{currentTrack.artist_name}</p>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const artistId = currentTrack.artist_user_id || currentTrack.user_id;
+                if (artistId) navigate(`/artist/${artistId}`);
+              }}
+              className="truncate font-body hover:underline block text-left w-full"
+              style={{ fontSize: 11, color: "var(--text-3)" }}
+            >
+              {currentTrack.artist_name}
+            </button>
           </div>
           {/* Controls */}
           <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
