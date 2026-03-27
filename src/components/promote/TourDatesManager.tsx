@@ -533,10 +533,20 @@ export function TourDatesManager() {
                 <Ticket className="w-4 h-4 text-primary" />
                 <div>
                   <p className="text-sm font-medium">Sell tickets via Eventbrite</p>
-                  <p className="text-xs text-muted-foreground">Creates a live event with full ticketing</p>
+                  <p className="text-xs text-muted-foreground">
+                    {ebConnected ? "Connected — creates live events with ticketing" : "Sign in to create events with full ticketing"}
+                  </p>
                 </div>
+                {ebConnected && <Badge variant="outline" className="text-xs border-green-500/30 text-green-400 ml-2">Connected</Badge>}
               </div>
-              <Switch checked={useEventbrite} onCheckedChange={handleEventbriteToggle} disabled={loadingOrg} />
+              <div className="flex items-center gap-2">
+                {ebConnected && (
+                  <Button size="sm" variant="ghost" className="text-xs text-muted-foreground h-7 px-2" onClick={disconnectEventbrite}>
+                    Disconnect
+                  </Button>
+                )}
+                <Switch checked={useEventbrite} onCheckedChange={handleEventbriteToggle} disabled={loadingOrg} />
+              </div>
             </div>
 
             {loadingOrg && (
