@@ -16,62 +16,75 @@ export function ArtistCard({ artist, isFollowing, onToggleFollow, onClick }: Art
   const followers = artist.monthly_listeners || artist.followers || 0;
   const artistId = artist.user_id || artist.id;
 
+  const formatCount = (n: number) => {
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+    return String(n);
+  };
+
   return (
     <div
-      className="flex flex-col items-center gap-2.5 p-5 rounded-2xl cursor-pointer transition-all hover:-translate-y-1"
+      className="group flex flex-col items-center gap-3 p-5 rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-1.5"
       style={{
         background: "rgba(255,255,255,0.03)",
+        backdropFilter: "blur(16px)",
         border: "1px solid rgba(255,255,255,0.06)",
         width: 160,
         textAlign: "center",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
       }}
       onClick={() => onClick?.(artist)}
     >
-      <div className="relative" style={{ width: 120, height: 120 }}>
-        <ArtistAvatar src={profileUrl} name={name} size={120} />
-        {/* Pulse ring */}
+      {/* Avatar with glow ring */}
+      <div className="relative" style={{ width: 110, height: 110 }}>
+        <ArtistAvatar src={profileUrl} name={name} size={110} />
+        {/* Glassmorphic pulse ring */}
         <div
-          className="absolute rounded-full pointer-events-none"
+          className="absolute rounded-full pointer-events-none transition-all duration-500 group-hover:scale-110"
           style={{
-            inset: -4,
-            border: "1.5px solid rgba(0,207,255,0.3)",
-            animation: "portalPulse 4s ease-in-out infinite",
+            inset: -5,
+            border: "1.5px solid rgba(0,207,255,0.2)",
+            boxShadow: "0 0 20px rgba(0,207,255,0.1)",
+          }}
+        />
+        <div
+          className="absolute rounded-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+          style={{
+            inset: -10,
+            border: "1px solid rgba(0,207,255,0.1)",
+            boxShadow: "0 0 40px rgba(0,207,255,0.08)",
           }}
         />
       </div>
 
       <span
-        className="truncate w-full"
+        className="truncate w-full group-hover:text-[#00CFFF] transition-colors"
         style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 14, color: "#FFFFFF", maxWidth: 140 }}
       >
         {name}
       </span>
 
-      <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
-        {followers > 0 ? `${followers.toLocaleString()} followers` : "TDZ Artist"}
+      <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+        {followers > 0 ? `${formatCount(followers)} listeners` : "TDZ Artist"}
       </span>
 
       <button
         onClick={(e) => { e.stopPropagation(); onToggleFollow?.(artistId); }}
-        className="px-5 py-1.5 rounded-full text-xs transition-all"
+        className="px-5 py-1.5 rounded-full text-xs transition-all duration-200 hover:scale-105"
         style={{
           fontFamily: "'Raleway', sans-serif",
           fontWeight: 600,
           letterSpacing: "0.08em",
-          border: isFollowing ? "1px solid #22C55E" : "1px solid rgba(255,255,255,0.2)",
-          background: isFollowing ? "rgba(34,197,94,0.15)" : "transparent",
-          color: isFollowing ? "#22C55E" : "rgba(255,255,255,0.8)",
+          border: isFollowing ? "1px solid rgba(0,207,255,0.4)" : "1px solid rgba(255,255,255,0.15)",
+          background: isFollowing
+            ? "rgba(0,207,255,0.1)"
+            : "rgba(255,255,255,0.04)",
+          backdropFilter: "blur(8px)",
+          color: isFollowing ? "#00CFFF" : "rgba(255,255,255,0.7)",
         }}
       >
         {isFollowing ? "Following" : "Follow"}
       </button>
-
-      <style>{`
-        @keyframes portalPulse {
-          0%, 100% { box-shadow: 0 0 20px rgba(0,207,255,0.2), 0 0 40px rgba(0,207,255,0.08); }
-          50% { box-shadow: 0 0 30px rgba(0,207,255,0.4), 0 0 60px rgba(0,207,255,0.15); }
-        }
-      `}</style>
     </div>
   );
 }
