@@ -1,32 +1,33 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { 
-  Play, ArrowLeft, Music, Clock, Calendar, Check, Bell,
-  Shuffle, Heart, MoreHorizontal, Edit2, Loader2
+import {
+  Play, Pause, ChevronDown, MoreHorizontal, SkipBack, SkipForward,
+  Heart, Music, Loader2, Disc3, Type, SlidersHorizontal, ListMusic,
+  BarChart3
 } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { EditAlbumDialog } from "@/components/EditAlbumDialog";
 import { AlbumAnalytics } from "@/components/AlbumAnalytics";
-import tdzLogo from "@/assets/tdz-logo.png";
 import { Helmet } from "react-helmet";
 import { useAuth } from "@/hooks/useAuth";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+type PlayerTab = 'cover' | 'lyrics' | 'visual' | 'eq' | 'queue';
 
 export default function AlbumDetail() {
   const { albumId } = useParams();
   const navigate = useNavigate();
-  const { playTrack, currentTrack } = usePlayer();
+  const { playTrack, currentTrack, isPlaying, pauseTrack, resumeTrack, nextTrack, previousTrack, currentTime } = usePlayer();
   const { user } = useAuth();
-  
+
   const [album, setAlbum] = useState<any>(null);
   const [tracks, setTracks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingAlbum, setEditingAlbum] = useState(false);
-  const [isPresaved, setIsPresaved] = useState(false);
+  const [activeTab, setActiveTab] = useState<PlayerTab>('cover');
 
   useEffect(() => {
     if (albumId) {
@@ -58,7 +59,6 @@ export default function AlbumDetail() {
 
     setAlbum(data);
     setLoading(false);
-    checkPresaveStatus();
   };
 
   const loadTracks = async () => {
@@ -73,62 +73,7 @@ export default function AlbumDetail() {
     }
   };
 
-  const checkPresaveStatus = async () => {
-    if (!user || !albumId || tracks.length === 0) return;
-
-    const { data } = await supabase
-      .from("track_presaves")
-      .select("id")
-      .eq("user_id", user.id)
-      .in("track_id", tracks.map(t => t.id))
-      .limit(1)
-      .maybeSingle();
-
-    setIsPresaved(!!data);
-  };
-
-  const isPreRelease = () => {
-    if (!album) return false;
-    const now = new Date();
-    const releaseDate = album.release_date ? new Date(album.release_date) : null;
-    const scheduledDate = album.scheduled_release_date ? new Date(album.scheduled_release_date) : null;
-    const targetDate = scheduledDate || releaseDate;
-    return targetDate && targetDate > now;
-  };
-
-  const handlePresaveAlbum = async () => {
-    if (!user) {
-      toast.error("Please sign in to pre-save this album");
-      return;
-    }
-
-    try {
-      if (isPresaved) {
-        await supabase
-          .from("track_presaves")
-          .delete()
-          .eq("user_id", user.id)
-          .in("track_id", tracks.map(t => t.id));
-
-        setIsPresaved(false);
-        toast.success("Album pre-save removed");
-      } else {
-        const presaves = tracks.map(track => ({
-          user_id: user.id,
-          track_id: track.id,
-          artist_id: album.user_id
-        }));
-
-        await supabase.from("track_presaves").insert(presaves);
-        setIsPresaved(true);
-        toast.success("Album pre-saved! You'll be notified on release");
-      }
-    } catch (error) {
-      toast.error("Failed to update pre-save status");
-    }
-  };
-
-  const handlePlayTrack = (track: any, index: number) => {
+  const handlePlayTrack = (track: any) => {
     const normalizedTrack = {
       ...track,
       duration: track.duration || 0,
@@ -138,7 +83,7 @@ export default function AlbumDetail() {
       album_cover_bucket: album?.motion_cover_path ? (album?.motion_cover_bucket || 'motion-covers') : 'album-covers',
       album_title: album?.title,
     };
-    
+
     const normalizedQueue = tracks.map(t => ({
       ...t,
       duration: t.duration || 0,
@@ -148,34 +93,20 @@ export default function AlbumDetail() {
       album_cover_bucket: album?.motion_cover_path ? (album?.motion_cover_bucket || 'motion-covers') : 'album-covers',
       album_title: album?.title,
     }));
-    
+
     playTrack(normalizedTrack, normalizedQueue);
   };
 
   const handlePlayAll = () => {
-    if (tracks.length > 0) {
-      handlePlayTrack(tracks[0], 0);
-      toast.success(`Playing ${album.title}`);
-    }
+    if (tracks.length > 0) handlePlayTrack(tracks[0]);
   };
 
-  const handleShuffle = () => {
-    if (tracks.length > 0) {
-      const shuffled = [...tracks].sort(() => Math.random() - 0.5);
-      handlePlayTrack(shuffled[0], 0);
-      toast.success(`Shuffling ${album.title}`);
-    }
-  };
+  const togglePlayPause = () => (isPlaying ? pauseTrack() : resumeTrack());
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const getTotalDuration = () => {
-    const total = tracks.reduce((sum, track) => sum + (track.duration || 0), 0);
-    return formatDuration(total);
   };
 
   const getCoverUrl = (path?: string, bucket?: string) => {
@@ -183,18 +114,25 @@ export default function AlbumDetail() {
     return supabase.storage.from(bucket || 'album-covers').getPublicUrl(path).data.publicUrl;
   };
 
-  const getHeroMedia = () => {
-    // Motion artwork takes priority
-    if (album?.motion_cover_path) {
+  const heroMedia = useMemo(() => {
+    if (!album) return { type: 'none' as const, url: '' };
+    if (album.motion_cover_path) {
       const url = supabase.storage.from(album.motion_cover_bucket || 'motion-covers').getPublicUrl(album.motion_cover_path).data.publicUrl;
       return { type: 'video' as const, url };
     }
-    if (album?.cover_art_path) {
+    if (album.cover_art_path) {
       const url = supabase.storage.from('album-covers').getPublicUrl(album.cover_art_path).data.publicUrl;
       return { type: 'image' as const, url };
     }
     return { type: 'none' as const, url: '' };
-  };
+  }, [album]);
+
+  // Which track is currently playing from this album
+  const playingTrack = currentTrack && tracks.find(t => t.id === currentTrack.id);
+  const activeSongTitle = playingTrack?.title || tracks[0]?.title || '';
+  const activeLyrics = playingTrack?.lyrics || currentTrack?.lyrics || '';
+
+  const isOwner = user && album && user.id === album.user_id;
 
   const handleEditSuccess = () => {
     loadAlbum();
@@ -202,256 +140,278 @@ export default function AlbumDetail() {
     setEditingAlbum(false);
   };
 
-  const isOwner = user && album && user.id === album.user_id;
-
   if (loading || !album) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "#030308" }}>
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-10 h-10 animate-spin" style={{ color: "#00CFFF" }} />
+          <Loader2 className="w-10 h-10 animate-spin" style={{ color: "#FF6347" }} />
           <p style={{ color: "rgba(255,255,255,0.4)", fontFamily: "'Raleway', sans-serif" }}>Loading album...</p>
         </div>
       </div>
     );
   }
 
-  const heroMedia = getHeroMedia();
+  // Progress percentage
+  const duration = playingTrack?.duration || currentTrack?.duration || 0;
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden flex flex-col" style={{
-      background: `
-        radial-gradient(ellipse 80% 50% at 30% 10%, rgba(139,92,246,0.08) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 40% at 70% 80%, rgba(0,207,255,0.06) 0%, transparent 55%),
-        #030308
-      `
-    }}>
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: "#0a0a14" }}>
       <Helmet>
-        <title>{album ? `${album.title} - ${album.artist_name}` : 'Album'}</title>
-        <meta name="description" content={album?.description || `Listen to ${album?.title} by ${album?.artist_name}`} />
-        <meta property="og:type" content="music.album" />
-        <meta property="og:title" content={`${album?.title} - ${album?.artist_name}`} />
-        <meta property="og:image" content={getCoverUrl(album?.cover_art_path)} />
+        <title>{`${album.title} - ${album.artist_name}`}</title>
+        <meta name="description" content={album.description || `Listen to ${album.title} by ${album.artist_name}`} />
       </Helmet>
 
-      {/* Header - Six Caps / Raleway */}
-      <div className="sticky top-0 z-10" style={{ 
-        background: "rgba(3,3,8,0.85)", 
-        backdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(139,92,246,0.1)"
-      }}>
-        <div className="flex items-center gap-4 px-4 md:px-6 py-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="rounded-full bg-white/5 hover:bg-white/10"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handlePlayAll}
-            disabled={tracks.length === 0}
-            className="rounded-full bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
-          >
-            <Play className="w-5 h-5" fill="currentColor" />
-          </Button>
-          
-          <h1 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 24, letterSpacing: "0.04em", textTransform: "uppercase", color: "#FFFFFF" }}>
-            {album.title}
-          </h1>
-          
-          {isOwner && (
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setEditingAlbum(true)}
-              className="ml-auto gap-2 text-white/60 hover:text-white"
+      {/* ─── Top Bar ─── */}
+      <div className="flex items-center justify-between px-4 md:px-6 py-3 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+        <button onClick={() => navigate(-1)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+          <ChevronDown className="w-5 h-5 text-white/60" />
+        </button>
+        <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)" }}>
+          NOW PLAYING
+        </p>
+        <button onClick={() => setEditingAlbum(true)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+          <MoreHorizontal className="w-5 h-5 text-white/60" />
+        </button>
+      </div>
+
+      {/* ─── Main 3-Column Layout ─── */}
+      <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
+
+        {/* LEFT COLUMN: Artist / Album Title + Tracklist */}
+        <div className="lg:w-[30%] flex flex-col p-4 md:p-6 lg:p-8 overflow-hidden order-2 lg:order-1">
+          <div className="mb-4 lg:mb-6 text-center lg:text-left">
+            <button
+              onClick={() => navigate(`/artist/${album.user_id}`)}
+              className="hover:opacity-70 transition-opacity"
             >
-              <Edit2 className="w-4 h-4" />
-              <span style={{ fontFamily: "'Raleway', sans-serif" }}>Edit</span>
-            </Button>
-          )}
+              <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)" }}>
+                {album.artist_name}
+              </p>
+            </button>
+            <h2 style={{
+              fontFamily: "'Six Caps', sans-serif",
+              fontSize: "clamp(28px, 3vw, 42px)",
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+              lineHeight: 1.1,
+              color: "#FFFFFF",
+            }}>
+              {album.title}
+            </h2>
+          </div>
+
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="space-y-0.5 pr-2">
+              {tracks.map((track, index) => {
+                const isActive = currentTrack?.id === track.id;
+                return (
+                  <button
+                    key={track.id}
+                    onClick={() => handlePlayTrack(track)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${
+                      isActive ? 'bg-white/8' : 'hover:bg-white/5'
+                    }`}
+                  >
+                    <span style={{
+                      fontFamily: "'Raleway', sans-serif",
+                      fontSize: 13,
+                      color: isActive ? '#FF6347' : 'rgba(255,255,255,0.3)',
+                      width: 20,
+                      textAlign: 'center',
+                      flexShrink: 0,
+                    }}>
+                      {isActive && isPlaying ? '▸' : (track.track_number || index + 1)}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate" style={{
+                        fontFamily: "'Raleway', sans-serif",
+                        fontWeight: 600,
+                        fontSize: 14,
+                        color: isActive ? '#FF6347' : '#FFFFFF',
+                      }}>
+                        {track.title}
+                      </p>
+                    </div>
+                    <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
+                      {formatDuration(track.duration || 0)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Analytics below tracklist if owner */}
+            {isOwner && album.is_published && (
+              <div className="mt-8 pt-6" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="flex items-center gap-2 mb-4">
+                  <BarChart3 className="w-4 h-4" style={{ color: "#FF6347" }} />
+                  <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 22, letterSpacing: "0.04em", textTransform: "uppercase", color: "#FFFFFF" }}>
+                    Analytics
+                  </h3>
+                </div>
+                <AlbumAnalytics albumId={albumId!} />
+              </div>
+            )}
+          </ScrollArea>
+        </div>
+
+        {/* CENTER COLUMN: Album Cover Art / Motion Art */}
+        <div className="lg:w-[40%] flex items-center justify-center p-4 md:p-8 order-1 lg:order-2 flex-shrink-0">
+          <div className="relative" style={{ width: "min(380px, 80vw)", aspectRatio: "1" }}>
+            <div
+              className="w-full h-full rounded-2xl overflow-hidden shadow-2xl"
+              style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.6), 0 0 80px rgba(255,99,71,0.08)" }}
+            >
+              {heroMedia.type === 'video' ? (
+                <video
+                  src={heroMedia.url}
+                  autoPlay loop muted playsInline
+                  className="w-full h-full object-cover"
+                />
+              ) : heroMedia.type === 'image' ? (
+                <img src={heroMedia.url} alt={album.title} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(255,99,71,0.3), rgba(139,92,246,0.3))" }}>
+                  <Music className="w-20 h-20 text-white/20" />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Song Title + Lyrics */}
+        <div className="lg:w-[30%] flex flex-col p-4 md:p-6 lg:p-8 overflow-hidden order-3">
+          <div className="mb-4 lg:mb-6 text-center lg:text-left">
+            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", color: "rgba(255,255,255,0.45)" }}>
+              {activeSongTitle ? 'SONG TITLE' : ''}
+            </p>
+            <h2 style={{
+              fontFamily: "'Six Caps', sans-serif",
+              fontSize: "clamp(28px, 3vw, 42px)",
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
+              lineHeight: 1.1,
+              color: "#FFFFFF",
+            }}>
+              {activeSongTitle || 'Select a track'}
+            </h2>
+          </div>
+
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="pr-2">
+              {activeLyrics ? (
+                <p style={{
+                  fontFamily: "'Raleway', sans-serif",
+                  fontSize: 13,
+                  lineHeight: 2,
+                  color: "rgba(255,255,255,0.55)",
+                  letterSpacing: "0.02em",
+                  whiteSpace: "pre-wrap",
+                }}>
+                  {activeLyrics}
+                </p>
+              ) : (
+                <p style={{
+                  fontFamily: "'Raleway', sans-serif",
+                  fontSize: 13,
+                  color: "rgba(255,255,255,0.25)",
+                  fontStyle: "italic",
+                }}>
+                  No lyrics available for this track.
+                </p>
+              )}
+            </div>
+          </ScrollArea>
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="pb-32">
-          {/* Album Hero */}
-          <div className="relative px-4 md:px-8 pt-8 pb-6">
-            <div className="flex flex-col md:flex-row gap-6 md:gap-8">
-              {/* Album Cover - Motion artwork priority */}
-              <div className="flex-shrink-0 mx-auto md:mx-0">
-                <div className="w-52 h-52 md:w-64 md:h-64 rounded-lg overflow-hidden shadow-2xl bg-white/5">
-                  {heroMedia.type === 'video' ? (
-                    <video
-                      src={heroMedia.url}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="w-full h-full object-cover"
-                    />
-                  ) : heroMedia.type === 'image' ? (
-                    <img
-                      src={heroMedia.url}
-                      alt={album.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.3), rgba(0,207,255,0.3))" }}>
-                      <Music className="w-16 h-16 text-white/30" />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Album Info - Six Caps headings, Raleway body */}
-              <div className="flex-1 text-center md:text-left space-y-4">
-                <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
-                  <Badge variant="outline" className="text-xs bg-white/5 border-white/10 text-white/80 uppercase" style={{ fontFamily: "'Raleway', sans-serif" }}>
-                    {album.release_type || 'Album'}
-                  </Badge>
-                  {album.genre && (
-                    <Badge variant="outline" className="text-xs bg-white/5 border-white/10" style={{ color: "#00CFFF", fontFamily: "'Raleway', sans-serif" }}>
-                      {album.genre}
-                    </Badge>
-                  )}
-                  {album.is_published ? (
-                    <Badge className="text-xs bg-green-600/20 text-green-400" style={{ fontFamily: "'Raleway', sans-serif" }}>Published</Badge>
-                  ) : (
-                    <Badge variant="secondary" className="text-xs" style={{ fontFamily: "'Raleway', sans-serif" }}>Unpublished</Badge>
-                  )}
-                </div>
-
-                <h1 style={{
-                  fontFamily: "'Six Caps', sans-serif",
-                  fontSize: "clamp(36px, 6vw, 64px)",
-                  letterSpacing: "0.04em",
-                  textTransform: "uppercase",
-                  lineHeight: 1,
-                  color: "#FFFFFF",
-                }}>
-                  {album.title}
-                </h1>
-
-                <button
-                  onClick={() => navigate(`/artist/${album.user_id}`)}
-                  className="inline-flex items-center gap-2 hover:opacity-80 transition-opacity"
-                >
-                  <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center">
-                    <Music className="w-3.5 h-3.5 text-white/60" />
-                  </div>
-                  <span style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, color: "rgba(255,255,255,0.8)" }} className="hover:text-cyan-400 transition-colors">
-                    {album.artist_name}
-                  </span>
-                </button>
-
-                <div className="flex items-center justify-center md:justify-start gap-4 text-sm flex-wrap" style={{ color: "rgba(255,255,255,0.5)", fontFamily: "'Raleway', sans-serif" }}>
-                  {album.release_date && (
-                    <>
-                      <span className="flex items-center gap-1.5">
-                        <Calendar className="w-4 h-4" />
-                        <strong style={{ color: "#FFFFFF" }}>{new Date(album.release_date).getFullYear()}</strong>
-                      </span>
-                      <span>•</span>
-                    </>
-                  )}
-                  <span className="flex items-center gap-1.5">
-                    <Music className="w-4 h-4" />
-                    <strong style={{ color: "#FFFFFF" }}>{tracks.length}</strong> tracks
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1.5">
-                    <Clock className="w-4 h-4" />
-                    <strong style={{ color: "#FFFFFF" }}>{getTotalDuration()}</strong>
-                  </span>
-                </div>
-
-                {album.description && (
-                  <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 14, color: "rgba(255,255,255,0.5)", maxWidth: 500 }}>
-                    {album.description}
-                  </p>
-                )}
-
-                <div className="flex items-center justify-center md:justify-start gap-3 pt-2">
-                  {isPreRelease() && !isOwner ? (
-                    <>
-                      <Button 
-                        size="lg"
-                        onClick={handlePresaveAlbum}
-                        className={`font-semibold px-8 ${isPresaved ? 'bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30' : 'bg-white text-black hover:bg-white/90'}`}
-                        style={{ fontFamily: "'Raleway', sans-serif" }}
-                      >
-                        {isPresaved ? <><Check className="w-5 h-5 mr-2" />Pre-saved</> : <><Bell className="w-5 h-5 mr-2" />Pre-save</>}
-                      </Button>
-                      <Button variant="outline" size="lg" onClick={handlePlayAll} disabled={tracks.length === 0} className="border-white/20 hover:border-white/40" style={{ fontFamily: "'Raleway', sans-serif" }}>
-                        <Play className="w-5 h-5 mr-2" fill="currentColor" />Preview
-                      </Button>
-                    </>
-                  ) : (
-                    <Button size="lg" onClick={handlePlayAll} disabled={tracks.length === 0} className="bg-white text-black hover:bg-white/90 font-semibold px-8" style={{ fontFamily: "'Raleway', sans-serif" }}>
-                      <Play className="w-5 h-5 mr-2" fill="currentColor" />PLAY
-                    </Button>
-                  )}
-                  <Button variant="outline" size="icon" onClick={handleShuffle} disabled={tracks.length === 0} className="border-white/20 hover:border-white/40">
-                    <Shuffle className="w-5 h-5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="text-white/60 hover:text-white"><Heart className="w-5 h-5" /></Button>
-                  <Button variant="ghost" size="icon" className="text-white/60 hover:text-white"><MoreHorizontal className="w-5 h-5" /></Button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Tracklist */}
-          <div className="px-4 md:px-8">
-            {tracks.length === 0 ? (
-              <div className="text-center py-16" style={{ color: "rgba(255,255,255,0.4)" }}>
-                <Music className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p style={{ fontFamily: "'Raleway', sans-serif" }}>No tracks in this album</p>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {tracks.map((track, index) => (
-                  <div
-                    key={track.id}
-                    className={`flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors group cursor-pointer ${
-                      currentTrack?.id === track.id ? 'bg-cyan-500/10' : ''
-                    }`}
-                    onClick={() => handlePlayTrack(track, index)}
-                  >
-                    <span className="w-6 text-center text-sm group-hover:hidden" style={{ color: "rgba(255,255,255,0.35)", fontFamily: "'Raleway', sans-serif" }}>
-                      {track.track_number || index + 1}
-                    </span>
-                    <div className="w-6 hidden group-hover:flex items-center justify-center">
-                      <Play className="w-4 h-4 text-white" fill="white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 600, color: currentTrack?.id === track.id ? '#00CFFF' : '#FFFFFF' }} className="truncate">
-                        {track.title}
-                      </p>
-                      <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "rgba(255,255,255,0.4)" }} className="truncate">{track.artist_name}</p>
-                    </div>
-                    <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
-                      {formatDuration(track.duration || 0)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Analytics - Only visible to album owner */}
-          {isOwner && album.is_published && (
-            <div className="px-4 md:px-8 mt-12">
-              <AlbumAnalytics albumId={albumId!} />
-            </div>
-          )}
+      {/* ─── Album Info Row (below art on mobile) ─── */}
+      <div className="flex items-center justify-between px-4 md:px-6 py-2 flex-shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div className="flex-1 min-w-0">
+          <p className="truncate" style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 20, letterSpacing: "0.04em", textTransform: "uppercase", color: "#FFFFFF" }}>
+            {playingTrack?.title || album.title}
+          </p>
+          <button onClick={() => navigate(`/artist/${album.user_id}`)} className="hover:underline">
+            <p className="truncate" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+              {album.artist_name}
+            </p>
+          </button>
         </div>
-      </ScrollArea>
+        <div className="flex items-center gap-2">
+          <button className="p-2 text-white/40 hover:text-white transition-colors">
+            <Heart className="w-5 h-5" />
+          </button>
+          <button className="p-2 text-white/40 hover:text-white transition-colors">
+            <MoreHorizontal className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* ─── Player Controls ─── */}
+      <div className="flex-shrink-0 px-4 md:px-6 pb-2 pt-2">
+        <div className="flex flex-col items-center gap-3">
+          {/* Transport */}
+          <div className="flex items-center gap-6">
+            <button onClick={previousTrack} className="text-white/50 hover:text-white transition-colors">
+              <SkipBack className="w-5 h-5" />
+            </button>
+            <button
+              onClick={playingTrack ? togglePlayPause : handlePlayAll}
+              className="w-14 h-14 rounded-full flex items-center justify-center transition-transform hover:scale-105"
+              style={{ background: "linear-gradient(135deg, #FF6347, #FF4500)", boxShadow: "0 4px 20px rgba(255,99,71,0.4)" }}
+            >
+              {isPlaying && playingTrack ? (
+                <Pause className="w-6 h-6 text-white" fill="white" />
+              ) : (
+                <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
+              )}
+            </button>
+            <button onClick={nextTrack} className="text-white/50 hover:text-white transition-colors">
+              <SkipForward className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Progress */}
+          <div className="w-full max-w-md flex items-center gap-3">
+            <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "rgba(255,255,255,0.4)", minWidth: 36, textAlign: "right" }}>
+              {formatDuration(currentTime)}
+            </span>
+            <div className="flex-1 h-1 rounded-full cursor-pointer" style={{ background: "rgba(255,255,255,0.1)" }}>
+              <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(progress, 100)}%`, background: "#FF6347" }} />
+            </div>
+            <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "rgba(255,255,255,0.4)", minWidth: 36 }}>
+              {formatDuration(duration)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Bottom Tab Bar ─── */}
+      <div className="flex-shrink-0 flex items-center justify-around px-4 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        {[
+          { id: 'cover' as PlayerTab, icon: Disc3, label: 'Cover' },
+          { id: 'lyrics' as PlayerTab, icon: Type, label: 'Lyrics' },
+          { id: 'visual' as PlayerTab, icon: SlidersHorizontal, label: 'Visual' },
+          { id: 'eq' as PlayerTab, icon: SlidersHorizontal, label: 'EQ' },
+          { id: 'queue' as PlayerTab, icon: ListMusic, label: 'Queue' },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className="flex flex-col items-center gap-1 px-3 py-1 transition-colors"
+          >
+            <tab.icon className="w-5 h-5" style={{ color: activeTab === tab.id ? '#FF6347' : 'rgba(255,255,255,0.35)' }} />
+            <span style={{
+              fontFamily: "'Raleway', sans-serif",
+              fontSize: 10,
+              color: activeTab === tab.id ? '#FF6347' : 'rgba(255,255,255,0.35)',
+            }}>
+              {tab.label}
+            </span>
+          </button>
+        ))}
+      </div>
 
       {isOwner && (
         <EditAlbumDialog
