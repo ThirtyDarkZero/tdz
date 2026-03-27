@@ -291,9 +291,9 @@ function Section1Hero() {
 function PhoneFrame({ children, style, className = "" }: { children: React.ReactNode; style?: React.CSSProperties; className?: string }) {
   return (
     <div className={`relative flex-shrink-0 ${className}`}
-      style={{ width: 240, height: 490, background: "#1A1A1A", borderRadius: 44, border: "2px solid #2A2A2A", boxShadow: "0 40px 80px rgba(0,0,0,0.8)", overflow: "hidden", ...style }}>
-      <div className="absolute top-2 left-1/2 -translate-x-1/2 w-16 h-5 bg-black rounded-full z-10" />
-      <div className="absolute inset-1 rounded-[40px] overflow-hidden overflow-y-auto scrollbar-hide" style={{ background: "#111" }}>
+      style={{ width: 220, height: 450, background: "#1A1A1A", borderRadius: 40, border: "2px solid #2A2A2A", boxShadow: "0 40px 80px rgba(0,0,0,0.8)", overflow: "hidden", ...style }}>
+      <div className="absolute top-2 left-1/2 -translate-x-1/2 w-14 h-4 bg-black rounded-full z-10" />
+      <div className="absolute inset-1 rounded-[36px] overflow-hidden overflow-y-auto scrollbar-hide" style={{ background: "#111" }}>
         {children}
       </div>
     </div>
