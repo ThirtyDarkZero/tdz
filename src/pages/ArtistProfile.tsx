@@ -579,7 +579,7 @@ export default function ArtistProfile() {
       {albums.filter(a => (a as any).release_type === 'single').length > 0 && (
         <section className="px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Singles</h2>
+            <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(28px, 4vw, 40px)", letterSpacing: "0.04em", textTransform: "uppercase", background: "linear-gradient(180deg, #FFFFFF 0%, #999999 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>SINGLES</h2>
             <div className="flex gap-2">
               <Button
                 variant="ghost"
