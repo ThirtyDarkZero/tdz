@@ -1,4 +1,4 @@
-import { Search, X, AudioLines } from "lucide-react";
+import { Search, Bell, X } from "lucide-react";
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -31,78 +31,75 @@ export function CosmicTopBar({ activeTab, onTabChange, searchQuery, onSearchChan
     setTimeout(() => inputRef.current?.focus(), 100);
   };
 
-  return (
-    <div className="sticky top-0 z-30" style={{
-      height: 56,
-      background: "rgba(5,5,16,0.6)",
-      backdropFilter: "blur(20px)",
-    }}>
-      <div className="max-w-7xl mx-auto h-full flex items-center justify-between px-5">
-        {/* Left: User avatar */}
-        <div
-          className="cursor-pointer"
-          onClick={() => navigate(user ? "/profile" : "/auth")}
-        >
-          <ArtistAvatar
-            src={avatarUrl}
-            name={user?.email?.charAt(0) || userProfile?.display_name?.charAt(0) || "U"}
-            size={36}
-          />
-        </div>
+  // Titles per tab
+  const tabTitles: Record<string, string> = {
+    discover: "Discover",
+    trending: "Search",
+    library: "Library",
+    artists: "Profile",
+  };
 
-        {/* Center: Search (expandable) */}
+  return (
+    <div
+      className="sticky top-0 z-30"
+      style={{
+        background: "rgba(18,18,18,0.92)",
+        backdropFilter: "blur(20px)",
+      }}
+    >
+      <div className="max-w-7xl mx-auto flex items-center justify-between px-5 h-14">
+        {/* Left: Title or search */}
         {searchOpen ? (
-          <div className="flex-1 mx-4 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "rgba(255,255,255,0.3)" }} />
-            <input
-              ref={inputRef}
-              type="search"
-              placeholder="Search artists, tracks, albums..."
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              onBlur={() => { if (!searchQuery) setSearchOpen(false); }}
-              className="w-full outline-none"
-              style={{
-                height: 36,
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(0,207,255,0.2)",
-                borderRadius: 999,
-                padding: "0 36px 0 36px",
-                fontFamily: "'Raleway', sans-serif",
-                fontSize: 13,
-                color: "#FFFFFF",
-              }}
-            />
-            <button className="absolute right-3 top-1/2 -translate-y-1/2" onClick={() => { onSearchChange(""); setSearchOpen(false); }}>
-              <X className="w-3.5 h-3.5" style={{ color: "rgba(255,255,255,0.4)" }} />
+          <div className="flex-1 flex items-center gap-2">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                ref={inputRef}
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder="Search songs, artists..."
+                className="w-full h-9 pl-9 pr-3 rounded-xl bg-white/5 border border-white/8 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary/40 transition-colors"
+              />
+            </div>
+            <button
+              onClick={() => { setSearchOpen(false); onSearchChange(""); }}
+              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="h-4 w-4" />
             </button>
           </div>
         ) : (
-          <button onClick={openSearch} className="p-2 rounded-full hover:bg-white/5 transition-colors">
-            <Search className="w-5 h-5" style={{ color: "rgba(255,255,255,0.5)" }} />
-          </button>
+          <>
+            <h1 className="text-lg font-bold text-foreground">
+              {tabTitles[activeTab] || "Discover"}
+            </h1>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={openSearch}
+                className="p-2 rounded-full hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Search className="h-5 w-5" />
+              </button>
+              <button className="p-2 rounded-full hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors">
+                <Bell className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => user ? navigate("/profile") : navigate("/auth")}
+                className="ml-1"
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover border border-white/10" />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
+                    <span className="text-xs font-bold text-primary">
+                      {user?.email?.[0]?.toUpperCase() || "?"}
+                    </span>
+                  </div>
+                )}
+              </button>
+            </div>
+          </>
         )}
-
-        {/* Right: Hi-Fi badge */}
-        <div
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer"
-          style={{
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(0,207,255,0.15)",
-            backdropFilter: "blur(8px)",
-          }}
-        >
-          <AudioLines className="w-3.5 h-3.5" style={{ color: "#00CFFF" }} />
-          <span style={{
-            fontFamily: "'Raleway', sans-serif",
-            fontSize: 11,
-            fontWeight: 700,
-            color: "#FFFFFF",
-            letterSpacing: "0.08em",
-          }}>
-            Hi-Fi
-          </span>
-        </div>
       </div>
     </div>
   );
