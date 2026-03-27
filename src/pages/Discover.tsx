@@ -792,6 +792,11 @@ export default function Discover() {
                     </div>
                   </div>
                 )}
+
+                {/* ── GENRE PLAYLIST sub-view ── */}
+                {!searchQuery.trim() && exploreView === "genre" && exploreGenre && (
+                  <GenrePlaylistDetail genre={exploreGenre} onBack={() => setExploreView("main")} />
+                )}
               </div>
             </div>
           );
