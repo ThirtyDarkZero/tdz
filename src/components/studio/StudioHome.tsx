@@ -100,7 +100,7 @@ export const StudioHome = ({ artistName, onNavigate, onUploadClick }: StudioHome
               <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-2" style={{ color: "rgba(0,207,255,0.7)" }}>
                 {greeting()}
               </p>
-              <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4" style={{ fontFamily: "'Six Caps', sans-serif", letterSpacing: "0.04em", color: "#fff" }}>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight mb-4" style={{ fontFamily: "'Six Caps', sans-serif", letterSpacing: "0.04em", color: "#fff" }}>
                 {artistName}
               </h1>
               <div className="flex items-center gap-4">
