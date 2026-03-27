@@ -23,6 +23,103 @@ const EQ_BANDS = [
 ];
 
 type FullView = "artwork" | "lyrics" | "visualizer" | "eq";
+type VisTheme = "bars" | "aurora" | "waves" | "sphere" | "pulse";
+
+const VIS_THEMES: { id: VisTheme; label: string; icon: any }[] = [
+  { id: "bars", label: "Bars", icon: SlidersHorizontal },
+  { id: "aurora", label: "Aurora", icon: Sparkles },
+  { id: "waves", label: "Waves", icon: Waves },
+  { id: "sphere", label: "Sphere", icon: Circle },
+  { id: "pulse", label: "Pulse", icon: Zap },
+];
+
+/* ── Canvas Visualizer Renderers ── */
+function drawBars(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
+  ctx.fillStyle = "rgba(3,3,15,0.12)";
+  ctx.fillRect(0, 0, w, h);
+  const bars = 48, gap = w / bars, barW = gap * 0.65;
+  for (let i = 0; i < bars; i++) {
+    const val = (Math.sin(t * 0.003 + i * 0.4) * 0.3 + 0.5 + Math.random() * 0.2) * h * 0.8;
+    const g = ctx.createLinearGradient(0, h - val, 0, h);
+    g.addColorStop(0, "#00CFFF"); g.addColorStop(1, "#8B5CF6");
+    ctx.fillStyle = g;
+    ctx.fillRect(i * gap + (gap - barW) / 2, h - val, barW, val);
+  }
+}
+
+function drawAurora(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
+  ctx.fillStyle = "rgba(3,3,15,0.06)";
+  ctx.fillRect(0, 0, w, h);
+  for (let i = 0; i < 5; i++) {
+    ctx.beginPath();
+    ctx.moveTo(0, h * 0.5);
+    for (let x = 0; x <= w; x += 4) {
+      const y = h * 0.3 + Math.sin(x * 0.008 + t * 0.001 + i * 1.2) * (h * 0.15) +
+        Math.sin(x * 0.015 + t * 0.002 + i * 0.7) * (h * 0.08);
+      ctx.lineTo(x, y + i * 30);
+    }
+    ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+    const colors = ["rgba(0,207,255,0.15)", "rgba(139,92,246,0.12)", "rgba(34,197,94,0.1)", "rgba(255,99,71,0.08)", "rgba(251,191,36,0.06)"];
+    ctx.fillStyle = colors[i];
+    ctx.fill();
+  }
+}
+
+function drawWaves(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
+  ctx.fillStyle = "rgba(3,3,15,0.1)";
+  ctx.fillRect(0, 0, w, h);
+  for (let wave = 0; wave < 4; wave++) {
+    ctx.beginPath();
+    ctx.moveTo(0, h / 2);
+    for (let x = 0; x <= w; x += 2) {
+      const amp = 30 + wave * 15 + Math.sin(t * 0.002 + wave) * 10;
+      const y = h / 2 + Math.sin(x * 0.02 + t * 0.003 * (wave + 1)) * amp + Math.sin(x * 0.005 + t * 0.001) * 20;
+      ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = `hsla(${180 + wave * 40}, 80%, 60%, ${0.6 - wave * 0.12})`;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+  }
+}
+
+function drawSphere(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
+  ctx.fillStyle = "rgba(3,3,15,0.08)";
+  ctx.fillRect(0, 0, w, h);
+  const cx = w / 2, cy = h / 2, r = Math.min(w, h) * 0.3;
+  const points = 64;
+  for (let i = 0; i < points; i++) {
+    const angle = (i / points) * Math.PI * 2;
+    const pulse = 1 + Math.sin(t * 0.004 + i * 0.3) * 0.15 + Math.random() * 0.05;
+    const px = cx + Math.cos(angle) * r * pulse;
+    const py = cy + Math.sin(angle) * r * pulse;
+    const size = 3 + Math.sin(t * 0.003 + i * 0.5) * 2;
+    ctx.beginPath();
+    ctx.arc(px, py, size, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${(i / points) * 360}, 80%, 60%, 0.7)`;
+    ctx.fill();
+    // Lines to center
+    ctx.beginPath();
+    ctx.moveTo(cx, cy); ctx.lineTo(px, py);
+    ctx.strokeStyle = `hsla(${(i / points) * 360}, 60%, 50%, 0.1)`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+}
+
+function drawPulse(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
+  ctx.fillStyle = "rgba(3,3,15,0.1)";
+  ctx.fillRect(0, 0, w, h);
+  const cx = w / 2, cy = h / 2;
+  for (let i = 0; i < 6; i++) {
+    const phase = (t * 0.003 + i * 0.8) % (Math.PI * 2);
+    const r = (Math.sin(phase) * 0.5 + 0.5) * Math.min(w, h) * 0.4 + 20;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = `hsla(${0 + i * 15}, 85%, 55%, ${0.5 - (r / (Math.min(w, h) * 0.5)) * 0.4})`;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+}
 
 export function OrbPlayerBar() {
   const {
