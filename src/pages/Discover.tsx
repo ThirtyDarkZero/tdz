@@ -521,10 +521,7 @@ export default function Discover() {
                 <ErrorBoundary fallback={null}>
                   <CityTrendingSection sectionNumber={0} onViewAllTrends={() => { setShowTrending(true); setActiveTab('library'); }} />
                 </ErrorBoundary>
-                <div>
-                  <SectionHeader title="Editorial" />
-                  <ErrorBoundary fallback={null}><EditorialPlaylistsSection /></ErrorBoundary>
-                </div>
+                {/* Editorial section removed */}
               </div>
             </div>
           );
