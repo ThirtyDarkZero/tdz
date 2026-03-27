@@ -1,12 +1,13 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import {
   Play, Pause, SkipForward, SkipBack,
   ListMusic, Mic2, Repeat, Shuffle, ChevronDown, MoreHorizontal, X,
-  Heart, SlidersHorizontal, Music,
+  Heart, SlidersHorizontal, Music, Sparkles, Waves, Circle, Mountain, Zap,
 } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { SongRow } from "./SongRow";
+import { supabase } from "@/integrations/supabase/client";
 
 function fmt(s: number) {
   const m = Math.floor(s / 60);
@@ -22,6 +23,103 @@ const EQ_BANDS = [
 ];
 
 type FullView = "artwork" | "lyrics" | "visualizer" | "eq";
+type VisTheme = "bars" | "aurora" | "waves" | "sphere" | "pulse";
+
+const VIS_THEMES: { id: VisTheme; label: string; icon: any }[] = [
+  { id: "bars", label: "Bars", icon: SlidersHorizontal },
+  { id: "aurora", label: "Aurora", icon: Sparkles },
+  { id: "waves", label: "Waves", icon: Waves },
+  { id: "sphere", label: "Sphere", icon: Circle },
+  { id: "pulse", label: "Pulse", icon: Zap },
+];
+
+/* ── Canvas Visualizer Renderers ── */
+function drawBars(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
+  ctx.fillStyle = "rgba(3,3,15,0.12)";
+  ctx.fillRect(0, 0, w, h);
+  const bars = 48, gap = w / bars, barW = gap * 0.65;
+  for (let i = 0; i < bars; i++) {
+    const val = (Math.sin(t * 0.003 + i * 0.4) * 0.3 + 0.5 + Math.random() * 0.2) * h * 0.8;
+    const g = ctx.createLinearGradient(0, h - val, 0, h);
+    g.addColorStop(0, "#00CFFF"); g.addColorStop(1, "#8B5CF6");
+    ctx.fillStyle = g;
+    ctx.fillRect(i * gap + (gap - barW) / 2, h - val, barW, val);
+  }
+}
+
+function drawAurora(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
+  ctx.fillStyle = "rgba(3,3,15,0.06)";
+  ctx.fillRect(0, 0, w, h);
+  for (let i = 0; i < 5; i++) {
+    ctx.beginPath();
+    ctx.moveTo(0, h * 0.5);
+    for (let x = 0; x <= w; x += 4) {
+      const y = h * 0.3 + Math.sin(x * 0.008 + t * 0.001 + i * 1.2) * (h * 0.15) +
+        Math.sin(x * 0.015 + t * 0.002 + i * 0.7) * (h * 0.08);
+      ctx.lineTo(x, y + i * 30);
+    }
+    ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+    const colors = ["rgba(0,207,255,0.15)", "rgba(139,92,246,0.12)", "rgba(34,197,94,0.1)", "rgba(255,99,71,0.08)", "rgba(251,191,36,0.06)"];
+    ctx.fillStyle = colors[i];
+    ctx.fill();
+  }
+}
+
+function drawWaves(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
+  ctx.fillStyle = "rgba(3,3,15,0.1)";
+  ctx.fillRect(0, 0, w, h);
+  for (let wave = 0; wave < 4; wave++) {
+    ctx.beginPath();
+    ctx.moveTo(0, h / 2);
+    for (let x = 0; x <= w; x += 2) {
+      const amp = 30 + wave * 15 + Math.sin(t * 0.002 + wave) * 10;
+      const y = h / 2 + Math.sin(x * 0.02 + t * 0.003 * (wave + 1)) * amp + Math.sin(x * 0.005 + t * 0.001) * 20;
+      ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = `hsla(${180 + wave * 40}, 80%, 60%, ${0.6 - wave * 0.12})`;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+  }
+}
+
+function drawSphere(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
+  ctx.fillStyle = "rgba(3,3,15,0.08)";
+  ctx.fillRect(0, 0, w, h);
+  const cx = w / 2, cy = h / 2, r = Math.min(w, h) * 0.3;
+  const points = 64;
+  for (let i = 0; i < points; i++) {
+    const angle = (i / points) * Math.PI * 2;
+    const pulse = 1 + Math.sin(t * 0.004 + i * 0.3) * 0.15 + Math.random() * 0.05;
+    const px = cx + Math.cos(angle) * r * pulse;
+    const py = cy + Math.sin(angle) * r * pulse;
+    const size = 3 + Math.sin(t * 0.003 + i * 0.5) * 2;
+    ctx.beginPath();
+    ctx.arc(px, py, size, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${(i / points) * 360}, 80%, 60%, 0.7)`;
+    ctx.fill();
+    // Lines to center
+    ctx.beginPath();
+    ctx.moveTo(cx, cy); ctx.lineTo(px, py);
+    ctx.strokeStyle = `hsla(${(i / points) * 360}, 60%, 50%, 0.1)`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+}
+
+function drawPulse(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
+  ctx.fillStyle = "rgba(3,3,15,0.1)";
+  ctx.fillRect(0, 0, w, h);
+  const cx = w / 2, cy = h / 2;
+  for (let i = 0; i < 6; i++) {
+    const phase = (t * 0.003 + i * 0.8) % (Math.PI * 2);
+    const r = (Math.sin(phase) * 0.5 + 0.5) * Math.min(w, h) * 0.4 + 20;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = `hsla(${0 + i * 15}, 85%, 55%, ${0.5 - (r / (Math.min(w, h) * 0.5)) * 0.4})`;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+}
 
 export function OrbPlayerBar() {
   const {
@@ -31,9 +129,9 @@ export function OrbPlayerBar() {
   const [showQueue, setShowQueue] = useState(false);
   const [isPill, setIsPill] = useState(false);
   const [fullView, setFullView] = useState<FullView>("artwork");
+  const [visTheme, setVisTheme] = useState<VisTheme>("bars");
   const [eqValues, setEqValues] = useState([0, 0, 0, 0, 0, 0, 0]);
   const [isLiked, setIsLiked] = useState(false);
-  const [isShuffle, setIsShuffle] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>();
 
@@ -42,34 +140,36 @@ export function OrbPlayerBar() {
   const pct = dur > 0 ? Math.min((currentTime / dur) * 100, 100) : 0;
   const circumference = 2 * Math.PI * 62;
 
-  // Visualizer
+  // Resolve cover URL from storage path
+  const coverUrl = useMemo(() => {
+    if (!currentTrack) return null;
+    const raw = currentTrack.album_cover_path || currentTrack.thumbnail || null;
+    if (!raw) return null;
+    if (raw.startsWith("http") || raw.startsWith("data:") || raw.startsWith("blob:")) return raw;
+    const bucket = currentTrack.album_cover_bucket || "album-covers";
+    return supabase.storage.from(bucket).getPublicUrl(raw).data.publicUrl;
+  }, [currentTrack]);
+
+  // Visualizer with multiple themes
   useEffect(() => {
-    if (fullView !== "visualizer" || !canvasRef.current || !isPlaying) {
+    if (fullView !== "visualizer" || !canvasRef.current) {
       if (animRef.current) cancelAnimationFrame(animRef.current);
       return;
     }
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    const renderers: Record<VisTheme, (ctx: CanvasRenderingContext2D, w: number, h: number, t: number) => void> = {
+      bars: drawBars, aurora: drawAurora, waves: drawWaves, sphere: drawSphere, pulse: drawPulse,
+    };
+    const render = renderers[visTheme] || drawBars;
     const draw = () => {
       animRef.current = requestAnimationFrame(draw);
-      ctx.fillStyle = "rgba(3,3,15,0.12)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      const bars = 48;
-      const gap = canvas.width / bars;
-      const barW = gap * 0.65;
-      for (let i = 0; i < bars; i++) {
-        const h = (Math.sin(Date.now() * 0.003 + i * 0.4) * 0.3 + 0.5 + Math.random() * 0.2) * canvas.height * 0.8;
-        const g = ctx.createLinearGradient(0, canvas.height - h, 0, canvas.height);
-        g.addColorStop(0, "#00CFFF");
-        g.addColorStop(1, "#8B5CF6");
-        ctx.fillStyle = g;
-        ctx.fillRect(i * gap + (gap - barW) / 2, canvas.height - h, barW, h);
-      }
+      render(ctx, canvas.width, canvas.height, Date.now());
     };
     draw();
     return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
-  }, [fullView, isPlaying]);
+  }, [fullView, visTheme, isPlaying]);
 
   // Lyrics from track
   const lyricsLines = useMemo(() => {
@@ -79,7 +179,7 @@ export function OrbPlayerBar() {
 
   if (!currentTrack) return null;
 
-  const cover = currentTrack.album_cover_path || currentTrack.thumbnail || null;
+  const cover = coverUrl;
   const isFullScreen = playerView === "full";
 
   /* ─── PILL ─── */
@@ -216,8 +316,27 @@ export function OrbPlayerBar() {
 
           {/* Visualizer */}
           {fullView === "visualizer" && (
-            <div className="w-full flex items-center justify-center">
-              <canvas ref={canvasRef} width={500} height={320} className="w-full rounded-2xl" style={{ maxWidth: 500, maxHeight: 320 }} />
+            <div className="w-full flex flex-col items-center gap-4">
+              {/* Theme selector */}
+              <div className="flex gap-1.5 p-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                {VIS_THEMES.map(({ id, label, icon: Icon }) => (
+                  <button
+                    key={id}
+                    onClick={() => setVisTheme(id)}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-full font-body transition-all"
+                    style={{
+                      fontSize: 10, fontWeight: 600,
+                      background: visTheme === id ? CORAL : "transparent",
+                      color: visTheme === id ? "#000" : "var(--text-3)",
+                    }}
+                  >
+                    <Icon className="h-3 w-3" />
+                    <span className="hidden sm:inline">{label}</span>
+                  </button>
+                ))}
+              </div>
+              {/* Canvas */}
+              <canvas ref={canvasRef} width={500} height={300} className="w-full rounded-2xl" style={{ maxWidth: 500, maxHeight: 300, border: "1px solid rgba(255,255,255,0.04)" }} />
             </div>
           )}
 

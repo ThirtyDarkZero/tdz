@@ -294,11 +294,18 @@ export default function Discover() {
     albums.filter(a => a.cover_art_path).forEach(album => {
       items.push({ id: album.id, title: album.title, artist: album.artist_name, image: supabase.storage.from("album-covers").getPublicUrl(album.cover_art_path!).data.publicUrl, type: "album" });
     });
-    singles.filter(t => t.album_cover_path).slice(0, 10 - items.length).forEach(track => {
+    singles.filter(t => t.album_cover_path).slice(0, Math.max(7, 10) - items.length).forEach(track => {
       const bucket = track.album_cover_bucket || "album-covers";
       items.push({ id: track.id, title: track.title, artist: track.artist_name, image: supabase.storage.from(bucket).getPublicUrl(track.album_cover_path!).data.publicUrl, type: "track", trackData: track });
     });
-    return items;
+    // Ensure exactly 7 items for carousel by duplicating if needed
+    if (items.length > 0 && items.length < 7) {
+      const original = [...items];
+      while (items.length < 7) {
+        items.push({ ...original[items.length % original.length], id: `dup-${items.length}-${original[items.length % original.length].id}` });
+      }
+    }
+    return items.slice(0, 7);
   }, [albums, singles]);
 
   const GENRES = ["Hip-Hop", "R&B", "Pop", "Electronic", "Rock", "Soul", "Latin", "Alternative"];
@@ -338,13 +345,13 @@ export default function Discover() {
                       grabCursor
                       centeredSlides
                       slidesPerView="auto"
-                      loop={forYouItems.length > 3}
-                      autoplay={{ delay: 4000, disableOnInteraction: true }}
+                      loop={true}
+                      autoplay={{ delay: 3500, disableOnInteraction: true }}
                       coverflowEffect={{ rotate: 30, stretch: 0, depth: 200, modifier: 1.2, slideShadows: true }}
                       className="w-full"
                       style={{ paddingTop: 8, paddingBottom: 16, overflow: "visible" }}
                     >
-                      {forYouItems.slice(0, 10).map(item => (
+                      {forYouItems.map(item => (
                         <SwiperSlide key={item.id} style={{ width: 200, height: 200 }}>
                           <div
                             className="relative w-full h-full cursor-pointer group"
