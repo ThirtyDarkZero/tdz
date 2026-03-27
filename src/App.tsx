@@ -84,7 +84,7 @@ const App = () => (
                       </ErrorBoundary>
                     }
                   />
-                  <Route path="/browse" element={<Browse />} />
+                  <Route path="/browse" element={<Discover />} />
                   <Route path="/artist/:artistId" element={<ArtistProfile />} />
                   <Route path="/artist/youtube/:artistId" element={<UnifiedArtistProfile />} />
                   <Route path="/profile" element={<ListenerProfile />} />
