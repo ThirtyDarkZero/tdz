@@ -411,28 +411,40 @@ function InsightsDemoMockup() {
 function DiscoveryDemoMockup() {
   const [activeGenre, setActiveGenre] = useState("All");
   return (
-    <div className="p-4 pt-8 h-full" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#888" }}>
-      <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 22, color: "#FFF", letterSpacing: "0.04em" }}>DISCOVER</p>
-      <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 18, color: "#00CFFF", letterSpacing: "0.04em", lineHeight: 1 }}>NEW TDZ RELEASES</p>
-      <div className="flex gap-1 mt-2 mb-3 overflow-x-auto scrollbar-hide">
+    <div className="p-3 pt-7 h-full" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#888" }}>
+      <div className="flex items-center gap-1.5 mb-1">
+        <img src={tdzLogo} alt="TDZ" className="w-4 h-4 object-contain" />
+        <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 18, color: "#FFF", letterSpacing: "0.04em" }}>DISCOVERY</p>
+      </div>
+      <p style={{ fontSize: 8, color: "#555", marginBottom: 6 }}>GOOD AFTERNOON</p>
+      <div className="flex gap-1 mb-3 overflow-x-auto scrollbar-hide">
         {["All", "Pop", "Hip-Hop", "R&B"].map(g => (
-          <button key={g} onClick={() => setActiveGenre(g)} className="px-2 py-1 rounded-full text-[8px] whitespace-nowrap transition-all"
+          <button key={g} onClick={() => setActiveGenre(g)} className="px-2 py-0.5 rounded-full text-[7px] whitespace-nowrap transition-all"
             style={{ background: activeGenre === g ? "#FFF" : "transparent", color: activeGenre === g ? "#000" : "#666", border: activeGenre === g ? "none" : "1px solid #333" }}>{g}</button>
         ))}
       </div>
-      <div className="space-y-1.5">
-        {["Stream unlimited music", "Every play supports creators", "$1 per stream to artists", "AI-powered playlists"].map((t, i) => (
-          <div key={i} className="p-2 rounded-lg flex items-center gap-2" style={{ background: "#1C1C1C" }}>
-            <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${["#c0392b", "#3498db", "#9b59b6", "#2ecc71"][i]}, #333)` }}>
-              <Play className="w-2.5 h-2.5" style={{ color: "#FFF" }} />
+      {/* Mini featured carousel */}
+      <div className="flex gap-1 mb-3">
+        {[1,2,3].map(i => (
+          <div key={i} className="flex-1 aspect-square rounded-lg" style={{ background: `linear-gradient(135deg, ${["#c0392b", "#3498db", "#9b59b6"][i-1]}, #333)` }} />
+        ))}
+      </div>
+      <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 14, color: "#FFF", letterSpacing: "0.03em", textAlign: "center" }}>POPULAR TRACKS</p>
+      <div className="space-y-1 mt-1">
+        {["Stream unlimited music", "Every play = $1 to artists", "AI-powered playlists"].map((t, i) => (
+          <div key={i} className="p-1.5 rounded-md flex items-center gap-1.5" style={{ background: "#1C1C1C" }}>
+            <div className="w-4 h-4 rounded flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${["#c0392b", "#3498db", "#2ecc71"][i]}, #333)` }}>
+              <Play className="w-2 h-2" style={{ color: "#FFF" }} />
             </div>
-            <span style={{ color: "#AAA", fontSize: 9 }}>{t}</span>
+            <span style={{ color: "#AAA", fontSize: 8 }}>{t}</span>
           </div>
         ))}
       </div>
-      <div className="mt-3 flex gap-2">
-        <button className="flex-1 py-1.5 rounded-full text-[9px]" style={{ background: "#FFF", color: "#000", fontWeight: 600 }}>▶ Play All</button>
-        <button className="flex-1 py-1.5 rounded-full text-[9px]" style={{ border: "1px solid #333", color: "#666" }}>⇄ Shuffle</button>
+      {/* Bottom nav mockup */}
+      <div className="flex justify-around mt-3 pt-2" style={{ borderTop: "1px solid #222" }}>
+        {["HOME", "EXPLORE", "LIBRARY"].map((t, i) => (
+          <span key={t} style={{ fontSize: 7, color: i === 0 ? "#00CFFF" : "#444", fontWeight: 600 }}>{t}</span>
+        ))}
       </div>
     </div>
   );
