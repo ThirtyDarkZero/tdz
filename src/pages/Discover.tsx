@@ -429,13 +429,7 @@ export default function Discover() {
                   </div>
                 </div>
 
-                {/* ── Editorial Picks ── */}
-                <div className="py-4">
-                  <SectionHeader title="Editorial Picks" />
-                  <ErrorBoundary fallback={null}>
-                    <EditorialPlaylistsSection />
-                  </ErrorBoundary>
-                </div>
+                {/* Editorial Picks removed */}
 
                 {/* ── Albums ── */}
                 {albums.length > 0 && (
