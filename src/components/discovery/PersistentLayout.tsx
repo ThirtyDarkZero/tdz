@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { SpaceBackground } from "./SpaceBackground";
-import { CosmicPlayerBar } from "./CosmicPlayerBar";
+import { BottomNavBar } from "./BottomNavBar";
 
 interface PersistentLayoutProps {
   children: ReactNode;
@@ -16,19 +16,14 @@ export function PersistentLayout({
   children,
   activeTab,
   onTabChange,
-  searchQuery,
-  onSearchChange,
-  showSearch,
-  onToggleSearch,
 }: PersistentLayoutProps) {
   return (
     <div className="min-h-screen relative" style={{ background: "#050510" }}>
       <SpaceBackground />
-      {/* All content sits above the space background */}
-      <div className="relative z-[1] min-h-screen pb-24">
+      <div className="relative z-[1] min-h-screen pb-36">
         {children}
       </div>
-      <CosmicPlayerBar />
+      <BottomNavBar activeTab={activeTab} onTabChange={onTabChange} />
     </div>
   );
 }
