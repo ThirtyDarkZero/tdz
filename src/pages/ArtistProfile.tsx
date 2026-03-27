@@ -460,9 +460,9 @@ export default function ArtistProfile() {
               >
                 <span className="w-6 text-center text-white/40 text-sm">{idx + 1}</span>
                 <div className="w-12 h-12 rounded-lg overflow-hidden bg-white/5 flex-shrink-0">
-                  {track.album_cover_path ? (
+                  {(track.album_cover_path || track.albums?.cover_art_path) ? (
                     <img 
-                      src={supabase.storage.from(track.album_cover_bucket || 'album-covers').getPublicUrl(track.album_cover_path).data.publicUrl}
+                      src={supabase.storage.from(track.album_cover_bucket || 'album-covers').getPublicUrl(track.album_cover_path || track.albums?.cover_art_path).data.publicUrl}
                       alt={track.title}
                       className="w-full h-full object-cover"
                     />
