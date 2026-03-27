@@ -165,7 +165,7 @@ export function EmailCampaignGenerator() {
     finally { setGeneratingSubject(false); }
   };
 
-  // AI Generate Full Email
+  // AI Generate Full Email — uses full narrative context via campaign-brain
   const generateEmail = async () => {
     if (!context.trim()) { toast.error("Provide campaign details"); return; }
     setGenerating(true);
@@ -174,20 +174,25 @@ export function EmailCampaignGenerator() {
 
     const typeInfo = CAMPAIGN_TYPES.find((t) => t.value === campaignType);
     const toneInfo = TONES.find((t) => t.value === tone);
+    const serialized = serializeNarrativeContext(narrativeCtx);
 
-    const systemPrompt = `You are an elite music marketing copywriter specializing in artist-to-fan email campaigns.
+    const systemPrompt = `You are an elite music marketing copywriter. You have the artist's FULL story, metrics, and release cycle status.
 
 CAMPAIGN TYPE: ${typeInfo?.label} — ${typeInfo?.desc}
 TONE: ${toneInfo?.emoji} ${toneInfo?.label}
 AUDIENCE SIZE: ${audience.length} contacts
 SEGMENT: ${segmentLabel}
 
+═══ ARTIST CONTEXT ═══
+${serialized}
+
 RULES:
 - Write compelling, emotionally resonant copy that drives action
+- Use the artist's authentic voice from their brand_voice and story
+- Reference their actual releases, metrics, and tour dates when relevant
 - ${usePersonalization ? "Use {{first_name}} placeholder for personalization (fallback to 'friend')" : "Do not use personalization placeholders"}
 - ${ctaText ? `Include a clear CTA button with text "${ctaText}"${ctaUrl ? ` linking to ${ctaUrl}` : ""}` : "Include a compelling call-to-action"}
 - Keep paragraphs short (2-3 sentences max)
-- Use the artist's authentic voice, not corporate speak
 - Format as clean HTML email with inline styles using a dark theme (background: #1a1a2e, text: #e0e0e0, accent: hsl(127, 100%, 60%))
 - Include a preheader text suggestion
 - Make it mobile-responsive
@@ -203,16 +208,16 @@ Return a JSON object with exactly these fields:
 }`;
 
     try {
-      const res = await supabase.functions.invoke("exec-agent-chat", {
+      const res = await supabase.functions.invoke("campaign-brain", {
         body: {
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: `Subject: ${subject || "(generate one)"}\nDetails: ${context}\n${ctaText ? `CTA: ${ctaText}` : ""}` },
-          ],
+          action: "email-campaign",
+          narrative_context: serialized,
+          release_phase: narrativeCtx.releaseCycle.phase,
+          extra_context: `Campaign type: ${campaignType}\nTone: ${tone}\nSubject: ${subject || "(generate one)"}\nDetails: ${context}\n${ctaText ? `CTA: ${ctaText}` : ""}`,
         },
       });
       if (res.error) throw res.error;
-      const raw = (res.data?.response || res.data?.content || "").trim();
+      const raw = (typeof res.data?.result === "string" ? res.data.result : JSON.stringify(res.data?.result)).trim();
 
       // Try to parse JSON
       try {
@@ -232,7 +237,7 @@ Return a JSON object with exactly these fields:
         setGeneratedHtml(`<div style="font-family: Arial, sans-serif; color: #e0e0e0; background: #1a1a2e; padding: 32px;">${raw.replace(/\n/g, "<br/>")}</div>`);
       }
       setStep("preview");
-      toast.success("Campaign email generated!");
+      toast.success("Campaign email generated with your full story context!");
     } catch {
       toast.error("Failed to generate email");
     } finally {
