@@ -383,32 +383,40 @@ export default function Discover() {
                 )}
 
                 {/* ── Moodscapes ── */}
-                <Section title="MOODSCAPES">
-                  <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                    {MOODS.map(m => (
-                      <button
-                        key={m.id}
-                        onClick={() => { setMood(m.id); toast.success(`${m.label} mode activated`); }}
-                        className="flex flex-col items-center gap-2 flex-shrink-0 transition-transform duration-200 active:scale-95"
-                        style={{ width: 80 }}
-                      >
-                        <div
-                          className="w-14 h-14 rounded-full flex items-center justify-center text-xl"
+                <div className="py-4">
+                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                    {MOODS.map(m => {
+                      const isActive = mood === m.id;
+                      return (
+                        <button
+                          key={m.id}
+                          onClick={() => { setMood(m.id); toast.success(`${m.label} mode activated`); }}
+                          className="flex-shrink-0 transition-all duration-300 active:scale-95"
                           style={{
-                            background: `${m.color}18`,
-                            border: `2px solid ${m.color}40`,
-                            boxShadow: mood === m.id ? `0 0 20px ${m.color}40` : "none",
+                            padding: "10px 18px",
+                            borderRadius: "var(--radius-pill)",
+                            background: isActive
+                              ? `linear-gradient(135deg, ${m.color}30, ${m.color}12)`
+                              : "var(--glass-1)",
+                            border: isActive
+                              ? `1.5px solid ${m.color}60`
+                              : "1px solid var(--glass-border)",
+                            boxShadow: isActive ? `0 0 16px ${m.color}20` : "none",
                           }}
                         >
-                          {m.emoji}
-                        </div>
-                        <span className="font-body" style={{ fontSize: 9, fontWeight: 700, color: mood === m.id ? m.color : "var(--text-3)", letterSpacing: "0.06em" }}>
-                          {m.label}
-                        </span>
-                      </button>
-                    ))}
+                          <span className="font-body" style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: isActive ? m.color : "var(--text-3)",
+                            letterSpacing: "0.08em",
+                          }}>
+                            {m.label}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
-                </Section>
+                </div>
 
                 {/* ── New This Week ── */}
                 {forYouItems.length > 1 && (
