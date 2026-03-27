@@ -26,7 +26,7 @@ import { UnifiedLibrary } from "@/components/discovery/UnifiedLibrary";
 import { SpotifyPlaylistSection } from "@/components/discovery/SpotifyPlaylistSection";
 import { UserPlaylistsSection } from "@/components/discovery/UserPlaylistsSection";
 import { GenreTop50Section } from "@/components/discovery/GenreTop50Section";
-import { EditorialPlaylistsSection } from "@/components/discovery/EditorialPlaylistsSection";
+// EditorialPlaylistsSection removed
 import { PlaylistManager } from "@/components/PlaylistManager";
 import { MoodMixGenerator } from "@/components/discovery/MoodMixGenerator";
 import { FanImpactCard } from "@/components/discovery/FanImpactCard";

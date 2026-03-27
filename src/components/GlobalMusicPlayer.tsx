@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { usePlayer, Track as PlayerTrack } from "@/contexts/PlayerContext";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { YouTubePlayerEnhanced } from "@/components/youtube/YouTubePlayerEnhanced";
 import { SpotifyPreviewPlayer } from "@/components/SpotifyPreviewPlayer";
-import { CosmicPlayerBar } from "@/components/discovery/CosmicPlayerBar";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -13,7 +13,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 const PREVIEW_DURATION_SECONDS = 30;
 
+// Pages where the global player should NOT appear
+const HIDDEN_ROUTES = ['/', '/auth', '/role-selection', '/pricing', '/checkout', '/terms', '/privacy', '/faq', '/support', '/investors'];
+
 export function GlobalMusicPlayer() {
+  const location = useLocation();
   const { user } = useAuth();
   const { role } = useUserRole(user);
   const { hasFeature } = useSubscription(user);
@@ -25,6 +29,9 @@ export function GlobalMusicPlayer() {
   
   const isArtist = role === 'artist' || role === 'verified_artist' || role === 'manager';
   const hasUnlimitedStreaming = hasFeature('unlimitedStreaming') || isArtist;
+
+  // Hide player on certain routes
+  const shouldHidePlayer = HIDDEN_ROUTES.includes(location.pathname);
   
   // Reset fallback state when track changes
   useEffect(() => {
@@ -103,16 +110,17 @@ export function GlobalMusicPlayer() {
     toast.info("Preview ended - Subscribe for unlimited streaming!");
   };
 
-  if (!currentTrack) return null;
+  // Don't render on hidden routes or when no track
+  if (shouldHidePlayer || !currentTrack) return null;
 
-  // When in mini or hidden mode, use CosmicPlayerBar (handles its own visibility)
-  if (playerView === 'mini' || playerView === 'hidden') {
-    return (
-      <>
-        <CosmicPlayerBar />
-        <SubscriptionModal open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal} />
-      </>
-    );
+  // On discover pages, the BottomNavBar handles mini player display
+  // Only render full player components for non-discover routes
+  if (playerView === 'hidden') return null;
+
+  // For mini view, render nothing here - BottomNavBar handles it on discover
+  // For other pages with mini view, render the mini pill
+  if (playerView === 'mini' && location.pathname === '/discover') {
+    return <SubscriptionModal open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal} />;
   }
 
   // Full player mode

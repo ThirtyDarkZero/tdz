@@ -293,7 +293,7 @@ export default function ArtistProfile() {
             </div>
 
             {/* Name */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black mb-3 tracking-tight">
+            <h1 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(48px, 8vw, 80px)", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1, color: "#FFFFFF" }}>
               {artist.artist_name}
             </h1>
 
