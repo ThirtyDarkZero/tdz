@@ -38,6 +38,10 @@ export default {
           DEFAULT: "hsl(var(--tertiary))",
           glow: "hsl(var(--tertiary-glow))",
         },
+        coral: {
+          DEFAULT: "hsl(var(--coral))",
+          foreground: "hsl(var(--coral-foreground))",
+        },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
