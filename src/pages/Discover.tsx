@@ -22,6 +22,7 @@ import { UserPlaylistsSection } from "@/components/discovery/UserPlaylistsSectio
 import { GenreTop50Section } from "@/components/discovery/GenreTop50Section";
 import { PlaylistManager } from "@/components/PlaylistManager";
 import { ProfileHub } from "@/components/discovery/ProfileHub";
+import { GenrePlaylistDetail } from "@/components/discovery/GenrePlaylistDetail";
 
 type FeaturedItem = {
   id: string;
@@ -68,8 +69,8 @@ const MOODS: Array<{ id: MoodTheme; label: string; emoji: string; color: string 
 
 /* ── Genre Colors ── */
 const GENRE_COLORS: Record<string, string> = {
-  "Hip-Hop": "#8B5CF6", "R&B": "#EC4899", "Pop": "#22C55E", "Electronic": "#06B6D4",
-  "Rock": "#EF4444", "Soul": "#F59E0B", "Latin": "#EAB308", "Alternative": "#A855F7",
+  "Hip-Hop": "#8B5CF6", "R&B": "#EC4899", "Pop": "#22C55E", "Rock": "#EF4444",
+  "Latin": "#EAB308", "Jazz": "#F59E0B", "Dance": "#06B6D4", "Afrobeats": "#F97316",
 };
 
 /* ── Filter Pill ── */
@@ -243,7 +244,8 @@ export default function Discover() {
   const [showSearch, setShowSearch] = useState(false);
   const [libraryFilter, setLibraryFilter] = useState("PLAYLISTS");
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [exploreView, setExploreView] = useState<"main" | "trending" | "new" | "charts">("main");
+  const [exploreView, setExploreView] = useState<"main" | "trending" | "new" | "charts" | "genre">("main");
+  const [exploreGenre, setExploreGenre] = useState<string>("");
   const [carouselCenterIndex, setCarouselCenterIndex] = useState(0);
   const { mood, setMood } = useMood();
 
@@ -407,7 +409,7 @@ export default function Discover() {
     return () => clearInterval(interval);
   }, [forYouItems.length]);
 
-  const GENRES = ["Hip-Hop", "R&B", "Pop", "Electronic", "Rock", "Soul", "Latin", "Alternative"];
+  const GENRES = ["Hip-Hop", "R&B", "Pop", "Rock", "Latin", "Jazz", "Dance", "Afrobeats"];
 
   if (loading) {
     return (
@@ -673,7 +675,7 @@ export default function Discover() {
                           return (
                             <button
                               key={g}
-                              onClick={() => { setSelectedGenre(g); setActiveTab("discover"); }}
+                              onClick={() => { setExploreGenre(g.toLowerCase()); setExploreView("genre"); }}
                               className="relative overflow-hidden transition-transform duration-200 hover:scale-[1.02] active:scale-[0.97]"
                               style={{ background: color, height: 88, borderRadius: "var(--radius-md)" }}
                             >
@@ -789,6 +791,11 @@ export default function Discover() {
                       })}
                     </div>
                   </div>
+                )}
+
+                {/* ── GENRE PLAYLIST sub-view ── */}
+                {!searchQuery.trim() && exploreView === "genre" && exploreGenre && (
+                  <GenrePlaylistDetail genre={exploreGenre} onBack={() => setExploreView("main")} />
                 )}
               </div>
             </div>
