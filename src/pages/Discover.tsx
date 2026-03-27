@@ -26,6 +26,7 @@ import { UnifiedLibrary } from "@/components/discovery/UnifiedLibrary";
 import { UserPlaylistsSection } from "@/components/discovery/UserPlaylistsSection";
 import { GenreTop50Section } from "@/components/discovery/GenreTop50Section";
 import { PlaylistManager } from "@/components/PlaylistManager";
+import { ProfileHub } from "@/components/discovery/ProfileHub";
 
 /* ── Section Header ── */
 function Section({ title, subtitle, action, children }: { title: string; subtitle?: string; action?: React.ReactNode; children: React.ReactNode }) {
