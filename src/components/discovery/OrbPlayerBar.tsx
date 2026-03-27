@@ -38,7 +38,7 @@ export function OrbPlayerBar() {
   const dur = currentTrack?.duration || 0;
   const pct = dur > 0 ? Math.min((currentTime / dur) * 100, 100) : 0;
 
-  if (!currentTrack || location.pathname === "/discover") return null;
+  if (!currentTrack) return null;
 
   const cover = currentTrack.album_cover_path || currentTrack.thumbnail || null;
 
