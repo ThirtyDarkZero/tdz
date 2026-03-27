@@ -553,7 +553,7 @@ function Section4Studio({ navigate }: { navigate: (p: string) => void }) {
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 p-5 sm:p-7 overflow-y-auto">
+          <div className="flex-1 p-4 sm:p-5 md:p-7 overflow-y-auto">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
               <div>
                 <span style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 400, fontSize: 11, color: "#666", letterSpacing: "0.2em", textTransform: "uppercase" as const }}>GOOD AFTERNOON </span>
