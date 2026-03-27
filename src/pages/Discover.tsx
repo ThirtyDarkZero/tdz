@@ -92,13 +92,13 @@ function HexCell({ image, label, onClick }: { image: string | null; label: strin
   return (
     <div
       className="relative cursor-pointer transition-all duration-200 active:brightness-130"
-      style={{ clipPath: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)", aspectRatio: "1", background: "hsl(var(--bg-surface))", maxWidth: 100 }}
+      style={{ clipPath: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)", aspectRatio: "1", background: "hsl(var(--bg-surface))" }}
       onClick={onClick}
     >
       {image && <img src={image} alt="" className="w-full h-full object-cover" />}
       <div className="absolute left-0 right-0 text-center font-body" style={{
-        bottom: "22%", fontSize: 8, fontWeight: 700, color: "white",
-        textShadow: "0 2px 8px rgba(0,0,0,0.9)", padding: "0 4px",
+        bottom: "22%", fontSize: 7, fontWeight: 700, color: "white",
+        textShadow: "0 2px 8px rgba(0,0,0,0.9)", padding: "0 2px",
         whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
       }}>
         {label}
