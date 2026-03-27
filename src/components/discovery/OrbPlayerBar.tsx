@@ -1,5 +1,6 @@
 import { Play, Pause, SkipForward, SkipBack } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
+import { useLocation } from "react-router-dom";
 
 /**
  * Global orb-style player bar. Shows a mini now-playing strip + play orb
