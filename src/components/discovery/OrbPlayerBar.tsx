@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Play, Pause, SkipForward, SkipBack,
   ListMusic, Mic2, Repeat, Shuffle, ChevronDown, MoreHorizontal, X,
