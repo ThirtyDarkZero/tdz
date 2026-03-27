@@ -10,7 +10,10 @@ import { useLocation } from "react-router-dom";
 export function OrbPlayerBar() {
   const { currentTrack, isPlaying, pauseTrack, resumeTrack, nextTrack, previousTrack, currentTime } = usePlayer();
 
-  if (!currentTrack) return null;
+  const location = useLocation();
+
+  // On /discover, BottomNavBar handles the player UI
+  if (!currentTrack || location.pathname === '/discover') return null;
 
   const togglePlay = () => (isPlaying ? pauseTrack() : resumeTrack());
 
