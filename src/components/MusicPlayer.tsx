@@ -72,6 +72,7 @@ interface MusicPlayerProps {
 export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEnd, maxDuration, onPreviewEnd }: MusicPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const { setCurrentTime: setContextTime } = usePlayer();
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
