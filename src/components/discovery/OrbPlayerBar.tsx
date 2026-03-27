@@ -1,12 +1,13 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import {
   Play, Pause, SkipForward, SkipBack,
   ListMusic, Mic2, Repeat, Shuffle, ChevronDown, MoreHorizontal, X,
-  Heart, SlidersHorizontal, Music,
+  Heart, SlidersHorizontal, Music, Sparkles, Waves, Circle, Mountain, Zap,
 } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { SongRow } from "./SongRow";
+import { supabase } from "@/integrations/supabase/client";
 
 function fmt(s: number) {
   const m = Math.floor(s / 60);
