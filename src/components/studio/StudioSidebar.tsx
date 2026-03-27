@@ -207,7 +207,7 @@ export const StudioSidebar = ({
         className={cn(
           "fixed left-0 top-0 h-screen z-50 flex flex-col transition-all duration-300 ease-out",
           "backdrop-blur-xl border-r border-white/[0.06]",
-          "w-[200px] md:w-[110px]",
+          "w-[260px] sm:w-[200px] md:w-[110px]",
           collapsed && !isHovering && "md:w-[72px]",
           collapsed ? "-translate-x-full" : "translate-x-0",
           "md:translate-x-0"

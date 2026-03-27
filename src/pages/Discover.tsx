@@ -436,57 +436,49 @@ export default function Discover() {
                 </div>
               )}
 
-              <div className="px-5 sm:px-6 lg:px-8">
+              <div className="px-3 sm:px-5 md:px-6 lg:px-8">
                 {/* ── Featured Coverflow Carousel ── */}
                 {forYouItems.length > 0 && (
                   <div className="pt-4 pb-2">
-                    <div className="grid grid-cols-7 gap-2 items-center" style={{ minHeight: 182 }}>
+                    {/* Mobile carousel: 3 covers */}
+                    <div className="grid grid-cols-3 gap-2 items-center sm:hidden" style={{ minHeight: 100 }}>
+                      {visibleCarouselItems.slice(2, 5).map(({ item, offset, index }, slotIndex) => {
+                        const distance = Math.abs(offset);
+                        const isCenter = offset === 0;
+                        const scaleByDistance = [1, 0.88, 0.76][distance] ?? 0.76;
+                        const opacityByDistance = [1, 0.85, 0.65][distance] ?? 0.65;
+                        return (
+                          <button key={`m-${item.id}-${slotIndex}`} type="button" className="relative w-full aspect-square cursor-pointer transition-all duration-500"
+                            style={{ transform: `scale(${scaleByDistance})`, opacity: opacityByDistance, filter: isCenter ? "none" : "saturate(0.8)" }}
+                            onClick={() => { if (!isCenter) { setCarouselCenterIndex(index); return; } if (item.trackData) { handlePlayTrack(item.trackData); return; } const targetId = item.id.replace(/^(album|track)-/, ""); navigate(item.type === "album" ? `/album/${targetId}` : `/track/${targetId}`); }}
+                            aria-label={`${item.title} by ${item.artist}`}
+                          >
+                            <img src={item.image} alt={`${item.title} cover artwork`} className="w-full h-full object-cover" style={{ borderRadius: 10 }} />
+                            {isCenter && (
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity" style={{ background: "hsl(var(--foreground) / 0.28)", borderRadius: 10 }}>
+                                <Play className="h-8 w-8" style={{ color: "hsl(var(--background))" }} fill="currentColor" />
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* Tablet/Desktop carousel: 7 covers */}
+                    <div className="hidden sm:grid grid-cols-7 gap-2 items-center" style={{ minHeight: 182 }}>
                       {visibleCarouselItems.map(({ item, offset, index }, slotIndex) => {
                         const distance = Math.abs(offset);
                         const isCenter = offset === 0;
                         const scaleByDistance = [1, 0.9, 0.82, 0.74][distance] ?? 0.74;
                         const opacityByDistance = [1, 0.9, 0.78, 0.66][distance] ?? 0.66;
-
                         return (
-                          <button
-                            key={`${item.id}-${slotIndex}-${carouselCenterIndex}`}
-                            type="button"
-                            className="relative w-full aspect-square cursor-pointer transition-all duration-500"
-                            style={{
-                              transform: `scale(${scaleByDistance})`,
-                              opacity: opacityByDistance,
-                              filter: isCenter ? "none" : "saturate(0.8)",
-                            }}
-                            onClick={() => {
-                              if (!isCenter) {
-                                setCarouselCenterIndex(index);
-                                return;
-                              }
-
-                              if (item.trackData) {
-                                handlePlayTrack(item.trackData);
-                                return;
-                              }
-
-                              const targetId = item.id.replace(/^(album|track)-/, "");
-                              navigate(item.type === "album" ? `/album/${targetId}` : `/track/${targetId}`);
-                            }}
+                          <button key={`${item.id}-${slotIndex}-${carouselCenterIndex}`} type="button" className="relative w-full aspect-square cursor-pointer transition-all duration-500"
+                            style={{ transform: `scale(${scaleByDistance})`, opacity: opacityByDistance, filter: isCenter ? "none" : "saturate(0.8)" }}
+                            onClick={() => { if (!isCenter) { setCarouselCenterIndex(index); return; } if (item.trackData) { handlePlayTrack(item.trackData); return; } const targetId = item.id.replace(/^(album|track)-/, ""); navigate(item.type === "album" ? `/album/${targetId}` : `/track/${targetId}`); }}
                             aria-label={`${item.title} by ${item.artist}`}
                           >
-                            <img
-                              src={item.image}
-                              alt={`${item.title} cover artwork`}
-                              className="w-full h-full object-cover"
-                              style={{ borderRadius: 14 }}
-                            />
+                            <img src={item.image} alt={`${item.title} cover artwork`} className="w-full h-full object-cover" style={{ borderRadius: 14 }} />
                             {isCenter && (
-                              <div
-                                className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
-                                style={{
-                                  background: "hsl(var(--foreground) / 0.28)",
-                                  borderRadius: 14,
-                                }}
-                              >
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity" style={{ background: "hsl(var(--foreground) / 0.28)", borderRadius: 14 }}>
                                 <Play className="h-10 w-10" style={{ color: "hsl(var(--background))" }} fill="currentColor" />
                               </div>
                             )}
@@ -494,24 +486,16 @@ export default function Discover() {
                         );
                       })}
                     </div>
-                    {/* Featured info below carousel — always centered */}
+                    {/* Featured info below carousel */}
                     {activeCarouselItem && (
-                      <div className="text-center mt-2 px-6">
-                        <h3 className="font-display truncate" style={{ fontSize: 38, color: "var(--text-1)", lineHeight: 1 }}>{activeCarouselItem.title}</h3>
-                        <p className="font-body truncate" style={{ fontSize: 15, color: "var(--text-2)", marginTop: 4 }}>{activeCarouselItem.artist}</p>
-                        <div className="flex items-center justify-center gap-4 mt-4">
+                      <div className="text-center mt-2 px-4 sm:px-6">
+                        <h3 className="font-display truncate" style={{ fontSize: "clamp(24px, 6vw, 38px)", color: "var(--text-1)", lineHeight: 1 }}>{activeCarouselItem.title}</h3>
+                        <p className="font-body truncate" style={{ fontSize: "clamp(12px, 3vw, 15px)", color: "var(--text-2)", marginTop: 4 }}>{activeCarouselItem.artist}</p>
+                        <div className="flex items-center justify-center gap-4 mt-3 sm:mt-4">
                           <button
-                            onClick={() => {
-                              if (activeCarouselItem.trackData) {
-                                handlePlayTrack(activeCarouselItem.trackData);
-                                return;
-                              }
-
-                              const targetId = activeCarouselItem.id.replace(/^(album|track)-/, "");
-                              navigate(activeCarouselItem.type === "album" ? `/album/${targetId}` : `/track/${targetId}`);
-                            }}
+                            onClick={() => { if (activeCarouselItem.trackData) { handlePlayTrack(activeCarouselItem.trackData); return; } const targetId = activeCarouselItem.id.replace(/^(album|track)-/, ""); navigate(activeCarouselItem.type === "album" ? `/album/${targetId}` : `/track/${targetId}`); }}
                             className="flex items-center justify-center"
-                            style={{ width: 52, height: 52, borderRadius: "50%", background: "var(--text-1)", color: "#000", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}
+                            style={{ width: 44, height: 44, borderRadius: "50%", background: "var(--text-1)", color: "#000", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}
                           >
                             <Play className="h-5 w-5 ml-0.5" fill="currentColor" />
                           </button>
@@ -611,7 +595,7 @@ export default function Discover() {
           return (
             <div>
               <CosmicTopBar activeTab={activeTab} onTabChange={setActiveTab} searchQuery={searchQuery} onSearchChange={setSearchQuery} userProfile={userProfile} />
-              <div className="px-5 sm:px-6 lg:px-8 py-5 space-y-5">
+              <div className="px-3 sm:px-5 md:px-6 lg:px-8 py-5 space-y-5">
                 {/* Search */}
                 <div className="relative">
                   <div className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: "var(--text-3)" }}>
@@ -805,7 +789,7 @@ export default function Discover() {
           return (
             <div>
               <CosmicTopBar activeTab={activeTab} onTabChange={setActiveTab} searchQuery={searchQuery} onSearchChange={setSearchQuery} userProfile={userProfile} />
-              <div className="px-5 sm:px-6 lg:px-8 py-5 space-y-4">
+              <div className="px-3 sm:px-5 md:px-6 lg:px-8 py-5 space-y-4">
                 {/* Filter pills */}
                 <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                   {["PLAYLISTS", "ALBUMS", "ARTISTS", "SONGS", "DOWNLOADED", "RECENT"].map(tab => (
@@ -870,7 +854,7 @@ export default function Discover() {
           return (
             <div>
               <CosmicTopBar activeTab={activeTab} onTabChange={setActiveTab} searchQuery={searchQuery} onSearchChange={setSearchQuery} userProfile={userProfile} />
-              <div className="px-5 sm:px-6 lg:px-8 py-5">
+              <div className="px-3 sm:px-5 md:px-6 lg:px-8 py-5">
                 <TDZStorefront artists={artists} />
               </div>
             </div>

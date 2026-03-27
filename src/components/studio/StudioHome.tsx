@@ -94,13 +94,13 @@ export const StudioHome = ({ artistName, onNavigate, onUploadClick }: StudioHome
       {/* Hero Header — dark Studio theme */}
       <div className="relative overflow-hidden rounded-2xl" style={{ background: "linear-gradient(135deg, #141414, #1a1a2e)" }}>
         <div className="absolute inset-0" style={{ background: "radial-gradient(circle at 80% 20%, rgba(0,207,255,0.08), transparent 60%)" }} />
-        <div className="relative z-10 p-8 md:p-10">
+        <div className="relative z-10 p-4 sm:p-6 md:p-10">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-2" style={{ color: "rgba(0,207,255,0.7)" }}>
                 {greeting()}
               </p>
-              <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4" style={{ fontFamily: "'Six Caps', sans-serif", letterSpacing: "0.04em", color: "#fff" }}>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight mb-4" style={{ fontFamily: "'Six Caps', sans-serif", letterSpacing: "0.04em", color: "#fff" }}>
                 {artistName}
               </h1>
               <div className="flex items-center gap-4">
@@ -110,12 +110,12 @@ export const StudioHome = ({ artistName, onNavigate, onUploadClick }: StudioHome
                 </a>
               </div>
             </div>
-            <div className="flex gap-3">
-              <Button onClick={onUploadClick} className="gap-2" style={{ background: "linear-gradient(135deg, #00CFFF, #8B5CF6)", color: "#000", fontWeight: 700 }}>
+            <div className="flex flex-wrap gap-2 sm:gap-3">
+              <Button onClick={onUploadClick} className="gap-2 text-xs sm:text-sm" style={{ background: "linear-gradient(135deg, #00CFFF, #8B5CF6)", color: "#000", fontWeight: 700 }}>
                 <Music className="w-4 h-4" />
                 Release Music
               </Button>
-              <Button variant="outline" onClick={() => onNavigate("music")} className="gap-2 border-white/10 text-white/70 hover:text-white hover:border-white/20">
+              <Button variant="outline" onClick={() => onNavigate("music")} className="gap-2 border-white/10 text-white/70 hover:text-white hover:border-white/20 text-xs sm:text-sm">
                 View All Releases
               </Button>
             </div>
@@ -124,7 +124,7 @@ export const StudioHome = ({ artistName, onNavigate, onUploadClick }: StudioHome
       </div>
 
       {/* 4 Metric Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-4">
         {metricCards.map((card, i) => (
           <ScrollReveal key={card.label} delay={i * 0.1}>
             <div
@@ -154,7 +154,7 @@ export const StudioHome = ({ artistName, onNavigate, onUploadClick }: StudioHome
       </div>
 
       {/* Content Boxes */}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
         {/* YOUR STORY SO FAR */}
         <div className="md:col-span-2 rounded-xl overflow-hidden" style={{ background: "#1A1A1A", border: "1px solid rgba(255,255,255,0.06)" }}>
           <div className="flex items-center justify-between p-6" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>

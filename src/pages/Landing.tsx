@@ -87,16 +87,16 @@ function NavPill() {
     { sub: "SHOP", main: "STORE", path: "/pricing" },
   ];
   return (
-    <div className="flex gap-0 mx-auto w-fit rounded-full px-2 py-2.5" style={{ background: "rgba(55,55,55,0.5)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(20px)" }}>
+    <div className="flex gap-0 mx-auto w-fit rounded-full px-1.5 sm:px-2 py-2 sm:py-2.5" style={{ background: "rgba(55,55,55,0.5)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(20px)" }}>
       {items.map((item, i) => (
         <button
           key={i}
           onClick={() => navigate(item.path)}
-          className="flex flex-col items-center gap-0.5 px-5 sm:px-7 py-2 rounded-full transition-colors"
+          className="flex flex-col items-center gap-0.5 px-3 sm:px-5 md:px-7 py-1.5 sm:py-2 rounded-full transition-colors"
           style={i === 0 ? { background: "rgba(80,80,80,0.5)" } : {}}
         >
-          <span style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: "9px", color: "#888", letterSpacing: "0.18em", textTransform: "uppercase" as const }}>{item.sub}</span>
-          <span style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "22px", color: "#FFF", letterSpacing: "0.06em" }}>{item.main}</span>
+          <span style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: "8px", color: "#888", letterSpacing: "0.18em", textTransform: "uppercase" as const }}>{item.sub}</span>
+          <span style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(16px, 4vw, 22px)", color: "#FFF", letterSpacing: "0.06em" }}>{item.main}</span>
         </button>
       ))}
     </div>
@@ -291,9 +291,9 @@ function Section1Hero() {
 function PhoneFrame({ children, style, className = "" }: { children: React.ReactNode; style?: React.CSSProperties; className?: string }) {
   return (
     <div className={`relative flex-shrink-0 ${className}`}
-      style={{ width: 240, height: 490, background: "#1A1A1A", borderRadius: 44, border: "2px solid #2A2A2A", boxShadow: "0 40px 80px rgba(0,0,0,0.8)", overflow: "hidden", ...style }}>
-      <div className="absolute top-2 left-1/2 -translate-x-1/2 w-16 h-5 bg-black rounded-full z-10" />
-      <div className="absolute inset-1 rounded-[40px] overflow-hidden overflow-y-auto scrollbar-hide" style={{ background: "#111" }}>
+      style={{ width: 220, height: 450, background: "#1A1A1A", borderRadius: 40, border: "2px solid #2A2A2A", boxShadow: "0 40px 80px rgba(0,0,0,0.8)", overflow: "hidden", ...style }}>
+      <div className="absolute top-2 left-1/2 -translate-x-1/2 w-14 h-4 bg-black rounded-full z-10" />
+      <div className="absolute inset-1 rounded-[36px] overflow-hidden overflow-y-auto scrollbar-hide" style={{ background: "#111" }}>
         {children}
       </div>
     </div>
@@ -302,9 +302,9 @@ function PhoneFrame({ children, style, className = "" }: { children: React.React
 
 function Section2Mockups() {
   return (
-    <section className="py-16 pb-20 px-4" style={{ background: "#000" }}>
+    <section className="py-10 sm:py-16 pb-14 sm:pb-20 px-4" style={{ background: "#000" }}>
       <Reveal>
-        <p className="text-center mb-8" style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 12, color: "#666", letterSpacing: "0.2em", textTransform: "uppercase" as const }}>
+        <p className="text-center mb-6 sm:mb-8" style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 12, color: "#666", letterSpacing: "0.2em", textTransform: "uppercase" as const }}>
           INTERACTIVE DEMOS — TAP TO EXPLORE
         </p>
         <div className="flex items-center justify-center gap-0" style={{ perspective: 1200 }}>
@@ -327,46 +327,46 @@ function StudioDemoMockup() {
   const [activeTab, setActiveTab] = useState("promote");
   const tabs = ["promote", "insights", "content"];
   return (
-    <div className="p-4 pt-8 h-full" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#888" }}>
-      <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 22, color: "#FFF", letterSpacing: "0.04em" }}>ARTIST STUDIO</p>
-      <div className="flex gap-1 mt-2 mb-3">
+    <div className="p-3 pt-7 h-full" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#888" }}>
+      <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 20, color: "#FFF", letterSpacing: "0.04em" }}>ARTIST STUDIO</p>
+      <div className="flex gap-1 mt-2 mb-2">
         {tabs.map(t => (
-          <button key={t} onClick={() => setActiveTab(t)} className="px-2 py-1 rounded-full text-[8px] transition-all"
+          <button key={t} onClick={() => setActiveTab(t)} className="px-2 py-0.5 rounded-full text-[7px] transition-all"
             style={{ background: activeTab === t ? "#22C55E" : "#1C1C1C", color: activeTab === t ? "#000" : "#666" }}>{t.toUpperCase()}</button>
         ))}
       </div>
       {activeTab === "promote" && (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {["AI Smart Promo", "Social Campaign", "Playlist Pitch", "Pre-Save Setup"].map((t, i) => (
-            <div key={i} className="flex items-center gap-2 p-2 rounded-lg" style={{ background: "#1C1C1C" }}>
-              <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: i === 0 ? "#8B5CF6" : "#222" }}>
-                <Zap className="w-3 h-3" style={{ color: i === 0 ? "#FFF" : "#555" }} />
+            <div key={i} className="flex items-center gap-1.5 p-1.5 rounded-md" style={{ background: "#1C1C1C" }}>
+              <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: i === 0 ? "#8B5CF6" : "#222" }}>
+                <Zap className="w-2.5 h-2.5" style={{ color: i === 0 ? "#FFF" : "#555" }} />
               </div>
-              <span style={{ color: "#AAA", fontSize: 11 }}>{t}</span>
-              {i === 0 && <span className="ml-auto px-2 py-0.5 rounded-full text-[8px]" style={{ background: "#8B5CF6", color: "#FFF" }}>AI</span>}
+              <span style={{ color: "#AAA", fontSize: 9 }}>{t}</span>
+              {i === 0 && <span className="ml-auto px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: "#8B5CF6", color: "#FFF" }}>AI</span>}
             </div>
           ))}
         </div>
       )}
       {activeTab === "insights" && (
-        <div className="space-y-2">
-          <div className="p-3 rounded-xl" style={{ background: "#1C1C1C" }}>
-            <span className="px-2 py-0.5 rounded-full text-[8px]" style={{ background: "#22C55E", color: "#000" }}>Earnings</span>
-            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 36, color: "#22C55E", lineHeight: 1.2, marginTop: 4 }}>$12,000</p>
-            <p style={{ fontSize: 9, color: "#555" }}>12,000 streams • $1/stream</p>
-          </div>
+        <div className="space-y-1.5">
           <div className="p-2 rounded-lg" style={{ background: "#1C1C1C" }}>
-            <span style={{ fontSize: 9, color: "#555" }}>Followers</span>
-            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 24, color: "#FFF" }}>9,000</p>
+            <span className="px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: "#22C55E", color: "#000" }}>Earnings</span>
+            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 30, color: "#22C55E", lineHeight: 1.2, marginTop: 3 }}>$12,000</p>
+            <p style={{ fontSize: 8, color: "#555" }}>12,000 streams • $1/stream</p>
+          </div>
+          <div className="p-1.5 rounded-md" style={{ background: "#1C1C1C" }}>
+            <span style={{ fontSize: 8, color: "#555" }}>Followers</span>
+            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 20, color: "#FFF" }}>9,000</p>
           </div>
         </div>
       )}
       {activeTab === "content" && (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {["Upload Tracks", "Manage Albums", "Lyrics Sync", "Territory Rights"].map((t, i) => (
-            <div key={i} className="p-2 rounded-lg flex items-center gap-2" style={{ background: "#1C1C1C" }}>
-              <Music className="w-4 h-4" style={{ color: "#22C55E" }} />
-              <span style={{ color: "#AAA", fontSize: 10 }}>{t}</span>
+            <div key={i} className="p-1.5 rounded-md flex items-center gap-1.5" style={{ background: "#1C1C1C" }}>
+              <Music className="w-3 h-3" style={{ color: "#22C55E" }} />
+              <span style={{ color: "#AAA", fontSize: 9 }}>{t}</span>
             </div>
           ))}
         </div>
@@ -377,32 +377,32 @@ function StudioDemoMockup() {
 
 function InsightsDemoMockup() {
   return (
-    <div className="p-4 pt-8 h-full" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#888" }}>
-      <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 24, color: "#FFF", letterSpacing: "0.04em" }}>INSIGHTS</p>
-      <p style={{ fontSize: 9, color: "#555", marginTop: 2 }}>Track your performance, audience, and growth</p>
-      <div className="flex gap-1 mt-3">
-        {["Streams", "Demographics", "Revenue", "Tour"].map((t, i) => (
-          <span key={i} className="px-2 py-1 rounded-full text-[8px]" style={{ background: i === 0 ? "#22C55E" : "#1C1C1C", color: i === 0 ? "#000" : "#666" }}>{t}</span>
+    <div className="p-3 pt-7 h-full" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#888" }}>
+      <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 20, color: "#FFF", letterSpacing: "0.04em" }}>INSIGHTS</p>
+      <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>Track your performance & growth</p>
+      <div className="flex gap-1 mt-2">
+        {["Streams", "Demographics", "Revenue"].map((t, i) => (
+          <span key={i} className="px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: i === 0 ? "#22C55E" : "#1C1C1C", color: i === 0 ? "#000" : "#666" }}>{t}</span>
         ))}
       </div>
-      <div className="mt-3 p-3 rounded-xl" style={{ background: "#1C1C1C" }}>
-        <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 rounded-full text-[8px]" style={{ background: "#22C55E", color: "#000" }}>Artist Earnings</span>
+      <div className="mt-2 p-2 rounded-lg" style={{ background: "#1C1C1C" }}>
+        <div className="flex items-center gap-1.5">
+          <span className="px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: "#22C55E", color: "#000" }}>Artist Earnings</span>
         </div>
-        <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 42, color: "#22C55E", letterSpacing: "0.03em", lineHeight: 1.2, marginTop: 4 }}>$12,000</p>
-        <p style={{ fontSize: 9, color: "#555", marginTop: 2 }}>12,000 streams • 100% download revenue</p>
+        <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 36, color: "#22C55E", letterSpacing: "0.03em", lineHeight: 1.2, marginTop: 3 }}>$12,000</p>
+        <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>12,000 streams • 100% download revenue</p>
       </div>
-      <div className="mt-2 p-2 rounded-lg flex items-center gap-2" style={{ background: "#1C1C1C" }}>
-        <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "#22C55E" }}>
-          <Play className="w-3 h-3" style={{ color: "#000" }} />
+      <div className="mt-1.5 p-1.5 rounded-md flex items-center gap-1.5" style={{ background: "#1C1C1C" }}>
+        <div className="w-4 h-4 rounded-full flex items-center justify-center" style={{ background: "#22C55E" }}>
+          <Play className="w-2.5 h-2.5" style={{ color: "#000" }} />
         </div>
-        <span style={{ color: "#AAA", fontSize: 10 }}>Streaming Revenue</span>
-        <span className="ml-auto" style={{ color: "#22C55E", fontSize: 11, fontWeight: 600 }}>$12,000</span>
+        <span style={{ color: "#AAA", fontSize: 9 }}>Streaming Revenue</span>
+        <span className="ml-auto" style={{ color: "#22C55E", fontSize: 9, fontWeight: 600 }}>$12,000</span>
       </div>
-      <div className="mt-2 p-2 rounded-lg flex items-center gap-2" style={{ background: "#1C1C1C" }}>
-        <Users className="w-4 h-4" style={{ color: "#00CFFF" }} />
-        <span style={{ color: "#AAA", fontSize: 10 }}>Followers</span>
-        <span className="ml-auto" style={{ color: "#00CFFF", fontSize: 11, fontWeight: 600 }}>9,000</span>
+      <div className="mt-1.5 p-1.5 rounded-md flex items-center gap-1.5" style={{ background: "#1C1C1C" }}>
+        <Users className="w-3.5 h-3.5" style={{ color: "#00CFFF" }} />
+        <span style={{ color: "#AAA", fontSize: 9 }}>Followers</span>
+        <span className="ml-auto" style={{ color: "#00CFFF", fontSize: 9, fontWeight: 600 }}>9,000</span>
       </div>
     </div>
   );
@@ -411,28 +411,40 @@ function InsightsDemoMockup() {
 function DiscoveryDemoMockup() {
   const [activeGenre, setActiveGenre] = useState("All");
   return (
-    <div className="p-4 pt-8 h-full" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#888" }}>
-      <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 22, color: "#FFF", letterSpacing: "0.04em" }}>DISCOVER</p>
-      <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 18, color: "#00CFFF", letterSpacing: "0.04em", lineHeight: 1 }}>NEW TDZ RELEASES</p>
-      <div className="flex gap-1 mt-2 mb-3 overflow-x-auto scrollbar-hide">
+    <div className="p-3 pt-7 h-full" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#888" }}>
+      <div className="flex items-center gap-1.5 mb-1">
+        <img src={tdzLogo} alt="TDZ" className="w-4 h-4 object-contain" />
+        <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 18, color: "#FFF", letterSpacing: "0.04em" }}>DISCOVERY</p>
+      </div>
+      <p style={{ fontSize: 8, color: "#555", marginBottom: 6 }}>GOOD AFTERNOON</p>
+      <div className="flex gap-1 mb-3 overflow-x-auto scrollbar-hide">
         {["All", "Pop", "Hip-Hop", "R&B"].map(g => (
-          <button key={g} onClick={() => setActiveGenre(g)} className="px-2 py-1 rounded-full text-[8px] whitespace-nowrap transition-all"
+          <button key={g} onClick={() => setActiveGenre(g)} className="px-2 py-0.5 rounded-full text-[7px] whitespace-nowrap transition-all"
             style={{ background: activeGenre === g ? "#FFF" : "transparent", color: activeGenre === g ? "#000" : "#666", border: activeGenre === g ? "none" : "1px solid #333" }}>{g}</button>
         ))}
       </div>
-      <div className="space-y-1.5">
-        {["Stream unlimited music", "Every play supports creators", "$1 per stream to artists", "AI-powered playlists"].map((t, i) => (
-          <div key={i} className="p-2 rounded-lg flex items-center gap-2" style={{ background: "#1C1C1C" }}>
-            <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${["#c0392b", "#3498db", "#9b59b6", "#2ecc71"][i]}, #333)` }}>
-              <Play className="w-2.5 h-2.5" style={{ color: "#FFF" }} />
+      {/* Mini featured carousel */}
+      <div className="flex gap-1 mb-3">
+        {[1,2,3].map(i => (
+          <div key={i} className="flex-1 aspect-square rounded-lg" style={{ background: `linear-gradient(135deg, ${["#c0392b", "#3498db", "#9b59b6"][i-1]}, #333)` }} />
+        ))}
+      </div>
+      <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 14, color: "#FFF", letterSpacing: "0.03em", textAlign: "center" }}>POPULAR TRACKS</p>
+      <div className="space-y-1 mt-1">
+        {["Stream unlimited music", "Every play = $1 to artists", "AI-powered playlists"].map((t, i) => (
+          <div key={i} className="p-1.5 rounded-md flex items-center gap-1.5" style={{ background: "#1C1C1C" }}>
+            <div className="w-4 h-4 rounded flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${["#c0392b", "#3498db", "#2ecc71"][i]}, #333)` }}>
+              <Play className="w-2 h-2" style={{ color: "#FFF" }} />
             </div>
-            <span style={{ color: "#AAA", fontSize: 9 }}>{t}</span>
+            <span style={{ color: "#AAA", fontSize: 8 }}>{t}</span>
           </div>
         ))}
       </div>
-      <div className="mt-3 flex gap-2">
-        <button className="flex-1 py-1.5 rounded-full text-[9px]" style={{ background: "#FFF", color: "#000", fontWeight: 600 }}>▶ Play All</button>
-        <button className="flex-1 py-1.5 rounded-full text-[9px]" style={{ border: "1px solid #333", color: "#666" }}>⇄ Shuffle</button>
+      {/* Bottom nav mockup */}
+      <div className="flex justify-around mt-3 pt-2" style={{ borderTop: "1px solid #222" }}>
+        {["HOME", "EXPLORE", "LIBRARY"].map((t, i) => (
+          <span key={t} style={{ fontSize: 7, color: i === 0 ? "#00CFFF" : "#444", fontWeight: 600 }}>{t}</span>
+        ))}
       </div>
     </div>
   );
@@ -473,9 +485,9 @@ function Section4Studio({ navigate }: { navigate: (p: string) => void }) {
 
       <Reveal delay={0.1}>
         <div className="mx-auto overflow-hidden flex flex-col lg:flex-row"
-          style={{ maxWidth: 1100, border: "1px solid #222", borderRadius: 20, background: "#141414", minHeight: 520 }}>
+          style={{ maxWidth: 1100, border: "1px solid #222", borderRadius: 20, background: "#141414", minHeight: "auto" }}>
           {/* Sidebar */}
-          <div className="w-full lg:w-64 flex-shrink-0 p-4 flex flex-col" style={{ background: "#1A1A1A", borderRight: "1px solid #222" }}>
+          <div className="w-full lg:w-64 flex-shrink-0 p-3 sm:p-4 flex flex-col" style={{ background: "#1A1A1A", borderRight: "1px solid #222" }}>
             <div className="flex items-center justify-between mb-4">
               <TDZBadge size={24} />
               <span style={{ color: "#555", fontSize: 14 }}>×</span>
@@ -541,7 +553,7 @@ function Section4Studio({ navigate }: { navigate: (p: string) => void }) {
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 p-5 sm:p-7 overflow-y-auto">
+          <div className="flex-1 p-4 sm:p-5 md:p-7 overflow-y-auto">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
               <div>
                 <span style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 400, fontSize: 11, color: "#666", letterSpacing: "0.2em", textTransform: "uppercase" as const }}>GOOD AFTERNOON </span>
@@ -559,7 +571,7 @@ function Section4Studio({ navigate }: { navigate: (p: string) => void }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 mb-4 sm:mb-6">
               {[
                 { label: "IMPACT", value: "12,000", sub: "Intentional plays" },
                 { label: "RELEASES", value: "24", sub: "Total tracks" },
@@ -825,14 +837,14 @@ function Section7ArtistPlans({ navigate }: { navigate: (p: string) => void }) {
               {p.popular && <span className="mb-2 px-3 py-1 rounded-full text-[10px] font-bold" style={{ background: "#22C55E", color: "#000" }}>MOST POPULAR</span>}
               <div className="flex flex-col justify-start items-center pt-8 w-full relative"
                 style={{ background: "linear-gradient(180deg, #2a2a2a 0%, #5a5a5a 40%, #b0b0b0 75%, #d8d8d8 100%)", borderRadius: 28, width: 310, minHeight: 460, padding: "30px 26px" }}>
-                <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 16, color: "#FFFFFF", letterSpacing: "0.2em", textTransform: "uppercase" as const }}>{p.name}</p>
-                <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 68, color: "#FFFFFF", letterSpacing: "0.04em", marginTop: 8 }}>{p.price}</p>
-                <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#999", marginTop: 4 }}>/month</p>
+                <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 16, color: "#000000", letterSpacing: "0.2em", textTransform: "uppercase" as const }}>{p.name}</p>
+                <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 68, color: "#000000", letterSpacing: "0.04em", marginTop: 8 }}>{p.price}</p>
+                <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#333", marginTop: 4 }}>/month</p>
                 <div className="mt-6 space-y-2 w-full">
                   {p.features.map((f, fi) => (
                     <div key={fi} className="flex items-start gap-2">
-                      <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: "#333" }} />
-                      <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#555", lineHeight: 1.4 }}>{f}</span>
+                      <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: "#000" }} />
+                      <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#111111", lineHeight: 1.4 }}>{f}</span>
                     </div>
                   ))}
                 </div>
@@ -1072,16 +1084,16 @@ function Section10FanPlan({ navigate }: { navigate: (p: string) => void }) {
           <div className="flex flex-col items-center pt-10"
             style={{ background: "linear-gradient(180deg, #2a2a2a 0%, #5a5a5a 40%, #b0b0b0 75%, #d8d8d8 100%)",
               borderRadius: 28, width: 380, maxWidth: "100%", minHeight: 520, padding: "36px 32px" }}>
-            <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 16, color: "#FFFFFF", letterSpacing: "0.2em", textTransform: "uppercase" as const, textAlign: "center" }}>
+            <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 16, color: "#000000", letterSpacing: "0.2em", textTransform: "uppercase" as const, textAlign: "center" }}>
               UNLIMITED STREAMING
             </p>
-            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 78, color: "#FFFFFF", letterSpacing: "0.04em", marginTop: 12 }}>$12.00</p>
-            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#888", marginTop: 4 }}>/month</p>
+            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 78, color: "#000000", letterSpacing: "0.04em", marginTop: 12 }}>$12.00</p>
+            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#333", marginTop: 4 }}>/month</p>
             <div className="mt-8 space-y-2 w-full">
               {fanFeatures.map((f, i) => (
                 <div key={i} className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: "#333" }} />
-                  <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#555", lineHeight: 1.4 }}>{f}</span>
+                  <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: "#000" }} />
+                  <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#111111", lineHeight: 1.4 }}>{f}</span>
                 </div>
               ))}
             </div>
