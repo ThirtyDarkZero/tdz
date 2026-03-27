@@ -343,6 +343,16 @@ export default function PlaylistDetail() {
               <Button variant="outline" size="icon" className="h-11 w-11">
                 <Share2 className="w-5 h-5" />
               </Button>
+              {isOwner && (
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-11 w-11 text-destructive hover:bg-destructive/10 border-destructive/30"
+                  onClick={handleDeletePlaylist}
+                >
+                  <Trash2 className="w-5 h-5" />
+                </Button>
+              )}
             </div>
           </div>
         </div>
