@@ -90,7 +90,7 @@ export function useDiscoveryData() {
       .select("*, albums(*)")
       .eq("is_published", true)
       .order("created_at", { ascending: false })
-      .limit(50);
+      .limit(300);
 
     if (tracksError) {
       console.error("Error loading tracks:", tracksError);
