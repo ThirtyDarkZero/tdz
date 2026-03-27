@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface ArtistAvatarProps {
   src?: string | null;
@@ -9,12 +9,11 @@ interface ArtistAvatarProps {
 
 export function ArtistAvatar({ src, name, size = 48, className = "" }: ArtistAvatarProps) {
   const [imgError, setImgError] = useState(false);
-  const initials = (name || "?")
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const fallbackLetter = (name || "?").trim().charAt(0).toUpperCase() || "?";
+
+  useEffect(() => {
+    setImgError(false);
+  }, [src]);
 
   if (!src || imgError) {
     return (
@@ -34,7 +33,7 @@ export function ArtistAvatar({ src, name, size = 48, className = "" }: ArtistAva
             color: "rgba(255,255,255,0.8)",
           }}
         >
-          {initials}
+          {fallbackLetter}
         </span>
       </div>
     );

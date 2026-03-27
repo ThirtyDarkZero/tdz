@@ -10,9 +10,17 @@ interface ArtistCardProps {
 
 export function ArtistCard({ artist, isFollowing, onToggleFollow, onClick }: ArtistCardProps) {
   const name = artist.artist_name || artist.name || "Unknown";
-  const profileUrl = artist.profile_image_path
-    ? supabase.storage.from("artist-profiles").getPublicUrl(artist.profile_image_path).data.publicUrl
-    : null;
+  const profileUrl = (() => {
+    const rawPath = artist.profile_image_path as string | null | undefined;
+    if (!rawPath) return null;
+    if (rawPath.startsWith("http://") || rawPath.startsWith("https://")) return rawPath;
+
+    const normalizedPath = rawPath.startsWith("artist-images/")
+      ? rawPath.replace("artist-images/", "")
+      : rawPath;
+
+    return supabase.storage.from("artist-images").getPublicUrl(normalizedPath).data.publicUrl;
+  })();
   const followers = artist.monthly_listeners || artist.followers || 0;
   const artistId = artist.user_id || artist.id;
 
