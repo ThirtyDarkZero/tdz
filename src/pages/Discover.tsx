@@ -26,7 +26,7 @@ import { UnifiedLibrary } from "@/components/discovery/UnifiedLibrary";
 import { SpotifyPlaylistSection } from "@/components/discovery/SpotifyPlaylistSection";
 import { UserPlaylistsSection } from "@/components/discovery/UserPlaylistsSection";
 import { GenreTop50Section } from "@/components/discovery/GenreTop50Section";
-import { EditorialPlaylistsSection } from "@/components/discovery/EditorialPlaylistsSection";
+// EditorialPlaylistsSection removed
 import { PlaylistManager } from "@/components/PlaylistManager";
 import { MoodMixGenerator } from "@/components/discovery/MoodMixGenerator";
 import { FanImpactCard } from "@/components/discovery/FanImpactCard";
@@ -429,13 +429,7 @@ export default function Discover() {
                   </div>
                 </div>
 
-                {/* ── Editorial Picks ── */}
-                <div className="py-4">
-                  <SectionHeader title="Editorial Picks" />
-                  <ErrorBoundary fallback={null}>
-                    <EditorialPlaylistsSection />
-                  </ErrorBoundary>
-                </div>
+                {/* Editorial Picks removed */}
 
                 {/* ── Albums ── */}
                 {albums.length > 0 && (
@@ -527,10 +521,7 @@ export default function Discover() {
                 <ErrorBoundary fallback={null}>
                   <CityTrendingSection sectionNumber={0} onViewAllTrends={() => { setShowTrending(true); setActiveTab('library'); }} />
                 </ErrorBoundary>
-                <div>
-                  <SectionHeader title="Editorial" />
-                  <ErrorBoundary fallback={null}><EditorialPlaylistsSection /></ErrorBoundary>
-                </div>
+                {/* Editorial section removed */}
               </div>
             </div>
           );

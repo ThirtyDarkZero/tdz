@@ -293,7 +293,7 @@ export default function ArtistProfile() {
             </div>
 
             {/* Name */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black mb-3 tracking-tight">
+            <h1 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(48px, 8vw, 80px)", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1, color: "#FFFFFF" }}>
               {artist.artist_name}
             </h1>
 
@@ -448,7 +448,7 @@ export default function ArtistProfile() {
       {/* Tracks Section */}
       {tracks.length > 0 && (
         <section className="px-4 sm:px-6 lg:px-8 py-6">
-          <h2 className="text-2xl sm:text-3xl font-black mb-6 tracking-tight">TRACKS</h2>
+          <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(28px, 4vw, 40px)", letterSpacing: "0.04em", textTransform: "uppercase", background: "linear-gradient(180deg, #FFFFFF 0%, #999999 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>TRACKS</h2>
           <div className="space-y-2">
             {tracks.slice(0, 10).map((track, idx) => (
               <div 
@@ -460,9 +460,9 @@ export default function ArtistProfile() {
               >
                 <span className="w-6 text-center text-white/40 text-sm">{idx + 1}</span>
                 <div className="w-12 h-12 rounded-lg overflow-hidden bg-white/5 flex-shrink-0">
-                  {track.album_cover_path ? (
+                  {(track.album_cover_path || track.albums?.cover_art_path) ? (
                     <img 
-                      src={supabase.storage.from(track.album_cover_bucket || 'album-covers').getPublicUrl(track.album_cover_path).data.publicUrl}
+                      src={supabase.storage.from(track.album_cover_bucket || 'album-covers').getPublicUrl(track.album_cover_path || track.albums?.cover_art_path).data.publicUrl}
                       alt={track.title}
                       className="w-full h-full object-cover"
                     />
@@ -497,7 +497,7 @@ export default function ArtistProfile() {
       {/* Albums Section - Filter by release_type */}
       {albums.filter(a => (a as any).release_type === 'album' || (!(a as any).release_type && !a.title?.toLowerCase().includes('single') && !a.title?.toLowerCase().includes('ep'))).length > 0 && (
         <section className="px-4 sm:px-6 lg:px-8 py-6">
-          <h2 className="text-2xl sm:text-3xl font-black mb-6 tracking-tight">Albums</h2>
+          <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(28px, 4vw, 40px)", letterSpacing: "0.04em", textTransform: "uppercase", background: "linear-gradient(180deg, #FFFFFF 0%, #999999 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>ALBUMS</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {albums.filter(a => (a as any).release_type === 'album' || (!(a as any).release_type && !a.title?.toLowerCase().includes('single') && !a.title?.toLowerCase().includes('ep'))).map((album) => (
               <div 
@@ -538,7 +538,7 @@ export default function ArtistProfile() {
       {/* EPs Section */}
       {albums.filter(a => (a as any).release_type === 'ep').length > 0 && (
         <section className="px-4 sm:px-6 lg:px-8 py-6">
-          <h2 className="text-2xl sm:text-3xl font-black mb-6 tracking-tight">EPs</h2>
+          <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(28px, 4vw, 40px)", letterSpacing: "0.04em", textTransform: "uppercase", background: "linear-gradient(180deg, #FFFFFF 0%, #999999 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>EPS</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {albums.filter(a => (a as any).release_type === 'ep').map((album) => (
               <div 
@@ -579,7 +579,7 @@ export default function ArtistProfile() {
       {albums.filter(a => (a as any).release_type === 'single').length > 0 && (
         <section className="px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">Singles</h2>
+            <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(28px, 4vw, 40px)", letterSpacing: "0.04em", textTransform: "uppercase", background: "linear-gradient(180deg, #FFFFFF 0%, #999999 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>SINGLES</h2>
             <div className="flex gap-2">
               <Button
                 variant="ghost"
@@ -643,7 +643,7 @@ export default function ArtistProfile() {
       {/* Photo Gallery Section */}
       {gallery.length > 0 && (
         <section className="px-4 sm:px-6 lg:px-8 py-6">
-          <h2 className="text-2xl sm:text-3xl font-black mb-6 tracking-tight">Gallery</h2>
+          <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(28px, 4vw, 40px)", letterSpacing: "0.04em", textTransform: "uppercase", background: "linear-gradient(180deg, #FFFFFF 0%, #999999 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>GALLERY</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {gallery.map((item) => (
               <div 
@@ -664,7 +664,7 @@ export default function ArtistProfile() {
       {/* About Section */}
       {artist.bio && (
         <section className="px-4 sm:px-6 lg:px-8 py-6">
-          <h2 className="text-2xl sm:text-3xl font-black mb-4 tracking-tight">ABOUT</h2>
+          <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(28px, 4vw, 40px)", letterSpacing: "0.04em", textTransform: "uppercase", background: "linear-gradient(180deg, #FFFFFF 0%, #999999 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>ABOUT</h2>
           <p className="text-white/70 leading-relaxed max-w-3xl">{artist.bio}</p>
         </section>
       )}

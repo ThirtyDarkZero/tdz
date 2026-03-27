@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { TrendingUp, Users, DollarSign, Music, Play, Eye, Heart, MessageCircle, MapPin, TrendingDown, Download } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, AreaChart, Area, CartesianGrid, Legend } from "recharts";
+import { TrendingUp, Users, DollarSign, Music, Play, Download } from "lucide-react";
+import { ResponsiveContainer, AreaChart, Area, CartesianGrid, XAxis, YAxis, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { toast } from "sonner";
 
@@ -19,9 +17,7 @@ interface AnalyticsData {
   totalTracks: number;
   totalListeners: number;
   topTrack?: any;
-  platformBreakdown: any[];
   growthData: any[];
-  revenueByPlatform: any[];
 }
 
 export function AlbumAnalytics({ albumId }: AlbumAnalyticsProps) {
@@ -31,82 +27,35 @@ export function AlbumAnalytics({ albumId }: AlbumAnalyticsProps) {
   const [albumInfo, setAlbumInfo] = useState<any>(null);
 
   useEffect(() => {
-    if (albumId) {
-      loadAnalytics();
-    }
+    if (albumId) loadAnalytics();
   }, [albumId]);
 
   const loadAnalytics = async () => {
     if (!albumId) return;
-    
     setLoading(true);
     try {
-      // Load album info
       const { data: album, error: albumError } = await supabase
-        .from("albums")
-        .select("*")
-        .eq("id", albumId)
-        .maybeSingle();
-
+        .from("albums").select("*").eq("id", albumId).maybeSingle();
       if (albumError) throw albumError;
-      if (!album) {
-        console.error("Album not found for analytics");
-        setLoading(false);
-        return;
-      }
+      if (!album) { setLoading(false); return; }
       setAlbumInfo(album);
 
       const { data: tracks, error: tracksError } = await supabase
-        .from("tracks")
-        .select("*")
-        .eq("album_id", albumId);
-
+        .from("tracks").select("*").eq("album_id", albumId);
       if (tracksError) throw tracksError;
 
       if (!tracks || tracks.length === 0) {
-        setAnalytics({
-          totalStreams: 0,
-          totalRevenue: 0,
-          totalTracks: 0,
-          totalListeners: 0,
-          platformBreakdown: [],
-          growthData: [],
-          revenueByPlatform: []
-        });
+        setAnalytics({ totalStreams: 0, totalRevenue: 0, totalTracks: 0, totalListeners: 0, growthData: [] });
         setLoading(false);
         return;
       }
 
-      // Calculate metrics
       const totalStreams = tracks.reduce((sum, track) => sum + (track.play_count || 0), 0);
       const totalTracks = tracks.length;
-      
-      // TDZ pays $1 per stream
       const totalRevenue = totalStreams * 1.00;
-      
-      // Find unique listeners (estimate based on streams)
       const totalListeners = Math.floor(totalStreams * 0.6);
-      
-      // Find top track
-      const topTrack = tracks.reduce((top, track) => 
-        (track.play_count || 0) > (top?.play_count || 0) ? track : top
-      , tracks[0]);
+      const topTrack = tracks.reduce((top, track) => (track.play_count || 0) > (top?.play_count || 0) ? track : top, tracks[0]);
 
-      // TDZ Platform data only - no external DSPs
-      const platformBreakdown = [
-        { name: "TDZ Streaming", value: totalStreams, color: "hsl(var(--primary))" },
-      ];
-
-      // Revenue breakdown - TDZ pays $1 per stream
-      const revenueByPlatform = [
-        {
-          name: "TDZ Streaming Revenue",
-          revenue: totalStreams.toFixed(2),
-          percentage: "100.0"
-        }
-      ];
-
-      // Growth data (simulated last 7 days)
       const growthData = Array.from({ length: 7 }, (_, i) => {
         const date = new Date();
         date.setDate(date.getDate() - (6 - i));
@@ -117,16 +66,7 @@ export function AlbumAnalytics({ albumId }: AlbumAnalyticsProps) {
         };
       });
 
-      setAnalytics({
-        totalStreams,
-        totalRevenue,
-        totalTracks,
-        totalListeners,
-        topTrack,
-        platformBreakdown,
-        growthData,
-        revenueByPlatform
-      });
+      setAnalytics({ totalStreams, totalRevenue, totalTracks, totalListeners, topTrack, growthData });
     } catch (error) {
       console.error("Error loading analytics:", error);
     } finally {
@@ -136,11 +76,9 @@ export function AlbumAnalytics({ albumId }: AlbumAnalyticsProps) {
 
   if (loading) {
     return (
-      <Card className="glass-card-premium p-8">
-        <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </Card>
+      <div className="rounded-2xl p-8 flex items-center justify-center" style={{ background: "rgba(255,255,255,0.02)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.05)" }}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: "#00CFFF" }} />
+      </div>
     );
   }
 
@@ -148,240 +86,124 @@ export function AlbumAnalytics({ albumId }: AlbumAnalyticsProps) {
 
   const handleExportPDF = async () => {
     if (!albumInfo) return;
-    
     setExporting(true);
     try {
       const { data, error } = await supabase.functions.invoke('export-analytics', {
-        body: {
-          type: 'album',
-          id: albumId,
-          title: albumInfo.title,
-          artistName: albumInfo.artist_name,
-          analytics: analytics
-        }
+        body: { type: 'album', id: albumId, title: albumInfo.title, artistName: albumInfo.artist_name, analytics }
       });
-
       if (error) throw error;
-
-      // Create a blob from the HTML and trigger download
       const printWindow = window.open('', '_blank');
       if (printWindow) {
         printWindow.document.write(data.html);
         printWindow.document.close();
-        
-        // Wait for content to load then trigger print
-        printWindow.onload = () => {
-          printWindow.print();
-        };
+        printWindow.onload = () => printWindow.print();
       }
-
-      toast.success('Analytics report opened in new window. Use Print > Save as PDF');
+      toast.success('Analytics report opened');
     } catch (error) {
-      console.error('Error exporting analytics:', error);
       toast.error('Failed to export analytics');
     } finally {
       setExporting(false);
     }
   };
 
-  const StatCard = ({ icon: Icon, label, value, subtext, trend }: any) => {
-    return (
-      <Card className="glass-card p-6 hover:shadow-glow transition-all">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <p className="text-sm text-muted-foreground mb-2">{label}</p>
-            <p className="text-3xl font-bold glow-text mb-1">{value}</p>
-            {subtext && <p className="text-xs text-muted-foreground">{subtext}</p>}
-          </div>
-          <div className="p-3 rounded-xl bg-primary/10">
-            <Icon className="w-6 h-6 text-primary" />
-          </div>
+  const StatCard = ({ icon: Icon, label, value, subtext, trend }: any) => (
+    <div className="rounded-2xl p-6 transition-all hover:scale-[1.02]" style={{
+      background: "rgba(255,255,255,0.03)",
+      backdropFilter: "blur(16px)",
+      border: "1px solid rgba(255,255,255,0.06)",
+    }}>
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</p>
+          <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 42, color: "#FFFFFF", letterSpacing: "0.03em", lineHeight: 1.1 }}>{value}</p>
+          {subtext && <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "rgba(255,255,255,0.3)" }}>{subtext}</p>}
         </div>
-        {trend && (
-          <div className="mt-4 flex items-center gap-2 text-sm text-green-500">
-            <TrendingUp className="w-4 h-4" />
-            <span>{trend}</span>
-          </div>
-        )}
-      </Card>
-    );
-  };
+        <div className="p-3 rounded-xl" style={{ background: "rgba(0,207,255,0.1)" }}>
+          <Icon className="w-6 h-6" style={{ color: "#00CFFF" }} />
+        </div>
+      </div>
+      {trend && (
+        <div className="mt-3 flex items-center gap-2 text-sm" style={{ color: "#22C55E" }}>
+          <TrendingUp className="w-4 h-4" /><span style={{ fontFamily: "'Raleway', sans-serif" }}>{trend}</span>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold glow-text">Album Analytics</h2>
-        <Button
-          onClick={handleExportPDF}
-          disabled={exporting || !albumInfo}
-          variant="outline"
-          size="sm"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          {exporting ? 'Exporting...' : 'Export PDF'}
+        <h2 style={{
+          fontFamily: "'Six Caps', sans-serif",
+          fontSize: "clamp(32px, 4vw, 48px)",
+          letterSpacing: "0.04em",
+          textTransform: "uppercase",
+          background: "linear-gradient(180deg, #FFFFFF 0%, #999999 100%)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+        }}>Album Analytics</h2>
+        <Button onClick={handleExportPDF} disabled={exporting || !albumInfo} variant="outline" size="sm"
+          className="border-white/20 hover:border-white/40" style={{ fontFamily: "'Raleway', sans-serif" }}>
+          <Download className="w-4 h-4 mr-2" />{exporting ? 'Exporting...' : 'Export PDF'}
         </Button>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          icon={Play}
-          label="Total Streams"
-          value={analytics.totalStreams.toLocaleString()}
-          trend="+12% this week"
-        />
-        <StatCard
-          icon={DollarSign}
-          label="TDZ Revenue"
-          value={`$${analytics.totalRevenue.toFixed(2)}`}
-          subtext="$1.00 per stream"
-        />
-        <StatCard
-          icon={Music}
-          label="Total Tracks"
-          value={analytics.totalTracks}
-        />
-        <StatCard
-          icon={Users}
-          label="Total Listeners"
-          value={analytics.totalListeners.toLocaleString()}
-          subtext="Unique listeners"
-        />
-      </div>
-
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Platform Distribution */}
-        <Card className="glass-card-premium p-6">
-          <h3 className="text-xl font-bold mb-6">Platform Distribution</h3>
-          <ChartContainer config={{}} className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={analytics.platformBreakdown}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {analytics.platformBreakdown.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <ChartTooltip content={<ChartTooltipContent />} />
-              </PieChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-        </Card>
-
-        {/* Streams by Platform */}
-        <Card className="glass-card-premium p-6">
-          <h3 className="text-xl font-bold mb-6">Streams by Platform</h3>
-          <ChartContainer config={{}} className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={analytics.platformBreakdown}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="value" radius={[8, 8, 0, 0]}>
-                  {analytics.platformBreakdown.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard icon={Play} label="Total Streams" value={analytics.totalStreams.toLocaleString()} trend="+12% this week" />
+        <StatCard icon={DollarSign} label="TDZ Revenue" value={`$${analytics.totalRevenue.toFixed(2)}`} subtext="$1.00 per stream" />
+        <StatCard icon={Music} label="Total Tracks" value={analytics.totalTracks} />
+        <StatCard icon={Users} label="Listeners" value={analytics.totalListeners.toLocaleString()} subtext="Unique listeners" />
       </div>
 
       {/* Growth Trend */}
-      <Card className="glass-card-premium p-6">
-        <h3 className="text-xl font-bold mb-6">7-Day Growth Trend</h3>
-        <ChartContainer config={{}} className="h-[300px]">
+      <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.02)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.05)" }}>
+        <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 28, letterSpacing: "0.04em", textTransform: "uppercase", color: "#FFFFFF", marginBottom: 16 }}>7-Day Growth</h3>
+        <ChartContainer config={{}} className="h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={analytics.growthData}>
               <defs>
-                <linearGradient id="colorStreams" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                <linearGradient id="colorStreamsAlbum" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#00CFFF" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#00CFFF" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-              <XAxis dataKey="date" />
-              <YAxis />
+              <XAxis dataKey="date" tick={{ fill: 'rgba(255,255,255,0.4)', fontFamily: "'Raleway', sans-serif", fontSize: 11 }} />
+              <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontFamily: "'Raleway', sans-serif", fontSize: 11 }} />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Legend />
-              <Area
-                type="monotone"
-                dataKey="streams"
-                stroke="hsl(var(--primary))"
-                fillOpacity={1}
-                fill="url(#colorStreams)"
-                name="Streams"
-              />
-              <Area
-                type="monotone"
-                dataKey="listeners"
-                stroke="hsl(var(--chart-2))"
-                fillOpacity={0.3}
-                fill="hsl(var(--chart-2))"
-                name="Listeners"
-              />
+              <Area type="monotone" dataKey="streams" stroke="#00CFFF" fillOpacity={1} fill="url(#colorStreamsAlbum)" name="Streams" />
+              <Area type="monotone" dataKey="listeners" stroke="#8B5CF6" fillOpacity={0.3} fill="rgba(139,92,246,0.2)" name="Listeners" />
             </AreaChart>
           </ResponsiveContainer>
         </ChartContainer>
-      </Card>
+      </div>
 
       {/* Top Track */}
       {analytics.topTrack && (
-        <Card className="glass-card-premium p-6">
-          <h3 className="text-xl font-bold mb-6">Top Performing Track</h3>
+        <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.02)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.05)" }}>
+          <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 28, letterSpacing: "0.04em", textTransform: "uppercase", color: "#FFFFFF", marginBottom: 16 }}>Top Track</h3>
           <div className="flex items-center gap-6">
-            <div className="w-24 h-24 rounded-lg overflow-hidden bg-accent/50 flex items-center justify-center">
-              <Music className="w-10 h-10 text-muted-foreground" />
+            <div className="w-20 h-20 rounded-lg overflow-hidden flex items-center justify-center" style={{ background: "rgba(0,207,255,0.1)" }}>
+              <Music className="w-8 h-8" style={{ color: "rgba(255,255,255,0.4)" }} />
             </div>
             <div className="flex-1">
-              <h4 className="text-2xl font-bold mb-2">{analytics.topTrack.title}</h4>
-              <p className="text-muted-foreground mb-4">{analytics.topTrack.artist_name}</p>
-              <div className="flex items-center gap-6">
+              <h4 style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 18, color: "#FFFFFF" }}>{analytics.topTrack.title}</h4>
+              <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "rgba(255,255,255,0.5)" }}>{analytics.topTrack.artist_name}</p>
+              <div className="flex items-center gap-6 mt-3">
                 <div>
-                  <p className="text-sm text-muted-foreground">Streams</p>
-                  <p className="text-xl font-bold">{analytics.topTrack.play_count?.toLocaleString() || 0}</p>
+                  <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Streams</p>
+                  <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 28, color: "#FFFFFF" }}>{(analytics.topTrack.play_count || 0).toLocaleString()}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">TDZ Earnings</p>
-                  <p className="text-xl font-bold">${((analytics.topTrack.play_count || 0) * 1.00).toFixed(2)}</p>
+                  <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Earnings</p>
+                  <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 28, color: "#22C55E" }}>${((analytics.topTrack.play_count || 0) * 1.00).toFixed(2)}</p>
                 </div>
               </div>
             </div>
           </div>
-        </Card>
-      )}
-
-      {/* Revenue Breakdown */}
-      <Card className="glass-card-premium p-6">
-        <h3 className="text-xl font-bold mb-6">Revenue by Platform</h3>
-        <div className="space-y-4">
-          {analytics.revenueByPlatform.map((platform, index) => (
-            <div key={index} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{platform.name}</span>
-                <span className="text-muted-foreground">${platform.revenue}</span>
-              </div>
-              <div className="h-2 bg-accent rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-full transition-all"
-                  style={{ width: `${platform.percentage}%` }}
-                />
-              </div>
-            </div>
-          ))}
         </div>
-      </Card>
+      )}
     </div>
   );
 }

@@ -239,6 +239,24 @@ export default function PlaylistDetail() {
     }
   };
 
+  const handleDeletePlaylist = async () => {
+    if (!isOwner || !playlistId) return;
+    const confirmed = window.confirm("Are you sure you want to delete this playlist? This cannot be undone.");
+    if (!confirmed) return;
+    
+    try {
+      // Delete tracks first
+      await supabase.from("playlist_tracks").delete().eq("playlist_id", playlistId);
+      // Delete playlist
+      const { error } = await supabase.from("playlists").delete().eq("id", playlistId);
+      if (error) throw error;
+      toast.success("Playlist deleted");
+      navigate("/discover");
+    } catch (error) {
+      toast.error("Failed to delete playlist");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -343,6 +361,16 @@ export default function PlaylistDetail() {
               <Button variant="outline" size="icon" className="h-11 w-11">
                 <Share2 className="w-5 h-5" />
               </Button>
+              {isOwner && (
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-11 w-11 text-destructive hover:bg-destructive/10 border-destructive/30"
+                  onClick={handleDeletePlaylist}
+                >
+                  <Trash2 className="w-5 h-5" />
+                </Button>
+              )}
             </div>
           </div>
         </div>
