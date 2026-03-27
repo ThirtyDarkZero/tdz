@@ -14,9 +14,6 @@ serve(async (req) => {
   }
 
   try {
-    const token = Deno.env.get("EVENTBRITE_API_TOKEN");
-    if (!token) throw new Error("EVENTBRITE_API_TOKEN not configured");
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -26,6 +23,22 @@ serve(async (req) => {
     const jwt = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
     if (authError || !user) throw new Error("Unauthorized");
+
+    // Try per-user OAuth token first, fall back to shared env token
+    let token: string | null = null;
+    const { data: tokenRow } = await supabase
+      .from("artist_eventbrite_tokens")
+      .select("access_token")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (tokenRow?.access_token) {
+      token = tokenRow.access_token;
+    } else {
+      token = Deno.env.get("EVENTBRITE_API_TOKEN") || null;
+    }
+
+    if (!token) throw new Error("EVENTBRITE_NOT_CONNECTED");
 
     const { action, ...params } = await req.json();
 

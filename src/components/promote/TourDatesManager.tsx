@@ -239,6 +239,8 @@ export function TourDatesManager() {
   const [orgId, setOrgId] = useState<string | null>(null);
   const [loadingOrg, setLoadingOrg] = useState(false);
   const [ebConnectionError, setEbConnectionError] = useState<string | null>(null);
+  const [ebConnected, setEbConnected] = useState(false);
+  const [connectingOAuth, setConnectingOAuth] = useState(false);
 
   // Form state
   const [venue, setVenue] = useState("");
@@ -265,7 +267,26 @@ export function TourDatesManager() {
     salesStart: string; salesEnd: string;
   }>>([{ name: "General Admission", price: "", quantity: "100", donation: false, hidden: false, salesStart: "", salesEnd: "" }]);
 
-  useEffect(() => { if (user) loadDates(); }, [user]);
+  // Check if user already has Eventbrite connected
+  useEffect(() => {
+    if (user) {
+      loadDates();
+      checkEventbriteConnection();
+    }
+  }, [user]);
+
+  const checkEventbriteConnection = async () => {
+    if (!user) return;
+    const { data } = await (supabase as any)
+      .from("artist_eventbrite_tokens")
+      .select("organization_id, organization_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (data?.organization_id) {
+      setOrgId(data.organization_id);
+      setEbConnected(true);
+    }
+  };
 
   const loadDates = async () => {
     if (!user) return;
@@ -277,6 +298,32 @@ export function TourDatesManager() {
     setDates((data as TourDate[]) || []);
   };
 
+  const connectEventbrite = async () => {
+    setConnectingOAuth(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("eventbrite-oauth-url", {
+        body: { redirectUri: window.location.origin + "/eventbrite-callback" },
+      });
+      if (error || !data?.authUrl) throw new Error(data?.error || "Failed to start Eventbrite connection");
+      window.location.href = data.authUrl;
+    } catch (err: any) {
+      toast.error(err.message || "Failed to connect Eventbrite");
+      setConnectingOAuth(false);
+    }
+  };
+
+  const disconnectEventbrite = async () => {
+    if (!user) return;
+    await (supabase as any)
+      .from("artist_eventbrite_tokens")
+      .delete()
+      .eq("user_id", user.id);
+    setOrgId(null);
+    setEbConnected(false);
+    setUseEventbrite(false);
+    toast.success("Eventbrite disconnected");
+  };
+
   const loadEventbriteOrg = async () => {
     if (orgId) return;
     setLoadingOrg(true);
@@ -286,20 +333,22 @@ export function TourDatesManager() {
         body: { action: "get_organizations" },
       });
       if (error) throw error;
-      if (data?.error?.includes("EVENTBRITE_API_TOKEN")) {
-        setEbConnectionError("no_token");
+      if (data?.error?.includes("EVENTBRITE_NOT_CONNECTED")) {
+        setEbConnectionError("not_connected");
         return;
       }
+      if (data?.error) throw new Error(data.error);
       const orgs = data?.data?.organizations;
       if (orgs && orgs.length > 0) {
         setOrgId(orgs[0].id);
+        setEbConnected(true);
       } else {
         setEbConnectionError("no_org");
       }
     } catch (err: any) {
       const msg = err.message || "";
-      if (msg.includes("EVENTBRITE_API_TOKEN") || msg.includes("not configured")) {
-        setEbConnectionError("no_token");
+      if (msg.includes("EVENTBRITE_NOT_CONNECTED") || msg.includes("not configured")) {
+        setEbConnectionError("not_connected");
       } else {
         setEbConnectionError(msg || "Connection failed");
       }
@@ -310,7 +359,10 @@ export function TourDatesManager() {
 
   const handleEventbriteToggle = async (checked: boolean) => {
     setUseEventbrite(checked);
-    if (checked) await loadEventbriteOrg();
+    if (checked) {
+      if (ebConnected && orgId) return; // Already connected
+      await loadEventbriteOrg();
+    }
   };
 
   const resetForm = () => {
@@ -481,10 +533,20 @@ export function TourDatesManager() {
                 <Ticket className="w-4 h-4 text-primary" />
                 <div>
                   <p className="text-sm font-medium">Sell tickets via Eventbrite</p>
-                  <p className="text-xs text-muted-foreground">Creates a live event with full ticketing</p>
+                  <p className="text-xs text-muted-foreground">
+                    {ebConnected ? "Connected — creates live events with ticketing" : "Sign in to create events with full ticketing"}
+                  </p>
                 </div>
+                {ebConnected && <Badge variant="outline" className="text-xs border-green-500/30 text-green-400 ml-2">Connected</Badge>}
               </div>
-              <Switch checked={useEventbrite} onCheckedChange={handleEventbriteToggle} disabled={loadingOrg} />
+              <div className="flex items-center gap-2">
+                {ebConnected && (
+                  <Button size="sm" variant="ghost" className="text-xs text-muted-foreground h-7 px-2" onClick={disconnectEventbrite}>
+                    Disconnect
+                  </Button>
+                )}
+                <Switch checked={useEventbrite} onCheckedChange={handleEventbriteToggle} disabled={loadingOrg} />
+              </div>
             </div>
 
             {loadingOrg && (
@@ -494,44 +556,46 @@ export function TourDatesManager() {
             )}
 
             {useEventbrite && ebConnectionError && !loadingOrg && (
-              <div className="p-4 rounded-xl border border-orange-500/30 bg-orange-500/5 space-y-3">
+              <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 space-y-3">
                 <div className="flex items-center gap-2">
-                  <Ticket className="w-5 h-5 text-orange-400" />
+                  <Ticket className="w-5 h-5 text-primary" />
                   <p className="font-medium text-sm">
-                    {ebConnectionError === "no_token"
-                      ? "Eventbrite not connected"
+                    {ebConnectionError === "not_connected"
+                      ? "Connect your Eventbrite account"
                       : ebConnectionError === "no_org"
                       ? "No Eventbrite organization found"
                       : "Eventbrite connection failed"}
                   </p>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {ebConnectionError === "no_token"
-                    ? "To sell tickets, connect your Eventbrite account by adding your Private API Token. You can get one from your Eventbrite account under App Management → API Keys."
+                  {ebConnectionError === "not_connected"
+                    ? "Sign in with your Eventbrite account to create events, sell tickets, and manage attendees directly from your studio."
                     : ebConnectionError === "no_org"
-                    ? "Your Eventbrite token is connected but no organization was found. Make sure your Eventbrite account has an active organization."
+                    ? "Your Eventbrite account is connected but no organization was found. Make sure your Eventbrite account has an active organization."
                     : `Error: ${ebConnectionError}`}
                 </p>
                 <div className="flex gap-2">
-                  {ebConnectionError === "no_token" && (
+                  {ebConnectionError === "not_connected" && (
                     <Button
                       size="sm"
-                      variant="outline"
-                      className="gap-1.5 border-orange-500/30 hover:bg-orange-500/10"
-                      onClick={() => window.open("https://www.eventbrite.com/account-settings/apps", "_blank")}
+                      className="gap-1.5"
+                      onClick={connectEventbrite}
+                      disabled={connectingOAuth}
                     >
-                      <ExternalLink className="w-3 h-3" /> Get API Key
+                      {connectingOAuth ? <Loader2 className="w-3 h-3 animate-spin" /> : <ExternalLink className="w-3 h-3" />}
+                      Sign in with Eventbrite
                     </Button>
                   )}
                   <Button
                     size="sm"
+                    variant="outline"
                     className="gap-1.5"
                     onClick={() => {
                       setEbConnectionError(null);
                       loadEventbriteOrg();
                     }}
                   >
-                    <Loader2 className="w-3 h-3" /> Retry Connection
+                    Retry
                   </Button>
                 </div>
               </div>
