@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Play, Pause, SkipForward, SkipBack,
   ListMusic, Mic2, Repeat, Shuffle, ChevronDown, MoreHorizontal, X,
@@ -122,6 +123,7 @@ function drawPulse(ctx: CanvasRenderingContext2D, w: number, h: number, t: numbe
 }
 
 export function OrbPlayerBar() {
+  const navigate = useNavigate();
   const {
     currentTrack, queue, playTrack, isPlaying, pauseTrack, resumeTrack,
     nextTrack, previousTrack, currentTime, playerView, setPlayerView,
@@ -229,7 +231,17 @@ export function OrbPlayerBar() {
           {/* Info */}
           <div className="min-w-0 flex-1">
             <p className="truncate font-body" style={{ fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>{currentTrack.title}</p>
-            <p className="truncate font-body" style={{ fontSize: 11, color: "var(--text-3)" }}>{currentTrack.artist_name}</p>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const artistId = currentTrack.artist_user_id || currentTrack.user_id;
+                if (artistId) navigate(`/artist/${artistId}`);
+              }}
+              className="truncate font-body hover:underline block text-left w-full"
+              style={{ fontSize: 11, color: "var(--text-3)" }}
+            >
+              {currentTrack.artist_name}
+            </button>
           </div>
           {/* Controls */}
           <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
@@ -383,7 +395,19 @@ export function OrbPlayerBar() {
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1 mr-3">
               <h2 className="font-display truncate" style={{ fontSize: 32, color: "var(--text-1)", lineHeight: 1 }}>{currentTrack.title}</h2>
-              <p className="font-body truncate mt-1" style={{ fontSize: 14, color: "var(--text-2)" }}>{currentTrack.artist_name}</p>
+              <button
+                onClick={() => {
+                  const artistId = currentTrack.artist_user_id || currentTrack.user_id;
+                  if (artistId) {
+                    setPlayerView("mini");
+                    navigate(`/artist/${artistId}`);
+                  }
+                }}
+                className="font-body truncate mt-1 hover:underline transition-colors block text-left"
+                style={{ fontSize: 14, color: "var(--text-2)" }}
+              >
+                {currentTrack.artist_name}
+              </button>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => setIsLiked(!isLiked)} className="p-1.5">

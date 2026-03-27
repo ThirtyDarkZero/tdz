@@ -94,20 +94,19 @@ function FilterPill({ label, active, onClick }: { label: string; active: boolean
 }
 
 /* ── Hex Cell for Library ── */
-function HexCell({ image, label, onClick }: { image: string | null; label: string; onClick: () => void }) {
+function LibraryCard({ image, label, onClick }: { image: string | null; label: string; onClick: () => void }) {
   return (
     <div
-      className="relative cursor-pointer transition-all duration-200 active:brightness-130"
-      style={{ clipPath: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)", aspectRatio: "1", background: "hsl(var(--bg-surface))" }}
+      className="relative cursor-pointer transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
+      style={{ aspectRatio: "1", borderRadius: "var(--radius-md)", overflow: "hidden", background: "var(--glass-1)" }}
       onClick={onClick}
     >
       {image && <img src={image} alt="" className="w-full h-full object-cover" />}
-      <div className="absolute left-0 right-0 text-center font-body" style={{
-        bottom: "22%", fontSize: 7, fontWeight: 700, color: "white",
-        textShadow: "0 2px 8px rgba(0,0,0,0.9)", padding: "0 2px",
-        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-      }}>
-        {label}
+      {!image && <div className="w-full h-full flex items-center justify-center"><Music className="w-6 h-6" style={{ color: "var(--text-4)" }} /></div>}
+      <div className="absolute inset-x-0 bottom-0 p-2" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)" }}>
+        <span className="font-body block truncate" style={{ fontSize: 10, fontWeight: 600, color: "white" }}>
+          {label}
+        </span>
       </div>
     </div>
   );
@@ -545,9 +544,12 @@ export default function Discover() {
                 {forYouItems.length > 1 && (
                   <Section title="NEW THIS WEEK" action={<SeeAll onClick={() => setActiveTab("library")} />}>
                     <div className="flex gap-3.5 overflow-x-auto pb-2 scrollbar-hide">
-                      {forYouItems.slice(0, 10).map(item => (
-                        <AlbumCard key={item.id} size="md" album={{ id: item.id, title: item.title, artist_name: item.artist, image: item.image }} onClick={() => navigate(item.type === "album" ? `/album/${item.id}` : `/track/${item.id}`)} />
-                      ))}
+                      {forYouItems.slice(0, 10).map(item => {
+                        const realId = item.id.replace(/^(album|track)-/, "");
+                        return (
+                          <AlbumCard key={item.id} size="md" album={{ id: realId, title: item.title, artist_name: item.artist, image: item.image }} onClick={() => navigate(item.type === "album" ? `/album/${realId}` : `/track/${realId}`)} />
+                        );
+                      })}
                     </div>
                   </Section>
                 )}
@@ -799,9 +801,9 @@ export default function Discover() {
 
                 {/* Hexagonal grid for albums — smaller cells */}
                 {(libraryFilter === "ALBUMS" || libraryFilter === "PLAYLISTS" || libraryFilter === "DOWNLOADED" || libraryFilter === "RECENT") && albums.length > 0 && (
-                  <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-8 gap-[2px]">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
                     {albums.map(album => (
-                      <HexCell
+                      <LibraryCard
                         key={album.id}
                         image={album.cover_art_path ? supabase.storage.from("album-covers").getPublicUrl(album.cover_art_path).data.publicUrl : null}
                         label={album.title}

@@ -4,6 +4,7 @@ import {
   Shuffle, Repeat, List, Mic, MoreHorizontal, Share2, Download,
   Cast, Radio, Clock, Sliders, Award, Maximize2, AlertCircle
 } from "lucide-react";
+import { usePlayer } from "@/contexts/PlayerContext";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
@@ -72,6 +73,7 @@ interface MusicPlayerProps {
 export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEnd, maxDuration, onPreviewEnd }: MusicPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const { setCurrentTime: setContextTime } = usePlayer();
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
@@ -359,6 +361,7 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
     if (audioRef.current && currentTrack) {
       const currentSeconds = audioRef.current.currentTime;
       setCurrentTime(currentSeconds);
+      setContextTime(currentSeconds);
       
       // Record stream when user has listened 30+ seconds OR 50%+ completion
       if (!streamRecorded) {
