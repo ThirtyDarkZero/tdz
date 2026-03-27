@@ -109,21 +109,6 @@ export function CosmicTopBar({ activeTab, searchQuery, onSearchChange, userProfi
             >
               <Search className="h-5 w-5" />
             </button>
-            {/* Profile avatar */}
-            <button onClick={() => user ? navigate("/profile") : navigate("/auth")}>
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="h-9 w-9 rounded-full object-cover" style={{ border: "2px solid rgba(255,255,255,0.1)" }} />
-              ) : (
-                <div
-                  className="h-9 w-9 rounded-full flex items-center justify-center"
-                  style={{ background: "hsl(var(--primary) / 0.15)", border: "2px solid hsl(var(--primary) / 0.3)" }}
-                >
-                  <span className="font-body" style={{ fontSize: 12, fontWeight: 700, color: "hsl(var(--primary))" }}>
-                    {user?.email?.[0]?.toUpperCase() || "?"}
-                  </span>
-                </div>
-              )}
-            </button>
           </div>
         </div>
       )}

@@ -442,7 +442,7 @@ export default function Discover() {
                 <Section title={selectedGenre ? selectedGenre.toUpperCase() : "POPULAR TRACKS"} subtitle="Top 10">
                   <div className="rounded-[var(--radius-md)] overflow-hidden" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)" }}>
                     <SongListHeader />
-                    {genreFilteredSingles.slice(0, 10).map((track, i) => (
+                    {trendingSingles.slice(0, 10).map((track, i) => (
                       <SongRow key={track.id} track={track} index={i + 1} isPlaying={currentTrack?.id === track.id} isLiked={likedTracks.has(track.id)} onPlay={handlePlayTrack} onToggleLike={toggleLike} onAddToQueue={handleAddToQueue} />
                     ))}
                   </div>
