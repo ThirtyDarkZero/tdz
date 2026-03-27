@@ -1,15 +1,12 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   Play, Pause, SkipForward, SkipBack,
-  ListMusic, Mic2, Repeat, Shuffle, ChevronDown, MoreHorizontal, X, ChevronRight,
-  Heart, SlidersHorizontal,
+  ListMusic, Mic2, Repeat, Shuffle, ChevronDown, MoreHorizontal, X,
+  Heart, SlidersHorizontal, Music,
 } from "lucide-react";
-import { useLocation } from "react-router-dom";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { LyricsPanel } from "@/components/LyricsPanel";
 import { SongRow } from "./SongRow";
-
 
 function fmt(s: number) {
   const m = Math.floor(s / 60);
@@ -17,25 +14,13 @@ function fmt(s: number) {
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
-// Generate static waveform bar heights
-const WAVEFORM_BARS = 60;
-const barHeights = Array.from({ length: WAVEFORM_BARS }, (_, i) => {
-  const base = 0.3 + Math.sin(i * 0.3) * 0.25 + Math.random() * 0.35;
-  return Math.min(1, Math.max(0.15, base));
-});
+const CORAL = "#FF6347";
 
-// EQ bands
 const EQ_BANDS = [
-  { label: "60", freq: 60 },
-  { label: "150", freq: 150 },
-  { label: "400", freq: 400 },
-  { label: "1K", freq: 1000 },
-  { label: "2.4K", freq: 2400 },
-  { label: "6K", freq: 6000 },
-  { label: "15K", freq: 15000 },
+  { label: "60" }, { label: "150" }, { label: "400" },
+  { label: "1K" }, { label: "2.4K" }, { label: "6K" }, { label: "15K" },
 ];
 
-type PlayerState = "full" | "mini" | "pill";
 type FullView = "artwork" | "lyrics" | "visualizer" | "eq";
 
 export function OrbPlayerBar() {
@@ -43,20 +28,21 @@ export function OrbPlayerBar() {
     currentTrack, queue, playTrack, isPlaying, pauseTrack, resumeTrack,
     nextTrack, previousTrack, currentTime, playerView, setPlayerView,
   } = usePlayer();
-  const location = useLocation();
   const [showQueue, setShowQueue] = useState(false);
-  const [playerState, setPlayerState] = useState<PlayerState>("mini");
+  const [isPill, setIsPill] = useState(false);
   const [fullView, setFullView] = useState<FullView>("artwork");
-  const [eqValues, setEqValues] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
+  const [eqValues, setEqValues] = useState([0, 0, 0, 0, 0, 0, 0]);
   const [isLiked, setIsLiked] = useState(false);
+  const [isShuffle, setIsShuffle] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>();
 
   const toggle = () => (isPlaying ? pauseTrack() : resumeTrack());
   const dur = currentTrack?.duration || 0;
   const pct = dur > 0 ? Math.min((currentTime / dur) * 100, 100) : 0;
+  const circumference = 2 * Math.PI * 62;
 
-  // Simple visualizer animation
+  // Visualizer
   useEffect(() => {
     if (fullView !== "visualizer" || !canvasRef.current || !isPlaying) {
       if (animRef.current) cancelAnimationFrame(animRef.current);
@@ -65,20 +51,19 @@ export function OrbPlayerBar() {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
     const draw = () => {
       animRef.current = requestAnimationFrame(draw);
-      ctx.fillStyle = "rgba(3,3,15,0.15)";
+      ctx.fillStyle = "rgba(3,3,15,0.12)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       const bars = 48;
-      const barW = (canvas.width / bars) * 0.7;
       const gap = canvas.width / bars;
+      const barW = gap * 0.65;
       for (let i = 0; i < bars; i++) {
         const h = (Math.sin(Date.now() * 0.003 + i * 0.4) * 0.3 + 0.5 + Math.random() * 0.2) * canvas.height * 0.8;
-        const gradient = ctx.createLinearGradient(0, canvas.height - h, 0, canvas.height);
-        gradient.addColorStop(0, "#00CFFF");
-        gradient.addColorStop(1, "#8B5CF6");
-        ctx.fillStyle = gradient;
+        const g = ctx.createLinearGradient(0, canvas.height - h, 0, canvas.height);
+        g.addColorStop(0, "#00CFFF");
+        g.addColorStop(1, "#8B5CF6");
+        ctx.fillStyle = g;
         ctx.fillRect(i * gap + (gap - barW) / 2, canvas.height - h, barW, h);
       }
     };
@@ -86,7 +71,7 @@ export function OrbPlayerBar() {
     return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
   }, [fullView, isPlaying]);
 
-  // Lyrics from track object
+  // Lyrics from track
   const lyricsLines = useMemo(() => {
     if (!currentTrack?.lyrics) return [{ time: 0, text: "No lyrics available" }];
     return currentTrack.lyrics.split("\n").filter(Boolean).map((line, i) => ({ time: i * 4, text: line }));
@@ -96,328 +81,278 @@ export function OrbPlayerBar() {
 
   const cover = currentTrack.album_cover_path || currentTrack.thumbnail || null;
   const isFullScreen = playerView === "full";
-  const CORAL = "#FF6347";
 
-  /* ─── STATE 3: FLOATING PILL ─── */
-  if (!isFullScreen && playerState === "pill") {
+  /* ─── PILL ─── */
+  if (!isFullScreen && isPill) {
     return (
       <div
         className="fixed z-[95] cursor-pointer"
         style={{
           bottom: "calc(var(--nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 16px)",
-          right: 20, width: 56, height: 56, borderRadius: "50%",
-          overflow: "hidden",
-          boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 24px ${CORAL}40`,
+          right: 20, width: 56, height: 56, borderRadius: "50%", overflow: "hidden",
+          boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 20px ${CORAL}40`,
         }}
-        onClick={() => setPlayerState("mini")}
+        onClick={() => setIsPill(false)}
       >
-        {cover ? (
-          <img src={cover} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center" style={{ background: "hsl(var(--bg-surface))" }}>
-            <span className="text-lg" style={{ color: "var(--text-3)" }}>♪</span>
-          </div>
+        {cover ? <img src={cover} alt="" className="w-full h-full object-cover" /> : (
+          <div className="w-full h-full flex items-center justify-center" style={{ background: "#1a1a2e" }}><Music className="h-5 w-5" style={{ color: "var(--text-4)" }} /></div>
         )}
-        <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.45)" }}>
-          {isPlaying ? (
-            <Pause className="h-[18px] w-[18px] text-white" fill="white" onClick={(e) => { e.stopPropagation(); pauseTrack(); }} />
-          ) : (
-            <Play className="h-[18px] w-[18px] text-white ml-0.5" fill="white" onClick={(e) => { e.stopPropagation(); resumeTrack(); }} />
-          )}
+        <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.4)" }}>
+          {isPlaying
+            ? <Pause className="h-4 w-4 text-white" fill="white" onClick={e => { e.stopPropagation(); pauseTrack(); }} />
+            : <Play className="h-4 w-4 text-white ml-0.5" fill="white" onClick={e => { e.stopPropagation(); resumeTrack(); }} />
+          }
         </div>
       </div>
     );
   }
 
-  /* ─── STATE 2: MINI BAR ─── */
+  /* ─── MINI BAR ─── */
   if (!isFullScreen) {
     return (
       <div className="fixed z-[95]" style={{ bottom: "calc(var(--nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 8px)", left: 8, right: 8 }}>
         <div
           className="mx-auto max-w-[540px] flex items-center gap-3 relative overflow-hidden cursor-pointer"
           style={{
-            background: "rgba(8, 8, 26, 0.94)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: "var(--radius-lg)",
-            backdropFilter: "blur(32px)",
-            boxShadow: `0 -4px 40px rgba(0,0,0,0.4), 0 0 24px ${CORAL}20`,
-            padding: "10px 14px",
+            background: "rgba(8,8,26,0.94)", border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "var(--radius-lg)", backdropFilter: "blur(32px)",
+            boxShadow: `0 -4px 40px rgba(0,0,0,0.4), 0 0 20px ${CORAL}15`, padding: "10px 14px",
           }}
           onClick={() => setPlayerView("full")}
         >
-          <div className="h-12 w-12 flex-shrink-0 overflow-hidden" style={{ borderRadius: "var(--radius-sm)", boxShadow: `0 4px 16px ${CORAL}30` }}>
+          {/* Art */}
+          <div className="h-11 w-11 flex-shrink-0 rounded-lg overflow-hidden" style={{ boxShadow: `0 4px 16px ${CORAL}25` }}>
             {cover ? <img src={cover} alt="" className="h-full w-full object-cover" /> : (
-              <div className="h-full w-full flex items-center justify-center" style={{ background: "hsl(var(--bg-surface))" }}>
-                <span className="text-lg" style={{ color: "var(--text-3)" }}>♪</span>
-              </div>
+              <div className="h-full w-full flex items-center justify-center" style={{ background: "#1a1a2e" }}><Music className="h-4 w-4" style={{ color: "var(--text-4)" }} /></div>
             )}
           </div>
+          {/* Info */}
           <div className="min-w-0 flex-1">
-            <p className="truncate font-body" style={{ fontSize: 14, fontWeight: 700, color: "var(--text-1)" }}>{currentTrack.title}</p>
-            <p className="truncate font-body" style={{ fontSize: 12, color: "var(--text-3)" }}>{currentTrack.artist_name}</p>
+            <p className="truncate font-body" style={{ fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>{currentTrack.title}</p>
+            <p className="truncate font-body" style={{ fontSize: 11, color: "var(--text-3)" }}>{currentTrack.artist_name}</p>
           </div>
-          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-            <button onClick={toggle} className="flex h-[38px] w-[38px] items-center justify-center rounded-full" style={{ background: CORAL, color: "#000" }}>
-              {isPlaying ? <Pause className="h-[14px] w-[14px]" fill="currentColor" /> : <Play className="h-[14px] w-[14px] ml-0.5" fill="currentColor" />}
+          {/* Controls */}
+          <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+            <button onClick={toggle} className="flex h-9 w-9 items-center justify-center rounded-full" style={{ background: CORAL, color: "#000" }}>
+              {isPlaying ? <Pause className="h-3.5 w-3.5" fill="currentColor" /> : <Play className="h-3.5 w-3.5 ml-0.5" fill="currentColor" />}
             </button>
-            <button onClick={nextTrack} className="p-1" style={{ color: "var(--text-2)" }}>
-              <SkipForward className="h-[18px] w-[18px]" />
-            </button>
-            <button onClick={() => setPlayerState("pill")} className="p-1" style={{ color: "var(--text-3)" }}>
-              <X className="h-4 w-4" />
-            </button>
+            <button onClick={nextTrack} className="p-1" style={{ color: "var(--text-2)" }}><SkipForward className="h-4 w-4" /></button>
+            <button onClick={() => setIsPill(true)} className="p-1" style={{ color: "var(--text-3)" }}><X className="h-3.5 w-3.5" /></button>
           </div>
+          {/* Progress line */}
           <div className="absolute bottom-0 left-0 h-[2px]" style={{
-            width: `${pct}%`, borderRadius: "0 0 var(--radius-lg) var(--radius-lg)",
-            background: `linear-gradient(90deg, ${CORAL}, #8B5CF6)`,
-            transition: "width 0.5s linear",
+            width: `${pct}%`, background: `linear-gradient(90deg, ${CORAL}, #8B5CF6)`, transition: "width 0.5s linear",
           }} />
         </div>
       </div>
     );
   }
 
-  /* ─── STATE 1: FULL SCREEN NOW PLAYING ─── */
+  /* ─── FULL SCREEN ─── */
   return (
     <>
-      <div className="fixed inset-0 z-[200] flex flex-col overflow-hidden"
-        style={{ padding: "env(safe-area-inset-top, 44px) 0 calc(env(safe-area-inset-bottom, 0px) + 24px)" }}
-      >
-        {/* Blurred art background */}
+      <div className="fixed inset-0 z-[200] flex flex-col" style={{ background: "#03030F" }}>
+        {/* Blurred art BG */}
         {cover && (
           <div className="absolute" style={{
-            inset: -40, backgroundImage: `url(${cover})`, backgroundSize: "cover", backgroundPosition: "center",
-            filter: "blur(60px) saturate(1.4) brightness(0.25)", transform: "scale(1.1)", transition: "background-image 0.8s ease",
+            inset: -60, backgroundImage: `url(${cover})`, backgroundSize: "cover", backgroundPosition: "center",
+            filter: "blur(80px) saturate(1.5) brightness(0.2)", transform: "scale(1.15)",
           }} />
         )}
-        {!cover && <div className="absolute inset-0" style={{ background: "#03030F" }} />}
         <div className="absolute inset-0" style={{
-          background: "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(3,3,15,0.4) 0%, transparent 60%), linear-gradient(to bottom, rgba(3,3,15,0.3) 0%, rgba(3,3,15,0.7) 70%, rgba(3,3,15,0.95) 100%)",
+          background: "linear-gradient(to bottom, rgba(3,3,15,0.5) 0%, rgba(3,3,15,0.85) 60%, rgba(3,3,15,0.98) 100%)",
         }} />
 
-        {/* Top bar */}
-        <div className="relative z-10 flex items-center justify-between px-5 pb-2">
-          <button onClick={() => { setPlayerView("mini"); setPlayerState("mini"); }} className="p-2" style={{ color: "var(--text-2)" }}>
+        {/* ── Top bar ── */}
+        <div className="relative z-10 flex items-center justify-between px-5 pt-3 pb-2" style={{ paddingTop: "max(env(safe-area-inset-top, 12px), 12px)" }}>
+          <button onClick={() => { setPlayerView("mini"); setIsPill(false); }} className="p-2 -ml-2" style={{ color: "var(--text-2)" }}>
             <ChevronDown className="h-6 w-6" />
           </button>
-          <p className="font-body" style={{ fontSize: 12, fontWeight: 500, color: "var(--text-3)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+          <p className="font-body" style={{ fontSize: 11, fontWeight: 600, color: "var(--text-3)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
             {fullView === "lyrics" ? "Lyrics" : fullView === "visualizer" ? "Visualizer" : fullView === "eq" ? "Equalizer" : "Now Playing"}
           </p>
-          <button className="p-2" style={{ color: "var(--text-2)" }}>
-            <MoreHorizontal className="h-5 w-5" />
-          </button>
+          <button className="p-2 -mr-2" style={{ color: "var(--text-2)" }}><MoreHorizontal className="h-5 w-5" /></button>
         </div>
 
-        {/* Main content area — switches between artwork, lyrics, visualizer, EQ */}
-        <div className="relative z-10 flex-1 flex items-center justify-center px-6 overflow-hidden">
+        {/* ── Main content area ── */}
+        <div className="relative z-10 flex-1 flex items-center justify-center px-8 min-h-0 overflow-hidden">
+          {/* Artwork view */}
           {fullView === "artwork" && (
-            <div className="relative" style={{ width: "min(calc(100vw - 80px), 340px)", height: "min(calc(100vw - 80px), 340px)" }}>
-              <div className="absolute inset-0" style={{ borderRadius: 24, background: `${CORAL}40`, filter: "blur(40px)" }} />
-              <div
-                className="relative z-10 w-full h-full overflow-hidden transition-transform duration-300"
-                style={{ borderRadius: 24, boxShadow: `0 40px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.08)`, transform: isPlaying ? "scale(1.02)" : "scale(0.98)" }}
-              >
+            <div className="relative w-full" style={{ maxWidth: 340, aspectRatio: "1" }}>
+              {/* Glow */}
+              <div className="absolute -inset-6 rounded-3xl" style={{ background: `${CORAL}25`, filter: "blur(50px)" }} />
+              <div className="relative w-full h-full overflow-hidden" style={{
+                borderRadius: 20,
+                boxShadow: `0 32px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)`,
+                transform: isPlaying ? "scale(1)" : "scale(0.96)",
+                transition: "transform 0.4s ease",
+              }}>
                 {cover ? <img src={cover} alt="" className="w-full h-full object-cover" /> : (
                   <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #1a1a4e, #0d3b6e)" }}>
-                    <span className="text-5xl" style={{ color: "rgba(255,255,255,0.15)" }}>♪</span>
+                    <Music className="w-16 h-16" style={{ color: "rgba(255,255,255,0.1)" }} />
                   </div>
                 )}
               </div>
             </div>
           )}
 
+          {/* Lyrics view */}
           {fullView === "lyrics" && (
-            <div className="w-full h-full overflow-y-auto px-4 py-6 space-y-4">
+            <div className="w-full h-full overflow-y-auto px-2 py-8 space-y-5 scrollbar-hide">
               {lyricsLines.map((line, i) => {
                 const isActive = i < lyricsLines.length - 1
                   ? currentTime >= line.time && currentTime < lyricsLines[i + 1].time
                   : currentTime >= line.time;
                 return (
-                  <p key={i} className="font-body transition-all duration-300" style={{
-                    fontSize: isActive ? 28 : 20, fontWeight: isActive ? 700 : 400,
-                    color: isActive ? "var(--text-1)" : "rgba(255,255,255,0.3)",
-                    lineHeight: 1.3,
-                  }}>
-                    {line.text}
-                  </p>
+                  <p key={i} className="font-body transition-all duration-500" style={{
+                    fontSize: isActive ? 30 : 22, fontWeight: isActive ? 800 : 400,
+                    color: isActive ? "var(--text-1)" : "rgba(255,255,255,0.25)",
+                    lineHeight: 1.25,
+                  }}>{line.text}</p>
                 );
               })}
             </div>
           )}
 
+          {/* Visualizer */}
           {fullView === "visualizer" && (
-            <canvas ref={canvasRef} width={400} height={300} className="w-full h-full rounded-2xl" style={{ maxHeight: 340 }} />
+            <div className="w-full flex items-center justify-center">
+              <canvas ref={canvasRef} width={500} height={320} className="w-full rounded-2xl" style={{ maxWidth: 500, maxHeight: 320 }} />
+            </div>
           )}
 
+          {/* EQ */}
           {fullView === "eq" && (
-            <div className="w-full max-w-sm space-y-6">
+            <div className="w-full max-w-md space-y-5">
               <h3 className="font-display text-center" style={{ fontSize: 28, color: "var(--text-1)" }}>EQUALIZER</h3>
-              <div className="flex items-end justify-between gap-2" style={{ height: 200 }}>
+              <div className="flex items-end justify-between gap-1.5" style={{ height: 200 }}>
                 {EQ_BANDS.map((band, i) => (
-                  <div key={band.label} className="flex flex-col items-center gap-2 flex-1">
-                    <div className="relative w-full flex justify-center" style={{ height: 160 }}>
-                      <input
-                        type="range" min={-12} max={12} step={1}
-                        value={eqValues[i]}
-                        onChange={(e) => { const v = [...eqValues]; v[i] = Number(e.target.value); setEqValues(v); }}
-                        className="eq-slider"
-                        style={{
-                          writingMode: "vertical-lr" as any,
-                          direction: "rtl",
-                          width: 32, height: 160,
-                          accentColor: CORAL,
-                        }}
+                  <div key={band.label} className="flex flex-col items-center gap-1.5 flex-1">
+                    <div className="flex justify-center" style={{ height: 150 }}>
+                      <input type="range" min={-12} max={12} step={1} value={eqValues[i]}
+                        onChange={e => { const v = [...eqValues]; v[i] = +e.target.value; setEqValues(v); }}
+                        style={{ writingMode: "vertical-lr" as any, direction: "rtl", width: 28, height: 150, accentColor: CORAL }}
                       />
                     </div>
-                    <span className="font-body" style={{ fontSize: 9, color: "var(--text-3)" }}>{band.label}</span>
-                    <span className="font-body" style={{ fontSize: 10, fontWeight: 700, color: eqValues[i] > 0 ? "#22C55E" : eqValues[i] < 0 ? CORAL : "var(--text-4)" }}>
-                      {eqValues[i] > 0 ? `+${eqValues[i]}` : eqValues[i]}dB
+                    <span className="font-body" style={{ fontSize: 8, color: "var(--text-3)" }}>{band.label}</span>
+                    <span className="font-body" style={{ fontSize: 9, fontWeight: 700, color: eqValues[i] > 0 ? "#22C55E" : eqValues[i] < 0 ? CORAL : "var(--text-4)" }}>
+                      {eqValues[i] > 0 ? "+" : ""}{eqValues[i]}
                     </span>
                   </div>
                 ))}
               </div>
-              {/* Presets */}
               <div className="flex flex-wrap gap-2 justify-center">
-                {["FLAT", "BASS BOOST", "VOCAL", "ROCK", "ELECTRONIC"].map(preset => (
-                  <button key={preset} className="px-3 py-1.5 font-body transition-all" style={{
+                {[
+                  { n: "FLAT", v: [0,0,0,0,0,0,0] },
+                  { n: "BASS", v: [8,6,3,0,-1,-1,0] },
+                  { n: "VOCAL", v: [-2,-1,0,4,6,4,0] },
+                  { n: "ROCK", v: [4,2,0,-1,2,4,6] },
+                  { n: "EDM", v: [6,4,0,-2,0,4,8] },
+                ].map(p => (
+                  <button key={p.n} onClick={() => setEqValues(p.v)} className="px-3 py-1.5 font-body" style={{
                     fontSize: 10, fontWeight: 600, borderRadius: "var(--radius-pill)",
                     background: "var(--glass-1)", border: "1px solid var(--glass-border)", color: "var(--text-3)",
-                  }}
-                    onClick={() => {
-                      const presets: Record<string, number[]> = {
-                        "FLAT": [0,0,0,0,0,0,0],
-                        "BASS BOOST": [8,6,3,0,-1,-1,0],
-                        "VOCAL": [-2,-1,0,4,6,4,0],
-                        "ROCK": [4,2,0,-1,2,4,6],
-                        "ELECTRONIC": [6,4,0,-2,0,4,8],
-                      };
-                      setEqValues(presets[preset] || [0,0,0,0,0,0,0]);
-                    }}
-                  >{preset}</button>
+                  }}>{p.n}</button>
                 ))}
               </div>
             </div>
           )}
         </div>
 
-        {/* Track info */}
-        <div className="relative z-10 px-7 pb-3">
-          <div className="flex items-start justify-between">
-            <div className="min-w-0 flex-1">
-              <h2 className="font-display truncate" style={{ fontSize: 42, color: "var(--text-1)", lineHeight: 1 }}>{currentTrack.title}</h2>
-              <p className="font-body truncate" style={{ fontSize: 16, color: "var(--text-2)", marginTop: 4 }}>{currentTrack.artist_name}</p>
+        {/* ── Track info ── */}
+        <div className="relative z-10 px-7 pt-4 pb-1">
+          <div className="flex items-center justify-between">
+            <div className="min-w-0 flex-1 mr-3">
+              <h2 className="font-display truncate" style={{ fontSize: 32, color: "var(--text-1)", lineHeight: 1 }}>{currentTrack.title}</h2>
+              <p className="font-body truncate mt-1" style={{ fontSize: 14, color: "var(--text-2)" }}>{currentTrack.artist_name}</p>
             </div>
-            <button onClick={() => setIsLiked(!isLiked)} className="flex-shrink-0 ml-3 mt-2 p-2">
-              <Heart className="h-6 w-6" style={{ color: isLiked ? CORAL : "var(--text-3)", fill: isLiked ? CORAL : "none" }} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setIsLiked(!isLiked)} className="p-1.5">
+                <Heart className="h-5 w-5" style={{ color: isLiked ? CORAL : "var(--text-3)", fill: isLiked ? CORAL : "none" }} />
+              </button>
+              <button className="p-1.5" style={{ color: "var(--text-3)" }}><MoreHorizontal className="h-5 w-5" /></button>
+            </div>
           </div>
         </div>
 
-        {/* Coral circular progress + controls (reference style) */}
-        <div className="relative z-10 flex flex-col items-center gap-2 pb-2">
-          {/* Coral ring play button */}
-          <div className="relative flex items-center justify-center">
-            {/* Track ring */}
-            <svg width={140} height={140} className="absolute">
-              <circle cx={70} cy={70} r={60} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={6} />
-              <circle cx={70} cy={70} r={60} fill="none" stroke={CORAL} strokeWidth={6}
-                strokeDasharray={`${2 * Math.PI * 60}`}
-                strokeDashoffset={`${2 * Math.PI * 60 * (1 - pct / 100)}`}
+        {/* ── Coral ring transport ── */}
+        <div className="relative z-10 flex flex-col items-center py-3">
+          <div className="relative flex items-center justify-center" style={{ width: 160, height: 160 }}>
+            {/* Background ring */}
+            <svg className="absolute inset-0" width="160" height="160" viewBox="0 0 160 160">
+              <circle cx="80" cy="80" r="62" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="5" />
+              <circle cx="80" cy="80" r="62" fill="none" stroke={CORAL} strokeWidth="5"
+                strokeDasharray={circumference}
+                strokeDashoffset={circumference * (1 - pct / 100)}
                 strokeLinecap="round"
-                transform="rotate(-90 70 70)"
+                transform="rotate(-90 80 80)"
                 style={{ transition: "stroke-dashoffset 0.5s linear" }}
               />
             </svg>
-            {/* Play controls row */}
-            <div className="flex items-center gap-4">
-              <button onClick={previousTrack} style={{ color: CORAL }}>
-                <SkipBack className="h-5 w-5" fill="currentColor" />
+            {/* Controls inside ring */}
+            <div className="relative flex items-center gap-5">
+              <button onClick={previousTrack} style={{ color: CORAL }}><SkipBack className="h-5 w-5" fill="currentColor" /></button>
+              <button onClick={toggle} className="flex items-center justify-center" style={{
+                width: 64, height: 64, borderRadius: "50%", background: CORAL, color: "#000",
+                boxShadow: `0 6px 28px ${CORAL}50`,
+              }}>
+                {isPlaying ? <Pause className="h-6 w-6" fill="currentColor" /> : <Play className="h-6 w-6 ml-0.5" fill="currentColor" />}
               </button>
-              <button
-                onClick={toggle}
-                className="flex items-center justify-center"
-                style={{
-                  width: 72, height: 72, borderRadius: "50%",
-                  background: CORAL, color: "#000",
-                  boxShadow: `0 8px 32px ${CORAL}60`,
-                }}
-              >
-                {isPlaying ? <Pause className="h-[26px] w-[26px]" fill="currentColor" /> : <Play className="h-[26px] w-[26px] ml-1" fill="currentColor" />}
-              </button>
-              <button onClick={nextTrack} style={{ color: CORAL }}>
-                <SkipForward className="h-5 w-5" fill="currentColor" />
-              </button>
+              <button onClick={nextTrack} style={{ color: CORAL }}><SkipForward className="h-5 w-5" fill="currentColor" /></button>
             </div>
           </div>
-
-          {/* Time display */}
-          <span className="font-body" style={{ fontSize: 13, color: CORAL, fontWeight: 600 }}>
-            {fmt(currentTime)}
-          </span>
+          {/* Time */}
+          <span className="font-body mt-1" style={{ fontSize: 13, color: CORAL, fontWeight: 600 }}>{fmt(currentTime)}</span>
         </div>
 
-        {/* Bottom action bar — view switchers */}
-        <div className="relative z-10 flex items-center justify-center gap-8 px-8 pb-4 pt-1">
-          <button onClick={() => setFullView("artwork")} className="flex flex-col items-center gap-1">
-            <Repeat className="h-5 w-5" style={{ color: fullView === "artwork" ? CORAL : "var(--text-3)" }} />
-            <span className="font-body" style={{ fontSize: 9, color: fullView === "artwork" ? CORAL : "var(--text-4)" }}>Cover</span>
-          </button>
-          <button onClick={() => setFullView("lyrics")} className="flex flex-col items-center gap-1">
-            <Mic2 className="h-5 w-5" style={{ color: fullView === "lyrics" ? CORAL : "var(--text-3)" }} />
-            <span className="font-body" style={{ fontSize: 9, color: fullView === "lyrics" ? CORAL : "var(--text-4)" }}>Lyrics</span>
-          </button>
-          <button onClick={() => setFullView("visualizer")} className="flex flex-col items-center gap-1">
-            <SlidersHorizontal className="h-5 w-5" style={{ color: fullView === "visualizer" ? CORAL : "var(--text-3)" }} />
-            <span className="font-body" style={{ fontSize: 9, color: fullView === "visualizer" ? CORAL : "var(--text-4)" }}>Visual</span>
-          </button>
-          <button onClick={() => setFullView("eq")} className="flex flex-col items-center gap-1">
-            <SlidersHorizontal className="h-5 w-5 rotate-90" style={{ color: fullView === "eq" ? CORAL : "var(--text-3)" }} />
-            <span className="font-body" style={{ fontSize: 9, color: fullView === "eq" ? CORAL : "var(--text-4)" }}>EQ</span>
-          </button>
-          <button onClick={() => setShowQueue(true)} className="flex flex-col items-center gap-1">
-            <ListMusic className="h-5 w-5" style={{ color: "var(--text-3)" }} />
-            <span className="font-body" style={{ fontSize: 9, color: "var(--text-4)" }}>Queue</span>
-          </button>
+        {/* ── Bottom toolbar ── */}
+        <div className="relative z-10 flex items-center justify-around px-6 pb-4 pt-1" style={{ paddingBottom: "max(env(safe-area-inset-bottom, 16px), 16px)" }}>
+          {([
+            { id: "artwork" as const, icon: Repeat, label: "Cover" },
+            { id: "lyrics" as const, icon: Mic2, label: "Lyrics" },
+            { id: "visualizer" as const, icon: SlidersHorizontal, label: "Visual" },
+            { id: "eq" as const, icon: SlidersHorizontal, label: "EQ", rotate: true },
+            { id: "queue" as const, icon: ListMusic, label: "Queue" },
+          ] as const).map(item => {
+            const isActive = item.id !== "queue" && fullView === item.id;
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  if (item.id === "queue") { setShowQueue(true); return; }
+                  setFullView(item.id);
+                }}
+                className="flex flex-col items-center gap-0.5"
+              >
+                <Icon className={`h-5 w-5 ${item.id === "eq" ? "rotate-90" : ""}`} style={{ color: isActive ? CORAL : "var(--text-3)" }} />
+                <span className="font-body" style={{ fontSize: 9, fontWeight: 600, color: isActive ? CORAL : "var(--text-4)" }}>{item.label}</span>
+              </button>
+            );
+          })}
         </div>
-
-        <style>{`
-          @keyframes artPulse { from { opacity: 0.4; } to { opacity: 0.7; } }
-        `}</style>
       </div>
 
-      {/* Queue sheet */}
+      {/* Queue Sheet */}
       <Sheet open={showQueue} onOpenChange={setShowQueue}>
         <SheetContent
           side="bottom"
           className="max-h-[75vh] p-0"
-          style={{
-            background: "rgba(8, 8, 26, 0.97)",
-            borderRadius: "var(--radius-xl) var(--radius-xl) 0 0",
-            borderColor: "rgba(255,255,255,0.06)",
-          }}
+          style={{ background: "rgba(8,8,26,0.97)", borderRadius: "var(--radius-xl) var(--radius-xl) 0 0", borderColor: "rgba(255,255,255,0.06)" }}
         >
           <div className="p-5">
             <div className="flex justify-center mb-3"><div className="h-1 w-10 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} /></div>
-            <div className="flex items-center justify-between pb-4 mb-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="flex items-center justify-between pb-3 mb-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
               <h2 className="font-display" style={{ fontSize: 24, color: "var(--text-1)" }}>PLAYBACK QUEUE</h2>
-              <button onClick={() => setShowQueue(false)} className="p-1" style={{ color: "var(--text-3)" }}>
-                <X className="h-5 w-5" />
-              </button>
+              <button onClick={() => setShowQueue(false)} className="p-1" style={{ color: "var(--text-3)" }}><X className="h-5 w-5" /></button>
             </div>
-            <div className="space-y-0.5 max-h-[55vh] overflow-y-auto">
-              {queue.map((track, i) => (
-                <SongRow
-                  key={track.id}
-                  track={track}
-                  index={i + 1}
-                  isPlaying={track.id === currentTrack?.id}
-                  onPlay={(t) => { playTrack(t, queue); setShowQueue(false); }}
-                />
-              ))}
-              {queue.length === 0 && (
-                <div className="py-10 text-center">
+            <div className="space-y-0.5 max-h-[55vh] overflow-y-auto scrollbar-hide">
+              {queue.length > 0 ? queue.map((track, i) => (
+                <SongRow key={track.id} track={track} index={i + 1} isPlaying={track.id === currentTrack?.id} onPlay={t => { playTrack(t, queue); setShowQueue(false); }} />
+              )) : (
+                <div className="py-12 text-center">
                   <ListMusic className="w-8 h-8 mx-auto mb-2" style={{ color: "var(--text-4)" }} />
-                  <p className="font-body" style={{ fontSize: 13, color: "var(--text-3)" }}>Queue is empty</p>
+                  <p className="font-body" style={{ fontSize: 13, color: "var(--text-3)" }}>Queue is empty — play a track to start</p>
                 </div>
               )}
             </div>
