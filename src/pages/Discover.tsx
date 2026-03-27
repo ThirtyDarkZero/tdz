@@ -10,11 +10,6 @@ import { useMood, MoodTheme } from "@/contexts/MoodContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ChevronRight, Play, Compass, TrendingUp, BarChart3, Music, ShoppingBag, Star, Shirt, Disc3, Package, Heart } from "lucide-react";
 
-import { Swiper, SwiperSlide } from "swiper/react";
-import { EffectCoverflow, Autoplay } from "swiper/modules";
-import "swiper/css";
-import "swiper/css/effect-coverflow";
-
 import { PersistentLayout } from "@/components/discovery/PersistentLayout";
 import { CosmicTopBar } from "@/components/discovery/CosmicTopBar";
 import { SongRow, SongListHeader } from "@/components/discovery/SongRow";
@@ -27,6 +22,15 @@ import { UserPlaylistsSection } from "@/components/discovery/UserPlaylistsSectio
 import { GenreTop50Section } from "@/components/discovery/GenreTop50Section";
 import { PlaylistManager } from "@/components/PlaylistManager";
 import { ProfileHub } from "@/components/discovery/ProfileHub";
+
+type FeaturedItem = {
+  id: string;
+  title: string;
+  artist: string;
+  image: string;
+  type: "album" | "track";
+  trackData?: any;
+};
 
 /* ── Section Header ── */
 function Section({ title, subtitle, action, children }: { title: string; subtitle?: string; action?: React.ReactNode; children: React.ReactNode }) {
@@ -240,6 +244,7 @@ export default function Discover() {
   const [libraryFilter, setLibraryFilter] = useState("PLAYLISTS");
   const [userProfile, setUserProfile] = useState<any>(null);
   const [exploreView, setExploreView] = useState<"main" | "trending" | "new" | "charts">("main");
+  const [carouselCenterIndex, setCarouselCenterIndex] = useState(0);
   const { mood, setMood } = useMood();
 
   const { currentTrack, playTrack, addToQueue } = usePlayer();
@@ -290,24 +295,107 @@ export default function Discover() {
     toast.success(`Added "${track.title}" to queue`);
   };
 
-  const forYouItems = useMemo(() => {
-    const items: Array<{ id: string; title: string; artist: string; image: string; type: "album" | "track"; trackData?: any }> = [];
-    albums.filter(a => a.cover_art_path).forEach(album => {
-      items.push({ id: album.id, title: album.title, artist: album.artist_name, image: supabase.storage.from("album-covers").getPublicUrl(album.cover_art_path!).data.publicUrl, type: "album" });
-    });
-    singles.filter(t => t.album_cover_path).slice(0, Math.max(7, 10) - items.length).forEach(track => {
-      const bucket = track.album_cover_bucket || "album-covers";
-      items.push({ id: track.id, title: track.title, artist: track.artist_name, image: supabase.storage.from(bucket).getPublicUrl(track.album_cover_path!).data.publicUrl, type: "track", trackData: track });
-    });
-    // Ensure exactly 7 items for carousel by duplicating if needed
-    if (items.length > 0 && items.length < 7) {
-      const original = [...items];
-      while (items.length < 7) {
-        items.push({ ...original[items.length % original.length], id: `dup-${items.length}-${original[items.length % original.length].id}` });
+  const resolveArtworkUrl = useCallback((item: any) => {
+    if (!item) return null;
+
+    const directUrl = item.image || item.thumbnail;
+    if (typeof directUrl === "string" && directUrl.startsWith("http")) return directUrl;
+
+    const paths: Array<{ path: string | null | undefined; bucket: string }> = [
+      { path: item.album_cover_path, bucket: item.album_cover_bucket || "album-covers" },
+      { path: item.cover_art_path, bucket: "album-covers" },
+      { path: item?.albums?.cover_art_path, bucket: "album-covers" },
+    ];
+
+    for (const candidate of paths) {
+      if (candidate.path) {
+        return supabase.storage.from(candidate.bucket).getPublicUrl(candidate.path).data.publicUrl;
       }
     }
-    return items.slice(0, 7);
-  }, [albums, singles]);
+
+    if (typeof directUrl === "string" && directUrl.length > 0) return directUrl;
+    return null;
+  }, []);
+
+  const forYouItems = useMemo(() => {
+    const items: FeaturedItem[] = [];
+
+    for (const album of albums) {
+      const image = resolveArtworkUrl(album);
+      if (!image) continue;
+
+      items.push({
+        id: `album-${album.id}`,
+        title: album.title,
+        artist: album.artist_name,
+        image,
+        type: "album",
+      });
+    }
+
+    for (const track of tracks) {
+      const image = resolveArtworkUrl(track);
+      if (!image) continue;
+
+      items.push({
+        id: `track-${track.id}`,
+        title: track.title,
+        artist: track.artist_name,
+        image,
+        type: "track",
+        trackData: track,
+      });
+    }
+
+    const uniqueItems = Array.from(new Map(items.map(item => [item.id, item])).values());
+    const featured = uniqueItems.slice(0, 7);
+
+    if (featured.length > 0 && featured.length < 7) {
+      const seed = [...featured];
+      while (featured.length < 7) {
+        const source = seed[featured.length % seed.length];
+        featured.push({ ...source, id: `${source.id}-clone-${featured.length}` });
+      }
+    }
+
+    return featured;
+  }, [albums, tracks, resolveArtworkUrl]);
+
+  const topChartTracks = useMemo(() => {
+    const ranked = [...tracks].sort((a, b) => (b.play_count || 0) - (a.play_count || 0));
+    return ranked.slice(0, 50);
+  }, [tracks]);
+
+  const visibleCarouselItems = useMemo(() => {
+    if (forYouItems.length === 0) return [];
+
+    return Array.from({ length: 7 }, (_, slot) => {
+      const offset = slot - 3;
+      const index = (carouselCenterIndex + offset + forYouItems.length) % forYouItems.length;
+      return {
+        offset,
+        index,
+        item: forYouItems[index],
+      };
+    });
+  }, [forYouItems, carouselCenterIndex]);
+
+  const activeCarouselItem = forYouItems[carouselCenterIndex] || forYouItems[0];
+
+  useEffect(() => {
+    if (forYouItems.length === 0) return;
+    setCarouselCenterIndex(0);
+  }, [forYouItems.length]);
+
+  useEffect(() => {
+    if (forYouItems.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCarouselCenterIndex(prev => (prev + 1) % forYouItems.length);
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, [forYouItems.length]);
 
   const GENRES = ["Hip-Hop", "R&B", "Pop", "Electronic", "Rock", "Soul", "Latin", "Alternative"];
 
@@ -340,43 +428,76 @@ export default function Discover() {
                 {/* ── Featured Coverflow Carousel ── */}
                 {forYouItems.length > 0 && (
                   <div className="pt-4 pb-2">
-                    <Swiper
-                      modules={[EffectCoverflow, Autoplay]}
-                      effect="coverflow"
-                      grabCursor
-                      centeredSlides
-                      slidesPerView="auto"
-                      loop={true}
-                      autoplay={{ delay: 3500, disableOnInteraction: true }}
-                      coverflowEffect={{ rotate: 30, stretch: 0, depth: 200, modifier: 1.2, slideShadows: true }}
-                      className="w-full"
-                      style={{ paddingTop: 8, paddingBottom: 16, overflow: "visible" }}
-                    >
-                      {forYouItems.map(item => (
-                        <SwiperSlide key={item.id} style={{ width: 200, height: 200 }}>
-                          <div
-                            className="relative w-full h-full cursor-pointer group"
-                            onClick={() => {
-                              if (item.trackData) handlePlayTrack(item.trackData);
-                              else navigate(item.type === "album" ? `/album/${item.id}` : `/track/${item.id}`);
+                    <div className="grid grid-cols-7 gap-2 items-center" style={{ minHeight: 182 }}>
+                      {visibleCarouselItems.map(({ item, offset, index }, slotIndex) => {
+                        const distance = Math.abs(offset);
+                        const isCenter = offset === 0;
+                        const scaleByDistance = [1, 0.9, 0.82, 0.74][distance] ?? 0.74;
+                        const opacityByDistance = [1, 0.9, 0.78, 0.66][distance] ?? 0.66;
+
+                        return (
+                          <button
+                            key={`${item.id}-${slotIndex}-${carouselCenterIndex}`}
+                            type="button"
+                            className="relative w-full aspect-square cursor-pointer transition-all duration-500"
+                            style={{
+                              transform: `scale(${scaleByDistance})`,
+                              opacity: opacityByDistance,
+                              filter: isCenter ? "none" : "saturate(0.8)",
                             }}
+                            onClick={() => {
+                              if (!isCenter) {
+                                setCarouselCenterIndex(index);
+                                return;
+                              }
+
+                              if (item.trackData) {
+                                handlePlayTrack(item.trackData);
+                                return;
+                              }
+
+                              const targetId = item.id.replace(/^(album|track)-/, "");
+                              navigate(item.type === "album" ? `/album/${targetId}` : `/track/${targetId}`);
+                            }}
+                            aria-label={`${item.title} by ${item.artist}`}
                           >
-                            <img src={item.image} alt="" className="w-full h-full object-cover" style={{ borderRadius: 14 }} />
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "rgba(0,0,0,0.4)", borderRadius: 14 }}>
-                              <Play className="h-10 w-10 text-white drop-shadow-lg" fill="white" />
-                            </div>
-                          </div>
-                        </SwiperSlide>
-                      ))}
-                    </Swiper>
+                            <img
+                              src={item.image}
+                              alt={`${item.title} cover artwork`}
+                              className="w-full h-full object-cover"
+                              style={{ borderRadius: 14 }}
+                            />
+                            {isCenter && (
+                              <div
+                                className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                                style={{
+                                  background: "hsl(var(--foreground) / 0.28)",
+                                  borderRadius: 14,
+                                }}
+                              >
+                                <Play className="h-10 w-10" style={{ color: "hsl(var(--background))" }} fill="currentColor" />
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
                     {/* Featured info below carousel — always centered */}
-                    {forYouItems[0] && (
+                    {activeCarouselItem && (
                       <div className="text-center mt-2 px-6">
-                        <h3 className="font-display truncate" style={{ fontSize: 38, color: "var(--text-1)", lineHeight: 1 }}>{forYouItems[0].title}</h3>
-                        <p className="font-body truncate" style={{ fontSize: 15, color: "var(--text-2)", marginTop: 4 }}>{forYouItems[0].artist}</p>
+                        <h3 className="font-display truncate" style={{ fontSize: 38, color: "var(--text-1)", lineHeight: 1 }}>{activeCarouselItem.title}</h3>
+                        <p className="font-body truncate" style={{ fontSize: 15, color: "var(--text-2)", marginTop: 4 }}>{activeCarouselItem.artist}</p>
                         <div className="flex items-center justify-center gap-4 mt-4">
                           <button
-                            onClick={() => { if (forYouItems[0].trackData) handlePlayTrack(forYouItems[0].trackData); }}
+                            onClick={() => {
+                              if (activeCarouselItem.trackData) {
+                                handlePlayTrack(activeCarouselItem.trackData);
+                                return;
+                              }
+
+                              const targetId = activeCarouselItem.id.replace(/^(album|track)-/, "");
+                              navigate(activeCarouselItem.type === "album" ? `/album/${targetId}` : `/track/${targetId}`);
+                            }}
                             className="flex items-center justify-center"
                             style={{ width: 52, height: 52, borderRadius: "50%", background: "var(--text-1)", color: "#000", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}
                           >
@@ -618,17 +739,15 @@ export default function Discover() {
                         <span className="font-body flex-1" style={{ fontSize: 9, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.1em" }}>TITLE</span>
                         <span className="font-body w-20 text-right" style={{ fontSize: 9, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.1em" }}>PLAYS</span>
                       </div>
-                      {trendingSingles.slice(0, 50).map((track, i) => {
+                      {topChartTracks.map((track, i) => {
                         const isTop3 = i < 3;
-                        const coverUrl = track.album_cover_path
-                          ? supabase.storage.from(track.album_cover_bucket || "album-covers").getPublicUrl(track.album_cover_path).data.publicUrl
-                          : null;
+                        const coverUrl = resolveArtworkUrl(track);
                         return (
                           <div
                             key={track.id}
                             className="flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors hover:bg-white/[0.03] active:bg-white/[0.06]"
                             style={{ borderBottom: i < 49 ? "1px solid rgba(255,255,255,0.03)" : "none" }}
-                            onClick={() => handlePlayFromList(track, trendingSingles.slice(0, 50))}
+                            onClick={() => handlePlayFromList(track, topChartTracks)}
                           >
                             {/* Chart position */}
                             <span className="font-display w-10 text-center flex-shrink-0" style={{
