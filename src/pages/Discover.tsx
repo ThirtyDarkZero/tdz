@@ -1,15 +1,14 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useSubscription } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 import { useDiscoveryData } from "@/hooks/useDiscoveryData";
-import { MerchStore } from "@/components/MerchStore";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { useMood, MoodTheme } from "@/contexts/MoodContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { ChevronRight, Play, Compass, TrendingUp, BarChart3, Music } from "lucide-react";
+import { ChevronRight, Play, Compass, TrendingUp, BarChart3, Music, ShoppingBag, Star, Shirt, Disc3, Package, Heart } from "lucide-react";
 
 import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectCoverflow, Autoplay } from "swiper/modules";
@@ -93,17 +92,140 @@ function HexCell({ image, label, onClick }: { image: string | null; label: strin
   return (
     <div
       className="relative cursor-pointer transition-all duration-200 active:brightness-130"
-      style={{ clipPath: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)", aspectRatio: "1", background: "hsl(var(--bg-surface))" }}
+      style={{ clipPath: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)", aspectRatio: "1", background: "hsl(var(--bg-surface))", maxWidth: 100 }}
       onClick={onClick}
     >
       {image && <img src={image} alt="" className="w-full h-full object-cover" />}
       <div className="absolute left-0 right-0 text-center font-body" style={{
-        bottom: "22%", fontSize: 10, fontWeight: 700, color: "white",
-        textShadow: "0 2px 8px rgba(0,0,0,0.9)", padding: "0 8px",
+        bottom: "22%", fontSize: 8, fontWeight: 700, color: "white",
+        textShadow: "0 2px 8px rgba(0,0,0,0.9)", padding: "0 4px",
         whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
       }}>
         {label}
       </div>
+    </div>
+  );
+}
+
+/* ── Explore Sub-Section ── */
+function ExploreSection({ title, color, icon: Icon, tracks, onPlayTrack }: {
+  title: string; color: string; icon: any;
+  tracks: any[]; onPlayTrack: (track: any) => void;
+}) {
+  const { currentTrack } = usePlayer();
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2.5">
+        <Icon className="h-5 w-5" style={{ color }} />
+        <h3 className="font-display" style={{ fontSize: 22, color: "var(--text-1)" }}>{title}</h3>
+      </div>
+      <div className="rounded-[var(--radius-md)] overflow-hidden" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)", borderTop: `2px solid ${color}` }}>
+        {tracks.slice(0, 10).map((track, i) => (
+          <div
+            key={track.id}
+            className="flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors"
+            style={{ borderBottom: i < Math.min(tracks.length, 10) - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}
+            onClick={() => onPlayTrack(track)}
+          >
+            <span className="font-body w-6 text-center flex-shrink-0" style={{ fontSize: 12, fontWeight: 700, color: i < 3 ? color : "var(--text-4)" }}>{i + 1}</span>
+            <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0" style={{ background: "var(--glass-2)" }}>
+              {track.album_cover_path ? (
+                <img src={supabase.storage.from(track.album_cover_bucket || "album-covers").getPublicUrl(track.album_cover_path).data.publicUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center"><Music className="w-3.5 h-3.5" style={{ color: "var(--text-4)" }} /></div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-body truncate" style={{ fontSize: 13, fontWeight: 600, color: currentTrack?.id === track.id ? "#00CFFF" : "var(--text-1)" }}>{track.title}</p>
+              <p className="font-body truncate" style={{ fontSize: 11, color: "var(--text-3)" }}>{track.artist_name}</p>
+            </div>
+            <Play className="w-3.5 h-3.5 flex-shrink-0 opacity-40" style={{ color: "var(--text-2)" }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── TDZ Merch Store ── */
+const TDZ_MERCH = [
+  { id: "tdz-hoodie-1", name: "TDZ Classic Hoodie", price: 65, image: "🧥", category: "Apparel" },
+  { id: "tdz-tee-1", name: "TDZ Logo Tee", price: 35, image: "👕", category: "Apparel" },
+  { id: "tdz-cap-1", name: "TDZ Snapback", price: 30, image: "🧢", category: "Accessories" },
+  { id: "tdz-vinyl-1", name: "TDZ Compilation Vinyl", price: 45, image: "💿", category: "Music" },
+  { id: "tdz-poster-1", name: "TDZ Limited Poster", price: 25, image: "🖼️", category: "Collectibles" },
+  { id: "tdz-sticker-1", name: "TDZ Sticker Pack", price: 12, image: "✨", category: "Accessories" },
+];
+
+function TDZStorefront({ artists }: { artists: any[] }) {
+  const [storeFilter, setStoreFilter] = useState("ALL");
+  const filters = ["ALL", "APPAREL", "MUSIC", "ACCESSORIES", "COLLECTIBLES"];
+
+  return (
+    <div className="space-y-5">
+      {/* Store hero */}
+      <div className="relative overflow-hidden" style={{
+        background: "linear-gradient(135deg, rgba(0,207,255,0.08), rgba(139,92,246,0.08))",
+        border: "1px solid var(--glass-border)",
+        borderRadius: "var(--radius-lg)",
+        padding: "28px 20px",
+      }}>
+        <div className="relative z-10">
+          <h2 className="font-display" style={{ fontSize: 36, color: "var(--text-1)" }}>TDZ STORE</h2>
+          <p className="font-body" style={{ fontSize: 13, color: "var(--text-3)", marginTop: 4 }}>Official merchandise & artist exclusives</p>
+        </div>
+        <ShoppingBag className="absolute top-5 right-5 h-16 w-16 opacity-[0.06]" style={{ color: "#00CFFF" }} />
+      </div>
+
+      {/* Filter pills */}
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        {filters.map(f => (
+          <FilterPill key={f} label={f.charAt(0) + f.slice(1).toLowerCase()} active={storeFilter === f} onClick={() => setStoreFilter(f)} />
+        ))}
+      </div>
+
+      {/* TDZ Official Merch */}
+      <Section title="TDZ OFFICIAL" subtitle="ThirtyDarkZero essentials">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {TDZ_MERCH
+            .filter(item => storeFilter === "ALL" || item.category.toUpperCase() === storeFilter)
+            .map(item => (
+              <div
+                key={item.id}
+                className="cursor-pointer transition-all duration-200 active:scale-[0.97] hover:scale-[1.02]"
+                style={{
+                  background: "var(--glass-1)",
+                  border: "1px solid var(--glass-border)",
+                  borderRadius: "var(--radius-md)",
+                  overflow: "hidden",
+                }}
+              >
+                <div className="flex items-center justify-center" style={{ height: 120, background: "var(--glass-2)" }}>
+                  <span style={{ fontSize: 48 }}>{item.image}</span>
+                </div>
+                <div className="p-3">
+                  <p className="font-body truncate" style={{ fontSize: 12, fontWeight: 600, color: "var(--text-1)" }}>{item.name}</p>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <span className="font-body" style={{ fontSize: 14, fontWeight: 700, color: "#22C55E" }}>${item.price}</span>
+                    <span className="font-body px-2 py-0.5" style={{ fontSize: 9, color: "var(--text-3)", background: "var(--glass-2)", borderRadius: "var(--radius-pill)" }}>{item.category}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+      </Section>
+
+      {/* Artist Merch */}
+      {artists.length > 0 && (
+        <Section title="ARTIST MERCH" subtitle="Support your favorite artists">
+          <div className="flex flex-col items-center justify-center py-10 gap-3" style={{ background: "var(--glass-1)", borderRadius: "var(--radius-md)", border: "1px solid var(--glass-border)" }}>
+            <Shirt className="h-10 w-10" style={{ color: "var(--text-4)" }} />
+            <p className="font-body text-center" style={{ fontSize: 13, color: "var(--text-3)", maxWidth: 240 }}>
+              Artists can upload their merch to sell directly to fans. Coming soon!
+            </p>
+          </div>
+        </Section>
+      )}
     </div>
   );
 }
@@ -116,6 +238,7 @@ export default function Discover() {
   const [showSearch, setShowSearch] = useState(false);
   const [libraryFilter, setLibraryFilter] = useState("PLAYLISTS");
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [exploreView, setExploreView] = useState<"main" | "trending" | "new" | "charts">("main");
   const { mood, setMood } = useMood();
 
   const { currentTrack, playTrack, addToQueue } = usePlayer();
@@ -147,9 +270,18 @@ export default function Discover() {
     return filtered;
   }, [singles, searchQuery, selectedGenre]);
 
+  // Sort for trending (by play_count desc), new (by created_at desc)
+  const trendingSingles = useMemo(() => [...singles].sort((a, b) => (b.play_count || 0) - (a.play_count || 0)), [singles]);
+  const newReleaseSingles = useMemo(() => [...singles].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()), [singles]);
+
   const handlePlayTrack = (track: any) => {
     const nt = { ...track, duration: track.duration || 0, file_path: track.file_path || "", play_count: track.play_count || 0 };
     playTrack(nt, genreFilteredSingles.map(t => ({ ...t, duration: t.duration || 0, file_path: t.file_path || "", play_count: t.play_count || 0 })));
+  };
+
+  const handlePlayFromList = (track: any, list: any[]) => {
+    const nt = { ...track, duration: track.duration || 0, file_path: track.file_path || "", play_count: track.play_count || 0 };
+    playTrack(nt, list.map(t => ({ ...t, duration: t.duration || 0, file_path: t.file_path || "", play_count: t.play_count || 0 })));
   };
 
   const handleAddToQueue = (track: any) => {
@@ -204,15 +336,16 @@ export default function Discover() {
                       modules={[EffectCoverflow, Autoplay]}
                       effect="coverflow"
                       coverflowEffect={{ rotate: 32, stretch: 0, depth: 200, modifier: 1.2, slideShadows: true }}
-                      centeredSlides
-                      slidesPerView="auto"
+                      centeredSlides={true}
+                      slidesPerView={1.4}
+                      spaceBetween={0}
                       loop={forYouItems.length > 3}
                       autoplay={{ delay: 3500, disableOnInteraction: false }}
                       className="w-full"
-                      style={{ paddingTop: 8, paddingBottom: 16 }}
+                      style={{ paddingTop: 8, paddingBottom: 16, overflow: "visible" }}
                     >
                       {forYouItems.slice(0, 10).map(item => (
-                        <SwiperSlide key={item.id} style={{ width: 220 }}>
+                        <SwiperSlide key={item.id} className="!flex !justify-center">
                           <div
                             className="cursor-pointer transition-transform duration-200"
                             onClick={() => {
@@ -220,14 +353,14 @@ export default function Discover() {
                               else navigate(item.type === "album" ? `/album/${item.id}` : `/track/${item.id}`);
                             }}
                           >
-                            <div className="relative overflow-hidden" style={{ width: 220, height: 220, borderRadius: "var(--radius-md)" }}>
+                            <div className="relative overflow-hidden mx-auto" style={{ width: 220, height: 220, borderRadius: "var(--radius-md)" }}>
                               <img src={item.image} alt="" className="w-full h-full object-cover" />
                             </div>
                           </div>
                         </SwiperSlide>
                       ))}
                     </Swiper>
-                    {/* Featured info below carousel */}
+                    {/* Featured info below carousel — always centered */}
                     {forYouItems[0] && (
                       <div className="text-center mt-2 px-6">
                         <h3 className="font-display truncate" style={{ fontSize: 38, color: "var(--text-1)", lineHeight: 1 }}>{forYouItems[0].title}</h3>
@@ -296,8 +429,8 @@ export default function Discover() {
                   </Section>
                 )}
 
-                {/* ── Popular Tracks ── */}
-                <Section title={selectedGenre ? selectedGenre.toUpperCase() : "POPULAR TRACKS"}>
+                {/* ── Popular Tracks (Top 10) ── */}
+                <Section title={selectedGenre ? selectedGenre.toUpperCase() : "POPULAR TRACKS"} subtitle="Top 10">
                   <div className="rounded-[var(--radius-md)] overflow-hidden" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)" }}>
                     <SongListHeader />
                     {genreFilteredSingles.slice(0, 10).map((track, i) => (
@@ -354,14 +487,14 @@ export default function Discover() {
                   </div>
                 )}
 
-                {!searchQuery.trim() && (
+                {!searchQuery.trim() && exploreView === "main" && (
                   <>
-                    {/* 3 Glassmorphic playlist launchers */}
+                    {/* 3 Glassmorphic playlist launchers — now navigate to real sections */}
                     <div className="space-y-3">
                       {[
-                        { label: "TRENDING NOW", icon: TrendingUp, color: "#F43F5E" },
-                        { label: "NEW RELEASES", icon: Music, color: "#00CFFF" },
-                        { label: "TOP CHARTS", icon: BarChart3, color: "#22C55E" },
+                        { label: "TRENDING NOW", icon: TrendingUp, color: "#F43F5E", view: "trending" as const },
+                        { label: "NEW RELEASES", icon: Music, color: "#00CFFF", view: "new" as const },
+                        { label: "TOP CHARTS", icon: BarChart3, color: "#22C55E", view: "charts" as const },
                       ].map(item => (
                         <button
                           key={item.label}
@@ -373,7 +506,7 @@ export default function Discover() {
                             borderRadius: "var(--radius-md)",
                             backdropFilter: "blur(24px)",
                           }}
-                          onClick={() => toast.success(`${item.label} coming soon`)}
+                          onClick={() => setExploreView(item.view)}
                         >
                           <div className="flex items-center gap-3">
                             <item.icon className="h-6 w-6" style={{ color: item.color }} />
@@ -410,6 +543,58 @@ export default function Discover() {
                     <ErrorBoundary fallback={null}><GenreTop50Section onViewAll={() => setActiveTab("library")} /></ErrorBoundary>
                   </>
                 )}
+
+                {/* ── TRENDING NOW sub-view ── */}
+                {!searchQuery.trim() && exploreView === "trending" && (
+                  <div className="space-y-4">
+                    <button onClick={() => setExploreView("main")} className="flex items-center gap-1 font-body" style={{ fontSize: 12, color: "#00CFFF" }}>
+                      ← Back to Explore
+                    </button>
+                    <h2 className="font-display" style={{ fontSize: 40, color: "var(--text-1)" }}>TRENDING NOW</h2>
+                    <p className="font-body" style={{ fontSize: 13, color: "var(--text-3)" }}>The hottest tracks on TDZ right now</p>
+                    <div className="rounded-[var(--radius-md)] overflow-hidden" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)", borderTop: "2px solid #F43F5E" }}>
+                      <SongListHeader />
+                      {trendingSingles.slice(0, 20).map((track, i) => (
+                        <SongRow key={track.id} track={track} index={i + 1} isPlaying={currentTrack?.id === track.id} isLiked={likedTracks.has(track.id)} onPlay={(t) => handlePlayFromList(t, trendingSingles)} onToggleLike={toggleLike} onAddToQueue={handleAddToQueue} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── NEW RELEASES sub-view ── */}
+                {!searchQuery.trim() && exploreView === "new" && (
+                  <div className="space-y-4">
+                    <button onClick={() => setExploreView("main")} className="flex items-center gap-1 font-body" style={{ fontSize: 12, color: "#00CFFF" }}>
+                      ← Back to Explore
+                    </button>
+                    <h2 className="font-display" style={{ fontSize: 40, color: "var(--text-1)" }}>NEW RELEASES</h2>
+                    <p className="font-body" style={{ fontSize: 13, color: "var(--text-3)" }}>Fresh drops from TDZ artists</p>
+                    {/* Album cards */}
+                    {albums.length > 0 && (
+                      <div className="flex gap-3.5 overflow-x-auto pb-3 scrollbar-hide">
+                        {albums.map(album => (
+                          <AlbumCard key={album.id} album={{ ...album, image: album.cover_art_path ? supabase.storage.from("album-covers").getPublicUrl(album.cover_art_path).data.publicUrl : null }} onClick={() => navigate(`/album/${album.id}`)} />
+                        ))}
+                      </div>
+                    )}
+                    <div className="rounded-[var(--radius-md)] overflow-hidden" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)", borderTop: "2px solid #00CFFF" }}>
+                      <SongListHeader />
+                      {newReleaseSingles.slice(0, 20).map((track, i) => (
+                        <SongRow key={track.id} track={track} index={i + 1} isPlaying={currentTrack?.id === track.id} isLiked={likedTracks.has(track.id)} onPlay={(t) => handlePlayFromList(t, newReleaseSingles)} onToggleLike={toggleLike} onAddToQueue={handleAddToQueue} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── TOP CHARTS sub-view ── */}
+                {!searchQuery.trim() && exploreView === "charts" && (
+                  <div className="space-y-4">
+                    <button onClick={() => setExploreView("main")} className="flex items-center gap-1 font-body" style={{ fontSize: 12, color: "#00CFFF" }}>
+                      ← Back to Explore
+                    </button>
+                    <ErrorBoundary fallback={null}><GenreTop50Section onViewAll={() => setActiveTab("library")} /></ErrorBoundary>
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -426,9 +611,9 @@ export default function Discover() {
                   ))}
                 </div>
 
-                {/* Hexagonal grid for albums */}
+                {/* Hexagonal grid for albums — smaller cells */}
                 {(libraryFilter === "ALBUMS" || libraryFilter === "PLAYLISTS" || libraryFilter === "DOWNLOADED" || libraryFilter === "RECENT") && albums.length > 0 && (
-                  <div className="grid grid-cols-3 gap-[3px] px-1">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-1 px-1">
                     {albums.map(album => (
                       <HexCell
                         key={album.id}
@@ -487,7 +672,7 @@ export default function Discover() {
             <div>
               <CosmicTopBar activeTab={activeTab} onTabChange={setActiveTab} searchQuery={searchQuery} onSearchChange={setSearchQuery} userProfile={userProfile} />
               <div className="px-5 sm:px-6 lg:px-8 py-5">
-                <Section title="STORE" subtitle="Support artists"><MerchStore variant="full" /></Section>
+                <TDZStorefront artists={artists} />
               </div>
             </div>
           );

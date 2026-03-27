@@ -208,7 +208,7 @@ export function GenreTop50Section({ onViewAll }: GenreTop50SectionProps) {
               <Loader2 className="w-8 h-8 animate-spin" style={{ color: "#00CFFF" }} />
             </div>
           ) : (
-            <ScrollArea className="h-[550px]">
+            <ScrollArea className="h-auto max-h-[80vh]">
               <div className="space-y-0.5">
                 {tracks.map((track, index) => (
                   <div
