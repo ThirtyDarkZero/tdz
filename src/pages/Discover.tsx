@@ -335,10 +335,10 @@ export default function Discover() {
                     <Swiper
                       modules={[EffectCoverflow, Autoplay]}
                       effect="coverflow"
-                      coverflowEffect={{ rotate: 32, stretch: 0, depth: 200, modifier: 1.2, slideShadows: true }}
+                      coverflowEffect={{ rotate: 8, stretch: 30, depth: 120, modifier: 1, slideShadows: false }}
                       centeredSlides={true}
-                      slidesPerView={1.4}
-                      spaceBetween={0}
+                      slidesPerView={2.4}
+                      spaceBetween={-10}
                       loop={forYouItems.length > 3}
                       autoplay={{ delay: 3500, disableOnInteraction: false }}
                       className="w-full"
@@ -353,8 +353,11 @@ export default function Discover() {
                               else navigate(item.type === "album" ? `/album/${item.id}` : `/track/${item.id}`);
                             }}
                           >
-                            <div className="relative overflow-hidden mx-auto" style={{ width: 220, height: 220, borderRadius: "var(--radius-md)" }}>
+                            <div className="relative overflow-hidden mx-auto" style={{ width: 180, height: 180, borderRadius: 18 }}>
                               <img src={item.image} alt="" className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity" style={{ background: "rgba(0,0,0,0.35)" }}>
+                                <Play className="h-10 w-10 text-white drop-shadow-lg" fill="white" />
+                              </div>
                             </div>
                           </div>
                         </SwiperSlide>
