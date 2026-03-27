@@ -597,13 +597,62 @@ export default function Discover() {
                   </div>
                 )}
 
-                {/* ── TOP CHARTS sub-view ── */}
+                {/* ── TOP CHARTS sub-view (Billboard-style 50 songs) ── */}
                 {!searchQuery.trim() && exploreView === "charts" && (
                   <div className="space-y-4">
                     <button onClick={() => setExploreView("main")} className="flex items-center gap-1 font-body" style={{ fontSize: 12, color: "#00CFFF" }}>
                       ← Back to Explore
                     </button>
-                    <ErrorBoundary fallback={null}><GenreTop50Section onViewAll={() => setActiveTab("library")} /></ErrorBoundary>
+                    <h2 className="font-display" style={{ fontSize: 40, color: "var(--text-1)" }}>TDZ TOP 50</h2>
+                    <p className="font-body" style={{ fontSize: 13, color: "var(--text-3)" }}>The official TDZ charts — updated weekly</p>
+                    <div className="rounded-[var(--radius-md)] overflow-hidden" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)", borderTop: "2px solid #22C55E" }}>
+                      {/* Chart header */}
+                      <div className="flex items-center px-4 py-2.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                        <span className="font-body w-10 text-center" style={{ fontSize: 9, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.1em" }}>#</span>
+                        <span className="font-body flex-1" style={{ fontSize: 9, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.1em" }}>TITLE</span>
+                        <span className="font-body w-20 text-right" style={{ fontSize: 9, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.1em" }}>PLAYS</span>
+                      </div>
+                      {trendingSingles.slice(0, 50).map((track, i) => {
+                        const isTop3 = i < 3;
+                        const coverUrl = track.album_cover_path
+                          ? supabase.storage.from(track.album_cover_bucket || "album-covers").getPublicUrl(track.album_cover_path).data.publicUrl
+                          : null;
+                        return (
+                          <div
+                            key={track.id}
+                            className="flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors hover:bg-white/[0.03] active:bg-white/[0.06]"
+                            style={{ borderBottom: i < 49 ? "1px solid rgba(255,255,255,0.03)" : "none" }}
+                            onClick={() => handlePlayFromList(track, trendingSingles.slice(0, 50))}
+                          >
+                            {/* Chart position */}
+                            <span className="font-display w-10 text-center flex-shrink-0" style={{
+                              fontSize: isTop3 ? 28 : 18,
+                              color: isTop3 ? "#22C55E" : "var(--text-4)",
+                            }}>
+                              {i + 1}
+                            </span>
+                            {/* Artwork */}
+                            <div className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0" style={{ background: "var(--glass-2)" }}>
+                              {coverUrl ? (
+                                <img src={coverUrl} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center"><Music className="w-4 h-4" style={{ color: "var(--text-4)" }} /></div>
+                              )}
+                            </div>
+                            {/* Info */}
+                            <div className="min-w-0 flex-1">
+                              <p className="font-body truncate" style={{ fontSize: 13, fontWeight: 600, color: currentTrack?.id === track.id ? "#00CFFF" : "var(--text-1)" }}>{track.title}</p>
+                              <p className="font-body truncate" style={{ fontSize: 11, color: "var(--text-3)" }}>{track.artist_name}</p>
+                            </div>
+                            {/* Play count */}
+                            <span className="font-body flex-shrink-0 w-20 text-right" style={{ fontSize: 11, color: "var(--text-4)" }}>
+                              {(track.play_count || 0).toLocaleString()}
+                            </span>
+                            <Play className="w-3.5 h-3.5 flex-shrink-0 opacity-30" style={{ color: "var(--text-2)" }} />
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
