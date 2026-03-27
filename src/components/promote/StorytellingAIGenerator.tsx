@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Copy, Check, RotateCcw, Loader2, BookOpen, Zap, Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import { Sparkles, Copy, Check, RotateCcw, Loader2, BookOpen, Zap, Calendar, ChevronDown, ChevronUp, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useArtistNarrativeContext, serializeNarrativeContext } from "@/hooks/useArtistNarrativeContext";
