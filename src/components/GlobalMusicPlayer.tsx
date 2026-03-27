@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import { usePlayer, Track as PlayerTrack } from "@/contexts/PlayerContext";
+import { usePlayer } from "@/contexts/PlayerContext";
 import { MusicPlayer } from "@/components/MusicPlayer";
 import { YouTubePlayerEnhanced } from "@/components/youtube/YouTubePlayerEnhanced";
 import { SpotifyPreviewPlayer } from "@/components/SpotifyPreviewPlayer";
@@ -14,24 +14,43 @@ import { OrbPlayerBar } from "@/components/discovery/OrbPlayerBar";
 
 const PREVIEW_DURATION_SECONDS = 30;
 
-const HIDDEN_ROUTES = ['/', '/auth', '/role-selection', '/pricing', '/checkout', '/terms', '/privacy', '/faq', '/support', '/investors'];
+const HIDDEN_ROUTES = [
+  "/",
+  "/auth",
+  "/role-selection",
+  "/pricing",
+  "/checkout",
+  "/terms",
+  "/privacy",
+  "/faq",
+  "/support",
+  "/investors",
+];
 
 export function GlobalMusicPlayer() {
   const location = useLocation();
   const { user } = useAuth();
   const { role } = useUserRole(user);
   const { hasFeature } = useSubscription(user);
-  const { currentTrack, queue, nextTrack, previousTrack, setIsPlaying, isPlaying, playTrack } = usePlayer();
+  const {
+    currentTrack,
+    queue,
+    nextTrack,
+    previousTrack,
+    setIsPlaying,
+    isPlaying,
+    playTrack,
+  } = usePlayer();
+
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [youtubeErrorCount, setYoutubeErrorCount] = useState(0);
   const [useSpotifyFallback, setUseSpotifyFallback] = useState(false);
-  const lastTrackIdRef = useRef<string>('');
-  
-  const isArtist = role === 'artist' || role === 'verified_artist' || role === 'manager';
-  const hasUnlimitedStreaming = hasFeature('unlimitedStreaming') || isArtist;
+  const lastTrackIdRef = useRef<string>("");
 
+  const isArtist = role === "artist" || role === "verified_artist" || role === "manager";
+  const hasUnlimitedStreaming = hasFeature("unlimitedStreaming") || isArtist;
   const shouldHidePlayer = HIDDEN_ROUTES.includes(location.pathname);
-  
+
   useEffect(() => {
     if (currentTrack?.id && currentTrack.id !== lastTrackIdRef.current) {
       lastTrackIdRef.current = currentTrack.id;
@@ -39,9 +58,9 @@ export function GlobalMusicPlayer() {
       setYoutubeErrorCount(0);
     }
   }, [currentTrack?.id]);
-  
+
   const handleYouTubeError = useCallback(() => {
-    setYoutubeErrorCount(prev => {
+    setYoutubeErrorCount((prev) => {
       const newCount = prev + 1;
       if (newCount >= 2 && currentTrack?.spotifyPreviewUrl) {
         setUseSpotifyFallback(true);
@@ -53,48 +72,56 @@ export function GlobalMusicPlayer() {
     });
   }, [currentTrack?.spotifyPreviewUrl, nextTrack]);
 
-  const loadMoreFromArtist = useCallback(async (artistName: string) => {
-    if (!artistName) return;
-    try {
-      const { data } = await supabase.functions.invoke('youtube-search', {
-        body: { query: `${artistName} official audio`, maxResults: 10, officialOnly: true }
-      });
-      if (data?.results?.length > 0) {
-        const randomIndex = Math.floor(Math.random() * data.results.length);
-        const nextVideo = data.results[randomIndex];
-        const track = {
-          id: `yt-${nextVideo.id}`,
-          title: nextVideo.title,
-          artist_name: artistName,
-          duration: 0,
-          file_path: '',
-          play_count: 0,
-          source: 'youtube' as const,
-          youtubeId: nextVideo.id,
-          thumbnail: nextVideo.thumbnail,
-        };
-        const queueTracks = data.results.map((video: any) => ({
-          id: `yt-${video.id}`,
-          title: video.title,
-          artist_name: artistName,
-          duration: 0,
-          file_path: '',
-          play_count: 0,
-          source: 'youtube' as const,
-          youtubeId: video.id,
-          thumbnail: video.thumbnail,
-        }));
-        playTrack(track, queueTracks);
-        toast.success(`Playing more by ${artistName}`);
+  const loadMoreFromArtist = useCallback(
+    async (artistName: string) => {
+      if (!artistName) return;
+      try {
+        const { data } = await supabase.functions.invoke("youtube-search", {
+          body: { query: `${artistName} official audio`, maxResults: 10, officialOnly: true },
+        });
+
+        if (data?.results?.length > 0) {
+          const randomIndex = Math.floor(Math.random() * data.results.length);
+          const nextVideo = data.results[randomIndex];
+
+          const track = {
+            id: `yt-${nextVideo.id}`,
+            title: nextVideo.title,
+            artist_name: artistName,
+            duration: 0,
+            file_path: "",
+            play_count: 0,
+            source: "youtube" as const,
+            youtubeId: nextVideo.id,
+            thumbnail: nextVideo.thumbnail,
+          };
+
+          const queueTracks = data.results.map((video: any) => ({
+            id: `yt-${video.id}`,
+            title: video.title,
+            artist_name: artistName,
+            duration: 0,
+            file_path: "",
+            play_count: 0,
+            source: "youtube" as const,
+            youtubeId: video.id,
+            thumbnail: video.thumbnail,
+          }));
+
+          playTrack(track, queueTracks);
+          toast.success(`Playing more by ${artistName}`);
+        }
+      } catch (error) {
+        console.error("Error loading more from artist:", error);
       }
-    } catch (error) {
-      console.error('Error loading more from artist:', error);
-    }
-  }, [playTrack]);
+    },
+    [playTrack]
+  );
 
   const handleTrackEnd = useCallback(() => {
-    const currentIndex = queue.findIndex(t => t.id === currentTrack?.id);
+    const currentIndex = queue.findIndex((t) => t.id === currentTrack?.id);
     const hasMoreInQueue = currentIndex >= 0 && currentIndex < queue.length - 1;
+
     if (hasMoreInQueue) {
       nextTrack();
     } else if (currentTrack?.artist_name) {
@@ -110,23 +137,32 @@ export function GlobalMusicPlayer() {
 
   if (shouldHidePlayer) return null;
 
-  const isYouTubeTrack = currentTrack?.source === 'youtube' || currentTrack?.youtubeId;
+  const isYouTubeTrack = currentTrack?.source === "youtube" || currentTrack?.youtubeId;
 
-  const playerTrack = currentTrack as unknown as {
-    id: string; title: string; artist_name: string; duration: number;
-    file_path: string; play_count: number; album_cover_path?: string;
-    album_cover_bucket?: string; motion_cover_path?: string;
-    motion_cover_bucket?: string;
-    album?: { title: string; cover_art_path?: string };
-    ai_tags?: { metadata?: { isMotionCover?: boolean; artworkUrl?: string } };
-  };
-  const playerQueue = queue as unknown as typeof playerTrack[];
+  const playerTrack = currentTrack as
+    | {
+        id: string;
+        title: string;
+        artist_name: string;
+        duration: number;
+        file_path: string;
+        play_count: number;
+        album_cover_path?: string;
+        album_cover_bucket?: string;
+        motion_cover_path?: string;
+        motion_cover_bucket?: string;
+        album?: { title: string; cover_art_path?: string };
+        ai_tags?: { metadata?: { isMotionCover?: boolean; artworkUrl?: string } };
+      }
+    | null;
+
+  const playerQueue = queue as typeof playerTrack[];
 
   return (
     <>
-      {/* Hidden audio engine - renders the actual audio/video elements but no visible UI */}
+      {/* Legacy player components remain mounted only as playback engines (fully hidden) */}
       {currentTrack && (
-        <div className="fixed -left-[9999px] -top-[9999px] w-0 h-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div className="hidden" aria-hidden="true">
           {useSpotifyFallback && currentTrack.spotifyPreviewUrl ? (
             <SpotifyPreviewPlayer
               track={currentTrack}
@@ -148,23 +184,21 @@ export function GlobalMusicPlayer() {
               onPlayingChange={setIsPlaying}
               onError={handleYouTubeError}
             />
-          ) : (
+          ) : playerTrack ? (
             <MusicPlayer
               currentTrack={playerTrack}
-              queue={playerQueue}
+              queue={playerQueue.filter(Boolean) as NonNullable<typeof playerTrack>[]}
               onNext={nextTrack}
               onPrevious={previousTrack}
               onTrackEnd={handleTrackEnd}
               maxDuration={!hasUnlimitedStreaming ? PREVIEW_DURATION_SECONDS : undefined}
               onPreviewEnd={!hasUnlimitedStreaming ? handlePreviewEnd : undefined}
             />
-          )}
+          ) : null}
         </div>
       )}
 
-      {/* Visible orb player bar */}
       <OrbPlayerBar />
-
       <SubscriptionModal open={showSubscriptionModal} onOpenChange={setShowSubscriptionModal} />
     </>
   );
