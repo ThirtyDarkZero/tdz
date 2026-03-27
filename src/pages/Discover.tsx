@@ -595,7 +595,7 @@ export default function Discover() {
           return (
             <div>
               <CosmicTopBar activeTab={activeTab} onTabChange={setActiveTab} searchQuery={searchQuery} onSearchChange={setSearchQuery} userProfile={userProfile} />
-              <div className="px-5 sm:px-6 lg:px-8 py-5 space-y-5">
+              <div className="px-3 sm:px-5 md:px-6 lg:px-8 py-5 space-y-5">
                 {/* Search */}
                 <div className="relative">
                   <div className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: "var(--text-3)" }}>
@@ -789,7 +789,7 @@ export default function Discover() {
           return (
             <div>
               <CosmicTopBar activeTab={activeTab} onTabChange={setActiveTab} searchQuery={searchQuery} onSearchChange={setSearchQuery} userProfile={userProfile} />
-              <div className="px-5 sm:px-6 lg:px-8 py-5 space-y-4">
+              <div className="px-3 sm:px-5 md:px-6 lg:px-8 py-5 space-y-4">
                 {/* Filter pills */}
                 <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                   {["PLAYLISTS", "ALBUMS", "ARTISTS", "SONGS", "DOWNLOADED", "RECENT"].map(tab => (
@@ -854,7 +854,7 @@ export default function Discover() {
           return (
             <div>
               <CosmicTopBar activeTab={activeTab} onTabChange={setActiveTab} searchQuery={searchQuery} onSearchChange={setSearchQuery} userProfile={userProfile} />
-              <div className="px-5 sm:px-6 lg:px-8 py-5">
+              <div className="px-3 sm:px-5 md:px-6 lg:px-8 py-5">
                 <TDZStorefront artists={artists} />
               </div>
             </div>
