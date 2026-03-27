@@ -86,20 +86,11 @@ export function OrbPlayerBar() {
     return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
   }, [fullView, isPlaying]);
 
-  // Lyrics data for inline display
-  const [lyricsLines, setLyricsLines] = useState<Array<{ time: number; text: string }>>([]);
-  useEffect(() => {
-    if (fullView !== "lyrics" || !currentTrack?.id) return;
-    const load = async () => {
-      const { data } = await supabase.from("track_lyrics").select("synced_lyrics").eq("track_id", currentTrack.id).maybeSingle();
-      if (data?.synced_lyrics && Array.isArray(data.synced_lyrics)) {
-        setLyricsLines((data.synced_lyrics as any[]).map((l: any) => ({ time: l.time || 0, text: l.text || "" })));
-      } else {
-        setLyricsLines([{ time: 0, text: "No lyrics available" }]);
-      }
-    };
-    load();
-  }, [fullView, currentTrack?.id]);
+  // Lyrics from track object
+  const lyricsLines = useMemo(() => {
+    if (!currentTrack?.lyrics) return [{ time: 0, text: "No lyrics available" }];
+    return currentTrack.lyrics.split("\n").filter(Boolean).map((line, i) => ({ time: i * 4, text: line }));
+  }, [currentTrack?.lyrics]);
 
   if (!currentTrack) return null;
 
