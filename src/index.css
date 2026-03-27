@@ -175,29 +175,31 @@
 
 @layer utilities {
   .glass-card {
-    @apply bg-card/40 backdrop-blur-xl border border-border/50;
-    box-shadow: var(--shadow-card), var(--shadow-inner-glow);
+    @apply bg-card/20 backdrop-blur-2xl border border-border/30;
+    box-shadow: var(--shadow-card), var(--shadow-inner-glow), inset 0 1px 0 hsl(0 0% 100% / 0.06);
+    backdrop-filter: blur(40px) saturate(180%);
   }
   
   .glass-card-premium {
     background: var(--gradient-glass-strong);
-    backdrop-filter: blur(40px) saturate(200%);
-    border: 1px solid hsl(var(--border) / 0.5);
+    backdrop-filter: blur(60px) saturate(220%);
+    border: 1px solid hsl(0 0% 100% / 0.1);
     box-shadow: var(--shadow-card), 
-      inset 0 1px 0 hsl(0 0% 100% / 0.08), 
-      inset 0 -1px 0 hsl(0 0% 0% / 0.25);
+      inset 0 1px 0 hsl(0 0% 100% / 0.1), 
+      inset 0 -1px 0 hsl(0 0% 0% / 0.3);
   }
   
   .glass-ultra {
     background: linear-gradient(145deg, 
-      hsl(240 15% 20% / 0.4) 0%, 
-      hsl(240 15% 10% / 0.2) 100%);
-    backdrop-filter: blur(60px) saturate(250%);
-    border: 1px solid hsl(0 0% 100% / 0.08);
+      hsl(240 15% 22% / 0.35) 0%, 
+      hsl(240 15% 12% / 0.18) 100%);
+    backdrop-filter: blur(80px) saturate(280%);
+    -webkit-backdrop-filter: blur(80px) saturate(280%);
+    border: 1px solid hsl(0 0% 100% / 0.1);
     box-shadow: 
       0 40px 100px -30px hsl(0 0% 0% / 0.7),
-      inset 0 1px 1px hsl(0 0% 100% / 0.1),
-      inset 0 -1px 1px hsl(0 0% 0% / 0.1);
+      inset 0 1px 1px hsl(0 0% 100% / 0.12),
+      inset 0 -1px 1px hsl(0 0% 0% / 0.15);
   }
   
   .glow-text {
