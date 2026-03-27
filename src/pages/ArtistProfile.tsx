@@ -538,7 +538,7 @@ export default function ArtistProfile() {
       {/* EPs Section */}
       {albums.filter(a => (a as any).release_type === 'ep').length > 0 && (
         <section className="px-4 sm:px-6 lg:px-8 py-6">
-          <h2 className="text-2xl sm:text-3xl font-black mb-6 tracking-tight">EPs</h2>
+          <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(28px, 4vw, 40px)", letterSpacing: "0.04em", textTransform: "uppercase", background: "linear-gradient(180deg, #FFFFFF 0%, #999999 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>EPS</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {albums.filter(a => (a as any).release_type === 'ep').map((album) => (
               <div 
