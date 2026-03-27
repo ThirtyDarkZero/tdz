@@ -27,7 +27,7 @@ export const StudioMusic = ({ onPlayTrack }: StudioMusicProps) => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-display font-black tracking-tight mb-2">Music</h1>
+        <h1 style={{ fontFamily: "'Six Caps', sans-serif", letterSpacing: "0.04em", fontSize: "2rem" }}>Music</h1>
         <p className="text-muted-foreground">Manage your releases, tracks, and media</p>
       </div>
 
