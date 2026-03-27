@@ -94,20 +94,19 @@ function FilterPill({ label, active, onClick }: { label: string; active: boolean
 }
 
 /* ── Hex Cell for Library ── */
-function HexCell({ image, label, onClick }: { image: string | null; label: string; onClick: () => void }) {
+function LibraryCard({ image, label, onClick }: { image: string | null; label: string; onClick: () => void }) {
   return (
     <div
-      className="relative cursor-pointer transition-all duration-200 active:brightness-130"
-      style={{ clipPath: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)", aspectRatio: "1", background: "hsl(var(--bg-surface))" }}
+      className="relative cursor-pointer transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
+      style={{ aspectRatio: "1", borderRadius: "var(--radius-md)", overflow: "hidden", background: "var(--glass-1)" }}
       onClick={onClick}
     >
       {image && <img src={image} alt="" className="w-full h-full object-cover" />}
-      <div className="absolute left-0 right-0 text-center font-body" style={{
-        bottom: "22%", fontSize: 7, fontWeight: 700, color: "white",
-        textShadow: "0 2px 8px rgba(0,0,0,0.9)", padding: "0 2px",
-        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-      }}>
-        {label}
+      {!image && <div className="w-full h-full flex items-center justify-center"><Music className="w-6 h-6" style={{ color: "var(--text-4)" }} /></div>}
+      <div className="absolute inset-x-0 bottom-0 p-2" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)" }}>
+        <span className="font-body block truncate" style={{ fontSize: 10, fontWeight: 600, color: "white" }}>
+          {label}
+        </span>
       </div>
     </div>
   );
