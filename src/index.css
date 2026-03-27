@@ -453,3 +453,21 @@
       0 0 70px hsl(var(--accent) / 0.4);
   }
 }
+
+/* Studio Font System — Six Caps (headings) + Raleway (everything else) */
+.studio-fonts {
+  font-family: 'Raleway', sans-serif !important;
+}
+.studio-fonts * {
+  font-family: inherit;
+}
+.studio-fonts h1,
+.studio-fonts h2,
+.studio-fonts h3,
+.studio-fonts h4,
+.studio-fonts h5,
+.studio-fonts h6 {
+  font-family: 'Six Caps', sans-serif !important;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
