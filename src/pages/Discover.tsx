@@ -718,76 +718,14 @@ export default function Discover() {
           return (
             <div>
               <CosmicTopBar activeTab={activeTab} onTabChange={setActiveTab} searchQuery={searchQuery} onSearchChange={setSearchQuery} userProfile={userProfile} />
-              <div className="px-5 sm:px-6 lg:px-8 py-5 space-y-5">
-                {user ? (
-                  <>
-                    {/* Fan Profile Card */}
-                    <div className="rounded-[var(--radius-lg)] overflow-hidden" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)" }}>
-                      <div className="relative h-28" style={{ background: "linear-gradient(135deg, rgba(0,207,255,0.15), rgba(139,92,246,0.15))" }}>
-                        <div className="absolute -bottom-10 left-5">
-                          <div className="w-20 h-20 rounded-full overflow-hidden" style={{ border: "3px solid var(--bg-deep)", background: "var(--glass-2)" }}>
-                            {userProfile?.profile_image_path ? (
-                              <img src={supabase.storage.from("listener-images").getPublicUrl(userProfile.profile_image_path).data.publicUrl} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center font-display" style={{ fontSize: 28, color: "var(--text-3)" }}>
-                                {user.email?.charAt(0).toUpperCase()}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="pt-12 pb-5 px-5">
-                        <h3 className="font-display" style={{ fontSize: 26, color: "var(--text-1)" }}>
-                          {userProfile?.display_name || userProfile?.artist_name || user.email?.split("@")[0]?.toUpperCase()}
-                        </h3>
-                        <p className="font-body" style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>{user.email}</p>
-                        <div className="flex gap-6 mt-4">
-                          {[
-                            { label: "FOLLOWING", value: followedArtists.size },
-                            { label: "LIKED", value: likedTracks.size },
-                            { label: "PLAYLISTS", value: playlists.length },
-                          ].map(s => (
-                            <div key={s.label}>
-                              <span className="font-body block" style={{ fontSize: 18, fontWeight: 800, color: "var(--text-1)" }}>{s.value}</span>
-                              <span className="font-body" style={{ fontSize: 9, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.1em" }}>{s.label}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Recently played / liked tracks */}
-                    <Section title="LIKED TRACKS">
-                      <div className="rounded-[var(--radius-md)] overflow-hidden" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)" }}>
-                        {singles.filter(t => likedTracks.has(t.id)).slice(0, 10).map((track, i) => (
-                          <SongRow key={track.id} track={track} index={i + 1} isPlaying={currentTrack?.id === track.id} isLiked={true} onPlay={handlePlayTrack} onToggleLike={toggleLike} onAddToQueue={handleAddToQueue} />
-                        ))}
-                        {likedTracks.size === 0 && (
-                          <div className="py-10 text-center">
-                            <Heart className="w-8 h-8 mx-auto mb-2" style={{ color: "var(--text-4)" }} />
-                            <p className="font-body" style={{ fontSize: 13, color: "var(--text-3)" }}>No liked tracks yet</p>
-                          </div>
-                        )}
-                      </div>
-                    </Section>
-
-                    {/* Your Playlists */}
-                    <ErrorBoundary fallback={null}>
-                      <UserPlaylistsSection onPlaylistClick={id => navigate(`/playlist/${id}`)} onViewAll={() => { setActiveTab("library"); setLibraryFilter("PLAYLISTS"); }} />
-                    </ErrorBoundary>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-20 gap-4">
-                    <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)" }}>
-                      <Heart className="w-7 h-7" style={{ color: "var(--text-4)" }} />
-                    </div>
-                    <h2 className="font-display" style={{ fontSize: 32, color: "var(--text-1)" }}>YOUR PROFILE</h2>
-                    <p className="font-body text-center" style={{ fontSize: 14, color: "var(--text-3)", maxWidth: 280 }}>
-                      Sign in to see your profile, liked tracks, and playlists.
-                    </p>
-                  </div>
-                )}
-              </div>
+              <ProfileHub
+                userProfile={userProfile}
+                likedTracks={likedTracks}
+                followedArtists={followedArtists}
+                playlists={playlists}
+                singles={singles}
+                onPlayTrack={handlePlayTrack}
+              />
             </div>
           );
 
