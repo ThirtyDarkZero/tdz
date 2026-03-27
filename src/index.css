@@ -15,10 +15,10 @@
     --popover: 220 18% 6%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 127 100% 60%;
-    --primary-foreground: 0 0% 0%;
-    --primary-glow: 127 100% 70%;
-    --primary-dark: 127 100% 35%;
+    --primary: 14 100% 63%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 14 100% 72%;
+    --primary-dark: 14 100% 42%;
 
     --secondary: 280 100% 65%;
     --secondary-foreground: 0 0% 98%;
@@ -26,6 +26,9 @@
 
     --tertiary: 200 100% 60%;
     --tertiary-glow: 200 100% 70%;
+
+    --coral: 14 100% 63%;
+    --coral-foreground: 0 0% 100%;
 
     --muted: 220 15% 15%;
     --muted-foreground: 220 10% 60%;
