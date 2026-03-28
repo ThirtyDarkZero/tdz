@@ -420,108 +420,78 @@ export function GlobalArtistProfile({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0a0a0a] overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto" style={{ background: "#03030F" }}>
+      {/* Blurred art background */}
+      {(artistImage || artist?.image) && (
+        <div className="fixed inset-0 z-0" style={{
+          backgroundImage: `url(${artistImage || artist?.image})`,
+          backgroundSize: "cover", backgroundPosition: "center",
+          filter: "blur(80px) saturate(1.5) brightness(0.15)", transform: "scale(1.2)",
+        }} />
+      )}
+      <div className="fixed inset-0 z-0" style={{ background: "linear-gradient(to bottom, rgba(3,3,15,0.4), rgba(3,3,15,0.9) 60%, rgba(3,3,15,0.98))" }} />
+
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/5">
+      <div className="sticky top-0 z-20" style={{ background: "rgba(3,3,15,0.75)", backdropFilter: "blur(32px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="flex items-center gap-4 px-4 md:px-6 py-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="rounded-full bg-white/5 hover:bg-white/10"
-          >
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
             <ChevronLeft className="w-5 h-5" />
           </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full bg-cyan-500/20 text-cyan-400"
-          >
-            <Play className="w-5 h-5" fill="currentColor" />
-          </Button>
-          
-          <h1 className="text-xl font-bold text-white">{artist?.name || artistName}</h1>
+          <h1 className="text-lg font-bold truncate" style={{ color: "var(--text-1)" }}>{artist?.name || artistName}</h1>
         </div>
       </div>
 
-      {/* Hero Section - RKHM Style */}
-      <div className="relative px-4 md:px-8 pt-8 pb-6">
-        <div className="flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-10">
-          {/* Circular Artist Image */}
-          <div className="relative flex-shrink-0">
-            <div className="w-48 h-48 md:w-56 md:h-56 rounded-full overflow-hidden border-4 border-white/10 shadow-2xl bg-gradient-to-br from-white/10 to-white/5">
+      <div className="relative z-10">
+        {/* Centered Hero */}
+        <div className="flex flex-col items-center pt-10 pb-8 px-4">
+          {/* Circular photo with coral glow */}
+          <div className="relative mb-6">
+            <div className="absolute -inset-4 rounded-full" style={{ background: "rgba(255,99,71,0.2)", filter: "blur(30px)" }} />
+            <div className="relative w-44 h-44 md:w-56 md:h-56 rounded-full overflow-hidden" style={{
+              border: "3px solid rgba(255,99,71,0.3)",
+              boxShadow: "0 0 40px rgba(255,99,71,0.15), inset 0 0 30px rgba(0,0,0,0.3)",
+            }}>
               {(artistImage || artist?.image) ? (
-                <img
-                  src={artistImage || artist?.image}
-                  alt={artist?.name || artistName}
-                  className="w-full h-full object-cover"
-                />
+                <img src={artistImage || artist?.image} alt={artist?.name || artistName} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-cyan-600/30 to-purple-600/30">
-                  <span className="text-5xl font-black text-white/40">
-                    {(artist?.name || artistName).charAt(0).toUpperCase()}
-                  </span>
+                <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(255,99,71,0.2), rgba(139,92,246,0.2))" }}>
+                  <span className="text-5xl font-black" style={{ color: "rgba(255,255,255,0.3)" }}>{(artist?.name || artistName).charAt(0).toUpperCase()}</span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Artist Info */}
-          <div className="flex-1 text-center md:text-left space-y-4">
-            {/* Type + Genres */}
-            <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
-              <span className="text-white/60 text-sm">Artist</span>
-              {artist?.genres?.slice(0, 3).map((genre: string) => (
-                <Badge 
-                  key={genre} 
-                  variant="outline" 
-                  className="text-xs bg-white/5 border-white/10 text-white/80"
-                >
-                  {genre}
-                </Badge>
-              ))}
-            </div>
+          {/* Name + genres */}
+          <h1 className="text-3xl md:text-5xl font-black text-center tracking-tight mb-2" style={{ color: "var(--text-1)" }}>
+            {artist?.name || artistName}
+          </h1>
+          <div className="flex items-center gap-2 flex-wrap justify-center mb-4">
+            <span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-3)" }}>Artist</span>
+            {artist?.genres?.slice(0, 4).map((genre: string) => (
+              <Badge key={genre} variant="outline" className="text-[10px]" style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-2)" }}>
+                {genre}
+              </Badge>
+            ))}
+          </div>
 
-            {/* Name */}
-            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight">
-              {artist?.name || artistName}
-            </h1>
+          {/* Stats */}
+          <div className="flex items-center gap-4 text-xs mb-5" style={{ color: "var(--text-3)" }}>
+            <span>Albums: <strong style={{ color: "var(--text-1)" }}>{albums.length}</strong></span>
+            <span>•</span>
+            <span>Tracks: <strong style={{ color: "var(--text-1)" }}>{tracks.length}</strong></span>
+          </div>
 
-            {/* Stats */}
-            <div className="flex items-center justify-center md:justify-start gap-4 text-sm text-white/60">
-              <span>Last release: <strong className="text-cyan-400">Recently</strong></span>
-              <span>•</span>
-              <span>Albums: <strong className="text-white">{albums.length}</strong></span>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center justify-center md:justify-start gap-3 pt-2">
-              <Button 
-                size="lg"
-                onClick={handlePlayAll}
-                className="bg-white text-black hover:bg-white/90 font-semibold px-8"
-              >
-                <Play className="w-5 h-5 mr-2" fill="currentColor" />
-                PLAY
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
-              >
-                <Bell className="w-5 h-5 mr-2" />
-                Subscribe
-              </Button>
-
-              <Button variant="ghost" size="icon" className="text-white/60 hover:text-white">
-                <MoreHorizontal className="w-5 h-5" />
-              </Button>
-            </div>
+          {/* Actions */}
+          <div className="flex items-center gap-3">
+            <Button size="lg" onClick={handlePlayAll} className="font-semibold px-8" style={{ background: "#FF6347", color: "#000" }}>
+              <Play className="w-5 h-5 mr-2" fill="currentColor" /> PLAY
+            </Button>
+            <Button variant="outline" size="lg" style={{ borderColor: "rgba(255,99,71,0.3)", color: "#FF6347" }}>
+              <Bell className="w-5 h-5 mr-2" /> Subscribe
+            </Button>
+            <Button variant="ghost" size="icon" style={{ color: "var(--text-3)" }}><MoreHorizontal className="w-5 h-5" /></Button>
           </div>
         </div>
-      </div>
 
       <div className="px-4 md:px-8 pb-32 space-y-10">
         {/* YouTube Music Catalog - Full Official Releases */}
