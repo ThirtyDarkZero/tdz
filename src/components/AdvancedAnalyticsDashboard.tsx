@@ -183,6 +183,8 @@ export const AdvancedAnalyticsDashboard = () => {
         const olderPlays = listeningData.filter(l => l.track_id === track.id && (now.getTime() - new Date(l.played_at).getTime()) >= 7 * 86400000 && (now.getTime() - new Date(l.played_at).getTime()) < 14 * 86400000).length;
         const trendPct = olderPlays > 0 ? Math.round(((recentPlays - olderPlays) / olderPlays) * 100) : recentPlays > 0 ? 100 : 0;
 
+        const trendDirection: 'up' | 'down' | 'stable' = trendPct > 0 ? 'up' : trendPct < 0 ? 'down' : 'stable';
+
         return {
           id: track.id,
           title: track.title,
@@ -192,7 +194,7 @@ export const AdvancedAnalyticsDashboard = () => {
           bpm: track.bpm || 0,
           mood: (track.ai_tags as any)?.mood || 'Unknown',
           topCountries,
-          trend: trendPct > 0 ? 'up' : trendPct < 0 ? 'down' : 'stable',
+          trend: trendDirection,
           trendPercentage: Math.abs(trendPct),
           revenue: (track.play_count || 0) * 1.00,
         };
