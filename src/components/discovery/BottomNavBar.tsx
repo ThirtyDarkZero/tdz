@@ -1,11 +1,14 @@
-import { Home, Compass, LayoutGrid, User, ShoppingBag } from "lucide-react";
+import { Home, Compass, LayoutGrid, User, ShoppingBag, Disc3 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useNavigate } from "react-router-dom";
 
 interface BottomNavBarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
 }
 
-const NAV_ITEMS = [
+const BASE_NAV_ITEMS = [
   { id: "discover", label: "HOME", icon: Home },
   { id: "explore", label: "EXPLORE", icon: Compass },
   { id: "library", label: "LIBRARY", icon: LayoutGrid },
@@ -14,6 +17,12 @@ const NAV_ITEMS = [
 ];
 
 export function BottomNavBar({ activeTab, onTabChange }: BottomNavBarProps) {
+  const { user } = useAuth();
+  const { role } = useUserRole(user);
+  const navigate = useNavigate();
+
+  const isArtist = role === "artist" || role === "verified_artist" || role === "manager";
+
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[100]">
       <div
@@ -25,8 +34,24 @@ export function BottomNavBar({ activeTab, onTabChange }: BottomNavBarProps) {
           padding: "10px 0 calc(10px + env(safe-area-inset-bottom, 0px))",
         }}
       >
-        <div className="flex items-center justify-around max-w-[560px] mx-auto">
-          {NAV_ITEMS.map((item) => {
+        <div className="flex items-center justify-around max-w-[600px] mx-auto">
+          {/* Studio button for artists */}
+          {isArtist && (
+            <button
+              onClick={() => navigate("/studio")}
+              className="flex flex-col items-center gap-1 min-w-[56px] border-none bg-transparent transition-all duration-200"
+              style={{ padding: "6px 12px", borderRadius: "var(--radius-pill)" }}
+            >
+              <Disc3
+                className="transition-all duration-200"
+                style={{ width: 24, height: 24, color: "#FF6347", strokeWidth: 1.5 }}
+              />
+              <span className="font-body" style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#FF6347" }}>
+                STUDIO
+              </span>
+            </button>
+          )}
+          {BASE_NAV_ITEMS.map((item) => {
             const isActive = activeTab === item.id;
             return (
               <button
@@ -34,7 +59,7 @@ export function BottomNavBar({ activeTab, onTabChange }: BottomNavBarProps) {
                 onClick={() => onTabChange(item.id)}
                 className="flex flex-col items-center gap-1 min-w-[56px] border-none bg-transparent transition-all duration-200"
                 style={{
-                  padding: "6px 16px",
+                  padding: "6px 12px",
                   borderRadius: "var(--radius-pill)",
                   background: isActive ? "rgba(0, 207, 255, 0.1)" : "transparent",
                 }}
@@ -42,31 +67,20 @@ export function BottomNavBar({ activeTab, onTabChange }: BottomNavBarProps) {
                 <item.icon
                   className="transition-all duration-200"
                   style={{
-                    width: 24,
-                    height: 24,
+                    width: 24, height: 24,
                     color: isActive ? "#00CFFF" : "var(--text-3)",
                     strokeWidth: isActive ? 2 : 1.5,
                     transform: isActive ? "scale(1.1)" : "scale(1)",
                   }}
                 />
-                <span
-                  className="font-body transition-all duration-200"
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 600,
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    color: isActive ? "#00CFFF" : "var(--text-3)",
-                  }}
-                >
+                <span className="font-body transition-all duration-200" style={{
+                  fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase",
+                  color: isActive ? "#00CFFF" : "var(--text-3)",
+                }}>
                   {item.label}
                 </span>
-                {/* Active dot */}
                 {isActive && (
-                  <div
-                    className="w-1 h-1 rounded-full"
-                    style={{ background: "#00CFFF", boxShadow: "0 0 8px #00CFFF" }}
-                  />
+                  <div className="w-1 h-1 rounded-full" style={{ background: "#00CFFF", boxShadow: "0 0 8px #00CFFF" }} />
                 )}
               </button>
             );

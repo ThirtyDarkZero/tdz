@@ -420,137 +420,96 @@ export function GlobalArtistProfile({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0a0a0a] overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto" style={{ background: "#03030F" }}>
+      {/* Blurred art background */}
+      {(artistImage || artist?.image) && (
+        <div className="fixed inset-0 z-0" style={{
+          backgroundImage: `url(${artistImage || artist?.image})`,
+          backgroundSize: "cover", backgroundPosition: "center",
+          filter: "blur(80px) saturate(1.5) brightness(0.15)", transform: "scale(1.2)",
+        }} />
+      )}
+      <div className="fixed inset-0 z-0" style={{ background: "linear-gradient(to bottom, rgba(3,3,15,0.4), rgba(3,3,15,0.9) 60%, rgba(3,3,15,0.98))" }} />
+
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/5">
+      <div className="sticky top-0 z-20" style={{ background: "rgba(3,3,15,0.75)", backdropFilter: "blur(32px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="flex items-center gap-4 px-4 md:px-6 py-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="rounded-full bg-white/5 hover:bg-white/10"
-          >
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
             <ChevronLeft className="w-5 h-5" />
           </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full bg-cyan-500/20 text-cyan-400"
-          >
-            <Play className="w-5 h-5" fill="currentColor" />
-          </Button>
-          
-          <h1 className="text-xl font-bold text-white">{artist?.name || artistName}</h1>
+          <h1 className="text-lg font-bold truncate" style={{ color: "var(--text-1)" }}>{artist?.name || artistName}</h1>
         </div>
       </div>
 
-      {/* Hero Section - RKHM Style */}
-      <div className="relative px-4 md:px-8 pt-8 pb-6">
-        <div className="flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-10">
-          {/* Circular Artist Image */}
-          <div className="relative flex-shrink-0">
-            <div className="w-48 h-48 md:w-56 md:h-56 rounded-full overflow-hidden border-4 border-white/10 shadow-2xl bg-gradient-to-br from-white/10 to-white/5">
+      <div className="relative z-10">
+        {/* Centered Hero */}
+        <div className="flex flex-col items-center pt-10 pb-8 px-4">
+          {/* Circular photo with coral glow */}
+          <div className="relative mb-6">
+            <div className="absolute -inset-4 rounded-full" style={{ background: "rgba(255,99,71,0.2)", filter: "blur(30px)" }} />
+            <div className="relative w-44 h-44 md:w-56 md:h-56 rounded-full overflow-hidden" style={{
+              border: "3px solid rgba(255,99,71,0.3)",
+              boxShadow: "0 0 40px rgba(255,99,71,0.15), inset 0 0 30px rgba(0,0,0,0.3)",
+            }}>
               {(artistImage || artist?.image) ? (
-                <img
-                  src={artistImage || artist?.image}
-                  alt={artist?.name || artistName}
-                  className="w-full h-full object-cover"
-                />
+                <img src={artistImage || artist?.image} alt={artist?.name || artistName} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-cyan-600/30 to-purple-600/30">
-                  <span className="text-5xl font-black text-white/40">
-                    {(artist?.name || artistName).charAt(0).toUpperCase()}
-                  </span>
+                <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(255,99,71,0.2), rgba(139,92,246,0.2))" }}>
+                  <span className="text-5xl font-black" style={{ color: "rgba(255,255,255,0.3)" }}>{(artist?.name || artistName).charAt(0).toUpperCase()}</span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Artist Info */}
-          <div className="flex-1 text-center md:text-left space-y-4">
-            {/* Type + Genres */}
-            <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
-              <span className="text-white/60 text-sm">Artist</span>
-              {artist?.genres?.slice(0, 3).map((genre: string) => (
-                <Badge 
-                  key={genre} 
-                  variant="outline" 
-                  className="text-xs bg-white/5 border-white/10 text-white/80"
-                >
-                  {genre}
-                </Badge>
-              ))}
-            </div>
+          {/* Name + genres */}
+          <h1 className="text-3xl md:text-5xl font-black text-center tracking-tight mb-2" style={{ color: "var(--text-1)" }}>
+            {artist?.name || artistName}
+          </h1>
+          <div className="flex items-center gap-2 flex-wrap justify-center mb-4">
+            <span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-3)" }}>Artist</span>
+            {artist?.genres?.slice(0, 4).map((genre: string) => (
+              <Badge key={genre} variant="outline" className="text-[10px]" style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-2)" }}>
+                {genre}
+              </Badge>
+            ))}
+          </div>
 
-            {/* Name */}
-            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight">
-              {artist?.name || artistName}
-            </h1>
+          {/* Stats */}
+          <div className="flex items-center gap-4 text-xs mb-5" style={{ color: "var(--text-3)" }}>
+            <span>Albums: <strong style={{ color: "var(--text-1)" }}>{albums.length}</strong></span>
+            <span>•</span>
+            <span>Tracks: <strong style={{ color: "var(--text-1)" }}>{tracks.length}</strong></span>
+          </div>
 
-            {/* Stats */}
-            <div className="flex items-center justify-center md:justify-start gap-4 text-sm text-white/60">
-              <span>Last release: <strong className="text-cyan-400">Recently</strong></span>
-              <span>•</span>
-              <span>Albums: <strong className="text-white">{albums.length}</strong></span>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center justify-center md:justify-start gap-3 pt-2">
-              <Button 
-                size="lg"
-                onClick={handlePlayAll}
-                className="bg-white text-black hover:bg-white/90 font-semibold px-8"
-              >
-                <Play className="w-5 h-5 mr-2" fill="currentColor" />
-                PLAY
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
-              >
-                <Bell className="w-5 h-5 mr-2" />
-                Subscribe
-              </Button>
-
-              <Button variant="ghost" size="icon" className="text-white/60 hover:text-white">
-                <MoreHorizontal className="w-5 h-5" />
-              </Button>
-            </div>
+          {/* Actions */}
+          <div className="flex items-center gap-3">
+            <Button size="lg" onClick={handlePlayAll} className="font-semibold px-8" style={{ background: "#FF6347", color: "#000" }}>
+              <Play className="w-5 h-5 mr-2" fill="currentColor" /> PLAY
+            </Button>
+            <Button variant="outline" size="lg" style={{ borderColor: "rgba(255,99,71,0.3)", color: "#FF6347" }}>
+              <Bell className="w-5 h-5 mr-2" /> Subscribe
+            </Button>
+            <Button variant="ghost" size="icon" style={{ color: "var(--text-3)" }}><MoreHorizontal className="w-5 h-5" /></Button>
           </div>
         </div>
-      </div>
 
       <div className="px-4 md:px-8 pb-32 space-y-10">
         {/* YouTube Music Catalog - Full Official Releases */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-3">
+            <h2 className="text-2xl md:text-3xl font-black flex items-center gap-3" style={{ color: "var(--text-1)" }}>
               <Youtube className="w-7 h-7 text-red-500" />
               Official Catalog
             </h2>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFullCatalog(!showFullCatalog)}
-              className="border-white/20 text-white/60 hover:text-white"
-            >
+            <Button variant="outline" size="sm" onClick={() => setShowFullCatalog(!showFullCatalog)} style={{ borderColor: "rgba(255,255,255,0.15)", color: "var(--text-3)" }}>
               {showFullCatalog ? 'Show Less' : 'View All'}
             </Button>
           </div>
-          
           <ArtistYouTubeCatalog
             artistName={artist?.name || artistName}
             youtubeChannelId={youtubeChannelId || undefined}
             onAlbumClick={(album) => {
-              setSelectedAlbum({
-                id: album.id,
-                title: album.title,
-                coverArt: album.thumbnail,
-                genres: artist?.genres,
-              });
+              setSelectedAlbum({ id: album.id, title: album.title, coverArt: album.thumbnail, genres: artist?.genres });
             }}
           />
         </section>
@@ -558,87 +517,34 @@ export function GlobalArtistProfile({
         {/* Tracks Section */}
         {tracks.length > 0 && (
           <section>
-            <h2 className="text-2xl md:text-3xl font-black text-white mb-6">Popular Tracks</h2>
-            
+            <h2 className="text-2xl md:text-3xl font-black mb-6" style={{ color: "var(--text-1)" }}>Popular Tracks</h2>
             <div className="space-y-1">
               {tracks.slice(0, showFullCatalog ? tracks.length : 10).map((track, index) => {
-                const isLiked = isGlobalTrackLiked({
-                  id: track.id,
-                  title: track.title,
-                  artist_name: artist?.name || artistName,
-                  youtubeId: track.youtubeId,
-                  source: 'youtube',
-                });
-                
+                const isLiked = isGlobalTrackLiked({ id: track.id, title: track.title, artist_name: artist?.name || artistName, youtubeId: track.youtubeId, source: 'youtube' });
                 return (
-                  <div
-                    key={track.id}
-                    className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors group cursor-pointer"
-                    onClick={() => handlePlayTrack(track, index)}
-                  >
-                    {/* Thumbnail */}
-                    <div className="relative w-12 h-12 rounded-md overflow-hidden bg-white/5 flex-shrink-0">
-                      {track.thumbnail ? (
-                        <img 
-                          src={track.thumbnail} 
-                          alt={track.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Disc className="w-5 h-5 text-white/30" />
-                        </div>
+                  <div key={track.id} className="flex items-center gap-4 p-3 rounded-lg transition-colors group cursor-pointer" style={{ background: "transparent" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                    onClick={() => handlePlayTrack(track, index)}>
+                    <div className="relative w-12 h-12 rounded-md overflow-hidden flex-shrink-0" style={{ background: "rgba(255,255,255,0.05)" }}>
+                      {track.thumbnail ? <img src={track.thumbnail} alt={track.title} className="w-full h-full object-cover" /> : (
+                        <div className="w-full h-full flex items-center justify-center"><Disc className="w-5 h-5" style={{ color: "var(--text-4)" }} /></div>
                       )}
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        {loadingTrack === track.id ? (
-                          <Loader2 className="w-5 h-5 text-white animate-spin" />
-                        ) : (
-                          <Play className="w-5 h-5 text-white" fill="white" />
-                        )}
+                        {loadingTrack === track.id ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Play className="w-5 h-5 text-white" fill="white" />}
                       </div>
                     </div>
-
-                    {/* Track Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-white font-medium truncate">{track.title}</p>
-                      <p className="text-sm text-white/50 truncate">{track.album}</p>
+                      <p className="font-medium truncate" style={{ color: "var(--text-1)" }}>{track.title}</p>
+                      <p className="text-sm truncate" style={{ color: "var(--text-3)" }}>{track.album}</p>
                     </div>
-
-                    {/* Like Button */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={`transition-colors ${isLiked ? 'text-pink-500' : 'text-white/40 hover:text-pink-400'}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleGlobalLike({
-                          id: track.id,
-                          title: track.title,
-                          artist_name: artist?.name || artistName,
-                          youtubeId: track.youtubeId,
-                          thumbnail: track.thumbnail,
-                          source: 'youtube',
-                        });
-                      }}
-                    >
+                    <Button variant="ghost" size="icon" className={`transition-colors ${isLiked ? 'text-pink-500' : ''}`} style={{ color: isLiked ? undefined : "var(--text-4)" }}
+                      onClick={(e) => { e.stopPropagation(); toggleGlobalLike({ id: track.id, title: track.title, artist_name: artist?.name || artistName, youtubeId: track.youtubeId, thumbnail: track.thumbnail, source: 'youtube' }); }}>
                       <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
                     </Button>
-
-                    {/* Duration */}
-                    {track.duration && (
-                      <span className="text-sm text-white/40">{track.duration}</span>
-                    )}
-
-                    {/* Actions */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-white/60 hover:text-white"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddToPlaylist(track);
-                      }}
-                    >
+                    {track.duration && <span className="text-sm" style={{ color: "var(--text-4)" }}>{track.duration}</span>}
+                    <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: "var(--text-3)" }}
+                      onClick={(e) => { e.stopPropagation(); handleAddToPlaylist(track); }}>
                       <ListPlus className="w-5 h-5" />
                     </Button>
                   </div>
@@ -648,75 +554,27 @@ export function GlobalArtistProfile({
           </section>
         )}
 
-        {/* Studio Albums Section */}
+        {/* Albums */}
         {albums.length > 0 && (
           <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl md:text-3xl font-black text-white">
-                Studio albums
-                <span className="ml-3 text-sm font-normal text-white/40 uppercase tracking-wider">MORE</span>
-              </h2>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-white/5 hover:bg-white/10 text-white/60"
-                  onClick={() => setAlbumScrollPosition(Math.max(0, albumScrollPosition - 1))}
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-white/5 hover:bg-white/10 text-white/60"
-                  onClick={() => setAlbumScrollPosition(albumScrollPosition + 1)}
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
-
+            <h2 className="text-2xl md:text-3xl font-black mb-4" style={{ color: "var(--text-1)" }}>Studio Albums</h2>
             <ScrollArea className="w-full">
               <div className="flex gap-4 pb-4">
                 {albums.map((album) => (
-                  <div 
-                    key={album.id}
-                    className="flex-shrink-0 w-40 md:w-48 group cursor-pointer"
-                    onClick={() => handleAlbumClick(album)}
-                  >
-                    <div className="aspect-square rounded-lg overflow-hidden bg-white/5 mb-3 relative">
-                      {album.coverArt ? (
-                        <img
-                          src={album.coverArt}
-                          alt={album.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Disc className="w-12 h-12 text-white/20" />
-                        </div>
+                  <div key={album.id} className="flex-shrink-0 w-40 md:w-48 group cursor-pointer" onClick={() => handleAlbumClick(album)}>
+                    <div className="aspect-square rounded-lg overflow-hidden mb-3 relative" style={{ background: "rgba(255,255,255,0.05)" }}>
+                      {album.coverArt ? <img src={album.coverArt} alt={album.title} className="w-full h-full object-cover" /> : (
+                        <div className="w-full h-full flex items-center justify-center"><Disc className="w-12 h-12" style={{ color: "var(--text-4)" }} /></div>
                       )}
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Button
-                          size="icon"
-                          className="rounded-full bg-cyan-500 hover:bg-cyan-400 text-white"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAlbumClick(album);
-                          }}
-                        >
+                        <Button size="icon" className="rounded-full" style={{ background: "#FF6347" }}
+                          onClick={(e) => { e.stopPropagation(); handleAlbumClick(album); }}>
                           <Play className="w-5 h-5" fill="white" />
                         </Button>
                       </div>
-                      {/* YouTube badge */}
-                      <div className="absolute bottom-2 right-2">
-                        <Badge className="bg-red-600 text-white text-xs px-1.5 py-0.5">
-                          <Youtube className="w-3 h-3" />
-                        </Badge>
-                      </div>
                     </div>
-                    <p className="text-white font-medium text-sm truncate">{album.title}</p>
-                    <p className="text-white/50 text-xs">{album.year}</p>
+                    <p className="font-medium text-sm truncate" style={{ color: "var(--text-1)" }}>{album.title}</p>
+                    <p className="text-xs" style={{ color: "var(--text-3)" }}>{album.year}</p>
                   </div>
                 ))}
               </div>
@@ -727,58 +585,26 @@ export function GlobalArtistProfile({
         {/* Related Artists */}
         {relatedArtists.length > 0 && (
           <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl md:text-3xl font-black text-white">
-                Related artists
-                <span className="ml-3 text-sm font-normal text-white/40 uppercase tracking-wider">MORE</span>
-              </h2>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-white/5 hover:bg-white/10 text-white/60"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-white/5 hover:bg-white/10 text-white/60"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
-
+            <h2 className="text-2xl md:text-3xl font-black mb-4" style={{ color: "var(--text-1)" }}>Related Artists</h2>
             <ScrollArea className="w-full">
               <div className="flex gap-4 pb-4">
                 {relatedArtists.map((related, idx) => (
-                  <div 
-                    key={idx}
-                    className="flex-shrink-0 w-36 md:w-44 group cursor-pointer text-center"
-                  >
-                    <div className="aspect-square rounded-full overflow-hidden bg-white/5 mb-3 mx-auto w-32 h-32 md:w-40 md:h-40 relative">
-                      {related.thumbnail ? (
-                        <img
-                          src={related.thumbnail}
-                          alt={related.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-cyan-600/20 to-purple-600/20">
-                          <span className="text-3xl font-bold text-white/30">
-                            {related.name.charAt(0)}
-                          </span>
+                  <div key={idx} className="flex-shrink-0 w-36 md:w-44 text-center cursor-pointer">
+                    <div className="aspect-square rounded-full overflow-hidden mb-3 mx-auto w-32 h-32 md:w-40 md:h-40" style={{ background: "rgba(255,255,255,0.05)" }}>
+                      {related.thumbnail ? <img src={related.thumbnail} alt={related.name} className="w-full h-full object-cover" /> : (
+                        <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(255,99,71,0.15), rgba(139,92,246,0.15))" }}>
+                          <span className="text-3xl font-bold" style={{ color: "var(--text-4)" }}>{related.name.charAt(0)}</span>
                         </div>
                       )}
                     </div>
-                    <p className="text-white font-medium text-sm truncate">{related.name}</p>
+                    <p className="font-medium text-sm truncate" style={{ color: "var(--text-1)" }}>{related.name}</p>
                   </div>
                 ))}
               </div>
             </ScrollArea>
           </section>
         )}
+      </div>
       </div>
     </div>
   );

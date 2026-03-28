@@ -71,7 +71,8 @@ interface MusicPlayerProps {
 }
 
 export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEnd, maxDuration, onPreviewEnd }: MusicPlayerProps) => {
-  const [isPlaying, setIsPlaying] = useState(false);
+  const { isPlaying: contextIsPlaying, setIsPlaying: setContextIsPlaying } = usePlayer();
+  const [isPlaying, setIsPlayingLocal] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const { setCurrentTime: setContextTime } = usePlayer();
   const [volume, setVolume] = useState(1);
@@ -146,6 +147,24 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
       loadMotionCover();
     }
   }, [currentTrack?.id]);
+
+  // Wrapper to sync local + context isPlaying state
+  const setIsPlaying = useCallback((playing: boolean) => {
+    setIsPlayingLocal(playing);
+    setContextIsPlaying(playing);
+  }, [setContextIsPlaying]);
+
+  // Sync with context isPlaying (e.g. when OrbPlayerBar pauses)
+  useEffect(() => {
+    if (contextIsPlaying !== isPlaying && audioRef.current) {
+      if (contextIsPlaying) {
+        audioRef.current.play().catch(() => {});
+      } else {
+        audioRef.current.pause();
+      }
+      setIsPlayingLocal(contextIsPlaying);
+    }
+  }, [contextIsPlaying]);
 
   // Load audio URL when source is ready
   useEffect(() => {
