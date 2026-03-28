@@ -1,11 +1,14 @@
-import { Home, Compass, LayoutGrid, User, ShoppingBag } from "lucide-react";
+import { Home, Compass, LayoutGrid, User, ShoppingBag, Disc3 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useNavigate } from "react-router-dom";
 
 interface BottomNavBarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
 }
 
-const NAV_ITEMS = [
+const BASE_NAV_ITEMS = [
   { id: "discover", label: "HOME", icon: Home },
   { id: "explore", label: "EXPLORE", icon: Compass },
   { id: "library", label: "LIBRARY", icon: LayoutGrid },
