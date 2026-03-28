@@ -148,6 +148,24 @@ export const MusicPlayer = ({ currentTrack, queue, onNext, onPrevious, onTrackEn
     }
   }, [currentTrack?.id]);
 
+  // Wrapper to sync local + context isPlaying state
+  const setIsPlaying = useCallback((playing: boolean) => {
+    setIsPlayingLocal(playing);
+    setContextIsPlaying(playing);
+  }, [setContextIsPlaying]);
+
+  // Sync with context isPlaying (e.g. when OrbPlayerBar pauses)
+  useEffect(() => {
+    if (contextIsPlaying !== isPlaying && audioRef.current) {
+      if (contextIsPlaying) {
+        audioRef.current.play().catch(() => {});
+      } else {
+        audioRef.current.pause();
+      }
+      setIsPlayingLocal(contextIsPlaying);
+    }
+  }, [contextIsPlaying]);
+
   // Load audio URL when source is ready
   useEffect(() => {
     if (audioUrl && audioRef.current && currentTrack) {
