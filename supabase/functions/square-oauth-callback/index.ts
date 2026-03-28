@@ -13,7 +13,8 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const squareAppId = Deno.env.get('SQUARE_APPLICATION_ID')!;
     const squareAppSecret = Deno.env.get('SQUARE_APPLICATION_SECRET');
 
@@ -25,8 +26,29 @@ serve(async (req) => {
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
+    // ── Authenticate the caller ──
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid authorization' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    const authenticatedUserId = claimsData.claims.sub as string;
+
+    // ── Parse request body ──
     const { code, state } = await req.json();
 
     if (!code || !state) {
@@ -36,7 +58,7 @@ serve(async (req) => {
       );
     }
 
-    // Decode state to get user ID
+    // Decode state
     let stateData;
     try {
       stateData = JSON.parse(atob(state));
@@ -55,8 +77,19 @@ serve(async (req) => {
       );
     }
 
-    // Square uses different base URLs for production vs sandbox.
-    // Production app IDs start with "sq0idp-"; sandbox typically starts with "sq0idb-".
+    // ── CRITICAL: Verify the authenticated user matches the state userId ──
+    if (authenticatedUserId !== userId) {
+      console.error('User ID mismatch: authenticated', authenticatedUserId, 'vs state', userId);
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: user mismatch' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Use service role client for DB writes
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Square environment detection
     const isProd = squareAppId.startsWith('sq0idp-');
     const connectBase = isProd ? 'https://connect.squareup.com' : 'https://connect.squareupsandbox.com';
 
@@ -76,7 +109,6 @@ serve(async (req) => {
     });
 
     const tokenData = await tokenResponse.json();
-    console.log('Square token response:', JSON.stringify(tokenData));
 
     if (!tokenResponse.ok || tokenData.errors) {
       const errorMessage = tokenData.errors?.[0]?.detail || 'Failed to exchange code';
@@ -88,7 +120,7 @@ serve(async (req) => {
 
     const { access_token, refresh_token, expires_at, merchant_id } = tokenData;
 
-    // Get merchant info to display account name
+    // Get merchant info
     let merchantName = 'Square Account';
     try {
       const merchantResponse = await fetch(`${connectBase}/v2/merchants/me`, {
@@ -105,15 +137,15 @@ serve(async (req) => {
       console.warn('Could not fetch merchant info:', e);
     }
 
-    // Store the OAuth tokens in artist_payout_details
+    // Store the OAuth tokens
     const { data: existingDetails } = await supabase
       .from('artist_payout_details')
       .select('*')
-      .eq('artist_id', userId)
+      .eq('artist_id', authenticatedUserId)
       .maybeSingle();
 
     const payoutDetails = {
-      artist_id: userId,
+      artist_id: authenticatedUserId,
       square_merchant_id: merchant_id,
       square_access_token: access_token,
       square_refresh_token: refresh_token,
@@ -127,7 +159,7 @@ serve(async (req) => {
       const { error: updateError } = await supabase
         .from('artist_payout_details')
         .update(payoutDetails)
-        .eq('artist_id', userId);
+        .eq('artist_id', authenticatedUserId);
 
       if (updateError) {
         console.error('Error updating payout details:', updateError);
@@ -147,7 +179,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Square OAuth completed for user ${userId}, merchant ${merchant_id}`);
+    console.log(`Square OAuth completed for user ${authenticatedUserId}, merchant ${merchant_id}`);
 
     return new Response(
       JSON.stringify({
