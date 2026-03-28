@@ -497,30 +497,19 @@ export function GlobalArtistProfile({
         {/* YouTube Music Catalog - Full Official Releases */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-3">
+            <h2 className="text-2xl md:text-3xl font-black flex items-center gap-3" style={{ color: "var(--text-1)" }}>
               <Youtube className="w-7 h-7 text-red-500" />
               Official Catalog
             </h2>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFullCatalog(!showFullCatalog)}
-              className="border-white/20 text-white/60 hover:text-white"
-            >
+            <Button variant="outline" size="sm" onClick={() => setShowFullCatalog(!showFullCatalog)} style={{ borderColor: "rgba(255,255,255,0.15)", color: "var(--text-3)" }}>
               {showFullCatalog ? 'Show Less' : 'View All'}
             </Button>
           </div>
-          
           <ArtistYouTubeCatalog
             artistName={artist?.name || artistName}
             youtubeChannelId={youtubeChannelId || undefined}
             onAlbumClick={(album) => {
-              setSelectedAlbum({
-                id: album.id,
-                title: album.title,
-                coverArt: album.thumbnail,
-                genres: artist?.genres,
-              });
+              setSelectedAlbum({ id: album.id, title: album.title, coverArt: album.thumbnail, genres: artist?.genres });
             }}
           />
         </section>
@@ -528,87 +517,34 @@ export function GlobalArtistProfile({
         {/* Tracks Section */}
         {tracks.length > 0 && (
           <section>
-            <h2 className="text-2xl md:text-3xl font-black text-white mb-6">Popular Tracks</h2>
-            
+            <h2 className="text-2xl md:text-3xl font-black mb-6" style={{ color: "var(--text-1)" }}>Popular Tracks</h2>
             <div className="space-y-1">
               {tracks.slice(0, showFullCatalog ? tracks.length : 10).map((track, index) => {
-                const isLiked = isGlobalTrackLiked({
-                  id: track.id,
-                  title: track.title,
-                  artist_name: artist?.name || artistName,
-                  youtubeId: track.youtubeId,
-                  source: 'youtube',
-                });
-                
+                const isLiked = isGlobalTrackLiked({ id: track.id, title: track.title, artist_name: artist?.name || artistName, youtubeId: track.youtubeId, source: 'youtube' });
                 return (
-                  <div
-                    key={track.id}
-                    className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors group cursor-pointer"
-                    onClick={() => handlePlayTrack(track, index)}
-                  >
-                    {/* Thumbnail */}
-                    <div className="relative w-12 h-12 rounded-md overflow-hidden bg-white/5 flex-shrink-0">
-                      {track.thumbnail ? (
-                        <img 
-                          src={track.thumbnail} 
-                          alt={track.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Disc className="w-5 h-5 text-white/30" />
-                        </div>
+                  <div key={track.id} className="flex items-center gap-4 p-3 rounded-lg transition-colors group cursor-pointer" style={{ background: "transparent" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                    onClick={() => handlePlayTrack(track, index)}>
+                    <div className="relative w-12 h-12 rounded-md overflow-hidden flex-shrink-0" style={{ background: "rgba(255,255,255,0.05)" }}>
+                      {track.thumbnail ? <img src={track.thumbnail} alt={track.title} className="w-full h-full object-cover" /> : (
+                        <div className="w-full h-full flex items-center justify-center"><Disc className="w-5 h-5" style={{ color: "var(--text-4)" }} /></div>
                       )}
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        {loadingTrack === track.id ? (
-                          <Loader2 className="w-5 h-5 text-white animate-spin" />
-                        ) : (
-                          <Play className="w-5 h-5 text-white" fill="white" />
-                        )}
+                        {loadingTrack === track.id ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Play className="w-5 h-5 text-white" fill="white" />}
                       </div>
                     </div>
-
-                    {/* Track Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-white font-medium truncate">{track.title}</p>
-                      <p className="text-sm text-white/50 truncate">{track.album}</p>
+                      <p className="font-medium truncate" style={{ color: "var(--text-1)" }}>{track.title}</p>
+                      <p className="text-sm truncate" style={{ color: "var(--text-3)" }}>{track.album}</p>
                     </div>
-
-                    {/* Like Button */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={`transition-colors ${isLiked ? 'text-pink-500' : 'text-white/40 hover:text-pink-400'}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleGlobalLike({
-                          id: track.id,
-                          title: track.title,
-                          artist_name: artist?.name || artistName,
-                          youtubeId: track.youtubeId,
-                          thumbnail: track.thumbnail,
-                          source: 'youtube',
-                        });
-                      }}
-                    >
+                    <Button variant="ghost" size="icon" className={`transition-colors ${isLiked ? 'text-pink-500' : ''}`} style={{ color: isLiked ? undefined : "var(--text-4)" }}
+                      onClick={(e) => { e.stopPropagation(); toggleGlobalLike({ id: track.id, title: track.title, artist_name: artist?.name || artistName, youtubeId: track.youtubeId, thumbnail: track.thumbnail, source: 'youtube' }); }}>
                       <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
                     </Button>
-
-                    {/* Duration */}
-                    {track.duration && (
-                      <span className="text-sm text-white/40">{track.duration}</span>
-                    )}
-
-                    {/* Actions */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-white/60 hover:text-white"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddToPlaylist(track);
-                      }}
-                    >
+                    {track.duration && <span className="text-sm" style={{ color: "var(--text-4)" }}>{track.duration}</span>}
+                    <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: "var(--text-3)" }}
+                      onClick={(e) => { e.stopPropagation(); handleAddToPlaylist(track); }}>
                       <ListPlus className="w-5 h-5" />
                     </Button>
                   </div>
@@ -618,75 +554,27 @@ export function GlobalArtistProfile({
           </section>
         )}
 
-        {/* Studio Albums Section */}
+        {/* Albums */}
         {albums.length > 0 && (
           <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl md:text-3xl font-black text-white">
-                Studio albums
-                <span className="ml-3 text-sm font-normal text-white/40 uppercase tracking-wider">MORE</span>
-              </h2>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-white/5 hover:bg-white/10 text-white/60"
-                  onClick={() => setAlbumScrollPosition(Math.max(0, albumScrollPosition - 1))}
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-white/5 hover:bg-white/10 text-white/60"
-                  onClick={() => setAlbumScrollPosition(albumScrollPosition + 1)}
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
-
+            <h2 className="text-2xl md:text-3xl font-black mb-4" style={{ color: "var(--text-1)" }}>Studio Albums</h2>
             <ScrollArea className="w-full">
               <div className="flex gap-4 pb-4">
                 {albums.map((album) => (
-                  <div 
-                    key={album.id}
-                    className="flex-shrink-0 w-40 md:w-48 group cursor-pointer"
-                    onClick={() => handleAlbumClick(album)}
-                  >
-                    <div className="aspect-square rounded-lg overflow-hidden bg-white/5 mb-3 relative">
-                      {album.coverArt ? (
-                        <img
-                          src={album.coverArt}
-                          alt={album.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Disc className="w-12 h-12 text-white/20" />
-                        </div>
+                  <div key={album.id} className="flex-shrink-0 w-40 md:w-48 group cursor-pointer" onClick={() => handleAlbumClick(album)}>
+                    <div className="aspect-square rounded-lg overflow-hidden mb-3 relative" style={{ background: "rgba(255,255,255,0.05)" }}>
+                      {album.coverArt ? <img src={album.coverArt} alt={album.title} className="w-full h-full object-cover" /> : (
+                        <div className="w-full h-full flex items-center justify-center"><Disc className="w-12 h-12" style={{ color: "var(--text-4)" }} /></div>
                       )}
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Button
-                          size="icon"
-                          className="rounded-full bg-cyan-500 hover:bg-cyan-400 text-white"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAlbumClick(album);
-                          }}
-                        >
+                        <Button size="icon" className="rounded-full" style={{ background: "#FF6347" }}
+                          onClick={(e) => { e.stopPropagation(); handleAlbumClick(album); }}>
                           <Play className="w-5 h-5" fill="white" />
                         </Button>
                       </div>
-                      {/* YouTube badge */}
-                      <div className="absolute bottom-2 right-2">
-                        <Badge className="bg-red-600 text-white text-xs px-1.5 py-0.5">
-                          <Youtube className="w-3 h-3" />
-                        </Badge>
-                      </div>
                     </div>
-                    <p className="text-white font-medium text-sm truncate">{album.title}</p>
-                    <p className="text-white/50 text-xs">{album.year}</p>
+                    <p className="font-medium text-sm truncate" style={{ color: "var(--text-1)" }}>{album.title}</p>
+                    <p className="text-xs" style={{ color: "var(--text-3)" }}>{album.year}</p>
                   </div>
                 ))}
               </div>
@@ -697,58 +585,26 @@ export function GlobalArtistProfile({
         {/* Related Artists */}
         {relatedArtists.length > 0 && (
           <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl md:text-3xl font-black text-white">
-                Related artists
-                <span className="ml-3 text-sm font-normal text-white/40 uppercase tracking-wider">MORE</span>
-              </h2>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-white/5 hover:bg-white/10 text-white/60"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-white/5 hover:bg-white/10 text-white/60"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
-
+            <h2 className="text-2xl md:text-3xl font-black mb-4" style={{ color: "var(--text-1)" }}>Related Artists</h2>
             <ScrollArea className="w-full">
               <div className="flex gap-4 pb-4">
                 {relatedArtists.map((related, idx) => (
-                  <div 
-                    key={idx}
-                    className="flex-shrink-0 w-36 md:w-44 group cursor-pointer text-center"
-                  >
-                    <div className="aspect-square rounded-full overflow-hidden bg-white/5 mb-3 mx-auto w-32 h-32 md:w-40 md:h-40 relative">
-                      {related.thumbnail ? (
-                        <img
-                          src={related.thumbnail}
-                          alt={related.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-cyan-600/20 to-purple-600/20">
-                          <span className="text-3xl font-bold text-white/30">
-                            {related.name.charAt(0)}
-                          </span>
+                  <div key={idx} className="flex-shrink-0 w-36 md:w-44 text-center cursor-pointer">
+                    <div className="aspect-square rounded-full overflow-hidden mb-3 mx-auto w-32 h-32 md:w-40 md:h-40" style={{ background: "rgba(255,255,255,0.05)" }}>
+                      {related.thumbnail ? <img src={related.thumbnail} alt={related.name} className="w-full h-full object-cover" /> : (
+                        <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(255,99,71,0.15), rgba(139,92,246,0.15))" }}>
+                          <span className="text-3xl font-bold" style={{ color: "var(--text-4)" }}>{related.name.charAt(0)}</span>
                         </div>
                       )}
                     </div>
-                    <p className="text-white font-medium text-sm truncate">{related.name}</p>
+                    <p className="font-medium text-sm truncate" style={{ color: "var(--text-1)" }}>{related.name}</p>
                   </div>
                 ))}
               </div>
             </ScrollArea>
           </section>
         )}
+      </div>
       </div>
     </div>
   );
