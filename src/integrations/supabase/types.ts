@@ -4234,6 +4234,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_smart_link_clicks: {
+        Args: { p_short_code: string }
+        Returns: undefined
+      }
       log_audit: {
         Args: {
           p_action: string
