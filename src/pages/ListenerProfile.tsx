@@ -555,7 +555,7 @@ export default function ListenerProfile() {
       />
 
       {selectedConversation && (
-        <DirectMessagePanel open={true} onOpenChange={(open) => { if (!open) setSelectedConversation(null); }} recipientId={selectedConversation.user_id} recipientName={formData.display_name} />
+        <DirectMessagePanel open={true} onClose={() => setSelectedConversation(null)} recipientId={selectedConversation.user_id} recipientName={formData.display_name} />
       )}
     </div>
   );
