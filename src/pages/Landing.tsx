@@ -502,7 +502,7 @@ function Section4Studio({ navigate }: { navigate: (p: string) => void }) {
               <span style={{ color: "#555", fontSize: 14 }}>×</span>
             </div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ border: "2px solid #22C55E", color: "#22C55E" }}>R</div>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ border: "2px solid #FF6347", color: "#FF6347" }}>R</div>
               <div>
                 <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 13, color: "#FFF" }}>RobHayes</p>
                 <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#888" }}>Artist Studio</p>
