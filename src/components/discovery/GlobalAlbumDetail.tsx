@@ -293,29 +293,26 @@ export function GlobalAlbumDetail({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0a0a0a] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 overflow-hidden flex flex-col" style={{ background: "#03030F" }}>
+      {/* Blurred cover BG */}
+      {coverArt && (
+        <div className="fixed inset-0 z-0" style={{
+          backgroundImage: `url(${coverArt})`, backgroundSize: "cover", backgroundPosition: "center",
+          filter: "blur(80px) saturate(1.5) brightness(0.15)", transform: "scale(1.2)",
+        }} />
+      )}
+      <div className="fixed inset-0 z-0" style={{ background: "linear-gradient(to bottom, rgba(3,3,15,0.4), rgba(3,3,15,0.9) 60%, rgba(3,3,15,0.98))" }} />
+
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/5">
+      <div className="sticky top-0 z-20" style={{ background: "rgba(3,3,15,0.75)", backdropFilter: "blur(32px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="flex items-center gap-4 px-4 md:px-6 py-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="rounded-full bg-white/5 hover:bg-white/10"
-          >
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
             <ChevronLeft className="w-5 h-5" />
           </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handlePlayAll}
-            className="rounded-full bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
-          >
+          <Button variant="ghost" size="icon" onClick={handlePlayAll} className="rounded-full" style={{ background: "rgba(255,99,71,0.2)", color: "#FF6347" }}>
             <Play className="w-5 h-5" fill="currentColor" />
           </Button>
-          
-          <h1 className="text-lg font-semibold text-white truncate">{album.title}</h1>
+          <h1 className="text-lg font-semibold truncate" style={{ color: "var(--text-1)" }}>{album.title}</h1>
         </div>
       </div>
 
