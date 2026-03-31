@@ -27,7 +27,8 @@ import {
   Calendar,
   X,
   Menu,
-  LogOut
+  LogOut,
+  Brain
 } from "lucide-react";
 
 interface StudioSidebarProps {
@@ -61,6 +62,12 @@ const navGroups = [
     items: [
       { id: "insights", icon: BarChart3, label: "Analytics" },
       { id: "promote", icon: Megaphone, label: "Promote" },
+    ]
+  },
+  {
+    id: "ai",
+    items: [
+      { id: "agent", icon: Brain, label: "AI Agent" },
     ]
   },
   {

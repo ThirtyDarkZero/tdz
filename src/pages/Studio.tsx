@@ -11,6 +11,7 @@ import { StudioSidebar } from "@/components/studio/StudioSidebar";
 import { StudioHome } from "@/components/studio/StudioHome";
 import { StudioMusic } from "@/components/studio/StudioMusic";
 import { StudioInsights } from "@/components/studio/StudioInsights";
+import { StudioAgentPanel } from "@/components/studio/StudioAgentPanel";
 import { StudioPromote } from "@/components/studio/StudioPromote";
 import { StudioLearn } from "@/components/studio/StudioLearn";
 import { StudioSettings } from "@/components/studio/StudioSettings";
@@ -133,8 +134,9 @@ function StudioContent() {
         return <StudioInsights />;
       case "promote":
         return <StudioPromote />;
+      case "agent":
+        return <StudioAgentPanel />;
       case "learn":
-        // Academy removed — redirect to home
         setActiveSection("home");
         return null;
       case "settings":

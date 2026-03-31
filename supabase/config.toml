@@ -149,3 +149,15 @@ verify_jwt = false
 
 [functions.create-tip-session]
 verify_jwt = true
+
+[functions.agent-orchestrator]
+verify_jwt = true
+
+[functions.ai-release-optimizer]
+verify_jwt = true
+
+[functions.ai-fan-intelligence]
+verify_jwt = true
+
+[functions.ai-advisor]
+verify_jwt = true
