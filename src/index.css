@@ -317,6 +317,10 @@
     0%, 100% { box-shadow: 0 0 8px hsl(var(--primary) / 0.4), 0 0 16px hsl(var(--primary) / 0.2); }
     50% { box-shadow: 0 0 16px hsl(var(--primary) / 0.6), 0 0 32px hsl(var(--primary) / 0.3); }
   }
+  @keyframes beatPulse {
+    0% { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(1.15); opacity: 1; }
+  }
 }
 
 /* Studio Font System */

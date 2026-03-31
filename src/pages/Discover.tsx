@@ -36,7 +36,7 @@ type FeaturedItem = {
 /* ── Section Header ── */
 function Section({ title, subtitle, action, children }: { title: string; subtitle?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="py-5">
+    <div className="py-6">
       <div className="flex items-end justify-between mb-3.5">
         <div>
           <h2 className="font-display" style={{ fontSize: 28, color: "var(--text-1)" }}>{title}</h2>
