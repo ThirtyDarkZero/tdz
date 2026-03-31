@@ -27,11 +27,12 @@ export function BottomNavBar({ activeTab, onTabChange }: BottomNavBarProps) {
     <div className="fixed bottom-0 left-0 right-0 z-[100]">
       <div
         style={{
-          background: "rgba(3, 3, 15, 0.88)",
-          backdropFilter: "blur(32px)",
-          WebkitBackdropFilter: "blur(32px)",
+          background: "rgba(3, 3, 15, 0.92)",
+          backdropFilter: "blur(40px)",
+          WebkitBackdropFilter: "blur(40px)",
           borderTop: "1px solid rgba(255,255,255,0.06)",
-          padding: "10px 0 calc(10px + env(safe-area-inset-bottom, 0px))",
+          padding: "8px 0 calc(8px + env(safe-area-inset-bottom, 0px))",
+          boxShadow: "0 -8px 32px rgba(0,0,0,0.4)",
         }}
       >
         <div className="flex items-center justify-around max-w-[600px] mx-auto">
