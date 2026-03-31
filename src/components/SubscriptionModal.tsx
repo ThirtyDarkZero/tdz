@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription, SubscriptionPlan } from "@/hooks/useSubscription";
 import { cn } from "@/lib/utils";
-import { openSquareCheckout, isCheckoutPlan } from "@/lib/subscription-checkout";
+import { openStripeCheckout, isCheckoutPlan } from "@/lib/subscription-checkout";
 
 interface SubscriptionModalProps {
   open: boolean;
