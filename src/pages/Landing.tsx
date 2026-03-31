@@ -832,7 +832,7 @@ function Section7ArtistPlans({ navigate }: { navigate: (p: string) => void }) {
   ];
 
   const handleSubscribe = async (plan: "starter" | "pro" | "enterprise") => {
-    if (isCheckoutPlan(plan)) { openSquareCheckout(plan); }
+    if (isCheckoutPlan(plan)) { openStripeCheckout(plan); }
     else { navigate("/auth"); }
   };
 
@@ -1107,7 +1107,7 @@ function Section10FanPlan({ navigate }: { navigate: (p: string) => void }) {
               ))}
             </div>
           </div>
-          <SubscribeButton onClick={() => { if (isCheckoutPlan("fan")) openSquareCheckout("fan"); else navigate("/auth"); }} />
+          <SubscribeButton onClick={() => { if (isCheckoutPlan("fan")) openStripeCheckout("fan"); else navigate("/auth"); }} />
         </div>
       </Reveal>
     </section>
