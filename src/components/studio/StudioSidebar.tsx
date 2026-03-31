@@ -27,7 +27,8 @@ import {
   Calendar,
   X,
   Menu,
-  LogOut
+  LogOut,
+  Brain
 } from "lucide-react";
 
 interface StudioSidebarProps {
