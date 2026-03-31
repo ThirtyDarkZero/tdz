@@ -18,10 +18,8 @@ const PLAN_PRICES: Record<string, { amount: number; name: string }> = {
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get('origin'));
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    const preflight = handleCorsPreflightWithOrigin(req); if (preflight) return preflight;
-  }
+  const preflight = handleCorsPreflightWithOrigin(req);
+  if (preflight) return preflight;
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
