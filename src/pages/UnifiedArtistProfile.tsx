@@ -183,8 +183,8 @@ export default function UnifiedArtistProfile() {
       const yt = { id: track.id, title: track.title, artist_name: track.artist_name, duration: track.duration || 0, file_path: '', play_count: 0, source: 'youtube' as const, youtubeId: track.youtubeData.id, thumbnail: track.thumbnail };
       playTrack(yt, tracks.filter(t => t.source === 'youtube').map(t => ({ id: t.id, title: t.title, artist_name: t.artist_name, duration: t.duration || 0, file_path: '', play_count: 0, source: 'youtube' as const, youtubeId: t.youtubeData?.id, thumbnail: t.thumbnail })));
     } else {
-      const tdzTrack = { id: track.id, title: track.title, artist_name: track.artist_name, duration: track.duration || 0, file_path: '', play_count: 0 };
-      playTrack(tdzTrack, tracks.filter(t => t.source === 'tdz').map(t => ({ id: t.id, title: t.title, artist_name: t.artist_name, duration: t.duration || 0, file_path: '', play_count: 0 })));
+      const tdzTrack = { id: track.id, title: track.title, artist_name: track.artist_name, duration: track.duration || 0, file_path: '', play_count: 0, thumbnail: track.thumbnail, artist_user_id: artist?.id };
+      playTrack(tdzTrack, tracks.filter(t => t.source === 'tdz').map(t => ({ id: t.id, title: t.title, artist_name: t.artist_name, duration: t.duration || 0, file_path: '', play_count: 0, thumbnail: t.thumbnail, artist_user_id: artist?.id })));
     }
   };
 

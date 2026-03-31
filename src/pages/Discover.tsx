@@ -463,12 +463,12 @@ export default function Discover() {
                       })}
                     </div>
                     {/* Tablet/Desktop carousel: 7 covers */}
-                    <div className="hidden sm:grid grid-cols-7 gap-2 items-center" style={{ minHeight: 182 }}>
+                    <div className="hidden sm:grid grid-cols-7 items-center" style={{ minHeight: 182, gap: 0 }}>
                       {visibleCarouselItems.map(({ item, offset, index }, slotIndex) => {
                         const distance = Math.abs(offset);
                         const isCenter = offset === 0;
-                        const scaleByDistance = [1, 0.9, 0.82, 0.74][distance] ?? 0.74;
-                        const opacityByDistance = [1, 0.9, 0.78, 0.66][distance] ?? 0.66;
+                        const scaleByDistance = [1, 0.93, 0.86, 0.78][distance] ?? 0.78;
+                        const opacityByDistance = [1, 0.92, 0.82, 0.7][distance] ?? 0.7;
                         return (
                           <button key={`${item.id}-${slotIndex}-${carouselCenterIndex}`} type="button" className="relative w-full aspect-square cursor-pointer transition-all duration-500"
                             style={{ transform: `scale(${scaleByDistance})`, opacity: opacityByDistance, filter: isCenter ? "none" : "saturate(0.8)" }}
