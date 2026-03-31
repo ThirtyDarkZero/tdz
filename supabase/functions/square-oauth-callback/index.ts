@@ -5,9 +5,8 @@ import { getCorsHeaders, handleCorsPreflightWithOrigin } from '../_shared/cors.t
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get('origin'));
-  if (req.method === 'OPTIONS') {
-    const preflight = handleCorsPreflightWithOrigin(req); if (preflight) return preflight;
-  }
+  const preflight = handleCorsPreflightWithOrigin(req);
+  if (preflight) return preflight;
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;

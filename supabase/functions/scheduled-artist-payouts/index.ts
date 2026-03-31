@@ -6,9 +6,8 @@ import { getCorsHeaders, handleCorsPreflightWithOrigin } from '../_shared/cors.t
 // This function runs on a schedule (1st of each month) to process all pending artist payouts
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get('origin'));
-  if (req.method === 'OPTIONS') {
-    const preflight = handleCorsPreflightWithOrigin(req); if (preflight) return preflight;
-  }
+  const preflight = handleCorsPreflightWithOrigin(req);
+  if (preflight) return preflight;
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
