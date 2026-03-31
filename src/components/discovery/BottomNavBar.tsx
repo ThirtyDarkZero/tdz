@@ -62,7 +62,7 @@ export function BottomNavBar({ activeTab, onTabChange }: BottomNavBarProps) {
                 style={{
                   padding: "6px 12px",
                   borderRadius: "var(--radius-pill)",
-                  background: isActive ? "rgba(0, 207, 255, 0.1)" : "transparent",
+                  background: isActive ? "rgba(255, 99, 71, 0.1)" : "transparent",
                 }}
               >
                 <item.icon
