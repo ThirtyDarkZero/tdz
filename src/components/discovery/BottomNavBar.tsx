@@ -81,7 +81,7 @@ export function BottomNavBar({ activeTab, onTabChange }: BottomNavBarProps) {
                   {item.label}
                 </span>
                 {isActive && (
-                  <div className="w-1 h-1 rounded-full" style={{ background: "#00CFFF", boxShadow: "0 0 8px #00CFFF" }} />
+                  <div className="w-1 h-1 rounded-full" style={{ background: "#FF6347", boxShadow: "0 0 8px #FF6347" }} />
                 )}
               </button>
             );

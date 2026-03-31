@@ -21,6 +21,7 @@ export default function SubscriptionSuccess() {
   const [status, setStatus] = useState<"processing" | "success" | "error">("processing");
   
   const plan = searchParams.get("plan") as CheckoutPlan | null;
+  const sessionId = searchParams.get("session_id");
   const planInfo = plan ? PLAN_DETAILS[plan] : null;
 
   useEffect(() => {
@@ -31,12 +32,27 @@ export default function SubscriptionSuccess() {
       }
 
       try {
-        // Calculate subscription dates
+        // Verify with Stripe via check-subscription edge function
+        const { data, error } = await supabase.functions.invoke("check-subscription");
+        
+        if (error) {
+          console.error("Subscription check error:", error);
+        }
+
+        // The check-subscription function syncs the subscription to the DB
+        // If it confirms active, we're good. Otherwise fall back to manual activation.
+        if (data?.subscribed && data?.plan === plan) {
+          setStatus("success");
+          toast.success(`Welcome to ${planInfo.name}!`);
+          setTimeout(() => navigate(planInfo.redirect), 2000);
+          return;
+        }
+
+        // Fallback: activate manually
         const now = new Date();
         const endDate = new Date(now);
         endDate.setMonth(endDate.getMonth() + 1);
 
-        // Update or create subscription record
         const { error: subError } = await supabase
           .from("user_subscriptions")
           .upsert({
@@ -46,28 +62,21 @@ export default function SubscriptionSuccess() {
             current_period_start: now.toISOString(),
             current_period_end: endDate.toISOString(),
             updated_at: now.toISOString(),
-          }, {
-            onConflict: "user_id",
-          });
+          }, { onConflict: "user_id" });
 
         if (subError) throw subError;
 
-        // Record revenue for the platform
         const revenueType = plan === "fan" ? "fan_subscription" : "artist_subscription";
         await supabase.from("platform_revenue").insert({
           amount: planInfo.price,
           revenue_type: revenueType,
-          description: `${planInfo.name} subscription - Square checkout`,
+          description: `${planInfo.name} subscription - Stripe checkout`,
           period_date: now.toISOString().split("T")[0],
         });
 
         setStatus("success");
         toast.success(`Welcome to ${planInfo.name}!`);
-
-        // Redirect after short delay
-        setTimeout(() => {
-          navigate(planInfo.redirect);
-        }, 2000);
+        setTimeout(() => navigate(planInfo.redirect), 2000);
       } catch (error) {
         console.error("Subscription activation error:", error);
         setStatus("error");

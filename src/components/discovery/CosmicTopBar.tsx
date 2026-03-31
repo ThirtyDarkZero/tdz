@@ -54,10 +54,12 @@ export function CosmicTopBar({ activeTab, searchQuery, onSearchChange, userProfi
     <div
       className="sticky top-0 z-30"
       style={{
-        background: "rgba(3,3,15,0.7)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        padding: "calc(env(safe-area-inset-top, 12px) + 12px) 20px 16px",
+        background: "rgba(3,3,15,0.92)",
+        backdropFilter: "blur(40px)",
+        WebkitBackdropFilter: "blur(40px)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        padding: "calc(env(safe-area-inset-top, 12px) + 10px) 20px 14px",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
       }}
     >
       {searchOpen ? (
