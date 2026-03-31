@@ -1,5 +1,7 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { LogOut, Upload, LayoutDashboard } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -10,8 +12,14 @@ export const TopBar = ({ onUploadClick }: { onUploadClick?: () => void }) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   
-  // CEO check
-  const isCEO = user?.email === 'info@thirtydarkzero.com';
+  // CEO check using server-side role
+  const [isCEO, setIsCEO] = useState(false);
+  
+  useEffect(() => {
+    if (!user) return;
+    supabase.rpc('has_role', { _user_id: user.id, _role: 'ceo' })
+      .then(({ data }) => setIsCEO(!!data));
+  }, [user]);
 
   const handleUploadMusic = () => {
     if (onUploadClick) {

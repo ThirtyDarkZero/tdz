@@ -2,15 +2,13 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { getCorsHeaders, handleCorsPreflightWithOrigin } from '../_shared/cors.ts';
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'));
+
+  const preflight = handleCorsPreflightWithOrigin(req);
+  if (preflight) return preflight;
 
   try {
     const supabase = createClient(
@@ -43,7 +41,6 @@ serve(async (req) => {
       });
     }
 
-    // Verify artist exists
     const { data: artist } = await supabase
       .from("artist_profiles")
       .select("artist_name, user_id")
@@ -62,7 +59,6 @@ serve(async (req) => {
       });
     }
 
-    // Create tip record
     const { data: tip, error: tipError } = await supabase
       .from("artist_tips")
       .insert({
@@ -82,7 +78,6 @@ serve(async (req) => {
       });
     }
 
-    // Create Stripe Checkout session for the tip
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
       await supabase.from("artist_tips").update({ status: "completed" }).eq("id", tip.id);
@@ -122,6 +117,7 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("create-tip-session error:", error);
+    const corsHeaders = getCorsHeaders(req.headers.get('origin'));
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
