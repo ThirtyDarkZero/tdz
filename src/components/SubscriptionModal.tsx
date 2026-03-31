@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription, SubscriptionPlan } from "@/hooks/useSubscription";
 import { cn } from "@/lib/utils";
-import { openSquareCheckout, isCheckoutPlan } from "@/lib/subscription-checkout";
+import { openStripeCheckout, isCheckoutPlan } from "@/lib/subscription-checkout";
 
 interface SubscriptionModalProps {
   open: boolean;
@@ -97,9 +97,8 @@ export function SubscriptionModal({ open, onOpenChange, defaultAudience = 'fan' 
       return;
     }
 
-    // Open Square hosted checkout in new tab
     if (isCheckoutPlan(plan.planType)) {
-      openSquareCheckout(plan.planType);
+      openStripeCheckout(plan.planType);
       onOpenChange(false);
     }
   };

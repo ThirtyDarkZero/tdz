@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubscription, SubscriptionPlan } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
-import { openSquareCheckout, isCheckoutPlan } from "@/lib/subscription-checkout";
+import { openStripeCheckout, isCheckoutPlan } from "@/lib/subscription-checkout";
 
 interface PlanConfig {
   name: string;
@@ -139,7 +139,7 @@ export default function Pricing() {
 
     // For paid plans, open Square hosted checkout
     if (isCheckoutPlan(plan.planType)) {
-      openSquareCheckout(plan.planType);
+      openStripeCheckout(plan.planType);
     }
   };
 

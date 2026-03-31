@@ -291,8 +291,15 @@ export function OrbPlayerBar() {
           {/* Artwork view */}
           {fullView === "artwork" && (
             <div className="relative w-full" style={{ maxWidth: 340, aspectRatio: "1" }}>
-              {/* Glow */}
-              <div className="absolute -inset-6 rounded-3xl" style={{ background: `${CORAL}25`, filter: "blur(50px)" }} />
+              {/* Pulsing glow */}
+              <div
+                className="absolute -inset-6 rounded-3xl"
+                style={{
+                  background: `${CORAL}25`,
+                  filter: "blur(50px)",
+                  animation: isPlaying ? "beatPulse 0.6s ease-in-out infinite alternate" : "none",
+                }}
+              />
               <div className="relative w-full h-full overflow-hidden" style={{
                 borderRadius: 20,
                 boxShadow: `0 32px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)`,
