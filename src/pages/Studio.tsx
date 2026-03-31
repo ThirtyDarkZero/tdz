@@ -11,6 +11,7 @@ import { StudioSidebar } from "@/components/studio/StudioSidebar";
 import { StudioHome } from "@/components/studio/StudioHome";
 import { StudioMusic } from "@/components/studio/StudioMusic";
 import { StudioInsights } from "@/components/studio/StudioInsights";
+import { StudioAgentPanel } from "@/components/studio/StudioAgentPanel";
 import { StudioPromote } from "@/components/studio/StudioPromote";
 import { StudioLearn } from "@/components/studio/StudioLearn";
 import { StudioSettings } from "@/components/studio/StudioSettings";
