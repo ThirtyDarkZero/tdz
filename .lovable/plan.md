@@ -1,180 +1,144 @@
+# TDZ Platform Overhaul: Stripe Migration, Discovery UX, Player Fixes
 
+## Overview
 
-# TDZ Discovery — Complete Mobile Redesign Plan
-
-Based on the 50-page design specification document and the Loopster reference images, this is a full end-to-end rebuild of the Discovery mobile experience.
-
----
-
-## What Gets Built
-
-The entire Discovery experience is rebuilt with a living space environment, new navigation, immersive player, mood theming, and refined universal components. Every screen sits on an animated nebula background with stars and crystals.
+This is a multi-phase update covering: (1) full payment migration from Square to Stripe, (2) Discovery UI polish to match the player/profile aesthetic, (3) player artwork and glow fixes, (4) visualizer fullscreen, (5) carousel tightening, and (6) Investor page phone mockup sync.
 
 ---
 
-## Phase 1: Foundation — Design Tokens + SpaceBackground
+## Phase 1: Square → Stripe Payment Migration
 
-**`index.html`** — Add Google Fonts import for Six Caps + Raleway
+### What changes
 
-**`src/index.css`** — Replace current CSS variables with the spec's token system:
-- Space environment colors (`--bg-void: #03030F`, `--bg-deep: #07071A`, `--bg-surface: #0D0D26`, `--bg-elevated: #13132E`)
-- Nebula colors (violet, indigo, teal, rose)
-- Art-reactive dynamic colors (`--art-color-1`, `--art-color-2`, `--art-glow`)
-- Glass morphism tokens (`--glass-1`, `--glass-2`, `--glass-border`, `--glass-blur`)
-- Accent colors (`--cyan: #00CFFF`, `--green`, `--gold`, `--violet`, `--rose`)
-- Text hierarchy (`--text-1` through `--text-4`)
-- Radius tokens (`--radius-sm: 10px` through `--radius-pill: 999px`)
-- Safe area and nav height variables
-- Typography: Six Caps for all headings, Raleway for all body
+Replace all Square payment infrastructure with Stripe. This affects subscriptions, tips, download purchases, and artist payouts.
 
-**`src/components/discovery/SpaceBackground.tsx`** — Rewrite to match spec exactly:
-- Base void gradient (`radial-gradient` with `#0A0A2E → #050510 → #000`)
-- 4 nebula cloud layers with `blur(80px)` and `drift` animation (22s, 28s, 20s, 25s alternating)
-- Art-reactive nebula layer that transitions color via `--art-color-1` / `--art-color-2` CSS vars (3s transition)
-- 120 stars with randomized twinkle
-- 6 floating crystal diamonds
-- All GPU-accelerated with `will-change: transform`
+### Steps
 
----
-
-## Phase 2: Navigation — 5-Tab Bottom Nav + Glassmorphic Top Bar
-
-**`src/components/discovery/BottomNavBar.tsx`** — Rewrite:
-- 5 tabs: HOME (house), EXPLORE (compass), LIBRARY (grid), FEED (chat), STORE (bag)
-- Glassmorphic background: `rgba(3,3,15,0.88)`, `backdrop-filter: blur(32px)`
-- Active state: cyan glow dot + `rgba(0,207,255,0.1)` pill background
-- Raleway 10px uppercase labels, 24px icons
-- Safe area bottom padding
-
-**`src/components/discovery/CosmicTopBar.tsx`** — Rewrite:
-- Fixed glassmorphic top bar (`rgba(3,3,15,0.7)`, blur 20px)
-- Greeting text ("GOOD EVENING" etc.) in Raleway 12px uppercase
-- Title in Six Caps 28px
-- Circular glass search button (40px)
-- Profile avatar right-aligned
-
-**`src/components/discovery/PersistentLayout.tsx`** — Update:
-- Render SpaceBackground as fixed base layer behind all content
-- Pass through 5-tab navigation
-- Account for safe areas
+1. **Enable Stripe via Lovable's native Stripe integration** — this provisions Stripe keys and exposes Stripe-specific tools/docs for implementation.
+2. **Rewrite `create-checkout-session` edge function** — Replace Square `payment-links` API with Stripe Checkout Sessions (`stripe.checkout.sessions.create`). Map the 4 plans (starter $9.99, pro $19.99, enterprise $49.99, fan $12.00) to Stripe Price objects. Use `mode: 'subscription'` with `success_url` and `cancel_url`.
+3. **Rewrite `create-tip-session` edge function** — Replace Square payment processing with Stripe PaymentIntents for one-time tip amounts ($1–$500).
+4. **Rewrite `process-download-purchase` edge function** — Replace Square Payments API with Stripe PaymentIntents for track download purchases.
+5. **Rewrite `setup-artist-payout` edge function** — Replace Square customer creation with Stripe Connect (Express accounts) for artist bank account linking and payouts.
+6. **Rewrite `process-artist-payout` and `scheduled-artist-payouts**` — Use Stripe Transfer API to pay artists from platform balance instead of Square payout API.
+7. **Update client-side checkout** — Rewrite `src/lib/subscription-checkout.ts`: rename `openSquareCheckout` → `openStripeCheckout`, call updated edge function, redirect to Stripe Checkout URL.
+8. **Update `SubscriptionModal.tsx`, `Pricing.tsx`, `Landing.tsx**` — Replace all `openSquareCheckout` imports/calls with the new Stripe checkout function.
+9. **Update `SubscriptionSuccess.tsx**` — Handle Stripe's `session_id` query param instead of just `plan`. Verify payment via Stripe API before activating subscription.
+10. **Remove/archive Square-specific edge functions**: `get-square-config`, `square-account-balance`, `square-oauth-url`, `square-oauth-callback`, `create-square-subscription`.
+11. **Update `SquareOAuthCallback.tsx**` — Remove or redirect to Stripe Connect onboarding flow.
+12. **Update CEO Dashboard** — Replace `square-account-balance` with Stripe balance retrieval.
+13. Add back the quantum intellegent label ai agents into studio and deploy agents across all functions of the app using [https://github.com/langchain-ai/deepagents](https://github.com/langchain-ai/deepagents)
 
 ---
 
-## Phase 3: Home Screen — Coverflow Carousel + Moodscapes + Sections
+## Phase 2: Discovery Top/Bottom Bars — Match Player UI
 
-**`src/pages/Discover.tsx`** — Major rewrite of the `discover` tab:
+### What changes
 
-- **Section A — Featured Coverflow Carousel**: Install `swiper` package. Use `effect: "coverflow"` with `rotate: 32, depth: 200`. 220x220px slides, center slide at full brightness with art-glow shadow, side slides dimmed (`brightness(0.5)`). Track name below in Six Caps 38px, artist in Raleway 15px. Play button + glass icon buttons.
-- **Section B — Moodscapes**: 6 mood bubbles (CHILL, HYPE, FOCUS, VIBES, LATE NIGHT, SOUL). Tapping activates mood theme system.
-- **Section C — New This Week**: Horizontal scroll of 150x150px AlbumCards.
-- **Section D — Genre Pathways**: Simplified constellation SVG navigation.
-- **Section E — Artist Portals**: Glowing cyan ring artist avatars, 90px, horizontal scroll.
-- **Popular Tracks**: SongRow list with playing state (cyan title + cyan art glow).
+Restyle `CosmicTopBar` and `BottomNavBar` to use the same dark glassmorphic treatment as `OrbPlayerBar` (deep blur, coral accents, ultra-dark backgrounds).
 
----
+### Steps
 
-## Phase 4: Now Playing Screen (Crown Jewel)
-
-**`src/components/discovery/OrbPlayerBar.tsx`** — Complete rewrite:
-
-**Full-screen mode:**
-- Blurred album art background (`blur(60px)`, `saturate(1.4)`, `brightness(0.25)`) with dark vignette overlay
-- Center album art: `calc(100vw - 80px)` max 340px, `border-radius: 24px`, art-glow pulsing shadow (`artPulse` 2s animation), scales 1.02 when playing / 0.98 when paused
-- Track info: Six Caps 42px title, Raleway 16px artist
-- Earnings badge: green `$0.00` counter (TDZ differentiator)
-- **Waveform progress bar**: 60 bars of varying height, bars before playhead colored with `--art-color-1`/`--cyan`, bars after dimmed. White 14px draggable playhead dot. Time stamps in Raleway 12px.
-- Controls: shuffle, skip back, play/pause (72px white circle with art-glow shadow), skip forward, repeat
-- Artist mini portal (36px) + queue button at bottom
-
-**Queue drawer**: Sheet slides up, glassmorphic background, Six Caps title, SongRow list
+- **CosmicTopBar**: Change background to `rgba(3,3,15,0.92)` with `backdrop-blur(40px)`, coral active tab indicators, refined border (`rgba(255,255,255,0.06)`). Match the typography weight and spacing from OrbPlayerBar.
+- **BottomNavBar**: Apply same `rgba(3,3,15,0.92)` background with coral active icon coloring, reduce padding, match the shadow treatment from the mini player bar.
 
 ---
 
-## Phase 5: 3-State Mini Player
+## Phase 3: Player Artwork Fix (from Artist Profile)
 
-Continue in **OrbPlayerBar.tsx**:
+### What changes
 
-- **State 2 — Mini Bar**: Glassmorphic bar above bottom nav. 48px album art, Raleway track info, play/skip/close buttons. Gradient progress line (cyan→violet) along bottom edge. Art-glow box-shadow. Tap to expand to full.
-- **State 3 — Floating Pill**: 56px circle, album art only, play/pause overlay on tap. Positioned bottom-right. Tap expands back to mini bar.
-- CSS-based spring transitions between states (no GSAP to keep bundle small)
+When a track is played from the artist profile, the `album_cover_path` is not being passed into the PlayerContext track object.
 
----
+### Steps
 
-## Phase 6: Explore Screen
-
-New tab content in **Discover.tsx** (replaces current "trending"):
-- Title "EXPLORE" in Six Caps 56px
-- 3 glassmorphic playlist launchers: TRENDING NOW, NEW RELEASES, TOP CHARTS (full-width, 110px, colored top border accent)
-- Genre Charts Grid: 2-column glass cards, top 3 tracks per genre preview
+- Trace how `ArtistProfile.tsx` and `UnifiedArtistProfile.tsx` call `playTrack()` and ensure the track object includes `album_cover_path`, `album_cover_bucket`, and `thumbnail` fields.
+- Verify `OrbPlayerBar`'s `coverUrl` resolver handles all field mappings correctly.
 
 ---
 
-## Phase 7: Library Screen (Hexagonal Collection)
+## Phase 4: Beat-Reactive Glow on Artwork
 
-New tab content in **Discover.tsx** (replaces current "library"):
-- Title "YOUR COLLECTION" in Six Caps 44px
-- Filter pills: PLAYLISTS, ALBUMS, ARTISTS, SONGS, DOWNLOADED, RECENT (horizontal scroll, glass active pill)
-- Hexagonal grid: `clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)`, 3-column grid, 3px gap
-- Each hex cell shows album art with label overlay
+### What changes
 
----
+The glow behind artwork in the full-screen player should pulse to the beat.
 
-## Phase 8: Universal Components Refresh
+### Steps
 
-**`src/components/discovery/SongRow.tsx`** — Update to spec:
-- 52x52px art, `border-radius: 10px`, Raleway typography
-- Playing state: cyan title + cyan box-shadow on art
-- Duration + menu button right-aligned
-- Active press: `background: var(--glass-1)`
-
-**`src/components/discovery/AlbumCard.tsx`** — Update:
-- 150x150px art, `border-radius: 16px`, play overlay on active
-- Raleway 13px title, 11px artist
-
-**New `src/components/discovery/ArtistPortal.tsx`**:
-- Circular avatar with animated cyan glow ring (`portalPulse` keyframes)
-- Real photo with mic icon fallback (never initials)
-- Raleway 11px name label
+- In `OrbPlayerBar` full-screen artwork view (line ~293–308), add CSS animation that scales and modulates the glow `opacity`/`blur` using a CSS keyframe driven by `isPlaying` state.
+- Use a pulsing animation (e.g., `scale(1) → scale(1.15)` on a ~500ms cycle) applied to the glow div when `isPlaying` is true.
 
 ---
 
-## Phase 9: Mood Theme System
+## Phase 5: Fullscreen Visualizer
 
-**`src/contexts/MoodContext.tsx`** — Update with full theme definitions:
-- 6 themes (chill, hype, focus, vibes, late-night, soul) each with accent, nebula primary/secondary, art-glow
-- `applyMoodTheme()` sets CSS custom properties on `document.documentElement`
-- 1.4s transition across all elements
-- Active mood badge shown in top bar
+### What changes
 
----
+Add a button to expand the visualizer canvas to fill the entire screen.
 
-## Implementation Order
+### Steps
 
-All phases implemented in a single pass across these files:
-1. `index.html` — fonts
-2. `src/index.css` — design tokens
-3. `src/components/discovery/SpaceBackground.tsx` — living background
-4. `src/components/discovery/BottomNavBar.tsx` — 5-tab nav
-5. `src/components/discovery/CosmicTopBar.tsx` — glassmorphic top bar
-6. `src/components/discovery/PersistentLayout.tsx` — layout wrapper
-7. `src/components/discovery/ArtistPortal.tsx` — new component
-8. `src/components/discovery/SongRow.tsx` — refresh
-9. `src/components/discovery/AlbumCard.tsx` — refresh
-10. `src/components/discovery/OrbPlayerBar.tsx` — full 3-state player
-11. `src/pages/Discover.tsx` — all tabs (home, explore, library)
-12. `src/contexts/MoodContext.tsx` — mood theming
-13. Install `swiper` package for coverflow carousel
-
-**No database changes needed.** All updates are purely frontend visual/UX.
+- Add a "fullscreen" toggle button (Maximize icon) next to the visualizer theme selector.
+- When toggled, render the canvas at `100vw × 100vh` with absolute positioning, hiding the top bar and controls. Add an exit button overlay.
 
 ---
 
-## Technical Notes
+## Phase 6: Discovery Main Page Organization
 
-- Swiper.js needed for coverflow carousel (`npm install swiper`)
-- Art color extraction: lightweight canvas-based approach (no ColorThief dependency) — draw image to hidden canvas, sample pixels
-- All animations GPU-accelerated via `transform` and `opacity` only
-- SpaceBackground limited to ~130 DOM nodes for performance
-- React.memo on SongRow, AlbumCard, ArtistPortal
-- Six Caps for all headings/titles/numbers, Raleway for all body/labels
+### What changes
 
+Better visual hierarchy and spacing on the Discover home tab.
+
+### Steps
+
+- Increase section spacing from `py-5` to `py-6`/`py-8`.
+- Add subtle section dividers (thin gradient lines).
+- Ensure consistent section ordering: Carousel → Moodscapes → Popular Tracks → Featured Artists → New This Week → Albums → Playlists.
+
+---
+
+## Phase 7: Discovery Carousel — Tighten Spacing
+
+### What changes
+
+The 7-cover carousel on Discovery has too much gap between covers compared to the Landing page version.
+
+### Steps
+
+- In `Discover.tsx` carousel (line ~466), reduce `gap-2` to `gap-0` or `gap-px`.
+- Increase scale values for adjacent covers (e.g., side covers at `0.92` instead of `0.82`).
+- Reduce `translateX` spread so covers overlap slightly, matching the Landing page's tight coverflow effect.
+
+---
+
+## Phase 8: Investor Page Phone Mockups
+
+### What changes
+
+The `StudioPhoneMockups`, `MusicPlayerPhoneMockups`, and `DiscoveryPhoneMockups` on the Investor page need to match the Landing page versions.
+
+### Steps
+
+- Import and use the same phone mockup components from `Landing.tsx` in `Investors.tsx`, or update `StudioPhoneMockup.tsx` exports to reflect the current UI (coral theme, glassmorphic cards, Six Caps typography).
+- Ensure visual parity between both pages.
+
+---
+
+## Technical Details
+
+### Files to create/edit:
+
+- **New edge functions**: Stripe versions of checkout, tips, purchases, payouts (6 functions)
+- **Delete/archive**: 5 Square-specific edge functions
+- **Client files**: `subscription-checkout.ts`, `SubscriptionModal.tsx`, `Pricing.tsx`, `Landing.tsx`, `SubscriptionSuccess.tsx`, `SquareOAuthCallback.tsx`
+- **Discovery UI**: `CosmicTopBar.tsx`, `BottomNavBar.tsx`, `Discover.tsx`
+- **Player**: `OrbPlayerBar.tsx`, `ArtistProfile.tsx`, `UnifiedArtistProfile.tsx`
+- **Investor**: `Investors.tsx`, `StudioPhoneMockup.tsx`
+
+### Dependencies:
+
+- Stripe must be enabled via Lovable's native integration before implementation begins
+- Stripe secret key will be collected automatically during enablement
+
+&nbsp;
+
+&nbsp;
