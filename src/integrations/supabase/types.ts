@@ -149,6 +149,57 @@ export type Database = {
         }
         Relationships: []
       }
+      artist_autopilot: {
+        Row: {
+          auto_analytics_reports: boolean
+          auto_fan_engagement: boolean
+          auto_momentum_tracking: boolean
+          auto_playlist_pitching: boolean
+          auto_publish_releases: boolean
+          auto_revenue_optimization: boolean
+          auto_social_posting: boolean
+          created_at: string
+          id: string
+          is_enabled: boolean
+          last_run_at: string | null
+          run_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_analytics_reports?: boolean
+          auto_fan_engagement?: boolean
+          auto_momentum_tracking?: boolean
+          auto_playlist_pitching?: boolean
+          auto_publish_releases?: boolean
+          auto_revenue_optimization?: boolean
+          auto_social_posting?: boolean
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          last_run_at?: string | null
+          run_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_analytics_reports?: boolean
+          auto_fan_engagement?: boolean
+          auto_momentum_tracking?: boolean
+          auto_playlist_pitching?: boolean
+          auto_publish_releases?: boolean
+          auto_revenue_optimization?: boolean
+          auto_social_posting?: boolean
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          last_run_at?: string | null
+          run_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       artist_collaborators: {
         Row: {
           artist_id: string
@@ -723,6 +774,36 @@ export type Database = {
           id?: string
           identifier?: string
           window_start?: string
+        }
+        Relationships: []
+      }
+      autopilot_logs: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json | null
+          status: string
+          summary: string | null
+          task_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          status?: string
+          summary?: string | null
+          task_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          status?: string
+          summary?: string | null
+          task_type?: string
+          user_id?: string
         }
         Relationships: []
       }
