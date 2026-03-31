@@ -137,6 +137,8 @@ function StudioContent() {
         return <StudioPromote />;
       case "agent":
         return <StudioAgentPanel />;
+      case "autopilot":
+        return <StudioAutopilot />;
       case "learn":
         setActiveSection("home");
         return null;
