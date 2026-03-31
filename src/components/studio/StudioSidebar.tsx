@@ -105,8 +105,9 @@ export const StudioSidebar = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       
-      // Check CEO status
-      if (user.email === "info@thirtydarkzero.com") {
+      // Check CEO status using server-side role
+      const { data: hasCeoRole } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'ceo' });
+      if (hasCeoRole) {
         setIsCEO(true);
       }
 

@@ -52,8 +52,13 @@ export function DiscoveryHeader({
   const searchRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   
-  // CEO check
-  const isCEO = user?.email === 'info@thirtydarkzero.com';
+  // CEO check using server-side role
+  const [isCEO, setIsCEO] = useState(false);
+  useEffect(() => {
+    if (!user) return;
+    supabase.rpc('has_role', { _user_id: user.id, _role: 'ceo' })
+      .then(({ data }) => setIsCEO(!!data));
+  }, [user]);
 
   // Search both TDZ and YouTube when query changes
   useEffect(() => {
