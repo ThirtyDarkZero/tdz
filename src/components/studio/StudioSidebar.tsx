@@ -65,6 +65,12 @@ const navGroups = [
     ]
   },
   {
+    id: "ai",
+    items: [
+      { id: "agent", icon: Brain, label: "AI Agent" },
+    ]
+  },
+  {
     id: "tools",
     items: [
       { id: "settings", icon: Settings2, label: "Settings" },
