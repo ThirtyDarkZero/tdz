@@ -97,9 +97,8 @@ export function SubscriptionModal({ open, onOpenChange, defaultAudience = 'fan' 
       return;
     }
 
-    // Open Square hosted checkout in new tab
     if (isCheckoutPlan(plan.planType)) {
-      openSquareCheckout(plan.planType);
+      openStripeCheckout(plan.planType);
       onOpenChange(false);
     }
   };

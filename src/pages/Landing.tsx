@@ -12,7 +12,7 @@ import "swiper/css";
 import "swiper/css/effect-coverflow";
 // @ts-ignore
 import "swiper/css/navigation";
-import { openSquareCheckout, isCheckoutPlan } from "@/lib/subscription-checkout";
+import { openStripeCheckout, isCheckoutPlan } from "@/lib/subscription-checkout";
 
 // ─── Types ───
 interface Track {
