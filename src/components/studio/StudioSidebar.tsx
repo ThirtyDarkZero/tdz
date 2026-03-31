@@ -28,7 +28,8 @@ import {
   X,
   Menu,
   LogOut,
-  Brain
+  Brain,
+  Bot
 } from "lucide-react";
 
 interface StudioSidebarProps {
@@ -68,6 +69,7 @@ const navGroups = [
     id: "ai",
     items: [
       { id: "agent", icon: Brain, label: "AI Agent" },
+      { id: "autopilot", icon: Bot, label: "Autopilot" },
     ]
   },
   {

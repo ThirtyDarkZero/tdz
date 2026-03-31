@@ -12,6 +12,7 @@ import { StudioHome } from "@/components/studio/StudioHome";
 import { StudioMusic } from "@/components/studio/StudioMusic";
 import { StudioInsights } from "@/components/studio/StudioInsights";
 import { StudioAgentPanel } from "@/components/studio/StudioAgentPanel";
+import { StudioAutopilot } from "@/components/studio/StudioAutopilot";
 import { StudioPromote } from "@/components/studio/StudioPromote";
 import { StudioLearn } from "@/components/studio/StudioLearn";
 import { StudioSettings } from "@/components/studio/StudioSettings";
@@ -136,6 +137,8 @@ function StudioContent() {
         return <StudioPromote />;
       case "agent":
         return <StudioAgentPanel />;
+      case "autopilot":
+        return <StudioAutopilot />;
       case "learn":
         setActiveSection("home");
         return null;
