@@ -6,22 +6,12 @@ export type CheckoutPlan = "starter" | "pro" | "enterprise" | "fan";
 
 const VALID_PLANS: CheckoutPlan[] = ["starter", "pro", "enterprise", "fan"];
 
-export function getAppBaseUrl(): string {
-  // Always use production URL for Square redirects
-  if (window.location.origin.includes('localhost') || window.location.origin.includes('preview')) {
-    return 'https://tdz.lovable.app';
-  }
-  return window.location.origin;
-}
-
-export async function openSquareCheckout(plan: CheckoutPlan): Promise<void> {
+export async function openStripeCheckout(plan: CheckoutPlan): Promise<void> {
   const loadingToast = toast.loading("Preparing checkout...");
   
   try {
-    const redirectUrl = `${getAppBaseUrl()}/subscription-success?plan=${plan}`;
-    
     const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-      body: { plan, redirectUrl },
+      body: { plan },
     });
 
     toast.dismiss(loadingToast);
@@ -34,7 +24,7 @@ export async function openSquareCheckout(plan: CheckoutPlan): Promise<void> {
       return;
     }
 
-    if (!data?.checkoutUrl) {
+    if (!data?.url) {
       console.error('No checkout URL returned:', data);
       toast.error("Payment system error", { 
         description: data?.error || "Could not create checkout session" 
@@ -42,8 +32,8 @@ export async function openSquareCheckout(plan: CheckoutPlan): Promise<void> {
       return;
     }
 
-    // Redirect to Square checkout
-    window.location.href = data.checkoutUrl;
+    // Redirect to Stripe checkout
+    window.location.href = data.url;
     
   } catch (err) {
     toast.dismiss(loadingToast);
@@ -53,6 +43,9 @@ export async function openSquareCheckout(plan: CheckoutPlan): Promise<void> {
     });
   }
 }
+
+/** @deprecated Use openStripeCheckout instead */
+export const openSquareCheckout = openStripeCheckout;
 
 export function isCheckoutPlan(plan: string): plan is CheckoutPlan {
   return VALID_PLANS.includes(plan as CheckoutPlan);
