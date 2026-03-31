@@ -4,7 +4,6 @@ import { FanDemographics } from "@/components/FanDemographics";
 import { MomentumTracker } from "@/components/MomentumTracker";
 import { TourRecommendations } from "@/components/TourRecommendations";
 import { AdvancedAnalyticsDashboard } from "@/components/AdvancedAnalyticsDashboard";
-import { FeatureGate } from "@/components/FeatureGate";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -39,9 +38,7 @@ export const StudioInsights = () => {
         </TabsList>
 
         <TabsContent value="advanced" className="mt-0">
-          <FeatureGate feature="advancedAnalytics">
-            <AdvancedAnalyticsDashboard />
-          </FeatureGate>
+          <AdvancedAnalyticsDashboard />
         </TabsContent>
 
         <TabsContent value="streams" className="mt-0">
@@ -53,9 +50,7 @@ export const StudioInsights = () => {
         </TabsContent>
 
         <TabsContent value="momentum" className="mt-0">
-          <FeatureGate feature="advancedAnalytics">
-            <MomentumTracker />
-          </FeatureGate>
+          <MomentumTracker />
         </TabsContent>
 
         <TabsContent value="tour" className="mt-0">
