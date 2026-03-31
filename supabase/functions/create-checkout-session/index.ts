@@ -12,9 +12,10 @@ const PLAN_PRICES: Record<string, { priceId: string; name: string }> = {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'));
+  
+  const preflight = handleCorsPreflightWithOrigin(req);
+  if (preflight) return preflight;
 
   const supabaseClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
@@ -43,7 +44,6 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Check for existing Stripe customer
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId: string | undefined;
     if (customers.data.length > 0) {

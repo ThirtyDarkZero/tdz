@@ -5,9 +5,10 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from '../_shared/cors.ts';
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'));
+
+  const preflight = handleCorsPreflightWithOrigin(req);
+  if (preflight) return preflight;
 
   try {
     const supabase = createClient(
@@ -40,7 +41,6 @@ serve(async (req) => {
       });
     }
 
-    // Verify artist exists
     const { data: artist } = await supabase
       .from("artist_profiles")
       .select("artist_name, user_id")
@@ -59,7 +59,6 @@ serve(async (req) => {
       });
     }
 
-    // Create tip record
     const { data: tip, error: tipError } = await supabase
       .from("artist_tips")
       .insert({
@@ -79,7 +78,6 @@ serve(async (req) => {
       });
     }
 
-    // Create Stripe Checkout session for the tip
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
       await supabase.from("artist_tips").update({ status: "completed" }).eq("id", tip.id);
@@ -119,6 +117,7 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("create-tip-session error:", error);
+    const corsHeaders = getCorsHeaders(req.headers.get('origin'));
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
