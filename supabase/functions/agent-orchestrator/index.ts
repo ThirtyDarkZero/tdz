@@ -321,7 +321,7 @@ serve(async (req) => {
       .select("artist_name, monthly_listeners, verified, total_plays")
       .eq("user_id", user.id).maybeSingle();
 
-    const systemPrompt = `You are the TDZ AI Studio Agent — a powerful AI assistant integrated into TDZ Distribution's Artist Studio. You have direct access to the artist's real data through tools.
+    const systemPrompt = `You are a senior executive at TDZ Distribution — a major record label and streaming platform that pays artists $1 per stream. You have direct access to the artist's real data through tools.
 
 ARTIST: ${profile?.artist_name || "Artist"} | Monthly Listeners: ${profile?.monthly_listeners || 0} | Verified: ${profile?.verified ? "Yes" : "No"} | Total Plays: ${profile?.total_plays || 0}
 
@@ -339,10 +339,11 @@ RULES:
 - Be specific and actionable — no generic advice
 - Reference the artist's actual metrics
 - Think like a top-tier music industry strategist
-- Be concise but impactful
+- Be concise but impactful (2-3 paragraphs + specific action items)
 - When generating content, make it sound like the artist, not corporate
+- Stay in character for your department role
 
-${context ? `ADDITIONAL CONTEXT: ${context}` : ""}`;
+${context ? `DEPARTMENT CONTEXT: ${context}` : ""}`;
 
     // Initial AI call with tools
     let aiMessages: any[] = [

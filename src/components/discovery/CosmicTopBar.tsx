@@ -1,5 +1,5 @@
-import { Search, X } from "lucide-react";
-import { useState, useRef, useMemo } from "react";
+import { Search, X, Globe, Loader2 } from "lucide-react";
+import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,7 +34,10 @@ export function CosmicTopBar({ activeTab, searchQuery, onSearchChange, userProfi
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [globalResults, setGlobalResults] = useState<any[]>([]);
+  const [globalLoading, setGlobalLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const avatarUrl = useMemo(() => {
     const raw = userProfile?.profile_image_path;
@@ -47,6 +50,40 @@ export function CosmicTopBar({ activeTab, searchQuery, onSearchChange, userProfi
     setSearchOpen(true);
     setTimeout(() => inputRef.current?.focus(), 100);
   };
+
+  // Global music library search (debounced)
+  const searchGlobal = useCallback(async (q: string) => {
+    if (q.length < 3) { setGlobalResults([]); return; }
+    setGlobalLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("unified-music-search", {
+        body: { query: q, limit: 8, sources: ["spotify", "musicbrainz"] },
+      });
+      if (!error && data?.results) {
+        setGlobalResults(data.results.slice(0, 8));
+      }
+    } catch {
+      // Silent fail — global search is supplementary
+    } finally {
+      setGlobalLoading(false);
+    }
+  }, []);
+
+  const handleSearchChange = (q: string) => {
+    onSearchChange(q);
+    // Debounce global search
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (q.trim().length >= 3) {
+      debounceRef.current = setTimeout(() => searchGlobal(q.trim()), 600);
+    } else {
+      setGlobalResults([]);
+    }
+  };
+
+  // Clear global results when search closes
+  useEffect(() => {
+    if (!searchOpen) setGlobalResults([]);
+  }, [searchOpen]);
 
   const currentTitle = TAB_TITLES[activeTab] || "DISCOVERY";
 
@@ -69,9 +106,9 @@ export function CosmicTopBar({ activeTab, searchQuery, onSearchChange, userProfi
             <input
               ref={inputRef}
               value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search songs, artists..."
-              className="w-full h-10 pl-10 pr-4 text-sm outline-none font-body"
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Search TDZ + global music library..."
+              className="w-full h-10 pl-10 pr-10 text-sm outline-none font-body"
               style={{
                 background: "var(--glass-1)",
                 border: "1px solid var(--glass-border)",
@@ -80,9 +117,12 @@ export function CosmicTopBar({ activeTab, searchQuery, onSearchChange, userProfi
                 backdropFilter: "blur(12px)",
               }}
             />
+            {globalLoading && (
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin" style={{ color: "#00CFFF" }} />
+            )}
           </div>
           <button
-            onClick={() => { setSearchOpen(false); onSearchChange(""); }}
+            onClick={() => { setSearchOpen(false); onSearchChange(""); setGlobalResults([]); }}
             className="p-2"
             style={{ color: "var(--text-3)" }}
           >
@@ -124,4 +164,9 @@ export function CosmicTopBar({ activeTab, searchQuery, onSearchChange, userProfi
       )}
     </div>
   );
+}
+
+// Export global results hook for parent to consume
+export function useGlobalSearchResults() {
+  return { globalResults: [], globalLoading: false };
 }
