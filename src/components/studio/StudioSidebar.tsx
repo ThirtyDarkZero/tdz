@@ -28,7 +28,8 @@ import {
   X,
   Menu,
   LogOut,
-  Brain
+  Brain,
+  Bot
 } from "lucide-react";
 
 interface StudioSidebarProps {
