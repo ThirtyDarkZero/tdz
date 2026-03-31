@@ -80,7 +80,7 @@ export default function CEODashboard() {
   }, [user]);
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || !roleChecked) return;
     if (!isCEO) {
       navigate('/studio');
       return;
