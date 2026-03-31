@@ -69,8 +69,8 @@ export function BottomNavBar({ activeTab, onTabChange }: BottomNavBarProps) {
                   className="transition-all duration-200"
                   style={{
                     width: 24, height: 24,
-                    color: isActive ? "#00CFFF" : "var(--text-3)",
-                    strokeWidth: isActive ? 2 : 1.5,
+                    color: isActive ? "#FF6347" : "var(--text-3)",
+                    strokeWidth: isActive ? 2.2 : 1.5,
                     transform: isActive ? "scale(1.1)" : "scale(1)",
                   }}
                 />
