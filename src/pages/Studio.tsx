@@ -134,8 +134,9 @@ function StudioContent() {
         return <StudioInsights />;
       case "promote":
         return <StudioPromote />;
+      case "agent":
+        return <StudioAgentPanel />;
       case "learn":
-        // Academy removed — redirect to home
         setActiveSection("home");
         return null;
       case "settings":
