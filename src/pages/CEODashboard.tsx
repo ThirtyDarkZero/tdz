@@ -66,8 +66,18 @@ export default function CEODashboard() {
   const [activeTab, setActiveTab] = useState("executive");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Check if user is CEO - only after auth has loaded
-  const isCEO = user?.email === 'info@thirtydarkzero.com';
+  // Check if user is CEO using server-side role check
+  const [isCEO, setIsCEO] = useState(false);
+  const [roleChecked, setRoleChecked] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.rpc('has_role', { _user_id: user.id, _role: 'ceo' })
+      .then(({ data }) => {
+        setIsCEO(!!data);
+        setRoleChecked(true);
+      });
+  }, [user]);
 
   useEffect(() => {
     if (authLoading) return;
