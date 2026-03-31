@@ -4,7 +4,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from '../_shared/cors.ts';
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'));
+  if (req.method === 'OPTIONS') const preflight = handleCorsPreflightWithOrigin(req); if (preflight) return preflight;
 
   try {
     const { trackId, artistId, listenerId, sessionId, durationSeconds, deviceType } = await req.json();

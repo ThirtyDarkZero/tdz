@@ -17,9 +17,10 @@ const PLAN_PRICES: Record<string, { amount: number; name: string }> = {
 };
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req.headers.get('origin'));
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    const preflight = handleCorsPreflightWithOrigin(req); if (preflight) return preflight;
   }
 
   try {
