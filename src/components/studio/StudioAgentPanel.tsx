@@ -133,12 +133,7 @@ export function StudioAgentPanel() {
 
       setConversations(prev => ({
         ...prev,
-        [activeDept]: [...(prev[activeDept] || []), userMsg, { role: "assistant", content: data.response }].filter((m, i, arr) => !(m.role === "user" && m.content === userMsg.content && i < arr.length - 2)),
-      }));
-      // Fix: just set properly
-      setConversations(prev => ({
-        ...prev,
-        [activeDept]: [...newMessages, { role: "assistant", content: data.response }],
+        [activeDept]: [...newMessages, { role: "assistant" as const, content: data.response }],
       }));
     } catch (err: any) {
       const msg = err.message || "Agent failed";
