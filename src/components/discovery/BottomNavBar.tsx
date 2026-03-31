@@ -76,7 +76,7 @@ export function BottomNavBar({ activeTab, onTabChange }: BottomNavBarProps) {
                 />
                 <span className="font-body transition-all duration-200" style={{
                   fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase",
-                  color: isActive ? "#00CFFF" : "var(--text-3)",
+                  color: isActive ? "#FF6347" : "var(--text-3)",
                 }}>
                   {item.label}
                 </span>
