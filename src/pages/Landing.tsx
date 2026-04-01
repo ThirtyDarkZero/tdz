@@ -784,7 +784,7 @@ function SectionAIAgents() {
     { name: "QUANTUM ADVISOR", desc: "AI-powered career advisor that analyzes your data in real-time. Get actionable insights for revenue optimization, release timing, and audience growth.", icon: "🧠", color: "#8B5CF6" },
     { name: "MOOD MIX GENERATOR", desc: "Tell the AI how you're feeling and it generates a personalized playlist from TDZ's catalog. Unique to our platform.", icon: "🎵", color: "#00CFFF" },
     { name: "SMART PROMO", desc: "AI identifies optimal promotion windows, suggests collaboration opportunities, and automates social media scheduling.", icon: "📣", color: "#22C55E" },
-    { name: "STORYTELLING STUDIO", desc: "Generate AI music videos using Kling, Runway, Sora, and Veo. Create professional visual content in minutes, not months.", icon: "🎬", color: "#D4A017" },
+    { name: "STORYTELLING STUDIO", desc: "Create compelling visual stories and narratives for your music. Build your brand identity with AI-powered content tools.", icon: "🎬", color: "#D4A017" },
     { name: "LABEL STAFF AI", desc: "Virtual A&R, marketing manager, and distribution coordinator. Get label-quality support without the label contract.", icon: "👔", color: "#00CFFF" },
     { name: "TERRITORY OPTIMIZER", desc: "AI analyzes global streaming patterns to recommend optimal release territories and timing for maximum impact.", icon: "🌐", color: "#8B5CF6" },
   ];
