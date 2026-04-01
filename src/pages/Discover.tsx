@@ -17,7 +17,7 @@ import { ArtistCard } from "@/components/discovery/ArtistCard";
 import { AlbumCard } from "@/components/discovery/AlbumCard";
 import { ArtistPortal } from "@/components/discovery/ArtistPortal";
 import { UniversalSearchResults } from "@/components/discovery/UniversalSearchResults";
-import { UnifiedLibrary } from "@/components/discovery/UnifiedLibrary";
+
 import { UserPlaylistsSection } from "@/components/discovery/UserPlaylistsSection";
 import { GenreTop50Section } from "@/components/discovery/GenreTop50Section";
 import { PlaylistManager } from "@/components/PlaylistManager";
