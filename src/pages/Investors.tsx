@@ -318,7 +318,7 @@ export default function Investors() {
           </div>
 
           {/* Market Growth Chart */}
-          <Reveal className="mt-12">
+          <ScreenPopReveal className="mt-12">
             <div className="rounded-2xl border border-[#222] bg-[#111] p-8">
               <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 36, color: "#fff", textAlign: "center", letterSpacing: "0.04em", textTransform: "uppercase" }}>
                 GLOBAL MUSIC MARKET 5-YEAR PROJECTION
@@ -345,7 +345,7 @@ export default function Investors() {
                 </ResponsiveContainer>
               </div>
             </div>
-          </Reveal>
+          </ScreenPopReveal>
 
           {/* Independent + AI Details */}
           <div className="grid lg:grid-cols-2 gap-6 mt-8">
