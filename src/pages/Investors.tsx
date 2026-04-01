@@ -608,10 +608,43 @@ export default function Investors() {
         </div>
       </section>
 
-      {/* ─── Phone Mockups (preserved) ─── */}
-      <StudioPhoneMockups />
-      <MusicPlayerPhoneMockups />
-      <DiscoveryPhoneMockups />
+      {/* ─── Phone Mockups (Landing-style) ─── */}
+      <section className="py-20 px-4 md:px-6">
+        <div className="max-w-6xl mx-auto">
+          <Reveal>
+            <TDZBadge />
+            <SectionTitle chrome>PLATFORM EXPERIENCE</SectionTitle>
+            <p className="text-center mt-4 mb-12" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 15, color: "#777" }}>
+              Interactive demos — artist studio, real-time insights, and fan discovery
+            </p>
+          </Reveal>
+          <ScreenPopReveal>
+            <div className="flex items-center justify-center gap-0" style={{ perspective: 1200 }}>
+              {/* Studio Phone */}
+              <div className="hidden md:block relative flex-shrink-0" style={{ width: 220, height: 450, background: "#1A1A1A", borderRadius: 40, border: "2px solid #2A2A2A", boxShadow: "0 40px 80px rgba(0,0,0,0.8)", overflow: "hidden", transform: "rotateY(18deg) rotateZ(-2deg) translateX(-30px)", zIndex: 1, opacity: 0.85 }}>
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-14 h-4 bg-black rounded-full z-10" />
+                <div className="absolute inset-1 rounded-[36px] overflow-hidden overflow-y-auto scrollbar-hide" style={{ background: "#111" }}>
+                  <InvestorStudioDemo />
+                </div>
+              </div>
+              {/* Center — Insights */}
+              <div className="relative flex-shrink-0" style={{ width: 220, height: 450, background: "#1A1A1A", borderRadius: 40, border: "2px solid #2A2A2A", boxShadow: "0 40px 80px rgba(0,0,0,0.8), 0 0 60px rgba(0,207,255,0.1)", overflow: "hidden", transform: "rotateY(0deg) scale(1.08)", zIndex: 3 }}>
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-14 h-4 bg-black rounded-full z-10" />
+                <div className="absolute inset-1 rounded-[36px] overflow-hidden overflow-y-auto scrollbar-hide" style={{ background: "#111" }}>
+                  <InvestorInsightsDemo />
+                </div>
+              </div>
+              {/* Discovery Phone */}
+              <div className="hidden md:block relative flex-shrink-0" style={{ width: 220, height: 450, background: "#1A1A1A", borderRadius: 40, border: "2px solid #2A2A2A", boxShadow: "0 40px 80px rgba(0,0,0,0.8)", overflow: "hidden", transform: "rotateY(-18deg) rotateZ(2deg) translateX(30px)", zIndex: 1, opacity: 0.85 }}>
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-14 h-4 bg-black rounded-full z-10" />
+                <div className="absolute inset-1 rounded-[36px] overflow-hidden overflow-y-auto scrollbar-hide" style={{ background: "#111" }}>
+                  <InvestorDiscoveryDemo />
+                </div>
+              </div>
+            </div>
+          </ScreenPopReveal>
+        </div>
+      </section>
 
       {/* ─── COMPETITIVE ADVANTAGES ─── */}
       <section className="py-20 px-4 md:px-6">
