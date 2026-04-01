@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { 
   Play, Bell, MoreHorizontal, ChevronLeft, ChevronRight, 
-  Disc, Clock, ListPlus, Youtube, Loader2, Music, Heart
+  Disc, Clock, ListPlus, Youtube, Loader2, Music, Heart, Bot
 } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { useMusicBrainz } from "@/hooks/useMusicBrainz";
@@ -14,6 +14,7 @@ import { useDiscogsLibrary } from "@/hooks/useDiscogsLibrary";
 import { GlobalAlbumDetail } from "./GlobalAlbumDetail";
 import { ArtistYouTubeCatalog } from "./ArtistYouTubeCatalog";
 import { useGlobalLibrary } from "@/hooks/useGlobalLibrary";
+import { useDiscographyAgent } from "@/hooks/useDiscographyAgent";
 
 interface GlobalArtistProfileProps {
   artistName: string;
