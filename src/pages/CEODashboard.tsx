@@ -628,6 +628,13 @@ export default function CEODashboard() {
             </div>
           )}
 
+          {/* Financial Agents Tab */}
+          {activeTab === "finance" && (
+            <div className="animate-fade-in">
+              <StripeFinancialAgents />
+            </div>
+          )}
+
           {/* Artist Messaging Tab */}
           {activeTab === "messaging" && (
             <div className="animate-fade-in">
