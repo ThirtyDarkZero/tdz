@@ -906,6 +906,8 @@ export const ManagerDashboard = () => {
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 };
