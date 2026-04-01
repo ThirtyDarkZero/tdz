@@ -755,7 +755,7 @@ function SectionWhyTDZ({ navigate }: { navigate: (p: string) => void }) {
       </div>
 
       {/* Comparison Table */}
-      <Reveal delay={0.3}>
+      <ScreenPopReveal>
         <div className="max-w-[900px] mx-auto mt-16">
           <WhiteTitle className="text-center mb-8">TDZ VS THE COMPETITION</WhiteTitle>
           <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #222" }}>
@@ -775,7 +775,7 @@ function SectionWhyTDZ({ navigate }: { navigate: (p: string) => void }) {
             ))}
           </div>
         </div>
-      </Reveal>
+      </ScreenPopReveal>
     </section>
   );
 }
