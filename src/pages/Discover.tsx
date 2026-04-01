@@ -17,7 +17,7 @@ import { ArtistCard } from "@/components/discovery/ArtistCard";
 import { AlbumCard } from "@/components/discovery/AlbumCard";
 import { ArtistPortal } from "@/components/discovery/ArtistPortal";
 import { UniversalSearchResults } from "@/components/discovery/UniversalSearchResults";
-import { UnifiedLibrary } from "@/components/discovery/UnifiedLibrary";
+
 import { UserPlaylistsSection } from "@/components/discovery/UserPlaylistsSection";
 import { GenreTop50Section } from "@/components/discovery/GenreTop50Section";
 import { PlaylistManager } from "@/components/PlaylistManager";
@@ -760,11 +760,7 @@ export default function Discover() {
                   </div>
                 )}
 
-                <ErrorBoundary fallback={null}>
-                  <UnifiedLibrary showTrending={false} onPlayYouTube={(videoId, title, artist, thumbnail) => {
-                    playTrack({ id: videoId, title, artist_name: artist, source: "youtube", youtubeId: videoId, album_cover_path: thumbnail, duration: 0, file_path: "", play_count: 0 } as any);
-                  }} />
-                </ErrorBoundary>
+                {/* Global library removed — search is in the top bar */}
               </div>
             </div>
           );

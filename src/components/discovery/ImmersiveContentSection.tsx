@@ -2,6 +2,7 @@ import { memo } from "react";
 import { ArtistPortal } from "@/components/discovery/ArtistPortal";
 import { AlbumCard } from "@/components/discovery/AlbumCard";
 import { supabase } from "@/integrations/supabase/client";
+import { useScalePop, useStaggerEmerge, ScrollReveal } from "@/hooks/useScrollAnimations";
 
 interface ImmersiveContentSectionProps {
   artists: any[];
@@ -16,13 +17,16 @@ export const ImmersiveContentSection = memo(function ImmersiveContentSection({
   onArtistClick,
   onAlbumClick,
 }: ImmersiveContentSectionProps) {
+  const artistStagger = useStaggerEmerge(Math.min(artists.length, 12), 60);
+  const albumStagger = useStaggerEmerge(Math.min(albums.length, 10), 70);
+
   return (
     <>
       {/* Artists Section */}
       {artists.length > 0 && (
         <section className="relative w-full min-h-[50vh] flex items-center py-16">
           <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="mb-8">
+            <ScrollReveal effect="emerge-left" className="mb-8">
               <h2
                 className="font-display"
                 style={{ fontSize: "clamp(40px, 8vw, 72px)", color: "var(--text-1)", lineHeight: 0.9 }}
@@ -30,12 +34,17 @@ export const ImmersiveContentSection = memo(function ImmersiveContentSection({
                 FEATURED ARTISTS
               </h2>
               <div className="mt-4 w-20 h-0.5 rounded-full" style={{ background: "#8B5CF6" }} />
-            </div>
+            </ScrollReveal>
 
-            {/* Artist grid with circular glowing portraits */}
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-6 sm:gap-8">
-              {artists.slice(0, 12).map((a) => (
-                <div key={a.user_id} className="flex flex-col items-center gap-3 group cursor-pointer" onClick={() => onArtistClick(a)}>
+            {/* Artist grid with stagger emerge */}
+            <div ref={artistStagger.containerRef} className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-6 sm:gap-8">
+              {artists.slice(0, 12).map((a, i) => (
+                <div
+                  key={a.user_id}
+                  className="flex flex-col items-center gap-3 group cursor-pointer"
+                  onClick={() => onArtistClick(a)}
+                  style={artistStagger.getItemStyle(i)}
+                >
                   {/* Circular glow portrait */}
                   <div className="relative">
                     <div
@@ -58,7 +67,7 @@ export const ImmersiveContentSection = memo(function ImmersiveContentSection({
       {albums.length > 0 && (
         <section className="relative w-full min-h-[50vh] flex items-center py-16">
           <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="mb-8">
+            <ScrollReveal effect="emerge-right" className="mb-8">
               <h2
                 className="font-display"
                 style={{ fontSize: "clamp(40px, 8vw, 72px)", color: "var(--text-1)", lineHeight: 0.9 }}
@@ -66,16 +75,21 @@ export const ImmersiveContentSection = memo(function ImmersiveContentSection({
                 ALBUMS
               </h2>
               <div className="mt-4 w-20 h-0.5 rounded-full" style={{ background: "#22C55E" }} />
-            </div>
+            </ScrollReveal>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5">
-              {albums.map((album) => {
+            <div ref={albumStagger.containerRef} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5">
+              {albums.map((album, i) => {
                 const coverUrl = album.cover_art_path
                   ? supabase.storage.from("album-covers").getPublicUrl(album.cover_art_path).data.publicUrl
                   : null;
 
                 return (
-                  <div key={album.id} className="group cursor-pointer" onClick={() => onAlbumClick(album)}>
+                  <div
+                    key={album.id}
+                    className="group cursor-pointer"
+                    onClick={() => onAlbumClick(album)}
+                    style={albumStagger.getItemStyle(i)}
+                  >
                     <div className="relative">
                       {/* Circular glow behind artwork */}
                       <div

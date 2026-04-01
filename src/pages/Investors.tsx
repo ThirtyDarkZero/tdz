@@ -29,7 +29,36 @@ function useReveal() {
 function Reveal({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   const { ref, visible } = useReveal();
   return (
-    <div ref={ref} className={className} style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(28px)", transition: `opacity 0.6s ease ${delay}s, transform 0.6s ease ${delay}s` }}>
+    <div ref={ref} className={className} style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0) scale(1)" : "translateY(40px) scale(0.96)", transition: `opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s` }}>
+      {children}
+    </div>
+  );
+}
+
+function ScreenPopReveal({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onScroll = () => {
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const raw = 1 - Math.max(0, Math.min(1, (rect.top - vh * 0.2) / (vh * 0.6)));
+      setProgress(raw);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return (
+    <div ref={ref} className={className} style={{
+      transform: `scale(${0.85 + progress * 0.15})`,
+      opacity: Math.min(1, progress * 1.4),
+      borderRadius: `${32 - progress * 20}px`,
+      transition: "transform 0.1s linear, opacity 0.1s linear, border-radius 0.1s linear",
+      willChange: "transform, opacity",
+    }}>
       {children}
     </div>
   );
@@ -289,7 +318,7 @@ export default function Investors() {
           </div>
 
           {/* Market Growth Chart */}
-          <Reveal className="mt-12">
+          <ScreenPopReveal className="mt-12">
             <div className="rounded-2xl border border-[#222] bg-[#111] p-8">
               <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 36, color: "#fff", textAlign: "center", letterSpacing: "0.04em", textTransform: "uppercase" }}>
                 GLOBAL MUSIC MARKET 5-YEAR PROJECTION
@@ -316,7 +345,7 @@ export default function Investors() {
                 </ResponsiveContainer>
               </div>
             </div>
-          </Reveal>
+          </ScreenPopReveal>
 
           {/* Independent + AI Details */}
           <div className="grid lg:grid-cols-2 gap-6 mt-8">
@@ -400,7 +429,7 @@ export default function Investors() {
           </Reveal>
 
           {/* Profit Formula */}
-          <Reveal className="mt-10">
+          <ScreenPopReveal className="mt-10">
             <div className="rounded-2xl border border-[#1A3A1A] bg-[#0A1A0A] p-8 text-center">
               <div style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 32, color: "#fff", letterSpacing: "0.04em", textTransform: "uppercase" }}>THE PROFIT FORMULA</div>
               <div className="mt-4" style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(28px, 4vw, 48px)", color: "#22C55E", letterSpacing: "0.04em" }}>
@@ -410,7 +439,7 @@ export default function Investors() {
                 You win when: <span style={{ color: "#22C55E", fontWeight: 700 }}>ARPS &gt; $1.00</span>
               </p>
             </div>
-          </Reveal>
+          </ScreenPopReveal>
 
           {/* $200M by Year 5 */}
           <Reveal className="mt-12">
@@ -485,7 +514,7 @@ export default function Investors() {
           </div>
 
           {/* Streaming Cost Model */}
-          <Reveal className="mt-8">
+          <ScreenPopReveal className="mt-8">
             <div className="rounded-2xl border border-[#222] bg-[#111] p-8">
               <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 32, color: "#fff", textAlign: "center", letterSpacing: "0.04em" }}>STREAMING COST MODEL</h3>
               <div className="grid md:grid-cols-4 gap-4 mt-6">
@@ -512,7 +541,7 @@ export default function Investors() {
                 </p>
               </div>
             </div>
-          </Reveal>
+          </ScreenPopReveal>
         </div>
       </section>
 
