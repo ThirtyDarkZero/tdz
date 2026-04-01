@@ -478,19 +478,15 @@ export function useFeatureAccess() {
   };
 
   const getAiVideosLimit = (): number => {
-    return PLAN_FEATURES[plan].aiVideos;
+    return 0; // AI video feature removed
   };
 
   const getAiVideosRemaining = (): number => {
-    const limit = getAiVideosLimit();
-    if (limit === -1) return Infinity;
-    if (limit === 0) return 0;
-    const used = subscription?.ai_videos_used || 0;
-    return Math.max(0, limit - used);
+    return 0;
   };
 
   const canUseAiVideos = (): boolean => {
-    return getAiVideosRemaining() > 0;
+    return false;
   };
 
   const isPaidPlan = (): boolean => {
