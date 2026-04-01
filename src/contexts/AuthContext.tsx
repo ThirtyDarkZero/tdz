@@ -163,7 +163,6 @@ export const PLAN_FEATURES = {
     advancedAnalytics: false,
     fanEngagement: false,
     downloadSales: false,
-    aiVideos: 0,
     presaveCampaigns: false,
     collaborationTools: false,
     multiArtistManagement: false,
