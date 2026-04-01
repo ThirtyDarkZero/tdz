@@ -57,6 +57,7 @@ export function GlobalArtistProfile({
   const { toggleGlobalLike, isGlobalTrackLiked, loadLikedGlobalTracks } = useGlobalLibrary();
   const { getArtist: getMBArtist, search: searchMB, findYouTubeMatch } = useMusicBrainz();
   const { getArtist: getDiscogsArtist, getArtistReleases } = useDiscogsLibrary();
+  const { result: discographyResult, loading: discographyLoading, fetchDiscography } = useDiscographyAgent();
   
   const [artist, setArtist] = useState<any>(null);
   const [tracks, setTracks] = useState<GlobalTrack[]>([]);
