@@ -51,8 +51,10 @@ function Reveal({ children, className = "", delay = 0 }: { children: React.React
       className={className}
       style={{
         opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0) scale(1)" : "translateY(40px) scale(0.96)",
-        transition: `opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
+        transform: visible ? "translateY(0) scale(1) rotateX(0deg)" : "translateY(70px) scale(0.88) rotateX(8deg)",
+        filter: visible ? "blur(0px)" : "blur(6px)",
+        perspective: "1200px",
+        transition: `opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, filter 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
       }}
     >
       {children}
@@ -60,7 +62,7 @@ function Reveal({ children, className = "", delay = 0 }: { children: React.React
   );
 }
 
-// Snapped-style screen-pop reveal: section scales from 0.85 to 1.0 on scroll
+// Dramatic screen-pop reveal: section scales from 0.65 to 1.0 with 3D rotation + blur
 function ScreenPopReveal({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState(0);
@@ -71,7 +73,7 @@ function ScreenPopReveal({ children, className = "" }: { children: React.ReactNo
     const onScroll = () => {
       const rect = el.getBoundingClientRect();
       const vh = window.innerHeight;
-      const raw = 1 - Math.max(0, Math.min(1, (rect.top - vh * 0.2) / (vh * 0.6)));
+      const raw = 1 - Math.max(0, Math.min(1, (rect.top - vh * 0.15) / (vh * 0.65)));
       setProgress(raw);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -84,11 +86,12 @@ function ScreenPopReveal({ children, className = "" }: { children: React.ReactNo
       ref={ref}
       className={className}
       style={{
-        transform: `scale(${0.85 + progress * 0.15})`,
-        opacity: Math.min(1, progress * 1.4),
-        borderRadius: `${32 - progress * 20}px`,
-        transition: "transform 0.1s linear, opacity 0.1s linear, border-radius 0.1s linear",
-        willChange: "transform, opacity",
+        transform: `scale(${0.65 + progress * 0.35}) perspective(1200px) rotateX(${(1 - progress) * 10}deg)`,
+        opacity: Math.min(1, progress * 1.6),
+        borderRadius: `${40 - progress * 28}px`,
+        filter: `blur(${(1 - progress) * 8}px)`,
+        transition: "transform 0.06s linear, opacity 0.06s linear, border-radius 0.06s linear, filter 0.06s linear",
+        willChange: "transform, opacity, filter",
       }}
     >
       {children}
