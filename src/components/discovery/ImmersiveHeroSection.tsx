@@ -2,6 +2,7 @@ import { memo, useMemo } from "react";
 import { Play, Music } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/contexts/PlayerContext";
+import { useScalePop, useScreenPop, ScrollReveal } from "@/hooks/useScrollAnimations";
 
 interface ImmersiveHeroSectionProps {
   forYouItems: Array<{
@@ -53,11 +54,11 @@ export const ImmersiveHeroSection = memo(function ImmersiveHeroSection({
 
       {/* Content grid */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 sm:px-6">
-        {/* Hero artwork with circular glow */}
-        <div className="relative mb-8 mt-20">
+        {/* Hero artwork with circular glow — screen-pop emergence */}
+        <ScrollReveal effect="scale-pop" className="relative mb-8 mt-20">
           {/* Circular glow layers */}
           <div
-            className="absolute inset-0 rounded-full animate-pulse"
+            className="absolute inset-0 rounded-full"
             style={{
               width: 320,
               height: 320,
@@ -66,6 +67,7 @@ export const ImmersiveHeroSection = memo(function ImmersiveHeroSection({
               transform: "translate(-50%, -50%)",
               background: `radial-gradient(circle, rgba(0,207,255,0.25) 0%, rgba(139,92,246,0.15) 40%, transparent 70%)`,
               filter: "blur(40px)",
+              animation: "breathe 4s ease-in-out infinite",
             }}
           />
           <div
@@ -78,7 +80,7 @@ export const ImmersiveHeroSection = memo(function ImmersiveHeroSection({
               transform: "translate(-50%, -50%)",
               background: `radial-gradient(circle, rgba(0,207,255,0.1) 0%, transparent 60%)`,
               filter: "blur(60px)",
-              animation: "breathe 4s ease-in-out infinite",
+              animation: "breathe 6s ease-in-out infinite reverse",
             }}
           />
           <img
@@ -87,10 +89,10 @@ export const ImmersiveHeroSection = memo(function ImmersiveHeroSection({
             className="relative z-10 w-64 h-64 sm:w-72 sm:h-72 object-cover rounded-2xl shadow-2xl transition-all duration-700"
             style={{ boxShadow: "0 30px 80px -20px rgba(0,0,0,0.8), 0 0 60px rgba(0,207,255,0.15)" }}
           />
-        </div>
+        </ScrollReveal>
 
         {/* Track info */}
-        <div className="text-center mb-8 max-w-lg">
+        <ScrollReveal effect="emerge-up" delay={0.1} className="text-center mb-8 max-w-lg">
           <h1
             className="font-display transition-all duration-500"
             style={{ fontSize: "clamp(36px, 8vw, 64px)", color: "var(--text-1)", lineHeight: 0.95 }}
@@ -119,10 +121,10 @@ export const ImmersiveHeroSection = memo(function ImmersiveHeroSection({
           >
             <Play className="h-6 w-6 ml-0.5" fill="currentColor" />
           </button>
-        </div>
+        </ScrollReveal>
 
         {/* Carousel strip */}
-        <div className="w-full max-w-3xl">
+        <ScrollReveal effect="emerge-up" delay={0.2} className="w-full max-w-3xl">
           {/* Desktop: 7 covers */}
           <div className="hidden sm:grid grid-cols-7 items-center" style={{ gap: 0 }}>
             {visibleItems.map(({ item, offset, index }, slotIndex) => {
@@ -196,7 +198,7 @@ export const ImmersiveHeroSection = memo(function ImmersiveHeroSection({
               );
             })}
           </div>
-        </div>
+        </ScrollReveal>
 
         {/* Scroll indicator */}
         <div className="mt-12 mb-8 flex flex-col items-center gap-2 animate-bounce">
@@ -204,6 +206,14 @@ export const ImmersiveHeroSection = memo(function ImmersiveHeroSection({
           <span className="font-body" style={{ fontSize: 10, color: "var(--text-4)", letterSpacing: "0.15em" }}>SCROLL</span>
         </div>
       </div>
+
+      {/* Breathe keyframe */}
+      <style>{`
+        @keyframes breathe {
+          0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+          50% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+        }
+      `}</style>
     </section>
   );
 });

@@ -2,6 +2,7 @@ import { memo } from "react";
 import { Play, Music } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { SongRow, SongListHeader } from "@/components/discovery/SongRow";
+import { useScalePop, useEmerge, ScrollReveal } from "@/hooks/useScrollAnimations";
 
 interface ImmersiveTrackSectionProps {
   title: string;
@@ -30,8 +31,10 @@ export const ImmersiveTrackSection = memo(function ImmersiveTrackSection({
 }: ImmersiveTrackSectionProps) {
   if (tracks.length === 0) return null;
 
+  const scalePop = useScalePop(0.12);
+
   return (
-    <section className="relative w-full min-h-[60vh] flex items-center py-20">
+    <section ref={scalePop.ref} className="relative w-full min-h-[60vh] flex items-center py-20" style={scalePop.style}>
       {/* Section accent line */}
       <div
         className="absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-full hidden lg:block"
@@ -40,7 +43,7 @@ export const ImmersiveTrackSection = memo(function ImmersiveTrackSection({
 
       <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
-        <div className="mb-8">
+        <ScrollReveal effect="emerge-left" className="mb-8">
           <h2
             className="font-display"
             style={{ fontSize: "clamp(40px, 8vw, 72px)", color: "var(--text-1)", lineHeight: 0.9 }}
@@ -53,31 +56,33 @@ export const ImmersiveTrackSection = memo(function ImmersiveTrackSection({
             </p>
           )}
           <div className="mt-4 w-20 h-0.5 rounded-full" style={{ background: accentColor }} />
-        </div>
+        </ScrollReveal>
 
-        {/* Track list with glass container */}
-        <div
-          className="rounded-2xl overflow-hidden"
-          style={{
-            background: "linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)",
-            border: "1px solid rgba(255,255,255,0.06)",
-            backdropFilter: "blur(40px)",
-          }}
-        >
-          <SongListHeader />
-          {tracks.slice(0, maxTracks).map((track, i) => (
-            <SongRow
-              key={track.id}
-              track={track}
-              index={i + 1}
-              isPlaying={currentTrackId === track.id}
-              isLiked={likedTracks.has(track.id)}
-              onPlay={onPlayTrack}
-              onToggleLike={onToggleLike}
-              onAddToQueue={onAddToQueue}
-            />
-          ))}
-        </div>
+        {/* Track list with glass container — screen-pop effect */}
+        <ScrollReveal effect="screen-pop" delay={0.15}>
+          <div
+            className="rounded-2xl overflow-hidden"
+            style={{
+              background: "linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              backdropFilter: "blur(40px)",
+            }}
+          >
+            <SongListHeader />
+            {tracks.slice(0, maxTracks).map((track, i) => (
+              <SongRow
+                key={track.id}
+                track={track}
+                index={i + 1}
+                isPlaying={currentTrackId === track.id}
+                isLiked={likedTracks.has(track.id)}
+                onPlay={onPlayTrack}
+                onToggleLike={onToggleLike}
+                onAddToQueue={onAddToQueue}
+              />
+            ))}
+          </div>
+        </ScrollReveal>
       </div>
     </section>
   );
