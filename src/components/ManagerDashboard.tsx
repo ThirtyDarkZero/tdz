@@ -410,6 +410,30 @@ export const ManagerDashboard = () => {
           <p className="text-muted-foreground mt-2">Manage your roster like a sports team</p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant={activeManagerTab === "roster" ? "default" : "outline"}
+            onClick={() => setActiveManagerTab("roster")}
+            className="gap-2"
+          >
+            <Users className="h-4 w-4" />
+            Roster
+          </Button>
+          <Button
+            variant={activeManagerTab === "branding" ? "default" : "outline"}
+            onClick={() => setActiveManagerTab("branding")}
+            className="gap-2"
+          >
+            <Paintbrush className="h-4 w-4" />
+            Branding
+          </Button>
+        </div>
+      </div>
+
+      {activeManagerTab === "branding" ? (
+        <WhiteLabelSettings />
+      ) : (
+      <>
+      <div className="flex gap-2 justify-end">
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2">
