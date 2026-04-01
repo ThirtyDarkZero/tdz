@@ -29,7 +29,6 @@ function validateInput(data: unknown): {
 
   const { trackId, completionPercentage, duration, focusMetrics } = data as Record<string, unknown>;
 
-  // Validate trackId - required and must be UUID
   if (!trackId || typeof trackId !== 'string') {
     return { error: 'Missing or invalid trackId' };
   }
@@ -37,7 +36,6 @@ function validateInput(data: unknown): {
     return { error: 'Invalid trackId format - must be a valid UUID' };
   }
 
-  // Validate completionPercentage - optional, must be number 0-100
   let validatedCompletionPercentage: number | undefined;
   if (completionPercentage !== undefined) {
     if (typeof completionPercentage !== 'number' || isNaN(completionPercentage)) {
@@ -49,19 +47,17 @@ function validateInput(data: unknown): {
     validatedCompletionPercentage = completionPercentage;
   }
 
-  // Validate duration - optional, must be non-negative number
   let validatedDuration: number | undefined;
   if (duration !== undefined) {
     if (typeof duration !== 'number' || isNaN(duration)) {
       return { error: 'duration must be a number' };
     }
-    if (duration < 0 || duration > 86400) { // Max 24 hours
+    if (duration < 0 || duration > 86400) {
       return { error: 'duration must be between 0 and 86400 seconds' };
     }
     validatedDuration = duration;
   }
 
-  // Validate focus metrics - optional
   let validatedFocusMetrics: FocusMetrics | undefined;
   if (focusMetrics && typeof focusMetrics === 'object') {
     const fm = focusMetrics as Record<string, unknown>;
@@ -84,47 +80,51 @@ function validateInput(data: unknown): {
   };
 }
 
-// Generate device fingerprint from request headers
 function generateDeviceFingerprint(req: Request): string {
   const userAgent = req.headers.get('user-agent') || '';
   const acceptLanguage = req.headers.get('accept-language') || '';
   const acceptEncoding = req.headers.get('accept-encoding') || '';
-  
-  // Create a simple fingerprint from available headers
   const fingerprintData = `${userAgent}|${acceptLanguage}|${acceptEncoding}`;
-  
-  // Simple hash function
   let hash = 0;
   for (let i = 0; i < fingerprintData.length; i++) {
     const char = fingerprintData.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
+    hash = hash & hash;
   }
   return `fp_${Math.abs(hash).toString(16)}`;
 }
 
-// Get client IP address from request
 function getClientIP(req: Request): string | null {
-  // Check common headers for real IP (when behind proxy/CDN)
   const forwardedFor = req.headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim();
-  }
-  
+  if (forwardedFor) return forwardedFor.split(',')[0].trim();
   const realIP = req.headers.get('x-real-ip');
-  if (realIP) {
-    return realIP;
-  }
-  
+  if (realIP) return realIP;
   const cfConnectingIP = req.headers.get('cf-connecting-ip');
-  if (cfConnectingIP) {
-    return cfConnectingIP;
-  }
-  
+  if (cfConnectingIP) return cfConnectingIP;
   return null;
 }
 
-// This function records a stream with fraud detection and updates artist earnings ($1 per stream)
+// Check if user has an active paid subscription
+async function isPaidSubscriber(supabase: any, userId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('user_subscriptions')
+    .select('plan, status, expires_at')
+    .eq('user_id', userId)
+    .in('status', ['active', 'trial'])
+    .maybeSingle();
+
+  if (!data) return false;
+  
+  // Check expiry
+  if (data.expires_at && new Date(data.expires_at) < new Date()) return false;
+  
+  // Only paid plans count: starter, pro, enterprise, fan
+  const paidPlans = ['starter', 'pro', 'enterprise', 'fan'];
+  return paidPlans.includes(data.plan);
+}
+
+// This function records a stream with fraud detection
+// Artists earn $1 per stream ONLY when played by a PAID subscriber past the 30-second preview
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -135,11 +135,10 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get request metadata for fraud detection
     const clientIP = getClientIP(req);
     const deviceFingerprint = generateDeviceFingerprint(req);
 
-    // Optional auth - streams can be recorded for anonymous users too
+    // Auth required for earning streams
     const authHeader = req.headers.get('Authorization');
     let userId: string | null = null;
     
@@ -149,7 +148,6 @@ serve(async (req) => {
       userId = user?.id || null;
     }
 
-    // Parse and validate input
     let rawBody: unknown;
     try {
       rawBody = await req.json();
@@ -170,7 +168,7 @@ serve(async (req) => {
 
     const { trackId, completionPercentage, duration, focusMetrics } = validation;
 
-    // FOCUS-BASED FRAUD DETECTION: Require minimum tab focus time
+    // FOCUS-BASED FRAUD DETECTION
     const MIN_FOCUS_PERCENTAGE = 50;
     if (focusMetrics) {
       if (focusMetrics.focusPercentage < MIN_FOCUS_PERCENTAGE) {
@@ -184,10 +182,9 @@ serve(async (req) => {
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      console.log(`Focus validation passed: ${focusMetrics.focusPercentage.toFixed(1)}% focused time`);
     }
 
-    // FRAUD DETECTION: Validate stream before counting
+    // FRAUD DETECTION
     if (userId) {
       const { data: fraudCheck, error: fraudError } = await supabase.rpc('validate_stream', {
         p_user_id: userId,
@@ -198,7 +195,6 @@ serve(async (req) => {
 
       if (fraudError) {
         console.error('Fraud check error:', fraudError);
-        // Continue with caution - log but don't block
       } else if (fraudCheck && !fraudCheck.allowed) {
         console.warn(`Stream blocked for user ${userId}: ${fraudCheck.reason}`);
         return new Response(
@@ -209,8 +205,6 @@ serve(async (req) => {
           }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
-      } else if (fraudCheck && fraudCheck.fraud_score > 0) {
-        console.log(`Stream allowed with fraud score: ${fraudCheck.fraud_score} for user ${userId}`);
       }
     }
 
@@ -253,7 +247,7 @@ serve(async (req) => {
       );
     }
 
-    // Prevent self-streaming (artists streaming their own tracks)
+    // Prevent self-streaming
     if (userId && userId === track.user_id) {
       return new Response(
         JSON.stringify({ recorded: false, reason: 'Self-streams not counted' }),
@@ -278,7 +272,13 @@ serve(async (req) => {
         });
     }
 
-    // Increment track play count
+    // ═══════════════════════════════════════════════════════════════
+    // PAID SUBSCRIBER CHECK: Only paid subscribers generate $1 earnings
+    // Free/anonymous plays still count as plays but do NOT generate revenue
+    // ═══════════════════════════════════════════════════════════════
+    const listenerIsPaid = userId ? await isPaidSubscriber(supabase, userId) : false;
+
+    // Increment track play count (all valid streams count for visibility)
     const newPlayCount = (track.play_count || 0) + 1;
     await supabase
       .from('tracks')
@@ -301,54 +301,53 @@ serve(async (req) => {
         .eq('user_id', track.user_id);
     }
 
-    // $1 PER STREAM - Update artist earnings
-    const STREAM_PAYOUT_RATE = 1.00; // $1.00 per stream
-    const today = new Date();
-    const periodStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-    const periodEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+    // $1 PER STREAM - ONLY for paid subscriber plays
+    let artistEarned = 0;
+    if (listenerIsPaid) {
+      const STREAM_PAYOUT_RATE = 1.00;
+      artistEarned = STREAM_PAYOUT_RATE;
+      
+      const today = new Date();
+      const periodStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+      const periodEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
 
-    // Get or create current period earnings
-    const { data: existingEarnings } = await supabase
-      .from('artist_earnings')
-      .select('id, streaming_revenue, total_streams, total_earnings')
-      .eq('artist_id', track.user_id)
-      .eq('period_start', periodStart)
-      .maybeSingle();
-
-    if (existingEarnings) {
-      // Update existing period - don't update total_earnings (it's a generated column)
-      const newStreamingRevenue = (existingEarnings.streaming_revenue || 0) + STREAM_PAYOUT_RATE;
-      const newTotalStreams = (existingEarnings.total_streams || 0) + 1;
-
-      await supabase
+      const { data: existingEarnings } = await supabase
         .from('artist_earnings')
-        .update({
-          streaming_revenue: newStreamingRevenue,
-          total_streams: newTotalStreams,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existingEarnings.id);
+        .select('id, streaming_revenue, total_streams')
+        .eq('artist_id', track.user_id)
+        .eq('period_start', periodStart)
+        .maybeSingle();
 
-      console.log(`Updated artist ${track.user_id} earnings: +$${STREAM_PAYOUT_RATE} (total: $${newStreamingRevenue})`);
+      if (existingEarnings) {
+        await supabase
+          .from('artist_earnings')
+          .update({
+            streaming_revenue: (existingEarnings.streaming_revenue || 0) + STREAM_PAYOUT_RATE,
+            total_streams: (existingEarnings.total_streams || 0) + 1,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingEarnings.id);
+      } else {
+        await supabase
+          .from('artist_earnings')
+          .insert({
+            artist_id: track.user_id,
+            period_start: periodStart,
+            period_end: periodEnd,
+            streaming_revenue: STREAM_PAYOUT_RATE,
+            total_streams: 1,
+            download_revenue: 0,
+            total_downloads: 0,
+            payout_status: 'pending',
+          });
+      }
+
+      console.log(`Paid stream: Artist ${track.user_id} earned $${STREAM_PAYOUT_RATE} from subscriber ${userId}`);
     } else {
-      // Create new earnings period - don't include total_earnings (it's a generated column)
-      await supabase
-        .from('artist_earnings')
-        .insert({
-          artist_id: track.user_id,
-          period_start: periodStart,
-          period_end: periodEnd,
-          streaming_revenue: STREAM_PAYOUT_RATE,
-          total_streams: 1,
-          download_revenue: 0,
-          total_downloads: 0,
-          payout_status: 'pending',
-        });
-
-      console.log(`Created new earnings period for artist ${track.user_id}: $${STREAM_PAYOUT_RATE}`);
+      console.log(`Free stream: Track ${trackId} played by ${userId || 'anonymous'} - no earnings generated`);
     }
 
-    // Log activity if user is logged in
+    // Log activity
     if (userId) {
       await supabase
         .from('activity_log')
@@ -362,6 +361,7 @@ serve(async (req) => {
             ip: clientIP,
             fingerprint: deviceFingerprint,
             focus_metrics: focusMetrics,
+            paid_stream: listenerIsPaid,
           }
         });
     }
@@ -370,7 +370,8 @@ serve(async (req) => {
       JSON.stringify({
         recorded: true,
         playCount: newPlayCount,
-        artistEarned: STREAM_PAYOUT_RATE,
+        artistEarned,
+        paidStream: listenerIsPaid,
         artistId: track.user_id,
         focusPercentage: focusMetrics?.focusPercentage,
       }),
