@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Paintbrush, Upload, Eye, RotateCcw, Palette, Type, Image as ImageIcon } from "lucide-react";
+import { Paintbrush, Upload, Eye, RotateCcw, Palette, Image as ImageIcon } from "lucide-react";
 
 interface BrandConfig {
   logo_path: string | null;
@@ -43,7 +43,7 @@ export function WhiteLabelSettings() {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("enterprise_branding")
         .select("*")
         .eq("user_id", user.id)
@@ -112,7 +112,7 @@ export function WhiteLabelSettings() {
         label_name: brand.label_name,
       };
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("enterprise_branding")
         .upsert(payload, { onConflict: "user_id" });
 
@@ -158,7 +158,6 @@ export function WhiteLabelSettings() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            {/* Logo Upload */}
             <div className="flex flex-col items-center gap-3">
               <div
                 className="relative w-32 h-32 rounded-2xl border-2 border-dashed border-muted cursor-pointer hover:border-primary transition-colors overflow-hidden flex items-center justify-center"
