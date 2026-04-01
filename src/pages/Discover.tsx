@@ -760,11 +760,7 @@ export default function Discover() {
                   </div>
                 )}
 
-                <ErrorBoundary fallback={null}>
-                  <UnifiedLibrary showTrending={false} onPlayYouTube={(videoId, title, artist, thumbnail) => {
-                    playTrack({ id: videoId, title, artist_name: artist, source: "youtube", youtubeId: videoId, album_cover_path: thumbnail, duration: 0, file_path: "", play_count: 0 } as any);
-                  }} />
-                </ErrorBoundary>
+                {/* Global library removed — search is in the top bar */}
               </div>
             </div>
           );
