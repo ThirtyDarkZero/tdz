@@ -514,7 +514,7 @@ export default function Investors() {
           </div>
 
           {/* Streaming Cost Model */}
-          <Reveal className="mt-8">
+          <ScreenPopReveal className="mt-8">
             <div className="rounded-2xl border border-[#222] bg-[#111] p-8">
               <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 32, color: "#fff", textAlign: "center", letterSpacing: "0.04em" }}>STREAMING COST MODEL</h3>
               <div className="grid md:grid-cols-4 gap-4 mt-6">
@@ -541,7 +541,7 @@ export default function Investors() {
                 </p>
               </div>
             </div>
-          </Reveal>
+          </ScreenPopReveal>
         </div>
       </section>
 
