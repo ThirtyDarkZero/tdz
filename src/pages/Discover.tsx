@@ -23,6 +23,9 @@ import { GenreTop50Section } from "@/components/discovery/GenreTop50Section";
 import { PlaylistManager } from "@/components/PlaylistManager";
 import { ProfileHub } from "@/components/discovery/ProfileHub";
 import { GenrePlaylistDetail } from "@/components/discovery/GenrePlaylistDetail";
+import { ImmersiveHeroSection } from "@/components/discovery/ImmersiveHeroSection";
+import { ImmersiveTrackSection } from "@/components/discovery/ImmersiveTrackSection";
+import { ImmersiveContentSection } from "@/components/discovery/ImmersiveContentSection";
 
 type FeaturedItem = {
   id: string;
@@ -435,161 +438,90 @@ export default function Discover() {
                 </div>
               )}
 
-              <div className="px-3 sm:px-5 md:px-6 lg:px-8">
-                {/* ── Featured Coverflow Carousel ── */}
-                {forYouItems.length > 0 && (
-                  <div className="pt-4 pb-2">
-                    {/* Mobile carousel: 3 covers */}
-                    <div className="grid grid-cols-3 gap-2 items-center sm:hidden" style={{ minHeight: 100 }}>
-                      {visibleCarouselItems.slice(2, 5).map(({ item, offset, index }, slotIndex) => {
-                        const distance = Math.abs(offset);
-                        const isCenter = offset === 0;
-                        const scaleByDistance = [1, 0.88, 0.76][distance] ?? 0.76;
-                        const opacityByDistance = [1, 0.85, 0.65][distance] ?? 0.65;
-                        return (
-                          <button key={`m-${item.id}-${slotIndex}`} type="button" className="relative w-full aspect-square cursor-pointer transition-all duration-500"
-                            style={{ transform: `scale(${scaleByDistance})`, opacity: opacityByDistance, filter: isCenter ? "none" : "saturate(0.8)" }}
-                            onClick={() => { if (!isCenter) { setCarouselCenterIndex(index); return; } if (item.trackData) { handlePlayTrack(item.trackData); return; } const targetId = item.id.replace(/^(album|track)-/, ""); navigate(item.type === "album" ? `/album/${targetId}` : `/track/${targetId}`); }}
-                            aria-label={`${item.title} by ${item.artist}`}
-                          >
-                            <img src={item.image} alt={`${item.title} cover artwork`} className="w-full h-full object-cover" style={{ borderRadius: 10 }} />
-                            {isCenter && (
-                              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity" style={{ background: "hsl(var(--foreground) / 0.28)", borderRadius: 10 }}>
-                                <Play className="h-8 w-8" style={{ color: "hsl(var(--background))" }} fill="currentColor" />
-                              </div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {/* Tablet/Desktop carousel: 7 covers */}
-                    <div className="hidden sm:grid grid-cols-7 items-center" style={{ minHeight: 182, gap: 0 }}>
-                      {visibleCarouselItems.map(({ item, offset, index }, slotIndex) => {
-                        const distance = Math.abs(offset);
-                        const isCenter = offset === 0;
-                        const scaleByDistance = [1, 0.93, 0.86, 0.78][distance] ?? 0.78;
-                        const opacityByDistance = [1, 0.92, 0.82, 0.7][distance] ?? 0.7;
-                        return (
-                          <button key={`${item.id}-${slotIndex}-${carouselCenterIndex}`} type="button" className="relative w-full aspect-square cursor-pointer transition-all duration-500"
-                            style={{ transform: `scale(${scaleByDistance})`, opacity: opacityByDistance, filter: isCenter ? "none" : "saturate(0.8)" }}
-                            onClick={() => { if (!isCenter) { setCarouselCenterIndex(index); return; } if (item.trackData) { handlePlayTrack(item.trackData); return; } const targetId = item.id.replace(/^(album|track)-/, ""); navigate(item.type === "album" ? `/album/${targetId}` : `/track/${targetId}`); }}
-                            aria-label={`${item.title} by ${item.artist}`}
-                          >
-                            <img src={item.image} alt={`${item.title} cover artwork`} className="w-full h-full object-cover" style={{ borderRadius: 14 }} />
-                            {isCenter && (
-                              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity" style={{ background: "hsl(var(--foreground) / 0.28)", borderRadius: 14 }}>
-                                <Play className="h-10 w-10" style={{ color: "hsl(var(--background))" }} fill="currentColor" />
-                              </div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {/* Featured info below carousel */}
-                    {activeCarouselItem && (
-                      <div className="text-center mt-2 px-4 sm:px-6">
-                        <h3 className="font-display truncate" style={{ fontSize: "clamp(24px, 6vw, 38px)", color: "var(--text-1)", lineHeight: 1 }}>{activeCarouselItem.title}</h3>
-                        <p className="font-body truncate" style={{ fontSize: "clamp(12px, 3vw, 15px)", color: "var(--text-2)", marginTop: 4 }}>{activeCarouselItem.artist}</p>
-                        <div className="flex items-center justify-center gap-4 mt-3 sm:mt-4">
-                          <button
-                            onClick={() => { if (activeCarouselItem.trackData) { handlePlayTrack(activeCarouselItem.trackData); return; } const targetId = activeCarouselItem.id.replace(/^(album|track)-/, ""); navigate(activeCarouselItem.type === "album" ? `/album/${targetId}` : `/track/${targetId}`); }}
-                            className="flex items-center justify-center"
-                            style={{ width: 44, height: 44, borderRadius: "50%", background: "var(--text-1)", color: "#000", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}
-                          >
-                            <Play className="h-5 w-5 ml-0.5" fill="currentColor" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+              {!searchQuery.trim() && (
+                <div>
+                  {/* ── Immersive Hero with Full-Viewport Carousel ── */}
+                  <ImmersiveHeroSection
+                    forYouItems={forYouItems}
+                    carouselCenterIndex={carouselCenterIndex}
+                    onCenterChange={setCarouselCenterIndex}
+                    onNavigate={navigate}
+                    onPlayTrack={handlePlayTrack}
+                  />
 
-                {/* ── Moodscapes ── */}
-                <div className="py-4">
-                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                    {MOODS.map(m => {
-                      const isActive = mood === m.id;
-                      return (
-                        <button
-                          key={m.id}
-                          onClick={() => { setMood(m.id); toast.success(`${m.label} mode activated`); }}
-                          className="flex-shrink-0 transition-all duration-300 active:scale-95"
-                          style={{
-                            padding: "10px 18px",
-                            borderRadius: "var(--radius-pill)",
-                            background: isActive
-                              ? `linear-gradient(135deg, ${m.color}30, ${m.color}12)`
-                              : "var(--glass-1)",
-                            border: isActive
-                              ? `1.5px solid ${m.color}60`
-                              : "1px solid var(--glass-border)",
-                            boxShadow: isActive ? `0 0 16px ${m.color}20` : "none",
-                          }}
-                        >
-                          <span className="font-body" style={{
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: isActive ? m.color : "var(--text-3)",
-                            letterSpacing: "0.08em",
-                          }}>
-                            {m.label}
-                          </span>
-                        </button>
-                      );
-                    })}
+                  {/* ── Moodscapes (sticky between sections) ── */}
+                  <div className="sticky top-0 z-30 py-4 px-4 sm:px-6 lg:px-8" style={{ background: "linear-gradient(to bottom, rgba(3,3,15,0.95), rgba(3,3,15,0.8))", backdropFilter: "blur(20px)" }}>
+                    <div className="flex gap-2 overflow-x-auto scrollbar-hide max-w-5xl mx-auto">
+                      {MOODS.map(m => {
+                        const isActive = mood === m.id;
+                        return (
+                          <button
+                            key={m.id}
+                            onClick={() => { setMood(m.id); toast.success(`${m.label} mode activated`); }}
+                            className="flex-shrink-0 transition-all duration-300 active:scale-95"
+                            style={{
+                              padding: "10px 18px",
+                              borderRadius: "var(--radius-pill)",
+                              background: isActive ? `linear-gradient(135deg, ${m.color}30, ${m.color}12)` : "var(--glass-1)",
+                              border: isActive ? `1.5px solid ${m.color}60` : "1px solid var(--glass-border)",
+                              boxShadow: isActive ? `0 0 16px ${m.color}20` : "none",
+                            }}
+                          >
+                            <span className="font-body" style={{ fontSize: 11, fontWeight: 700, color: isActive ? m.color : "var(--text-3)", letterSpacing: "0.08em" }}>
+                              {m.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* ── Popular Tracks (Full-width immersive section) ── */}
+                  <ImmersiveTrackSection
+                    title="POPULAR TRACKS"
+                    subtitle="Top 10 on TDZ right now"
+                    tracks={trendingSingles}
+                    currentTrackId={currentTrack?.id}
+                    likedTracks={likedTracks}
+                    onPlayTrack={handlePlayTrack}
+                    onToggleLike={toggleLike}
+                    onAddToQueue={handleAddToQueue}
+                    accentColor="#00CFFF"
+                    maxTracks={10}
+                  />
+
+                  {/* ── Featured Artists + Albums ── */}
+                  <ImmersiveContentSection
+                    artists={artists}
+                    albums={albums}
+                    onArtistClick={(a) => navigate(`/artist/${a.user_id}`)}
+                    onAlbumClick={(a) => navigate(`/album/${a.id}`)}
+                  />
+
+                  {/* ── New This Week (immersive section) ── */}
+                  {newReleaseSingles.length > 0 && (
+                    <ImmersiveTrackSection
+                      title="NEW THIS WEEK"
+                      subtitle="Fresh drops from TDZ artists"
+                      tracks={newReleaseSingles}
+                      currentTrackId={currentTrack?.id}
+                      likedTracks={likedTracks}
+                      onPlayTrack={(t) => handlePlayFromList(t, newReleaseSingles)}
+                      onToggleLike={toggleLike}
+                      onAddToQueue={handleAddToQueue}
+                      accentColor="#8B5CF6"
+                      maxTracks={10}
+                    />
+                  )}
+
+                  {/* ── User Playlists ── */}
+                  <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+                    <ErrorBoundary fallback={null}>
+                      <UserPlaylistsSection onPlaylistClick={id => navigate(`/playlist/${id}`)} onViewAll={() => setActiveTab("library")} />
+                    </ErrorBoundary>
                   </div>
                 </div>
-
-                {/* ── New This Week ── */}
-                {forYouItems.length > 1 && (
-                  <Section title="NEW THIS WEEK" action={<SeeAll onClick={() => setActiveTab("library")} />}>
-                    <div className="flex gap-3.5 overflow-x-auto pb-2 scrollbar-hide">
-                      {forYouItems.slice(0, 10).map(item => {
-                        const realId = item.id.replace(/^(album|track)-/, "");
-                        return (
-                          <AlbumCard key={item.id} size="md" album={{ id: realId, title: item.title, artist_name: item.artist, image: item.image }} onClick={() => navigate(item.type === "album" ? `/album/${realId}` : `/track/${realId}`)} />
-                        );
-                      })}
-                    </div>
-                  </Section>
-                )}
-
-                {/* ── Artist Portals ── */}
-                {artists.length > 0 && (
-                  <Section title="FEATURED ARTISTS">
-                    <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                      {artists.slice(0, 8).map(a => (
-                        <ArtistPortal key={a.user_id} artist={a} onClick={ar => navigate(`/artist/${ar.user_id}`)} />
-                      ))}
-                    </div>
-                  </Section>
-                )}
-
-                {/* ── Popular Tracks (Top 10) ── */}
-                <Section title={selectedGenre ? selectedGenre.toUpperCase() : "POPULAR TRACKS"} subtitle="Top 10">
-                  <div className="rounded-[var(--radius-md)] overflow-hidden" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)" }}>
-                    <SongListHeader />
-                    {trendingSingles.slice(0, 10).map((track, i) => (
-                      <SongRow key={track.id} track={track} index={i + 1} isPlaying={currentTrack?.id === track.id} isLiked={likedTracks.has(track.id)} onPlay={handlePlayTrack} onToggleLike={toggleLike} onAddToQueue={handleAddToQueue} />
-                    ))}
-                  </div>
-                </Section>
-
-                {/* ── Albums ── */}
-                {albums.length > 0 && (
-                  <Section title="ALBUMS">
-                    <div className="flex gap-3.5 overflow-x-auto pb-2 scrollbar-hide">
-                      {albums.map(album => (
-                        <AlbumCard key={album.id} album={{ ...album, image: album.cover_art_path ? supabase.storage.from("album-covers").getPublicUrl(album.cover_art_path).data.publicUrl : null }} onClick={() => navigate(`/album/${album.id}`)} />
-                      ))}
-                    </div>
-                  </Section>
-                )}
-
-                <ErrorBoundary fallback={null}>
-                  <div className="py-3"><UserPlaylistsSection onPlaylistClick={id => navigate(`/playlist/${id}`)} onViewAll={() => setActiveTab("library")} /></div>
-                </ErrorBoundary>
-              </div>
+              )}
             </div>
           );
 

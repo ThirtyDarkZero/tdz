@@ -1308,6 +1308,48 @@ export type Database = {
           },
         ]
       }
+      enterprise_branding: {
+        Row: {
+          accent_color: string | null
+          background_color: string | null
+          created_at: string
+          custom_font: string | null
+          hide_tdz_branding: boolean | null
+          id: string
+          label_name: string | null
+          logo_path: string | null
+          sidebar_color: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accent_color?: string | null
+          background_color?: string | null
+          created_at?: string
+          custom_font?: string | null
+          hide_tdz_branding?: boolean | null
+          id?: string
+          label_name?: string | null
+          logo_path?: string | null
+          sidebar_color?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accent_color?: string | null
+          background_color?: string | null
+          created_at?: string
+          custom_font?: string | null
+          hide_tdz_branding?: boolean | null
+          id?: string
+          label_name?: string | null
+          logo_path?: string | null
+          sidebar_color?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       exec_conversations: {
         Row: {
           agent_type: string
