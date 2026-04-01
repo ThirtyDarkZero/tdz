@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 
 /**
- * Snapped-style scroll-driven animations
- * - Scale-pop: sections scale from 0.85 → 1.0 as they enter viewport
+ * Ultra-dramatic scroll-driven animations (Snapped-portfolio inspired)
+ * - Scale-pop: sections scale from 0.7 → 1.0 with 3D rotation
  * - Emerge: elements slide & fade in with stagger
  * - Parallax depth: layers move at different scroll rates
- * - Screen-pop: inner content scales out of a container (screen-in-screen)
+ * - Screen-pop: inner content scales out of a container with blur
+ * - Depth-zoom: fly-toward-viewer effect with blur transition
  */
 
-// ─── Scale Pop: Section scales up as it scrolls into view ───
+// ─── Scale Pop: Section scales up dramatically as it scrolls into view ───
 export function useScalePop(threshold = 0.15) {
   const ref = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState(0);
@@ -20,8 +21,7 @@ export function useScalePop(threshold = 0.15) {
     const onScroll = () => {
       const rect = el.getBoundingClientRect();
       const vh = window.innerHeight;
-      // 0 when bottom edge enters, 1 when element center reaches viewport center
-      const raw = 1 - Math.max(0, Math.min(1, (rect.top - vh * 0.2) / (vh * 0.6)));
+      const raw = 1 - Math.max(0, Math.min(1, (rect.top - vh * 0.15) / (vh * 0.65)));
       setProgress(raw);
     };
 
@@ -31,10 +31,11 @@ export function useScalePop(threshold = 0.15) {
   }, []);
 
   const style: React.CSSProperties = useMemo(() => ({
-    transform: `scale(${0.85 + progress * 0.15})`,
-    opacity: Math.min(1, progress * 1.5),
-    transition: "transform 0.1s linear, opacity 0.1s linear",
-    willChange: "transform, opacity",
+    transform: `scale(${0.7 + progress * 0.3}) perspective(1200px) rotateX(${(1 - progress) * 8}deg)`,
+    opacity: Math.min(1, progress * 1.6),
+    filter: `blur(${(1 - progress) * 6}px)`,
+    transition: "transform 0.08s linear, opacity 0.08s linear, filter 0.08s linear",
+    willChange: "transform, opacity, filter",
   }), [progress]);
 
   return { ref, style, progress };
@@ -52,7 +53,7 @@ export function useScreenPop() {
     const onScroll = () => {
       const rect = el.getBoundingClientRect();
       const vh = window.innerHeight;
-      const raw = 1 - Math.max(0, Math.min(1, (rect.top - vh * 0.3) / (vh * 0.5)));
+      const raw = 1 - Math.max(0, Math.min(1, (rect.top - vh * 0.25) / (vh * 0.5)));
       setProgress(raw);
     };
 
@@ -61,25 +62,57 @@ export function useScreenPop() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Container shrinks, inner content scales up — "screen popping out" effect
   const containerStyle: React.CSSProperties = useMemo(() => ({
-    borderRadius: `${32 - progress * 20}px`,
+    borderRadius: `${40 - progress * 28}px`,
     overflow: "hidden",
-    transition: "border-radius 0.1s linear",
+    transition: "border-radius 0.08s linear",
   }), [progress]);
 
   const innerStyle: React.CSSProperties = useMemo(() => ({
-    transform: `scale(${0.92 + progress * 0.08})`,
-    opacity: 0.6 + progress * 0.4,
-    transition: "transform 0.1s linear, opacity 0.1s linear",
-    willChange: "transform, opacity",
+    transform: `scale(${0.85 + progress * 0.15}) perspective(1000px) rotateX(${(1 - progress) * 5}deg)`,
+    opacity: 0.4 + progress * 0.6,
+    filter: `blur(${(1 - progress) * 4}px)`,
+    transition: "transform 0.08s linear, opacity 0.08s linear, filter 0.08s linear",
+    willChange: "transform, opacity, filter",
   }), [progress]);
 
   return { ref, containerStyle, innerStyle, progress };
 }
 
+// ─── Depth Zoom: fly-toward-viewer with dramatic blur ───
+export function useDepthZoom(intensity = 1) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const onScroll = () => {
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const raw = 1 - Math.max(0, Math.min(1, (rect.top - vh * 0.1) / (vh * 0.7)));
+      setProgress(raw);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [intensity]);
+
+  const style: React.CSSProperties = useMemo(() => ({
+    transform: `scale(${0.6 + progress * 0.4}) perspective(800px) translateZ(${progress * 60 * intensity}px) rotateY(${(1 - progress) * 6 * intensity}deg)`,
+    opacity: Math.min(1, progress * 2),
+    filter: `blur(${(1 - progress) * 10 * intensity}px)`,
+    transition: "transform 0.06s linear, opacity 0.06s linear, filter 0.06s linear",
+    willChange: "transform, opacity, filter",
+  }), [progress, intensity]);
+
+  return { ref, style, progress };
+}
+
 // ─── Smooth Emerge: fade + slide with configurable direction ───
-export function useEmerge(direction: "up" | "down" | "left" | "right" = "up", distance = 60) {
+export function useEmerge(direction: "up" | "down" | "left" | "right" = "up", distance = 80) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -88,23 +121,24 @@ export function useEmerge(direction: "up" | "down" | "left" | "right" = "up", di
     if (!el) return;
     const obs = new IntersectionObserver(
       ([e]) => { if (e.isIntersecting) setVisible(true); },
-      { threshold: 0.12 }
+      { threshold: 0.1 }
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
 
   const transforms: Record<string, string> = {
-    up: `translateY(${distance}px)`,
-    down: `translateY(-${distance}px)`,
-    left: `translateX(${distance}px)`,
-    right: `translateX(-${distance}px)`,
+    up: `translateY(${distance}px) scale(0.92)`,
+    down: `translateY(-${distance}px) scale(0.92)`,
+    left: `translateX(${distance}px) scale(0.92)`,
+    right: `translateX(-${distance}px) scale(0.92)`,
   };
 
   const style: React.CSSProperties = {
     opacity: visible ? 1 : 0,
-    transform: visible ? "translate(0, 0)" : transforms[direction],
-    transition: "opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
+    transform: visible ? "translate(0, 0) scale(1)" : transforms[direction],
+    filter: visible ? "blur(0px)" : "blur(6px)",
+    transition: "opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1), filter 0.9s cubic-bezier(0.16, 1, 0.3, 1)",
   };
 
   return { ref, style, visible };
@@ -120,7 +154,7 @@ export function useStaggerEmerge(count: number, staggerMs = 80) {
     if (!el) return;
     const obs = new IntersectionObserver(
       ([e]) => { if (e.isIntersecting) setVisible(true); },
-      { threshold: 0.08 }
+      { threshold: 0.06 }
     );
     obs.observe(el);
     return () => obs.disconnect();
@@ -129,8 +163,9 @@ export function useStaggerEmerge(count: number, staggerMs = 80) {
   const getItemStyle = useCallback(
     (index: number): React.CSSProperties => ({
       opacity: visible ? 1 : 0,
-      transform: visible ? "translateY(0) scale(1)" : "translateY(50px) scale(0.93)",
-      transition: `opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1) ${index * staggerMs}ms, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) ${index * staggerMs}ms`,
+      transform: visible ? "translateY(0) scale(1) rotateX(0deg)" : "translateY(60px) scale(0.88) rotateX(12deg)",
+      filter: visible ? "blur(0px)" : "blur(4px)",
+      transition: `opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${index * staggerMs}ms, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${index * staggerMs}ms, filter 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${index * staggerMs}ms`,
     }),
     [visible, staggerMs]
   );
@@ -177,7 +212,7 @@ export function useHorizontalReveal(fromRight = false) {
     const onScroll = () => {
       const rect = el.getBoundingClientRect();
       const vh = window.innerHeight;
-      const raw = 1 - Math.max(0, Math.min(1, (rect.top - vh * 0.4) / (vh * 0.4)));
+      const raw = 1 - Math.max(0, Math.min(1, (rect.top - vh * 0.35) / (vh * 0.45)));
       setProgress(raw);
     };
 
@@ -186,13 +221,14 @@ export function useHorizontalReveal(fromRight = false) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const x = fromRight ? (1 - progress) * 80 : (1 - progress) * -80;
+  const x = fromRight ? (1 - progress) * 120 : (1 - progress) * -120;
 
   const style: React.CSSProperties = useMemo(() => ({
-    transform: `translateX(${x}px)`,
-    opacity: Math.min(1, progress * 1.3),
-    transition: "transform 0.1s linear, opacity 0.1s linear",
-    willChange: "transform, opacity",
+    transform: `translateX(${x}px) scale(${0.9 + progress * 0.1})`,
+    opacity: Math.min(1, progress * 1.5),
+    filter: `blur(${(1 - progress) * 5}px)`,
+    transition: "transform 0.08s linear, opacity 0.08s linear, filter 0.08s linear",
+    willChange: "transform, opacity, filter",
   }), [x, progress]);
 
   return { ref, style, progress };
@@ -201,7 +237,7 @@ export function useHorizontalReveal(fromRight = false) {
 // ─── ScrollReveal wrapper component ───
 interface ScrollRevealProps {
   children: React.ReactNode;
-  effect?: "scale-pop" | "emerge-up" | "emerge-left" | "emerge-right" | "screen-pop";
+  effect?: "scale-pop" | "emerge-up" | "emerge-left" | "emerge-right" | "screen-pop" | "depth-zoom";
   delay?: number;
   className?: string;
   style?: React.CSSProperties;
@@ -216,18 +252,19 @@ export function ScrollReveal({ children, effect = "emerge-up", delay = 0, classN
     if (!el) return;
     const obs = new IntersectionObserver(
       ([e]) => { if (e.isIntersecting) setVisible(true); },
-      { threshold: 0.1 }
+      { threshold: 0.08 }
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
 
-  const transforms: Record<string, { hidden: string; visible: string }> = {
-    "scale-pop": { hidden: "scale(0.85)", visible: "scale(1)" },
-    "emerge-up": { hidden: "translateY(60px)", visible: "translateY(0)" },
-    "emerge-left": { hidden: "translateX(-60px)", visible: "translateX(0)" },
-    "emerge-right": { hidden: "translateX(60px)", visible: "translateX(0)" },
-    "screen-pop": { hidden: "scale(0.9) translateY(40px)", visible: "scale(1) translateY(0)" },
+  const transforms: Record<string, { hidden: string; visible: string; hiddenFilter?: string }> = {
+    "scale-pop": { hidden: "scale(0.7) rotateX(10deg)", visible: "scale(1) rotateX(0deg)", hiddenFilter: "blur(8px)" },
+    "emerge-up": { hidden: "translateY(80px) scale(0.92)", visible: "translateY(0) scale(1)", hiddenFilter: "blur(5px)" },
+    "emerge-left": { hidden: "translateX(-100px) scale(0.9) rotateY(8deg)", visible: "translateX(0) scale(1) rotateY(0deg)", hiddenFilter: "blur(6px)" },
+    "emerge-right": { hidden: "translateX(100px) scale(0.9) rotateY(-8deg)", visible: "translateX(0) scale(1) rotateY(0deg)", hiddenFilter: "blur(6px)" },
+    "screen-pop": { hidden: "scale(0.75) translateY(60px) rotateX(12deg)", visible: "scale(1) translateY(0) rotateX(0deg)", hiddenFilter: "blur(10px)" },
+    "depth-zoom": { hidden: "scale(0.6) translateZ(-100px)", visible: "scale(1) translateZ(0px)", hiddenFilter: "blur(12px)" },
   };
 
   const t = transforms[effect] || transforms["emerge-up"];
@@ -239,7 +276,9 @@ export function ScrollReveal({ children, effect = "emerge-up", delay = 0, classN
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? t.visible : t.hidden,
-        transition: `opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
+        filter: visible ? "blur(0px)" : (t.hiddenFilter || "blur(0px)"),
+        transition: `opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, filter 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
+        perspective: "1200px",
         ...extraStyle,
       }}
     >

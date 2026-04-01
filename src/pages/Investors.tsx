@@ -44,7 +44,7 @@ function ScreenPopReveal({ children, className = "" }: { children: React.ReactNo
     const onScroll = () => {
       const rect = el.getBoundingClientRect();
       const vh = window.innerHeight;
-      const raw = 1 - Math.max(0, Math.min(1, (rect.top - vh * 0.2) / (vh * 0.6)));
+      const raw = 1 - Math.max(0, Math.min(1, (rect.top - vh * 0.15) / (vh * 0.65)));
       setProgress(raw);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -53,11 +53,12 @@ function ScreenPopReveal({ children, className = "" }: { children: React.ReactNo
   }, []);
   return (
     <div ref={ref} className={className} style={{
-      transform: `scale(${0.85 + progress * 0.15})`,
-      opacity: Math.min(1, progress * 1.4),
-      borderRadius: `${32 - progress * 20}px`,
-      transition: "transform 0.1s linear, opacity 0.1s linear, border-radius 0.1s linear",
-      willChange: "transform, opacity",
+      transform: `scale(${0.65 + progress * 0.35}) perspective(1200px) rotateX(${(1 - progress) * 10}deg)`,
+      opacity: Math.min(1, progress * 1.6),
+      borderRadius: `${40 - progress * 28}px`,
+      filter: `blur(${(1 - progress) * 8}px)`,
+      transition: "transform 0.06s linear, opacity 0.06s linear, border-radius 0.06s linear, filter 0.06s linear",
+      willChange: "transform, opacity, filter",
     }}>
       {children}
     </div>
