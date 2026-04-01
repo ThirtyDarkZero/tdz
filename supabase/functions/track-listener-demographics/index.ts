@@ -164,7 +164,7 @@ serve(async (req) => {
       .insert({
         artist_id: artistId,
         listener_id: listenerId || null,
-        ip_address: null,
+        
         city: geoData.city,
         region: geoData.region,
         country: geoData.country,

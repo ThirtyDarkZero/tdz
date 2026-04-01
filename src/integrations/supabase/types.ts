@@ -1758,7 +1758,6 @@ export type Database = {
           device_type: string | null
           gender: string | null
           id: string
-          ip_address: unknown
           language: string | null
           latitude: number | null
           listener_id: string | null
@@ -1780,7 +1779,6 @@ export type Database = {
           device_type?: string | null
           gender?: string | null
           id?: string
-          ip_address?: unknown
           language?: string | null
           latitude?: number | null
           listener_id?: string | null
@@ -1802,7 +1800,6 @@ export type Database = {
           device_type?: string | null
           gender?: string | null
           id?: string
-          ip_address?: unknown
           language?: string | null
           latitude?: number | null
           listener_id?: string | null
