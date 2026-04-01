@@ -10,7 +10,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import tdzLogo from "@/assets/tdz-logo.png";
-import { StudioPhoneMockups, MusicPlayerPhoneMockups, DiscoveryPhoneMockups } from "@/components/StudioPhoneMockup";
+import { Play } from "lucide-react";
 import { LineChart as RechartsLine, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 /* ─── Scroll reveal ─── */
