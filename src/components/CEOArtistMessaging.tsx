@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,31 +45,45 @@ export const CEOArtistMessaging = () => {
     getCurrentUser();
   }, []);
 
-  useEffect(() => {
-    if (selectedArtist) {
-      loadMessages(selectedArtist.user_id);
-      const channel = supabase
-        .channel('ceo-messages')
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'direct_messages',
-        }, (payload) => {
-          const newMsg = payload.new as Message;
-          if (
-            (newMsg.sender_id === selectedArtist.user_id && newMsg.receiver_id === currentUserId) ||
-            (newMsg.sender_id === currentUserId && newMsg.receiver_id === selectedArtist.user_id)
-          ) {
-            setMessages(prev => [...prev, newMsg]);
-          }
-        })
-        .subscribe();
+  const loadMessages = useCallback(async (artistUserId: string) => {
+    if (!currentUserId) return;
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
+    try {
+      const { data, error } = await supabase
+        .from('direct_messages')
+        .select('*')
+        .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${artistUserId}),and(sender_id.eq.${artistUserId},receiver_id.eq.${currentUserId})`)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setMessages(data || []);
+
+      await supabase
+        .from('direct_messages')
+        .update({ is_read: true })
+        .eq('sender_id', artistUserId)
+        .eq('receiver_id', currentUserId);
+    } catch (error) {
+      console.error('Error loading messages:', error);
     }
-  }, [selectedArtist, currentUserId]);
+  }, [currentUserId]);
+
+  useEffect(() => {
+    if (!selectedArtist) return;
+    void loadMessages(selectedArtist.user_id);
+  }, [selectedArtist, loadMessages]);
+
+  useEffect(() => {
+    if (!selectedArtist || !currentUserId) return;
+
+    const intervalId = window.setInterval(() => {
+      void loadMessages(selectedArtist.user_id);
+    }, 5000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [selectedArtist, currentUserId, loadMessages]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -106,30 +120,6 @@ export const CEOArtistMessaging = () => {
       setFilteredArtists(data || []);
     } catch (error) {
       console.error('Error loading artists:', error);
-    }
-  };
-
-  const loadMessages = async (artistUserId: string) => {
-    if (!currentUserId) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('direct_messages')
-        .select('*')
-        .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${artistUserId}),and(sender_id.eq.${artistUserId},receiver_id.eq.${currentUserId})`)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      setMessages(data || []);
-
-      // Mark as read
-      await supabase
-        .from('direct_messages')
-        .update({ is_read: true })
-        .eq('sender_id', artistUserId)
-        .eq('receiver_id', currentUserId);
-    } catch (error) {
-      console.error('Error loading messages:', error);
     }
   };
 

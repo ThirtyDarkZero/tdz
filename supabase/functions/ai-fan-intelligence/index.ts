@@ -37,7 +37,11 @@ serve(async (req) => {
     const [followers, fanMetrics, demographics, contacts, innerCircle, tips, engagement] = await Promise.all([
       supabase.from("artist_follows").select("follower_id, created_at").eq("artist_id", user.id).order("created_at", { ascending: false }).limit(200),
       supabase.from("fan_metrics").select("*").eq("user_id", user.id).maybeSingle(),
-      supabase.from("listener_demographics").select("*").eq("artist_id", user.id).order("listener_count", { ascending: false }).limit(30),
+      supabase
+        .from("listener_demographics")
+        .select("city,country,country_code,device_type,browser,os,gender,age_range,listening_time_of_day,language,referral_source,listener_id")
+        .eq("artist_id", user.id)
+        .limit(30),
       supabase.from("artist_contacts").select("*").eq("artist_id", user.id),
       supabase.from("inner_circle_members").select("*").eq("artist_id", user.id),
       supabase.from("artist_tips").select("amount, created_at").eq("artist_id", user.id).order("created_at", { ascending: false }).limit(50),

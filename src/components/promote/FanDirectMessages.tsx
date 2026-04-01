@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,28 +34,7 @@ export function FanDirectMessages() {
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { if (user) loadConversations(); }, [user]);
-
-  useEffect(() => { if (activeConvo) loadMessages(activeConvo); }, [activeConvo]);
-
-  // Realtime subscription
-  useEffect(() => {
-    if (!user) return;
-    const channel = supabase
-      .channel("dm-updates")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "direct_messages" }, (payload) => {
-        const msg = payload.new as Message;
-        if (msg.sender_id === activeConvo || msg.receiver_id === activeConvo) {
-          setMessages(prev => [...prev, msg]);
-          bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-        }
-        loadConversations();
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [user, activeConvo]);
-
-  const loadConversations = async () => {
+  const loadConversations = useCallback(async () => {
     if (!user) return;
     // Get all messages involving this user
     const { data } = await supabase
@@ -85,9 +64,9 @@ export function FanDirectMessages() {
     });
 
     setConversations(Array.from(convoMap.values()));
-  };
+  }, [user]);
 
-  const loadMessages = async (otherId: string) => {
+  const loadMessages = useCallback(async (otherId: string, markRead = true) => {
     if (!user) return;
     const { data } = await supabase
       .from("direct_messages")
@@ -97,12 +76,34 @@ export function FanDirectMessages() {
       .limit(100);
     setMessages(data || []);
 
-    // Mark as read
-    await supabase.from("direct_messages").update({ is_read: true } as any)
-      .eq("sender_id", otherId).eq("receiver_id", user.id).eq("is_read", false);
+    if (markRead) {
+      await supabase.from("direct_messages").update({ is_read: true } as any)
+        .eq("sender_id", otherId).eq("receiver_id", user.id).eq("is_read", false);
+    }
 
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) loadConversations();
+  }, [user, loadConversations]);
+
+  useEffect(() => {
+    if (activeConvo) loadMessages(activeConvo);
+  }, [activeConvo, loadMessages]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const intervalId = window.setInterval(() => {
+      void loadConversations();
+      if (activeConvo) {
+        void loadMessages(activeConvo, false);
+      }
+    }, 5000);
+
+    return () => window.clearInterval(intervalId);
+  }, [user, activeConvo, loadConversations, loadMessages]);
 
   const handleSend = async () => {
     if (!user || !activeConvo || !input.trim()) return;

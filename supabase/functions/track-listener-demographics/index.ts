@@ -52,6 +52,14 @@ function validateInput(data: unknown): { trackId?: string; artistId: string; lis
   };
 }
 
+function toCoarseCoordinate(value: number | null): number | null {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return null;
+  }
+
+  return Math.round(value * 10) / 10;
+}
+
 serve(async (req) => {
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
@@ -147,19 +155,22 @@ serve(async (req) => {
       }
     }
 
+    const coarseLatitude = toCoarseCoordinate(geoData.latitude);
+    const coarseLongitude = toCoarseCoordinate(geoData.longitude);
+
     // Insert demographics record
     const { error: insertError } = await supabase
       .from('listener_demographics')
       .insert({
         artist_id: artistId,
         listener_id: listenerId || null,
-        ip_address: ipAddress !== 'unknown' ? ipAddress : null,
+        ip_address: null,
         city: geoData.city,
         region: geoData.region,
         country: geoData.country,
         country_code: geoData.countryCode,
-        latitude: geoData.latitude,
-        longitude: geoData.longitude,
+        latitude: coarseLatitude,
+        longitude: coarseLongitude,
         device_type: deviceType,
         browser: browser,
         os: os,
@@ -176,7 +187,12 @@ serve(async (req) => {
         .from('listening_history')
         .update({
           device_type: deviceType,
-          location_data: geoData
+          location_data: {
+            city: geoData.city,
+            region: geoData.region,
+            country: geoData.country,
+            countryCode: geoData.countryCode,
+          }
         })
         .eq('user_id', listenerId)
         .eq('track_id', trackId)
