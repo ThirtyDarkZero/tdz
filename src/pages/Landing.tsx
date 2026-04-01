@@ -339,7 +339,7 @@ function PhoneFrame({ children, style, className = "" }: { children: React.React
 function Section2Mockups() {
   return (
     <section className="py-10 sm:py-16 pb-14 sm:pb-20 px-4" style={{ background: "#000" }}>
-      <Reveal>
+      <ScreenPopReveal>
         <p className="text-center mb-6 sm:mb-8" style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 12, color: "#666", letterSpacing: "0.2em", textTransform: "uppercase" as const }}>
           INTERACTIVE DEMOS — TAP TO EXPLORE
         </p>
@@ -354,7 +354,7 @@ function Section2Mockups() {
             <DiscoveryDemoMockup />
           </PhoneFrame>
         </div>
-      </Reveal>
+      </ScreenPopReveal>
     </section>
   );
 }
