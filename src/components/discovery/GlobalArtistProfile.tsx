@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { 
   Play, Bell, MoreHorizontal, ChevronLeft, ChevronRight, 
-  Disc, Clock, ListPlus, Youtube, Loader2, Music, Heart
+  Disc, Clock, ListPlus, Youtube, Loader2, Music, Heart, Bot
 } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { useMusicBrainz } from "@/hooks/useMusicBrainz";
@@ -14,6 +14,7 @@ import { useDiscogsLibrary } from "@/hooks/useDiscogsLibrary";
 import { GlobalAlbumDetail } from "./GlobalAlbumDetail";
 import { ArtistYouTubeCatalog } from "./ArtistYouTubeCatalog";
 import { useGlobalLibrary } from "@/hooks/useGlobalLibrary";
+import { useDiscographyAgent } from "@/hooks/useDiscographyAgent";
 
 interface GlobalArtistProfileProps {
   artistName: string;
@@ -56,6 +57,7 @@ export function GlobalArtistProfile({
   const { toggleGlobalLike, isGlobalTrackLiked, loadLikedGlobalTracks } = useGlobalLibrary();
   const { getArtist: getMBArtist, search: searchMB, findYouTubeMatch } = useMusicBrainz();
   const { getArtist: getDiscogsArtist, getArtistReleases } = useDiscogsLibrary();
+  const { result: discographyResult, loading: discographyLoading, fetchDiscography } = useDiscographyAgent();
   
   const [artist, setArtist] = useState<any>(null);
   const [tracks, setTracks] = useState<GlobalTrack[]>([]);
@@ -257,43 +259,48 @@ export function GlobalArtistProfile({
         }
       }
 
-      // Get popular tracks via YouTube Music search (official only)
-      const { data: ytData } = await supabase.functions.invoke('youtube-search', {
-        body: { 
-          query: `${artistName} official audio`, 
-          maxResults: 15,
-          officialOnly: true 
+      // Use the deep discography agent for comprehensive YouTube Music results
+      const discography = await fetchDiscography(artistName, 'full');
+      
+      if (discography) {
+        // Use agent's top tracks
+        if (discography.topTracks?.length > 0) {
+          setTracks(discography.topTracks.map((video, idx) => ({
+            id: `yt-${video.youtubeId}`,
+            title: video.title.replace(new RegExp(artistName, 'gi'), '').replace(/[-|]/g, '').replace(/\(official.*?\)/gi, '').trim() || video.title,
+            album: 'YouTube Music',
+            duration: video.duration,
+            position: String(idx + 1),
+            youtubeId: video.youtubeId,
+            thumbnail: video.thumbnail,
+          })));
         }
-      });
-
-      if (ytData?.results) {
-        setTracks(ytData.results.map((video: any, idx: number) => ({
-          id: `yt-${video.id}`,
-          title: video.title.replace(new RegExp(artistName, 'gi'), '').replace(/[-|]/g, '').replace(/\(official.*?\)/gi, '').trim(),
-          album: 'YouTube Music',
-          duration: video.duration,
-          position: String(idx + 1),
-          youtubeId: video.id,
-          thumbnail: video.thumbnail,
-        })));
-      }
-
-      // Get related artists
-      const { data: relatedData } = await supabase.functions.invoke('youtube-search', {
-        body: { query: `${artistName} similar artists`, maxResults: 10 }
-      });
-
-      if (relatedData?.results) {
-        const uniqueArtists = new Map();
-        for (const video of relatedData.results) {
-          if (!uniqueArtists.has(video.channel) && video.channel.toLowerCase() !== artistName.toLowerCase()) {
-            uniqueArtists.set(video.channel, {
-              name: video.channel,
-              thumbnail: video.thumbnail,
-            });
+        
+        // Use agent's artist thumbnail as fallback image
+        if (!artistImage && discography.artist?.thumbnail) {
+          setArtistImage(discography.artist.thumbnail);
+        }
+      } else {
+        // Fallback to direct search if agent fails
+        const { data: ytData } = await supabase.functions.invoke('youtube-search', {
+          body: { 
+            query: `${artistName} official audio`, 
+            maxResults: 15,
+            officialOnly: true 
           }
+        });
+
+        if (ytData?.results) {
+          setTracks(ytData.results.map((video: any, idx: number) => ({
+            id: `yt-${video.id}`,
+            title: video.title.replace(new RegExp(artistName, 'gi'), '').replace(/[-|]/g, '').replace(/\(official.*?\)/gi, '').trim(),
+            album: 'YouTube Music',
+            duration: video.duration,
+            position: String(idx + 1),
+            youtubeId: video.id,
+            thumbnail: video.thumbnail,
+          })));
         }
-        setRelatedArtists(Array.from(uniqueArtists.values()).slice(0, 6));
       }
 
     } catch (error) {
