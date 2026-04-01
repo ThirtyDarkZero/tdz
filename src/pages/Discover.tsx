@@ -23,6 +23,9 @@ import { GenreTop50Section } from "@/components/discovery/GenreTop50Section";
 import { PlaylistManager } from "@/components/PlaylistManager";
 import { ProfileHub } from "@/components/discovery/ProfileHub";
 import { GenrePlaylistDetail } from "@/components/discovery/GenrePlaylistDetail";
+import { ImmersiveHeroSection } from "@/components/discovery/ImmersiveHeroSection";
+import { ImmersiveTrackSection } from "@/components/discovery/ImmersiveTrackSection";
+import { ImmersiveContentSection } from "@/components/discovery/ImmersiveContentSection";
 
 type FeaturedItem = {
   id: string;
