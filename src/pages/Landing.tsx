@@ -681,7 +681,7 @@ function SectionWhyTDZ({ navigate }: { navigate: (p: string) => void }) {
     { title: "100% DOWNLOAD REVENUE", desc: "Set your own download prices. Keep every cent. No middlemen, no hidden fees.", color: "#00CFFF", icon: "📥" },
     { title: "AI MUSIC WELCOME", desc: "First major platform to embrace AI-generated music. AI artists earn the same $1/stream.", color: "#8B5CF6", icon: "🤖" },
     { title: "ARTIST STUDIO", desc: "Upload tracks, manage albums, sync lyrics, set territory rights, collaborate with other artists—all in one dashboard.", color: "#D4A017", icon: "🎵" },
-    { title: "AI VIDEO CREATION", desc: "Generate professional music videos with AI (Kling, Runway, Sora, Veo). Reduce production costs by 95%.", color: "#00CFFF", icon: "🎬" },
+    { title: "FAN ENGAGEMENT", desc: "Built-in fan engagement hub, direct messaging, email campaigns, and community management tools.", color: "#00CFFF", icon: "👥" },
     { title: "ADVANCED ANALYTICS", desc: "Real-time streaming data, fan demographics, geographic heat maps, and revenue tracking.", color: "#22C55E", icon: "📊" },
     { title: "FAN TIPPING", desc: "Fans can tip artists directly from Discovery. Every dollar goes straight to the creator.", color: "#D4A017", icon: "❤️" },
     { title: "TERRITORY RIGHTS", desc: "Manage your music rights across 200+ territories. Full control over where and how your music is distributed.", color: "#8B5CF6", icon: "🌍" },
