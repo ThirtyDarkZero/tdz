@@ -528,7 +528,7 @@ function Section4Studio({ navigate }: { navigate: (p: string) => void }) {
         </Reveal>
       )}
 
-      <Reveal delay={0.1}>
+      <ScreenPopReveal>
         <div className="mx-auto overflow-hidden flex flex-col lg:flex-row"
           style={{ maxWidth: 1100, border: "1px solid #222", borderRadius: 20, background: "#141414", minHeight: "auto" }}>
           {/* Sidebar */}
@@ -670,7 +670,7 @@ function Section4Studio({ navigate }: { navigate: (p: string) => void }) {
             </div>
           </div>
         </div>
-      </Reveal>
+      </ScreenPopReveal>
     </section>
   );
 }
