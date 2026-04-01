@@ -51,8 +51,44 @@ function Reveal({ children, className = "", delay = 0 }: { children: React.React
       className={className}
       style={{
         opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(28px)",
-        transition: `opacity 0.6s ease ${delay}s, transform 0.6s ease ${delay}s`,
+        transform: visible ? "translateY(0) scale(1)" : "translateY(40px) scale(0.96)",
+        transition: `opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+// Snapped-style screen-pop reveal: section scales from 0.85 to 1.0 on scroll
+function ScreenPopReveal({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onScroll = () => {
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const raw = 1 - Math.max(0, Math.min(1, (rect.top - vh * 0.2) / (vh * 0.6)));
+      setProgress(raw);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        transform: `scale(${0.85 + progress * 0.15})`,
+        opacity: Math.min(1, progress * 1.4),
+        borderRadius: `${32 - progress * 20}px`,
+        transition: "transform 0.1s linear, opacity 0.1s linear, border-radius 0.1s linear",
+        willChange: "transform, opacity",
       }}
     >
       {children}
