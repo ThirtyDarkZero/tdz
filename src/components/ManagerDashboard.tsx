@@ -543,7 +543,6 @@ export const ManagerDashboard = () => {
               </div>
             </DialogContent>
           </Dialog>
-        </div>
       </div>
 
       {/* Summary Cards */}
