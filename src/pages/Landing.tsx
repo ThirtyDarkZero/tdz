@@ -691,7 +691,7 @@ function SectionWhyTDZ({ navigate }: { navigate: (p: string) => void }) {
     { feature: "Per-stream payout", tdz: "$1.00", spotify: "$0.003", apple: "$0.008" },
     { feature: "Download revenue", tdz: "100%", spotify: "N/A", apple: "~70%" },
     { feature: "AI music support", tdz: "✓ Full", spotify: "✗ Banned", apple: "✗ Limited" },
-    { feature: "AI video creation", tdz: "✓ Built-in", spotify: "✗", apple: "✗" },
+    { feature: "Fan engagement hub", tdz: "✓ Built-in", spotify: "✗", apple: "✗" },
     { feature: "Fan tipping", tdz: "✓ Inline", spotify: "✗", apple: "✗" },
     { feature: "Artist owns rights", tdz: "✓ 100%", spotify: "Partial", apple: "Partial" },
     { feature: "Real-time earnings", tdz: "✓", spotify: "✗ Delayed", apple: "✗ Delayed" },
