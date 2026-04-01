@@ -49,7 +49,10 @@ export const FanDemographics = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data, error } = await supabase.from("listener_demographics").select("*").eq("artist_id", user.id);
+      const { data, error } = await supabase
+        .from("listener_demographics")
+        .select("listener_id,country,city,device_type,browser,os,gender,age_range,listening_time_of_day,language,referral_source")
+        .eq("artist_id", user.id);
       if (error) throw error;
       if (!data || data.length === 0) {
         setDemographics({ countries: [], cities: [], devices: [], browsers: [], operatingSystems: [], genders: [], ageRanges: [], listeningTimes: [], languages: [], referralSources: [], totalListeners: 0, uniqueListeners: 0 });

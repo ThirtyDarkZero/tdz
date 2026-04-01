@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,35 +46,8 @@ export const DirectMessagePanel = ({
     }
   }, [open, recipientId]);
 
-  useEffect(() => {
-    // Subscribe to new messages
-    const channel = supabase
-      .channel('direct-messages')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'direct_messages',
-          filter: `receiver_id=eq.${currentUserId}`
-        },
-        (payload) => {
-          const newMsg = payload.new as Message;
-          if (newMsg.sender_id === recipientId) {
-            setMessages(prev => [...prev, newMsg]);
-            scrollToBottom();
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [currentUserId, recipientId]);
-
-  const loadMessages = async () => {
-    setLoading(true);
+  const loadMessages = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -92,9 +65,21 @@ export const DirectMessagePanel = ({
     } catch (error) {
       console.error('Error loading messages:', error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, [recipientId]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const intervalId = window.setInterval(() => {
+      void loadMessages(true);
+    }, 5000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [open, loadMessages]);
 
   const markAsRead = async () => {
     const { data: { user } } = await supabase.auth.getUser();
