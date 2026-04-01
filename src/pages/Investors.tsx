@@ -199,7 +199,7 @@ function InvestorDiscoveryDemo() {
   );
 }
 
-
+export default function Investors() {
   const navigate = useNavigate();
   const [activeGraph, setActiveGraph] = useState("revenue");
 
