@@ -32,6 +32,7 @@ interface AdminSidebarProps {
 const adminNavItems = [
   { id: "executive", icon: Bot, label: "Executive AI", badge: "AI" },
   { id: "overview", icon: LayoutDashboard, label: "Overview" },
+  { id: "finance", icon: BarChart3, label: "Financial Agents", badge: "STRIPE" },
   { id: "revenue", icon: DollarSign, label: "Revenue Pool" },
   { id: "users", icon: Users, label: "Users" },
   { id: "content", icon: Music, label: "Content" },

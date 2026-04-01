@@ -681,7 +681,7 @@ function SectionWhyTDZ({ navigate }: { navigate: (p: string) => void }) {
     { title: "100% DOWNLOAD REVENUE", desc: "Set your own download prices. Keep every cent. No middlemen, no hidden fees.", color: "#00CFFF", icon: "📥" },
     { title: "AI MUSIC WELCOME", desc: "First major platform to embrace AI-generated music. AI artists earn the same $1/stream.", color: "#8B5CF6", icon: "🤖" },
     { title: "ARTIST STUDIO", desc: "Upload tracks, manage albums, sync lyrics, set territory rights, collaborate with other artists—all in one dashboard.", color: "#D4A017", icon: "🎵" },
-    { title: "AI VIDEO CREATION", desc: "Generate professional music videos with AI (Kling, Runway, Sora, Veo). Reduce production costs by 95%.", color: "#00CFFF", icon: "🎬" },
+    { title: "FAN ENGAGEMENT", desc: "Built-in fan engagement hub, direct messaging, email campaigns, and community management tools.", color: "#00CFFF", icon: "👥" },
     { title: "ADVANCED ANALYTICS", desc: "Real-time streaming data, fan demographics, geographic heat maps, and revenue tracking.", color: "#22C55E", icon: "📊" },
     { title: "FAN TIPPING", desc: "Fans can tip artists directly from Discovery. Every dollar goes straight to the creator.", color: "#D4A017", icon: "❤️" },
     { title: "TERRITORY RIGHTS", desc: "Manage your music rights across 200+ territories. Full control over where and how your music is distributed.", color: "#8B5CF6", icon: "🌍" },
@@ -691,7 +691,7 @@ function SectionWhyTDZ({ navigate }: { navigate: (p: string) => void }) {
     { feature: "Per-stream payout", tdz: "$1.00", spotify: "$0.003", apple: "$0.008" },
     { feature: "Download revenue", tdz: "100%", spotify: "N/A", apple: "~70%" },
     { feature: "AI music support", tdz: "✓ Full", spotify: "✗ Banned", apple: "✗ Limited" },
-    { feature: "AI video creation", tdz: "✓ Built-in", spotify: "✗", apple: "✗" },
+    { feature: "Fan engagement hub", tdz: "✓ Built-in", spotify: "✗", apple: "✗" },
     { feature: "Fan tipping", tdz: "✓ Inline", spotify: "✗", apple: "✗" },
     { feature: "Artist owns rights", tdz: "✓ 100%", spotify: "Partial", apple: "Partial" },
     { feature: "Real-time earnings", tdz: "✓", spotify: "✗ Delayed", apple: "✗ Delayed" },
@@ -750,9 +750,9 @@ function SectionWhyTDZ({ navigate }: { navigate: (p: string) => void }) {
 function SectionHowPaymentsWork() {
   const steps = [
     { step: "1", title: "UPLOAD YOUR MUSIC", desc: "Upload tracks to your Artist Studio. Set download prices, add metadata, and choose territories.", color: "#00CFFF" },
-    { step: "2", title: "FANS STREAM & BUY", desc: "Every stream earns you $1. Every download purchase goes 100% to you. Fans can also tip directly.", color: "#22C55E" },
+    { step: "2", title: "PAID FANS STREAM", desc: "Every stream by a paid subscriber earns you $1. Every download purchase goes 100% to you. Fans can also tip directly.", color: "#22C55E" },
     { step: "3", title: "REAL-TIME EARNINGS", desc: "Watch your earnings grow in real-time on your dashboard. No 90-day delays like traditional DSPs.", color: "#D4A017" },
-    { step: "4", title: "GET PAID", desc: "Cash out via Square once you reach the $50 minimum payout threshold. Direct deposit to your bank.", color: "#8B5CF6" },
+    { step: "4", title: "GET PAID", desc: "Cash out via Stripe once you reach the $50 minimum payout threshold. Direct deposit to your bank.", color: "#8B5CF6" },
   ];
 
   return (
@@ -784,7 +784,7 @@ function SectionAIAgents() {
     { name: "QUANTUM ADVISOR", desc: "AI-powered career advisor that analyzes your data in real-time. Get actionable insights for revenue optimization, release timing, and audience growth.", icon: "🧠", color: "#8B5CF6" },
     { name: "MOOD MIX GENERATOR", desc: "Tell the AI how you're feeling and it generates a personalized playlist from TDZ's catalog. Unique to our platform.", icon: "🎵", color: "#00CFFF" },
     { name: "SMART PROMO", desc: "AI identifies optimal promotion windows, suggests collaboration opportunities, and automates social media scheduling.", icon: "📣", color: "#22C55E" },
-    { name: "STORYTELLING STUDIO", desc: "Generate AI music videos using Kling, Runway, Sora, and Veo. Create professional visual content in minutes, not months.", icon: "🎬", color: "#D4A017" },
+    { name: "STORYTELLING STUDIO", desc: "Create compelling visual stories and narratives for your music. Build your brand identity with AI-powered content tools.", icon: "🎬", color: "#D4A017" },
     { name: "LABEL STAFF AI", desc: "Virtual A&R, marketing manager, and distribution coordinator. Get label-quality support without the label contract.", icon: "👔", color: "#00CFFF" },
     { name: "TERRITORY OPTIMIZER", desc: "AI analyzes global streaming patterns to recommend optimal release territories and timing for maximum impact.", icon: "🌐", color: "#8B5CF6" },
   ];
@@ -821,13 +821,13 @@ function SectionAIAgents() {
 function Section7ArtistPlans({ navigate }: { navigate: (p: string) => void }) {
   const plans = [
     { name: "STARTER", price: "$9.99", plan: "starter" as const, features: [
-      "Upload up to 50 tracks", "5 albums maximum", "Advanced analytics", "HD audio quality", "1 AI video per month", "Priority support", "$1 per stream payout"
+      "Upload up to 50 tracks & 5 albums", "Fan engagement tools", "Download sales", "HD audio quality", "Playlist management", "Social features", "$1 per paid subscriber stream"
     ]},
     { name: "PRO", price: "$19.99", plan: "pro" as const, popular: true, features: [
-      "Unlimited tracks & albums", "Full analytics suite", "Dolby Atmos support", "5 AI videos per month", "Collaboration tools", "Custom branding", "Territory rights management", "$1 per stream payout"
+      "Unlimited tracks & albums", "Full analytics suite", "Collaboration tools", "Pre-save campaigns", "Territory rights management", "Priority support", "$1 per paid subscriber stream"
     ]},
     { name: "ENTERPRISE", price: "$49.99", plan: "enterprise" as const, features: [
-      "Everything in Pro", "Unlimited AI videos", "Multi-artist management", "API access", "Dedicated account manager", "Custom integrations", "White-label options", "$1 per stream payout"
+      "Everything in Pro", "Multi-artist roster management", "White-label dashboard branding", "Dedicated account manager", "Create & manage artist accounts", "Custom integrations", "$1 per paid subscriber stream"
     ]},
   ];
 

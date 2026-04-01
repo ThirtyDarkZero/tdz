@@ -15,11 +15,12 @@ import {
   Wallet,
   ArrowUpRight,
   ExternalLink,
-  Loader2
+  Loader2,
+  CreditCard
 } from "lucide-react";
 
 interface PayoutDetails {
-  square_merchant_id: string | null;
+  square_merchant_id: string | null; // Actually stores Stripe Connect account ID
   account_holder_name: string | null;
   payout_enabled: boolean;
   last_payout_date: string | null;
@@ -56,7 +57,6 @@ export const ArtistPayoutSettings = () => {
     if (!user) return;
 
     try {
-      // Use the secure view that excludes sensitive tokens
       const { data, error } = await supabase
         .from('artist_payout_info' as any)
         .select('*')
@@ -87,7 +87,6 @@ export const ArtistPayoutSettings = () => {
     if (!user) return;
 
     try {
-      // Get actual play counts from tracks (single source of truth)
       const { data: tracksData, error: tracksError } = await supabase
         .from('tracks')
         .select('play_count')
@@ -98,11 +97,8 @@ export const ArtistPayoutSettings = () => {
         return;
       }
 
-      // Calculate total streams from actual track data
-      const actualStreams = tracksData?.reduce((sum, t) => sum + (t.play_count || 0), 0) || 0;
-      const actualEarnings = actualStreams * 1.00; // $1 per stream
-
-      // Get paid amount from earnings table
+      // Note: play_count includes all plays, but earnings only come from paid subscriber plays
+      // So we use the earnings table as the source of truth for revenue
       const { data: earningsData, error: earningsError } = await supabase
         .from('artist_earnings')
         .select('*')
@@ -112,20 +108,23 @@ export const ArtistPayoutSettings = () => {
         console.error('Error loading earnings:', earningsError);
       }
 
+      const totalStreams = tracksData?.reduce((sum, t) => sum + (t.play_count || 0), 0) || 0;
+      
       const paid = earningsData
         ?.filter(e => e.payout_status === 'paid')
+        .reduce((sum, e) => sum + (e.total_earnings || 0), 0) || 0;
+
+      const pending = earningsData
+        ?.filter(e => e.payout_status === 'pending')
         .reduce((sum, e) => sum + (e.total_earnings || 0), 0) || 0;
 
       const now = new Date();
       const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-      // Pending = actual earnings minus already paid
-      const pending = Math.max(0, actualEarnings - paid);
-
       setEarnings({
         totalPending: pending,
         totalPaid: paid,
-        totalStreams: actualStreams,
+        totalStreams: totalStreams,
         nextPayoutDate: nextMonth.toISOString(),
       });
     } catch (error) {
@@ -133,21 +132,13 @@ export const ArtistPayoutSettings = () => {
     }
   };
 
-  const handleConnectSquare = async () => {
+  const handleConnectStripe = async () => {
     if (!user || !session) return;
 
     setConnectLoading(true);
 
     try {
-      // ALWAYS use the Lovable app URL for Square OAuth redirects
-      // Square only has this URL configured as a valid redirect URI
-      const redirectUri = 'https://tdz.lovable.app/square-callback';
-      
-      console.log('Requesting Square OAuth with redirect URI:', redirectUri);
-      
-      const response = await supabase.functions.invoke('square-oauth-url', {
-        body: { redirectUri },
-      });
+      const response = await supabase.functions.invoke('setup-artist-payout', {});
 
       if (response.error) {
         throw new Error(response.error.message);
@@ -155,15 +146,14 @@ export const ArtistPayoutSettings = () => {
 
       const data = response.data;
       
-      if (data.success && data.authUrl) {
-        // Redirect to Square OAuth
-        window.location.href = data.authUrl;
+      if (data.success && data.onboardingUrl) {
+        window.location.href = data.onboardingUrl;
       } else {
-        throw new Error(data.error || 'Failed to get authorization URL');
+        throw new Error(data.error || 'Failed to get onboarding URL');
       }
     } catch (error: any) {
       console.error('Connect error:', error);
-      toast.error(error.message || "Failed to connect to Square");
+      toast.error(error.message || "Failed to connect to Stripe");
       setConnectLoading(false);
     }
   };
@@ -190,7 +180,7 @@ export const ArtistPayoutSettings = () => {
       const data = response.data;
       
       if (data.success) {
-        toast.success(`Payout of $${data.payout.amount.toFixed(2)} initiated!`);
+        toast.success(`Payout of $${data.amount?.toFixed(2)} initiated via Stripe!`);
         loadEarnings();
       } else {
         throw new Error(data.error || "Payout failed");
@@ -236,7 +226,7 @@ export const ArtistPayoutSettings = () => {
               <Wallet className="h-8 w-8 text-green-500/50" />
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Minimum payout: ${MINIMUM_PAYOUT}
+              Minimum payout: ${MINIMUM_PAYOUT} • Only paid subscriber streams earn revenue
             </p>
           </CardContent>
         </Card>
@@ -253,7 +243,7 @@ export const ArtistPayoutSettings = () => {
               <DollarSign className="h-8 w-8 text-blue-500/50" />
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Lifetime earnings
+              Lifetime earnings via Stripe
             </p>
           </CardContent>
         </Card>
@@ -262,7 +252,7 @@ export const ArtistPayoutSettings = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Streams</p>
+                <p className="text-sm text-muted-foreground">Total Plays</p>
                 <p className="text-3xl font-bold text-purple-500">
                   {earnings.totalStreams.toLocaleString()}
                 </p>
@@ -270,23 +260,23 @@ export const ArtistPayoutSettings = () => {
               <ArrowUpRight className="h-8 w-8 text-purple-500/50" />
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              $1.00 per stream
+              $1.00 per paid subscriber stream
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Square Connection */}
+      {/* Stripe Connect */}
       <Card className="bg-card/50 backdrop-blur border-border/50">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5" />
-                Payout Account
+                <CreditCard className="h-5 w-5" />
+                Stripe Connect Payouts
               </CardTitle>
               <CardDescription>
-                Connect your Square account to receive royalty payments
+                Connect your Stripe account to receive royalty payments via direct deposit
               </CardDescription>
             </div>
             {isConnected ? (
@@ -307,9 +297,9 @@ export const ArtistPayoutSettings = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                 <div>
-                  <p className="font-medium">{payoutDetails?.account_holder_name || 'Square Account'}</p>
+                  <p className="font-medium">{payoutDetails?.account_holder_name || 'Stripe Connect Account'}</p>
                   <p className="text-sm text-muted-foreground">
-                    Merchant ID: {payoutDetails?.square_merchant_id?.slice(0, 8)}...
+                    Account: {payoutDetails?.square_merchant_id?.slice(0, 12)}...
                   </p>
                 </div>
                 <CheckCircle className="h-5 w-5 text-green-500" />
@@ -356,20 +346,21 @@ export const ArtistPayoutSettings = () => {
             <div className="space-y-4">
               <div className="p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground mb-4">
-                  Connect your Square account to receive royalty payments directly to your bank. 
-                  Square handles secure payment processing for millions of businesses.
+                  Connect your Stripe account to receive royalty payments directly to your bank. 
+                  Stripe handles secure payment processing for millions of creators worldwide.
                 </p>
                 
                 <ul className="text-sm text-muted-foreground space-y-1 mb-4">
-                  <li>✓ Secure OAuth connection</li>
+                  <li>✓ Secure Stripe Connect onboarding</li>
                   <li>✓ Direct bank deposits</li>
                   <li>✓ Real-time payment tracking</li>
                   <li>✓ Automatic monthly payouts</li>
+                  <li>✓ Tax form generation (1099-K)</li>
                 </ul>
               </div>
 
               <Button 
-                onClick={handleConnectSquare}
+                onClick={handleConnectStripe}
                 disabled={connectLoading}
                 className="w-full"
               >
@@ -381,22 +372,10 @@ export const ArtistPayoutSettings = () => {
                 ) : (
                   <>
                     <ExternalLink className="h-4 w-4 mr-2" />
-                    Connect Square Account
+                    Connect Stripe Account
                   </>
                 )}
               </Button>
-              
-              <p className="text-xs text-center text-muted-foreground">
-                Don't have a Square account?{" "}
-                <a 
-                  href="https://squareup.com/signup" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  Sign up free
-                </a>
-              </p>
             </div>
           )}
         </CardContent>
@@ -405,16 +384,17 @@ export const ArtistPayoutSettings = () => {
       {/* Payout Info */}
       <Card className="bg-card/50 backdrop-blur border-border/50">
         <CardHeader>
-          <CardTitle className="text-sm">How TDZ Automated Royalty Payouts Work</CardTitle>
+          <CardTitle className="text-sm">How TDZ Royalty Payouts Work</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>• You earn <strong className="text-foreground">$1.00 per stream</strong> on TDZ</p>
+          <p>• You earn <strong className="text-foreground">$1.00 per stream</strong> from paid subscribers on TDZ</p>
+          <p>• Only streams past the <strong className="text-foreground">30-second preview</strong> by <strong className="text-foreground">paid subscribers</strong> generate earnings</p>
+          <p>• Free/anonymous plays count as plays but do not generate revenue</p>
           <p>• Minimum payout threshold is <strong className="text-foreground">$50</strong></p>
-          <p>• <strong className="text-foreground">Automated payouts</strong> run on the <strong className="text-foreground">1st of every month</strong></p>
+          <p>• <strong className="text-foreground">Automated payouts</strong> run on the <strong className="text-foreground">1st of every month</strong> via Stripe</p>
           <p>• All artists with $50+ pending are paid automatically</p>
-          <p>• Request manual payouts anytime if you can't wait</p>
-          <p>• Payouts are processed within 3-5 business days</p>
-          <p>• 100% of download sales go directly to you (minus transaction fees)</p>
+          <p>• Payouts are processed within 2-3 business days</p>
+          <p>• 100% of download sales go directly to you (minus Stripe processing fees)</p>
         </CardContent>
       </Card>
     </div>
