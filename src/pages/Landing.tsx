@@ -750,7 +750,7 @@ function SectionWhyTDZ({ navigate }: { navigate: (p: string) => void }) {
 function SectionHowPaymentsWork() {
   const steps = [
     { step: "1", title: "UPLOAD YOUR MUSIC", desc: "Upload tracks to your Artist Studio. Set download prices, add metadata, and choose territories.", color: "#00CFFF" },
-    { step: "2", title: "FANS STREAM & BUY", desc: "Every stream earns you $1. Every download purchase goes 100% to you. Fans can also tip directly.", color: "#22C55E" },
+    { step: "2", title: "PAID FANS STREAM", desc: "Every stream by a paid subscriber earns you $1. Every download purchase goes 100% to you. Fans can also tip directly.", color: "#22C55E" },
     { step: "3", title: "REAL-TIME EARNINGS", desc: "Watch your earnings grow in real-time on your dashboard. No 90-day delays like traditional DSPs.", color: "#D4A017" },
     { step: "4", title: "GET PAID", desc: "Cash out via Stripe once you reach the $50 minimum payout threshold. Direct deposit to your bank.", color: "#8B5CF6" },
   ];
