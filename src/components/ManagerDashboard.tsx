@@ -12,8 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
-import { UserPlus, Users, TrendingUp, DollarSign, Music, Upload, ChevronRight, Image, X, Check, Lock, HardDrive } from "lucide-react";
+import { UserPlus, Users, TrendingUp, DollarSign, Music, Upload, ChevronRight, Image, X, Check, Lock, HardDrive, Paintbrush } from "lucide-react";
 import { CatalogImport } from "@/components/CatalogImport";
+import { WhiteLabelSettings } from "@/components/enterprise/WhiteLabelSettings";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart
 } from "recharts";
