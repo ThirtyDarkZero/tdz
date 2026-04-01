@@ -429,7 +429,7 @@ export default function Investors() {
           </Reveal>
 
           {/* Profit Formula */}
-          <Reveal className="mt-10">
+          <ScreenPopReveal className="mt-10">
             <div className="rounded-2xl border border-[#1A3A1A] bg-[#0A1A0A] p-8 text-center">
               <div style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 32, color: "#fff", letterSpacing: "0.04em", textTransform: "uppercase" }}>THE PROFIT FORMULA</div>
               <div className="mt-4" style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(28px, 4vw, 48px)", color: "#22C55E", letterSpacing: "0.04em" }}>
@@ -439,7 +439,7 @@ export default function Investors() {
                 You win when: <span style={{ color: "#22C55E", fontWeight: 700 }}>ARPS &gt; $1.00</span>
               </p>
             </div>
-          </Reveal>
+          </ScreenPopReveal>
 
           {/* $200M by Year 5 */}
           <Reveal className="mt-12">
