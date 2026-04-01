@@ -65,6 +65,7 @@ export const ManagerDashboard = () => {
   const [uploadCoverFile, setUploadCoverFile] = useState<File | null>(null);
   const [uploadCoverPreview, setUploadCoverPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [activeManagerTab, setActiveManagerTab] = useState<"roster" | "branding">("roster");
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
