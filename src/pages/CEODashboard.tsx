@@ -21,6 +21,7 @@ import { PaymentFlowDashboard } from "@/components/PaymentFlowDashboard";
 import { CEOArtistMessaging } from "@/components/CEOArtistMessaging";
 import { SystemDiagnosticsPanel } from "@/components/SystemDiagnosticsPanel";
 import { AdminSidebar, CEORevenueControl } from "@/components/admin";
+import { StripeFinancialAgents } from "@/components/admin/StripeFinancialAgents";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
