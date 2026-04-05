@@ -1,144 +1,145 @@
-# TDZ Platform Overhaul: Stripe Migration, Discovery UX, Player Fixes
+# Comprehensive Platform Upgrade Plan
 
-## Overview
-
-This is a multi-phase update covering: (1) full payment migration from Square to Stripe, (2) Discovery UI polish to match the player/profile aesthetic, (3) player artwork and glow fixes, (4) visualizer fullscreen, (5) carousel tightening, and (6) Investor page phone mockup sync.
+This plan covers all requested features organized into 8 implementation phases. Each phase is self-contained and builds on the previous. one straight through upgrade do all 8 phases in one don't keep asking for approval or to continue just upgrade all 8 phases. 
 
 ---
 
-## Phase 1: Square → Stripe Payment Migration
+## Phase 1: Global Artist Profile Deep Agent System
 
-### What changes
+**Goal**: Every searchable artist gets a fully populated, clickable profile with discography from YouTube Music.
 
-Replace all Square payment infrastructure with Stripe. This affects subscriptions, tips, download purchases, and artist payouts.
+**Changes**:
 
-### Steps
-
-1. **Enable Stripe via Lovable's native Stripe integration** — this provisions Stripe keys and exposes Stripe-specific tools/docs for implementation.
-2. **Rewrite `create-checkout-session` edge function** — Replace Square `payment-links` API with Stripe Checkout Sessions (`stripe.checkout.sessions.create`). Map the 4 plans (starter $9.99, pro $19.99, enterprise $49.99, fan $12.00) to Stripe Price objects. Use `mode: 'subscription'` with `success_url` and `cancel_url`.
-3. **Rewrite `create-tip-session` edge function** — Replace Square payment processing with Stripe PaymentIntents for one-time tip amounts ($1–$500).
-4. **Rewrite `process-download-purchase` edge function** — Replace Square Payments API with Stripe PaymentIntents for track download purchases.
-5. **Rewrite `setup-artist-payout` edge function** — Replace Square customer creation with Stripe Connect (Express accounts) for artist bank account linking and payouts.
-6. **Rewrite `process-artist-payout` and `scheduled-artist-payouts**` — Use Stripe Transfer API to pay artists from platform balance instead of Square payout API.
-7. **Update client-side checkout** — Rewrite `src/lib/subscription-checkout.ts`: rename `openSquareCheckout` → `openStripeCheckout`, call updated edge function, redirect to Stripe Checkout URL.
-8. **Update `SubscriptionModal.tsx`, `Pricing.tsx`, `Landing.tsx**` — Replace all `openSquareCheckout` imports/calls with the new Stripe checkout function.
-9. **Update `SubscriptionSuccess.tsx**` — Handle Stripe's `session_id` query param instead of just `plan`. Verify payment via Stripe API before activating subscription.
-10. **Remove/archive Square-specific edge functions**: `get-square-config`, `square-account-balance`, `square-oauth-url`, `square-oauth-callback`, `create-square-subscription`.
-11. **Update `SquareOAuthCallback.tsx**` — Remove or redirect to Stripe Connect onboarding flow.
-12. **Update CEO Dashboard** — Replace `square-account-balance` with Stripe balance retrieval.
-13. Add back the quantum intellegent label ai agents into studio and deploy agents across all functions of the app using [https://github.com/langchain-ai/deepagents](https://github.com/langchain-ai/deepagents)
+- **Upgrade `artist-discography-agent` edge function** to also fetch: artist bio (from YouTube channel "About"), album tracklists (via YouTube Music topic playlists), artist thumbnail, and subscriber count
+- **Refactor `GlobalArtistProfile.tsx**` to become the single source of truth for any global artist — auto-populates albums, singles, bio, videos from YouTube Music on load
+- **Add artist name click navigation in `OrbPlayerBar.tsx**`: When playing a YouTube/global track, clicking artist name navigates to `/artist/global/{encodedArtistName}` instead of requiring a `user_id`
+- **Add route** in `App.tsx`: `/artist/global/:artistName` that renders `GlobalArtistProfile` as a full page (not overlay)
+- **Enable "Add to Playlist" from global tracks**: Wire `onAddToPlaylist` through `useGlobalLibrary.addGlobalTrackToPlaylist` in `GlobalArtistProfile`, `UniversalSearchResults`, and the player's 3-dot menu
 
 ---
 
-## Phase 2: Discovery Top/Bottom Bars — Match Player UI
+## Phase 2: Search Results — Albums, Artists, Songs Categories + Play Fix
 
-### What changes
+**Goal**: Search results properly categorized with working single-click playback.
 
-Restyle `CosmicTopBar` and `BottomNavBar` to use the same dark glassmorphic treatment as `OrbPlayerBar` (deep blur, coral accents, ultra-dark backgrounds).
+**Changes**:
 
-### Steps
-
-- **CosmicTopBar**: Change background to `rgba(3,3,15,0.92)` with `backdrop-blur(40px)`, coral active tab indicators, refined border (`rgba(255,255,255,0.06)`). Match the typography weight and spacing from OrbPlayerBar.
-- **BottomNavBar**: Apply same `rgba(3,3,15,0.92)` background with coral active icon coloring, reduce padding, match the shadow treatment from the mini player bar.
-
----
-
-## Phase 3: Player Artwork Fix (from Artist Profile)
-
-### What changes
-
-When a track is played from the artist profile, the `album_cover_path` is not being passed into the PlayerContext track object.
-
-### Steps
-
-- Trace how `ArtistProfile.tsx` and `UnifiedArtistProfile.tsx` call `playTrack()` and ensure the track object includes `album_cover_path`, `album_cover_bucket`, and `thumbnail` fields.
-- Verify `OrbPlayerBar`'s `coverUrl` resolver handles all field mappings correctly.
+- **Fix double-click play bug** in `UniversalSearchResults.tsx`: The `handlePlayGlobal` function creates a track without resolving a YouTube ID first. Add YouTube ID resolution (via `youtube-search` edge function) before calling `playTrack`, and auto-play once resolved
+- **Enhance global search results**: When clicking a global artist in search, navigate to `/artist/global/{name}` (the new route). When clicking a global album, open a `GlobalAlbumDetail` overlay that fetches tracklist from YouTube Music
+- **Add "Add to Playlist" button** on each global search result row (songs, albums)
 
 ---
 
-## Phase 4: Beat-Reactive Glow on Artwork
+## Phase 3: Orb Player Fixes — Progress Ring, Repeat, 3-Dot Menu
 
-### What changes
+**Goal**: Fix non-moving progress ring for YouTube tracks, add repeat, add sharing to 3-dot menu.
 
-The glow behind artwork in the full-screen player should pulse to the beat.
+**Changes**:
 
-### Steps
-
-- In `OrbPlayerBar` full-screen artwork view (line ~293–308), add CSS animation that scales and modulates the glow `opacity`/`blur` using a CSS keyframe driven by `isPlaying` state.
-- Use a pulsing animation (e.g., `scale(1) → scale(1.15)` on a ~500ms cycle) applied to the glow div when `isPlaying` is true.
-
----
-
-## Phase 5: Fullscreen Visualizer
-
-### What changes
-
-Add a button to expand the visualizer canvas to fill the entire screen.
-
-### Steps
-
-- Add a "fullscreen" toggle button (Maximize icon) next to the visualizer theme selector.
-- When toggled, render the canvas at `100vw × 100vh` with absolute positioning, hiding the top bar and controls. Add an exit button overlay.
+- **Fix progress ring**: In `OrbPlayerBar.tsx`, the `pct` calculation uses `currentTrack?.duration` which is `0` for YouTube tracks. Instead, use `youtubeState.duration` from `PlayerContext` when source is YouTube: `const dur = (currentTrack?.source === 'youtube' ? youtubeState.duration : currentTrack?.duration) || 0; const time = currentTrack?.source === 'youtube' ? youtubeState.currentTime : currentTime;`
+- **Add Repeat button**: Add repeat state (`off` | `all` | `one`) to `PlayerContext`. Add `Repeat` icon to the full-screen transport controls (between Skip buttons and the ring). Wire `handleTrackEnd` in `GlobalMusicPlayer.tsx` to respect repeat mode
+- **3-dot menu actions**: Replace the empty `<MoreHorizontal>` button in the full-screen view with a `DropdownMenu` containing: Share (copy link, share to social), Add to Playlist, Add to Queue, View Artist, Sleep Timer
 
 ---
 
-## Phase 6: Discovery Main Page Organization
+## Phase 4: Library = User's Collection Only
 
-### What changes
+**Goal**: Library tab shows only user's liked songs, playlists, and listening history.
 
-Better visual hierarchy and spacing on the Discover home tab.
+**Changes**:
 
-### Steps
-
-- Increase section spacing from `py-5` to `py-6`/`py-8`.
-- Add subtle section dividers (thin gradient lines).
-- Ensure consistent section ordering: Carousel → Moodscapes → Popular Tracks → Featured Artists → New This Week → Albums → Playlists.
-
----
-
-## Phase 7: Discovery Carousel — Tighten Spacing
-
-### What changes
-
-The 7-cover carousel on Discovery has too much gap between covers compared to the Landing page version.
-
-### Steps
-
-- In `Discover.tsx` carousel (line ~466), reduce `gap-2` to `gap-0` or `gap-px`.
-- Increase scale values for adjacent covers (e.g., side covers at `0.92` instead of `0.82`).
-- Reduce `translateX` spread so covers overlap slightly, matching the Landing page's tight coverflow effect.
+- **Refactor Library tab** in `Discover.tsx` (`case "library"`): Show only user-created playlists, liked songs count card, and recent listening history (from `listening_history` table)
+- **Remove native platform albums/artists/songs** from the library view — those belong in Discovery/Explore
+- **Add "Liked Songs" card** at top that navigates to `/liked-songs`
+- **Add "Recently Played" section** querying `listening_history` for the current user
 
 ---
 
-## Phase 8: Investor Page Phone Mockups
+## Phase 5: YouTube Music New Releases Agent + Album Pages
 
-### What changes
+**Goal**: Pull new release albums/singles from YouTube Music, create browsable album pages.
 
-The `StudioPhoneMockups`, `MusicPlayerPhoneMockups`, and `DiscoveryPhoneMockups` on the Investor page need to match the Landing page versions.
+**Changes**:
 
-### Steps
+- **Create `youtube-new-releases` edge function**: Scrapes/fetches new album releases from YouTube Music's new releases section (using YouTube Data API to query official topic channels for recent uploads, or curated playlist IDs for new music)
+- **Create `GlobalAlbumPage` component** (or enhance existing `GlobalAlbumDetail`): Full album page with cover art, tracklist, play-all button, individual track play — matching the existing TDZ album detail layout
+- **Add "NEW RELEASES" section** to Discovery that shows YouTube Music new releases alongside TDZ releases
+- **Add route** `/album/global/:albumId` for global album pages
+- **Artist name clickable** in the album page, navigating to the global artist profile
 
-- Import and use the same phone mockup components from `Landing.tsx` in `Investors.tsx`, or update `StudioPhoneMockup.tsx` exports to reflect the current UI (coral theme, glassmorphic cards, Six Caps typography).
-- Ensure visual parity between both pages.
+---
+
+## Phase 6: Curated Playlists Agent
+
+**Goal**: Auto-populate and daily-update curated genre playlists in Explore.
+
+**Changes**:
+
+- **Create `curated-playlists` edge function**: Takes YouTube Music playlist IDs (90s Hip Hop, 90s Rock, 80s Hits, Phonk, Country) and fetches their tracks via YouTube Data API `playlistItems` endpoint
+- **Create `curated_playlists` DB table**: Stores playlist metadata (name, youtube_playlist_id, tracks JSON, last_updated)
+- **Create daily cron job** via `pg_cron` + `pg_net` to invoke the edge function and refresh playlist data
+- **Add "CURATED FOR YOU" section** in Explore tab with glassmorphic playlist cards for each genre
+- **Playlist detail view**: Clicking a curated playlist opens a tracklist view where all songs are playable via YouTube and can be added to user playlists
+
+---
+
+## Phase 7: Fan Onboarding Demographics + Artist Insights
+
+**Goal**: Collect gender and more demographic data from fans, report to artists in real-time.
+
+**Changes**:
+
+- **Enhance `RoleSelection.tsx**` for listener role: Add fields for gender (select), age range (select), preferred genres (multi-select), country, and how they discovered TDZ
+- **Add columns to `listener_profiles` table** via migration: `gender`, `age_range`, `discovery_source`
+- **Create `discovery-insights-reporter` edge function**: Aggregates demographic data from `listener_demographics`, `listening_history`, `stream_events` and pushes summary to artist insights
+- **Ensure `StudioInsights.tsx**` displays real demographic breakdowns (gender distribution, age ranges, geographic data) from actual DB data, not mocked
+
+---
+
+## Phase 8: Artist Profile Interactive Cards + Scrolling Effects
+
+**Goal**: Make Tour Dates, Videos, Newsletters, Events cards interactive; rename Events to Merch; fix artwork display; add scroll effects.
+
+**Changes**:
+
+- **In `UnifiedArtistProfile.tsx**`:
+  - **Tour Dates card**: Artists can post tour dates (form with venue, date, ticket link); fans see upcoming dates
+  - **Videos card**: Embed YouTube videos from the artist's channel
+  - **Newsletters card**: Artists can compose and post updates/newsletters
+  - **Rename "Events" to "Merch"**: Connect to artist's Shopify store or show uploaded merch items
+  - **Tracks section**: Show artwork next to each song; only display standalone singles (no album tracks)
+  - **Releases section**: Show only albums and EPs (not singles)
+- **Apply `useScrollAnimations**` hooks (ScreenPopReveal, Reveal) to artist profile sections for the same dramatic scroll effects used on Landing/Investors pages
 
 ---
 
 ## Technical Details
 
-### Files to create/edit:
+### New Files
 
-- **New edge functions**: Stripe versions of checkout, tips, purchases, payouts (6 functions)
-- **Delete/archive**: 5 Square-specific edge functions
-- **Client files**: `subscription-checkout.ts`, `SubscriptionModal.tsx`, `Pricing.tsx`, `Landing.tsx`, `SubscriptionSuccess.tsx`, `SquareOAuthCallback.tsx`
-- **Discovery UI**: `CosmicTopBar.tsx`, `BottomNavBar.tsx`, `Discover.tsx`
-- **Player**: `OrbPlayerBar.tsx`, `ArtistProfile.tsx`, `UnifiedArtistProfile.tsx`
-- **Investor**: `Investors.tsx`, `StudioPhoneMockup.tsx`
+- `supabase/functions/youtube-new-releases/index.ts`
+- `supabase/functions/curated-playlists/index.ts`
+- `supabase/functions/discovery-insights-reporter/index.ts`
 
-### Dependencies:
+### Modified Files
 
-- Stripe must be enabled via Lovable's native integration before implementation begins
-- Stripe secret key will be collected automatically during enablement
+- `src/App.tsx` — new routes for global artists/albums
+- `src/components/discovery/OrbPlayerBar.tsx` — progress ring fix, repeat button, 3-dot menu
+- `src/contexts/PlayerContext.tsx` — repeat mode state
+- `src/components/GlobalMusicPlayer.tsx` — repeat mode logic
+- `src/components/discovery/GlobalArtistProfile.tsx` — full-page mode, enhanced agent integration
+- `src/components/discovery/UniversalSearchResults.tsx` — play fix, add-to-playlist, artist navigation
+- `src/pages/Discover.tsx` — library refactor, new releases, curated playlists
+- `src/pages/RoleSelection.tsx` — demographic fields
+- `src/pages/UnifiedArtistProfile.tsx` — interactive cards, merch rename, scroll effects
+- `src/hooks/useGlobalLibrary.ts` — playlist add integration
+- `supabase/functions/artist-discography-agent/index.ts` — bio, album tracklists
 
-&nbsp;
+### Database Migrations
 
-&nbsp;
+1. `curated_playlists` table (id, name, youtube_playlist_id, tracks JSONB, cover_url, last_updated)
+2. Add `gender`, `age_range`, `discovery_source` columns to `listener_profiles`
+
+### Cron Job
+
+- Daily refresh of curated playlists via `pg_cron`
