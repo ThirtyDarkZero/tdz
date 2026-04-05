@@ -42,6 +42,8 @@ const SquareOAuthCallback = lazy(() => import("./pages/SquareOAuthCallback"));
 const EventbriteOAuthCallback = lazy(() => import("./pages/EventbriteOAuthCallback"));
 
 const FanSettings = lazy(() => import("./pages/FanSettings"));
+const GlobalArtistPage = lazy(() => import("./pages/GlobalArtistPage"));
+const GlobalAlbumPage = lazy(() => import("./pages/GlobalAlbumPage"));
 
 const queryClient = new QueryClient();
 
@@ -87,6 +89,8 @@ const App = () => (
                   <Route path="/browse" element={<Discover />} />
                   <Route path="/artist/:artistId" element={<ArtistProfile />} />
                   <Route path="/artist/youtube/:artistId" element={<UnifiedArtistProfile />} />
+                  <Route path="/artist/global/:artistName" element={<GlobalArtistPage />} />
+                  <Route path="/album/global/:albumId" element={<GlobalAlbumPage />} />
                   <Route path="/profile" element={<ListenerProfile />} />
                   <Route path="/liked-songs" element={<LikedSongs />} />
                   <Route path="/fan/:fanId" element={<ListenerProfile />} />

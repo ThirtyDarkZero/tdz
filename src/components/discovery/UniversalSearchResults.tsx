@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, Globe, Loader2, Music, Play, ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Search, Globe, Loader2, Music, Play, ExternalLink, ListPlus } from "lucide-react";
 import { SongRow, SongListHeader } from "./SongRow";
 import { ArtistCard } from "./ArtistCard";
 import { AlbumCard } from "./AlbumCard";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayer } from "@/contexts/PlayerContext";
+import { toast } from "sonner";
 
 interface UniversalSearchResultsProps {
   query: string;
@@ -30,9 +32,11 @@ export function UniversalSearchResults({
   onPlayTrack, onToggleLike, onToggleFollow,
   onArtistClick, onAlbumClick, onClose,
 }: UniversalSearchResultsProps) {
+  const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState<typeof FILTER_TABS[number]>("ALL");
   const [globalResults, setGlobalResults] = useState<any[]>([]);
   const [globalLoading, setGlobalLoading] = useState(false);
+  const [resolvingTrackId, setResolvingTrackId] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const { playTrack } = usePlayer();
 
@@ -82,20 +86,64 @@ export function UniversalSearchResults({
   const hasGlobalResults = globalResults.length > 0;
   const hasResults = hasLocalResults || hasGlobalResults || globalLoading;
 
-  const handlePlayGlobal = (item: any) => {
-    // Play global tracks via YouTube resolver
-    const track = {
-      id: `global-${item.sourceId || item.id}`,
-      title: item.title,
-      artist_name: item.artist,
-      thumbnail: item.thumbnail,
-      youtubeId: item.youtubeId,
-      source: item.source,
-      duration: 0,
-      file_path: "",
-      play_count: 0,
-    };
-    playTrack(track, [track]);
+  // Fix: Resolve YouTube ID before playing global tracks (fixes double-click bug)
+  const handlePlayGlobal = async (item: any) => {
+    const trackId = `global-${item.sourceId || item.id}`;
+    
+    // If already has a youtubeId, play immediately
+    if (item.youtubeId) {
+      const track = {
+        id: trackId,
+        title: item.title,
+        artist_name: item.artist,
+        thumbnail: item.thumbnail,
+        youtubeId: item.youtubeId,
+        source: 'youtube' as const,
+        duration: 0,
+        file_path: "",
+        play_count: 0,
+      };
+      playTrack(track, [track]);
+      onClose();
+      return;
+    }
+
+    // Resolve YouTube ID first
+    setResolvingTrackId(trackId);
+    try {
+      const { data } = await supabase.functions.invoke("youtube-search", {
+        body: { query: `${item.artist} ${item.title} official audio`, maxResults: 1, officialOnly: true },
+      });
+      
+      const videoId = data?.results?.[0]?.id;
+      if (videoId) {
+        const track = {
+          id: trackId,
+          title: item.title,
+          artist_name: item.artist,
+          thumbnail: data.results[0].thumbnail || item.thumbnail,
+          youtubeId: videoId,
+          source: 'youtube' as const,
+          duration: 0,
+          file_path: "",
+          play_count: 0,
+        };
+        playTrack(track, [track]);
+        onClose();
+      } else {
+        toast.error("Could not find this track on YouTube");
+      }
+    } catch {
+      toast.error("Failed to resolve track");
+    } finally {
+      setResolvingTrackId(null);
+    }
+  };
+
+  // Navigate to global artist profile
+  const handleGlobalArtistClick = (artist: any) => {
+    navigate(`/artist/global/${encodeURIComponent(artist.title)}`);
+    onClose();
   };
 
   return (
@@ -205,7 +253,7 @@ export function UniversalSearchResults({
                         key={artist.id}
                         className="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0 transition-transform hover:scale-105"
                         style={{ width: 90 }}
-                        onClick={() => onArtistClick({ user_id: artist.sourceId, artist_name: artist.title, source: artist.source })}
+                        onClick={() => handleGlobalArtistClick(artist)}
                       >
                         <div className="w-16 h-16 rounded-full overflow-hidden" style={{ background: "var(--glass-2)" }}>
                           {artist.thumbnail ? (
@@ -227,28 +275,36 @@ export function UniversalSearchResults({
                 <div className="mb-4">
                   <p className="px-2 mb-2 font-body" style={{ fontSize: 10, fontWeight: 600, color: "var(--text-4)", letterSpacing: "0.1em" }}>SONGS</p>
                   <div className="space-y-0.5">
-                    {globalTracks.map((track, i) => (
-                      <div
-                        key={track.id}
-                        className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors"
-                        style={{ background: "rgba(255,255,255,0.02)" }}
-                        onClick={() => handlePlayGlobal(track)}
-                      >
-                        <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0" style={{ background: "var(--glass-2)" }}>
-                          {track.thumbnail ? (
-                            <img src={track.thumbnail} alt="" className="w-full h-full object-cover" />
+                    {globalTracks.map((track) => {
+                      const trackId = `global-${track.sourceId || track.id}`;
+                      const isResolving = resolvingTrackId === trackId;
+                      return (
+                        <div
+                          key={track.id}
+                          className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors"
+                          style={{ background: "rgba(255,255,255,0.02)" }}
+                          onClick={() => !isResolving && handlePlayGlobal(track)}
+                        >
+                          <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0" style={{ background: "var(--glass-2)" }}>
+                            {track.thumbnail ? (
+                              <img src={track.thumbnail} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center"><Music className="h-3 w-3" style={{ color: "var(--text-4)" }} /></div>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-body truncate" style={{ fontSize: 12, fontWeight: 600, color: "var(--text-1)" }}>{track.title}</p>
+                            <p className="font-body truncate" style={{ fontSize: 10, color: "var(--text-3)" }}>{track.artist}</p>
+                          </div>
+                          <span className="font-body flex-shrink-0 px-1.5 py-0.5 rounded" style={{ fontSize: 8, fontWeight: 700, color: "#22C55E", background: "rgba(34,197,94,0.1)", textTransform: "uppercase" }}>{track.source}</span>
+                          {isResolving ? (
+                            <Loader2 className="h-3.5 w-3.5 flex-shrink-0 animate-spin" style={{ color: "#22C55E" }} />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center"><Music className="h-3 w-3" style={{ color: "var(--text-4)" }} /></div>
+                            <Play className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "var(--text-3)" }} />
                           )}
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-body truncate" style={{ fontSize: 12, fontWeight: 600, color: "var(--text-1)" }}>{track.title}</p>
-                          <p className="font-body truncate" style={{ fontSize: 10, color: "var(--text-3)" }}>{track.artist}</p>
-                        </div>
-                        <span className="font-body flex-shrink-0 px-1.5 py-0.5 rounded" style={{ fontSize: 8, fontWeight: 700, color: "#22C55E", background: "rgba(34,197,94,0.1)", textTransform: "uppercase" }}>{track.source}</span>
-                        <Play className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "var(--text-3)" }} />
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

@@ -2,13 +2,16 @@ import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Play, Pause, SkipForward, SkipBack,
-  ListMusic, Mic2, Repeat, Shuffle, ChevronDown, MoreHorizontal, X,
+  ListMusic, Mic2, Repeat, Repeat1, Shuffle, ChevronDown, MoreHorizontal, X,
   Heart, SlidersHorizontal, Music, Sparkles, Waves, Circle, Mountain, Zap,
+  Share2, ListPlus, UserCircle, Timer, Copy, Plus,
 } from "lucide-react";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SongRow } from "./SongRow";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 function fmt(s: number) {
   const m = Math.floor(s / 60);
@@ -98,7 +101,6 @@ function drawSphere(ctx: CanvasRenderingContext2D, w: number, h: number, t: numb
     ctx.arc(px, py, size, 0, Math.PI * 2);
     ctx.fillStyle = `hsla(${(i / points) * 360}, 80%, 60%, 0.7)`;
     ctx.fill();
-    // Lines to center
     ctx.beginPath();
     ctx.moveTo(cx, cy); ctx.lineTo(px, py);
     ctx.strokeStyle = `hsla(${(i / points) * 360}, 60%, 50%, 0.1)`;
@@ -127,6 +129,7 @@ export function OrbPlayerBar() {
   const {
     currentTrack, queue, playTrack, isPlaying, pauseTrack, resumeTrack,
     nextTrack, previousTrack, currentTime, playerView, setPlayerView,
+    youtubeState, addToQueue, repeatMode, cycleRepeatMode,
   } = usePlayer();
   const [showQueue, setShowQueue] = useState(false);
   const [isPill, setIsPill] = useState(false);
@@ -138,9 +141,36 @@ export function OrbPlayerBar() {
   const animRef = useRef<number>();
 
   const toggle = () => (isPlaying ? pauseTrack() : resumeTrack());
-  const dur = currentTrack?.duration || 0;
-  const pct = dur > 0 ? Math.min((currentTime / dur) * 100, 100) : 0;
+
+  // Fix: Use YouTube duration when playing YouTube tracks
+  const isYouTube = currentTrack?.source === 'youtube' || !!currentTrack?.youtubeId;
+  const dur = isYouTube ? (youtubeState.duration || currentTrack?.duration || 0) : (currentTrack?.duration || 0);
+  const time = isYouTube ? (youtubeState.currentTime || currentTime) : currentTime;
+  const pct = dur > 0 ? Math.min((time / dur) * 100, 100) : 0;
   const circumference = 2 * Math.PI * 62;
+
+  // Navigate to artist profile
+  const navigateToArtist = useCallback(() => {
+    if (!currentTrack) return;
+    const artistId = currentTrack.artist_user_id || currentTrack.user_id;
+    if (artistId) {
+      setPlayerView("mini");
+      navigate(`/artist/${artistId}`);
+    } else if (currentTrack.artist_name) {
+      // Global artist - navigate to global profile
+      setPlayerView("mini");
+      navigate(`/artist/global/${encodeURIComponent(currentTrack.artist_name)}`);
+    }
+  }, [currentTrack, navigate, setPlayerView]);
+
+  // Copy share link
+  const handleShare = useCallback(() => {
+    const url = currentTrack?.youtubeId
+      ? `https://music.youtube.com/watch?v=${currentTrack.youtubeId}`
+      : `${window.location.origin}/track/${currentTrack?.id}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Link copied to clipboard!");
+  }, [currentTrack]);
 
   // Resolve cover URL from storage path
   const coverUrl = useMemo(() => {
@@ -183,6 +213,10 @@ export function OrbPlayerBar() {
 
   const cover = coverUrl;
   const isFullScreen = playerView === "full";
+
+  // Repeat icon
+  const RepeatIcon = repeatMode === 'one' ? Repeat1 : Repeat;
+  const repeatColor = repeatMode !== 'off' ? CORAL : "var(--text-3)";
 
   /* ─── PILL ─── */
   if (!isFullScreen && isPill) {
@@ -232,11 +266,7 @@ export function OrbPlayerBar() {
           <div className="min-w-0 flex-1">
             <p className="truncate font-body" style={{ fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>{currentTrack.title}</p>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                const artistId = currentTrack.artist_user_id || currentTrack.user_id;
-                if (artistId) navigate(`/artist/${artistId}`);
-              }}
+              onClick={(e) => { e.stopPropagation(); navigateToArtist(); }}
               className="truncate font-body hover:underline block text-left w-full"
               style={{ fontSize: 11, color: "var(--text-3)" }}
             >
@@ -283,7 +313,31 @@ export function OrbPlayerBar() {
           <p className="font-body" style={{ fontSize: 11, fontWeight: 600, color: "var(--text-3)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
             {fullView === "lyrics" ? "Lyrics" : fullView === "visualizer" ? "Visualizer" : fullView === "eq" ? "Equalizer" : "Now Playing"}
           </p>
-          <button className="p-2 -mr-2" style={{ color: "var(--text-2)" }}><MoreHorizontal className="h-5 w-5" /></button>
+          {/* 3-dot menu with actions */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="p-2 -mr-2" style={{ color: "var(--text-2)" }}><MoreHorizontal className="h-5 w-5" /></button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52" style={{ background: "rgba(15,15,35,0.97)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(24px)" }}>
+              <DropdownMenuItem onClick={handleShare} className="gap-2 cursor-pointer" style={{ color: "var(--text-1)" }}>
+                <Copy className="h-4 w-4" /> Copy Link
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { if (navigator.share) navigator.share({ title: currentTrack.title, text: `Listen to ${currentTrack.title} by ${currentTrack.artist_name}`, url: window.location.href }); else handleShare(); }} className="gap-2 cursor-pointer" style={{ color: "var(--text-1)" }}>
+                <Share2 className="h-4 w-4" /> Share
+              </DropdownMenuItem>
+              <DropdownMenuSeparator style={{ background: "rgba(255,255,255,0.06)" }} />
+              <DropdownMenuItem onClick={() => { toast.info("Add to playlist coming soon"); }} className="gap-2 cursor-pointer" style={{ color: "var(--text-1)" }}>
+                <ListPlus className="h-4 w-4" /> Add to Playlist
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { addToQueue(currentTrack); toast.success("Added to queue"); }} className="gap-2 cursor-pointer" style={{ color: "var(--text-1)" }}>
+                <Plus className="h-4 w-4" /> Add to Queue
+              </DropdownMenuItem>
+              <DropdownMenuSeparator style={{ background: "rgba(255,255,255,0.06)" }} />
+              <DropdownMenuItem onClick={navigateToArtist} className="gap-2 cursor-pointer" style={{ color: "var(--text-1)" }}>
+                <UserCircle className="h-4 w-4" /> View Artist
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* ── Main content area ── */}
@@ -320,8 +374,8 @@ export function OrbPlayerBar() {
             <div className="w-full h-full overflow-y-auto px-2 py-8 space-y-5 scrollbar-hide">
               {lyricsLines.map((line, i) => {
                 const isActive = i < lyricsLines.length - 1
-                  ? currentTime >= line.time && currentTime < lyricsLines[i + 1].time
-                  : currentTime >= line.time;
+                  ? time >= line.time && time < lyricsLines[i + 1].time
+                  : time >= line.time;
                 return (
                   <p key={i} className="font-body transition-all duration-500" style={{
                     fontSize: isActive ? 30 : 22, fontWeight: isActive ? 800 : 400,
@@ -403,13 +457,7 @@ export function OrbPlayerBar() {
             <div className="min-w-0 flex-1 mr-3">
               <h2 className="font-display truncate" style={{ fontSize: 32, color: "var(--text-1)", lineHeight: 1 }}>{currentTrack.title}</h2>
               <button
-                onClick={() => {
-                  const artistId = currentTrack.artist_user_id || currentTrack.user_id;
-                  if (artistId) {
-                    setPlayerView("mini");
-                    navigate(`/artist/${artistId}`);
-                  }
-                }}
+                onClick={navigateToArtist}
                 className="font-body truncate mt-1 hover:underline transition-colors block text-left"
                 style={{ fontSize: 14, color: "var(--text-2)" }}
               >
@@ -420,13 +468,22 @@ export function OrbPlayerBar() {
               <button onClick={() => setIsLiked(!isLiked)} className="p-1.5">
                 <Heart className="h-5 w-5" style={{ color: isLiked ? CORAL : "var(--text-3)", fill: isLiked ? CORAL : "none" }} />
               </button>
-              <button className="p-1.5" style={{ color: "var(--text-3)" }}><MoreHorizontal className="h-5 w-5" /></button>
             </div>
           </div>
         </div>
 
         {/* ── Coral ring transport ── */}
         <div className="relative z-10 flex flex-col items-center py-3">
+          {/* Repeat button above ring */}
+          <button onClick={cycleRepeatMode} className="mb-2 p-1.5 rounded-full transition-colors" style={{ color: repeatColor }}>
+            <RepeatIcon className="h-4 w-4" />
+            {repeatMode !== 'off' && (
+              <span className="font-body block" style={{ fontSize: 7, fontWeight: 700, color: CORAL, textAlign: "center" }}>
+                {repeatMode === 'one' ? '1' : 'ALL'}
+              </span>
+            )}
+          </button>
+
           <div className="relative flex items-center justify-center" style={{ width: 160, height: 160 }}>
             {/* Background ring */}
             <svg className="absolute inset-0" width="160" height="160" viewBox="0 0 160 160">
@@ -452,13 +509,17 @@ export function OrbPlayerBar() {
             </div>
           </div>
           {/* Time */}
-          <span className="font-body mt-1" style={{ fontSize: 13, color: CORAL, fontWeight: 600 }}>{fmt(currentTime)}</span>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="font-body" style={{ fontSize: 11, color: "var(--text-4)" }}>{fmt(time)}</span>
+            <span className="font-body" style={{ fontSize: 13, color: CORAL, fontWeight: 600 }}>/</span>
+            <span className="font-body" style={{ fontSize: 11, color: "var(--text-4)" }}>{fmt(dur)}</span>
+          </div>
         </div>
 
         {/* ── Bottom toolbar ── */}
         <div className="relative z-10 flex items-center justify-around px-6 pb-4 pt-1" style={{ paddingBottom: "max(env(safe-area-inset-bottom, 16px), 16px)" }}>
           {([
-            { id: "artwork" as const, icon: Repeat, label: "Cover" },
+            { id: "artwork" as const, icon: Music, label: "Cover" },
             { id: "lyrics" as const, icon: Mic2, label: "Lyrics" },
             { id: "visualizer" as const, icon: SlidersHorizontal, label: "Visual" },
             { id: "eq" as const, icon: SlidersHorizontal, label: "EQ", rotate: true },

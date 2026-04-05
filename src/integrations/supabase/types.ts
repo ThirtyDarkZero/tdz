@@ -1194,6 +1194,42 @@ export type Database = {
         }
         Relationships: []
       }
+      curated_playlists: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          genre: string | null
+          id: string
+          last_updated: string | null
+          name: string
+          track_count: number | null
+          tracks: Json | null
+          youtube_playlist_id: string
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          genre?: string | null
+          id?: string
+          last_updated?: string | null
+          name: string
+          track_count?: number | null
+          tracks?: Json | null
+          youtube_playlist_id: string
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          genre?: string | null
+          id?: string
+          last_updated?: string | null
+          name?: string
+          track_count?: number | null
+          tracks?: Json | null
+          youtube_playlist_id?: string
+        }
+        Relationships: []
+      }
       device_fingerprints: {
         Row: {
           fingerprint: string
@@ -1856,13 +1892,16 @@ export type Database = {
       }
       listener_profiles: {
         Row: {
+          age_range: string | null
           banner_image_path: string | null
           bio: string | null
           created_at: string
+          discovery_source: string | null
           display_name: string
           favorite_genres: Json | null
           follower_count: number | null
           following_count: number | null
+          gender: string | null
           id: string
           is_public: boolean | null
           location: string | null
@@ -1872,13 +1911,16 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          age_range?: string | null
           banner_image_path?: string | null
           bio?: string | null
           created_at?: string
+          discovery_source?: string | null
           display_name: string
           favorite_genres?: Json | null
           follower_count?: number | null
           following_count?: number | null
+          gender?: string | null
           id?: string
           is_public?: boolean | null
           location?: string | null
@@ -1888,13 +1930,16 @@ export type Database = {
           user_id: string
         }
         Update: {
+          age_range?: string | null
           banner_image_path?: string | null
           bio?: string | null
           created_at?: string
+          discovery_source?: string | null
           display_name?: string
           favorite_genres?: Json | null
           follower_count?: number | null
           following_count?: number | null
+          gender?: string | null
           id?: string
           is_public?: boolean | null
           location?: string | null

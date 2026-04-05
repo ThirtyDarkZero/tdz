@@ -47,6 +47,7 @@ interface YouTubePlayerState {
 }
 
 export type PlayerViewState = 'full' | 'mini' | 'hidden';
+export type RepeatMode = 'off' | 'all' | 'one';
 
 interface PlayerContextType {
   currentTrack: Track | null;
@@ -76,6 +77,11 @@ interface PlayerContextType {
   setCurrentTime: (time: number) => void;
   currentTime: number;
   
+  // Repeat mode
+  repeatMode: RepeatMode;
+  setRepeatMode: (mode: RepeatMode) => void;
+  cycleRepeatMode: () => void;
+  
   // YouTube player state
   youtubeState: YouTubePlayerState;
   youtubePlayer: any;
@@ -98,6 +104,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [queue, setQueue] = useState<Track[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [repeatMode, setRepeatMode] = useState<RepeatMode>('off');
   const [playerView, setPlayerView] = useState<PlayerViewState>('full');
   const [currentTime, setCurrentTime] = useState(0);
   const [youtubePlayer, setYoutubePlayer] = useState<any>(null);
@@ -197,19 +204,27 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [currentTrack]);
 
   const nextTrack = useCallback(() => {
+    if (repeatMode === 'one') {
+      setCurrentTime(0);
+      setIsPlaying(true);
+      return;
+    }
     if (currentIndex < queue.length - 1) {
       const next = queue[currentIndex + 1];
       setCurrentTrack(next);
       setCurrentIndex(currentIndex + 1);
       setCurrentTime(0);
       setIsPlaying(true);
+    } else if (repeatMode === 'all' && queue.length > 0) {
+      setCurrentTrack(queue[0]);
+      setCurrentIndex(0);
+      setCurrentTime(0);
+      setIsPlaying(true);
     } else if (queue.length > 0 && currentTrack) {
-      // Auto-play from same artist if queue is exhausted
-      // This will be handled by the player component checking for same-artist tracks
       setCurrentTrack(null);
       setIsPlaying(false);
     }
-  }, [currentIndex, queue, currentTrack]);
+  }, [currentIndex, queue, currentTrack, repeatMode]);
 
   const previousTrack = useCallback(() => {
     if (currentIndex > 0) {
@@ -255,6 +270,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [currentIndex]);
 
+  const cycleRepeatMode = useCallback(() => {
+    setRepeatMode(prev => prev === 'off' ? 'all' : prev === 'all' ? 'one' : 'off');
+  }, []);
+
   return (
     <PlayerContext.Provider
       value={{
@@ -279,6 +298,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         youtubeState,
         youtubePlayer,
         setYoutubePlayer,
+        repeatMode,
+        setRepeatMode,
+        cycleRepeatMode,
       }}
     >
       {children}
@@ -314,6 +336,9 @@ export function usePlayer() {
       youtubeState: { isReady: false, currentTime: 0, duration: 0, volume: 100, isMuted: false },
       youtubePlayer: null,
       setYoutubePlayer: () => {},
+      repeatMode: 'off' as RepeatMode,
+      setRepeatMode: () => {},
+      cycleRepeatMode: () => {},
     } as PlayerContextType;
   }
   return context;
