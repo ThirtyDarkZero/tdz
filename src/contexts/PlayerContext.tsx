@@ -270,6 +270,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [currentIndex]);
 
+  const cycleRepeatMode = useCallback(() => {
+    setRepeatMode(prev => prev === 'off' ? 'all' : prev === 'all' ? 'one' : 'off');
+  }, []);
+
   return (
     <PlayerContext.Provider
       value={{
@@ -294,6 +298,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         youtubeState,
         youtubePlayer,
         setYoutubePlayer,
+        repeatMode,
+        setRepeatMode,
+        cycleRepeatMode,
       }}
     >
       {children}
