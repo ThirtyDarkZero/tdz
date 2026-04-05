@@ -336,6 +336,9 @@ export function usePlayer() {
       youtubeState: { isReady: false, currentTime: 0, duration: 0, volume: 100, isMuted: false },
       youtubePlayer: null,
       setYoutubePlayer: () => {},
+      repeatMode: 'off' as RepeatMode,
+      setRepeatMode: () => {},
+      cycleRepeatMode: () => {},
     } as PlayerContextType;
   }
   return context;
