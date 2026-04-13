@@ -4292,6 +4292,48 @@ export type Database = {
         }
         Relationships: []
       }
+      artist_payout_details_safe: {
+        Row: {
+          account_holder_name: string | null
+          artist_id: string | null
+          bank_token_reference: string | null
+          created_at: string | null
+          has_square_connected: boolean | null
+          id: string | null
+          last_payout_date: string | null
+          payout_enabled: boolean | null
+          square_customer_id: string | null
+          square_merchant_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_holder_name?: string | null
+          artist_id?: string | null
+          bank_token_reference?: string | null
+          created_at?: string | null
+          has_square_connected?: never
+          id?: string | null
+          last_payout_date?: string | null
+          payout_enabled?: boolean | null
+          square_customer_id?: string | null
+          square_merchant_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          account_holder_name?: string | null
+          artist_id?: string | null
+          bank_token_reference?: string | null
+          created_at?: string | null
+          has_square_connected?: never
+          id?: string | null
+          last_payout_date?: string | null
+          payout_enabled?: boolean | null
+          square_customer_id?: string | null
+          square_merchant_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       artist_payout_info: {
         Row: {
           account_holder_name: string | null
@@ -4360,6 +4402,16 @@ export type Database = {
     }
     Functions: {
       check_upload_rate_limit: { Args: { p_user_id: string }; Returns: boolean }
+      create_system_notification: {
+        Args: {
+          p_message: string
+          p_metadata?: Json
+          p_notification_type: string
+          p_title: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       deduct_render_credits:
         | {
             Args: {
@@ -4381,6 +4433,15 @@ export type Database = {
       generate_isrc: { Args: never; Returns: string }
       generate_ticket_number: { Args: never; Returns: string }
       generate_upc: { Args: never; Returns: string }
+      get_artist_square_tokens: {
+        Args: { p_artist_id: string }
+        Returns: {
+          access_token: string
+          merchant_id: string
+          refresh_token: string
+          token_expires_at: string
+        }[]
+      }
       get_user_plan: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["subscription_plan"]
