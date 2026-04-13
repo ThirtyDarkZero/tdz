@@ -39,7 +39,9 @@ export const CollaboratorInviteDialog = ({ open, onOpenChange, onInviteSent }: C
   };
 
   const handleSendInvite = async () => {
-    if (!email || permissions.length === 0) {
+    const normalizedEmail = email.toLowerCase().trim();
+
+    if (!normalizedEmail || permissions.length === 0) {
       toast.error("Email and at least one permission are required");
       return;
     }
@@ -47,20 +49,20 @@ export const CollaboratorInviteDialog = ({ open, onOpenChange, onInviteSent }: C
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!user) throw new Error("Your session expired. Please sign in again.");
 
       const { error } = await supabase
         .from("collaborator_invites")
         .insert({
           artist_id: user.id,
-          invited_email: email.toLowerCase().trim(),
+          invited_email: normalizedEmail,
           permissions: permissions,
           message: message || null,
         });
 
       if (error) throw error;
 
-      toast.success(`Invitation sent to ${email}`);
+      toast.success(`Invitation sent to ${normalizedEmail}`);
       setEmail("");
       setMessage("");
       setPermissions(["view_tracks"]);
@@ -68,7 +70,12 @@ export const CollaboratorInviteDialog = ({ open, onOpenChange, onInviteSent }: C
       onInviteSent?.();
     } catch (error: any) {
       console.error("Error sending invite:", error);
-      toast.error(error.message || "Failed to send invitation");
+      const message = error?.message?.toLowerCase?.() || "";
+      if (message.includes("invalid login credentials") || message.includes("jwt") || message.includes("not authenticated")) {
+        toast.error("Your session expired. Please sign in again and retry.");
+      } else {
+        toast.error(error.message || "Failed to send invitation");
+      }
     } finally {
       setLoading(false);
     }

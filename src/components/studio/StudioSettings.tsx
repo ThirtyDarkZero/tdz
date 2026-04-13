@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +18,10 @@ import {
   Download, Trash2, AlertTriangle, Zap, LifeBuoy
 } from "lucide-react";
 import { toast } from "sonner";
+import { hardSignOut } from "@/lib/auth";
 
 export const StudioSettings = () => {
+  const navigate = useNavigate();
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [collaboratorsKey, setCollaboratorsKey] = useState(0);
   
@@ -43,6 +46,11 @@ export const StudioSettings = () => {
 
   const handleDeleteAccount = () => {
     toast.error("Please contact support@thirtydarkzero.com to delete your account.");
+  };
+
+  const handleLogout = async () => {
+    await hardSignOut({ redirectTo: "/" });
+    navigate("/");
   };
 
   return (
@@ -285,6 +293,9 @@ export const StudioSettings = () => {
               <Button variant="destructive" className="w-full" onClick={handleDeleteAccount}>
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete Account
+              </Button>
+              <Button variant="outline" className="w-full" onClick={handleLogout}>
+                Sign Out
               </Button>
             </CardContent>
           </Card>

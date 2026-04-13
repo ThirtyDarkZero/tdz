@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -240,6 +240,7 @@ function TDZStorefront({ artists }: { artists: any[] }) {
 
 export default function Discover() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("discover");
   const [selectedGenre, setSelectedGenre] = useState<string | undefined>(undefined);
@@ -266,6 +267,13 @@ export default function Discover() {
     };
     load();
   }, [user]);
+
+  useEffect(() => {
+    const requestedTab = searchParams.get("tab");
+    if (requestedTab && ["discover", "explore", "library", "feed", "store"].includes(requestedTab)) {
+      setActiveTab(requestedTab);
+    }
+  }, [searchParams]);
 
   const genreFilteredSingles = useMemo(() => {
     let filtered = singles;

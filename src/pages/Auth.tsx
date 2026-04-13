@@ -90,6 +90,8 @@ function AuthForm() {
         if (error) {
           if (error.message.includes("already registered")) {
             toast.error("This email is already registered. Please sign in instead.");
+          } else if (error.message.toLowerCase().includes("email not confirmed")) {
+            toast.error("Check your email and confirm your account before signing in.");
           } else if (error.message.includes("Invalid email")) {
             toast.error("Please enter a valid email address.");
           } else if (error.message.includes("Password")) {
@@ -105,7 +107,16 @@ function AuthForm() {
       } else {
         const { error } = await signIn(result.data.email, result.data.password);
         if (error) {
-          toast.error("Invalid email or password.");
+          const message = error.message?.toLowerCase?.() || "";
+          if (message.includes("email not confirmed") || message.includes("email_not_confirmed")) {
+            toast.error("Please confirm your email before signing in.");
+          } else if (message.includes("too many requests") || message.includes("rate limit")) {
+            toast.error("Too many sign-in attempts. Please wait a moment and try again.");
+          } else if (message.includes("invalid login credentials")) {
+            toast.error("Invalid email or password.");
+          } else {
+            toast.error(error.message || "Unable to sign in right now.");
+          }
           setLoading(false);
           return;
         }
