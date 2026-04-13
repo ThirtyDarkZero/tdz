@@ -40,7 +40,7 @@ export const PendingInvitesPanel = () => {
       const { data, error } = await supabase
         .from("collaborator_invites")
         .select("*")
-        .eq("invited_email", user.email)
+        .eq("invited_email", user.email?.toLowerCase() || "")
         .eq("status", "pending")
         .gt("expires_at", new Date().toISOString())
         .order("created_at", { ascending: false });
