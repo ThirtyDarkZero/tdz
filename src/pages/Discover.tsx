@@ -8,7 +8,7 @@ import { useDiscoveryData } from "@/hooks/useDiscoveryData";
 import { usePlayer } from "@/contexts/PlayerContext";
 import { useMood, MoodTheme } from "@/contexts/MoodContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { ChevronRight, Play, Compass, TrendingUp, BarChart3, Music, ShoppingBag, Star, Shirt, Disc3, Package, Heart } from "lucide-react";
+import { ChevronRight, Play, Compass, TrendingUp, BarChart3, Music, ShoppingBag, Star, Shirt, Disc3, Package, Heart, Clock, ListMusic } from "lucide-react";
 
 import { PersistentLayout } from "@/components/discovery/PersistentLayout";
 import { CosmicTopBar } from "@/components/discovery/CosmicTopBar";
@@ -97,7 +97,7 @@ function FilterPill({ label, active, onClick }: { label: string; active: boolean
 }
 
 /* ── Hex Cell for Library ── */
-function LibraryCard({ image, label, onClick }: { image: string | null; label: string; onClick: () => void }) {
+function LibraryCard({ image, label, count, icon: Icon, onClick }: { image?: string | null; label: string; count?: number; icon?: any; onClick: () => void }) {
   return (
     <div
       className="relative cursor-pointer transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
@@ -105,11 +105,18 @@ function LibraryCard({ image, label, onClick }: { image: string | null; label: s
       onClick={onClick}
     >
       {image && <img src={image} alt="" className="w-full h-full object-cover" />}
-      {!image && <div className="w-full h-full flex items-center justify-center"><Music className="w-6 h-6" style={{ color: "var(--text-4)" }} /></div>}
+      {!image && (
+        <div className="w-full h-full flex items-center justify-center" style={{ background: "var(--glass-2)" }}>
+          {Icon ? <Icon className="w-8 h-8" style={{ color: "var(--text-4)" }} /> : <Music className="w-6 h-6" style={{ color: "var(--text-4)" }} />}
+        </div>
+      )}
       <div className="absolute inset-x-0 bottom-0 p-2" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)" }}>
         <span className="font-body block truncate" style={{ fontSize: 10, fontWeight: 600, color: "white" }}>
           {label}
         </span>
+        {count !== undefined && (
+          <span className="font-body" style={{ fontSize: 9, color: "rgba(255,255,255,0.6)" }}>{count} songs</span>
+        )}
       </div>
     </div>
   );
@@ -252,6 +259,11 @@ export default function Discover() {
   const [carouselCenterIndex, setCarouselCenterIndex] = useState(0);
   const { mood, setMood } = useMood();
 
+  // Library-specific state
+  const [userPlaylists, setUserPlaylists] = useState<any[]>([]);
+  const [likedSongsCount, setLikedSongsCount] = useState(0);
+  const [recentHistory, setRecentHistory] = useState<any[]>([]);
+
   const { currentTrack, playTrack, addToQueue } = usePlayer();
   const { tracks, singles, artists, albums, playlists, likedTracks, followedArtists, loading, user, toggleLike, toggleFollow } = useDiscoveryData();
   const { role } = useUserRole(user);
@@ -267,6 +279,25 @@ export default function Discover() {
     };
     load();
   }, [user]);
+
+  // Load library data when library tab is active
+  useEffect(() => {
+    if (activeTab !== "library" || !user) return;
+    const loadLibrary = async () => {
+      // User playlists
+      const { data: pls } = await supabase.from("playlists").select("id, name, cover_image_path, created_at").eq("user_id", user.id).order("created_at", { ascending: false });
+      setUserPlaylists(pls || []);
+
+      // Liked songs count
+      const { count } = await supabase.from("track_likes").select("id", { count: "exact", head: true }).eq("user_id", user.id);
+      setLikedSongsCount(count || 0);
+
+      // Recent listening history
+      const { data: hist } = await supabase.from("listening_history").select("id, track_id, played_at, tracks(title, artist_name, album_cover_path, album_cover_bucket)").eq("user_id", user.id).order("played_at", { ascending: false }).limit(20);
+      setRecentHistory(hist || []);
+    };
+    loadLibrary();
+  }, [activeTab, user]);
 
   useEffect(() => {
     const requestedTab = searchParams.get("tab");
@@ -288,7 +319,6 @@ export default function Discover() {
     return filtered;
   }, [singles, searchQuery, selectedGenre]);
 
-  // Sort for trending (by play_count desc), new (by created_at desc)
   const trendingSingles = useMemo(() => [...singles].sort((a, b) => (b.play_count || 0) - (a.play_count || 0)), [singles]);
   const newReleaseSingles = useMemo(() => [...singles].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()), [singles]);
 
@@ -309,59 +339,36 @@ export default function Discover() {
 
   const resolveArtworkUrl = useCallback((item: any) => {
     if (!item) return null;
-
     const directUrl = item.image || item.thumbnail;
     if (typeof directUrl === "string" && directUrl.startsWith("http")) return directUrl;
-
     const paths: Array<{ path: string | null | undefined; bucket: string }> = [
       { path: item.album_cover_path, bucket: item.album_cover_bucket || "album-covers" },
       { path: item.cover_art_path, bucket: "album-covers" },
       { path: item?.albums?.cover_art_path, bucket: "album-covers" },
     ];
-
     for (const candidate of paths) {
       if (candidate.path) {
         return supabase.storage.from(candidate.bucket).getPublicUrl(candidate.path).data.publicUrl;
       }
     }
-
     if (typeof directUrl === "string" && directUrl.length > 0) return directUrl;
     return null;
   }, []);
 
   const forYouItems = useMemo(() => {
     const items: FeaturedItem[] = [];
-
     for (const album of albums) {
       const image = resolveArtworkUrl(album);
       if (!image) continue;
-
-      items.push({
-        id: `album-${album.id}`,
-        title: album.title,
-        artist: album.artist_name,
-        image,
-        type: "album",
-      });
+      items.push({ id: `album-${album.id}`, title: album.title, artist: album.artist_name, image, type: "album" });
     }
-
     for (const track of tracks) {
       const image = resolveArtworkUrl(track);
       if (!image) continue;
-
-      items.push({
-        id: `track-${track.id}`,
-        title: track.title,
-        artist: track.artist_name,
-        image,
-        type: "track",
-        trackData: track,
-      });
+      items.push({ id: `track-${track.id}`, title: track.title, artist: track.artist_name, image, type: "track", trackData: track });
     }
-
     const uniqueItems = Array.from(new Map(items.map(item => [item.id, item])).values());
     const featured = uniqueItems.slice(0, 7);
-
     if (featured.length > 0 && featured.length < 7) {
       const seed = [...featured];
       while (featured.length < 7) {
@@ -369,36 +376,26 @@ export default function Discover() {
         featured.push({ ...source, id: `${source.id}-clone-${featured.length}` });
       }
     }
-
     return featured;
   }, [albums, tracks, resolveArtworkUrl]);
 
   const topChartRows = useMemo(() => {
     const ranked = [...tracks].sort((a, b) => (b.play_count || 0) - (a.play_count || 0));
-
     if (ranked.length === 0) return [] as Array<{ rowId: string; track: any }>;
-
     const rows = ranked.slice(0, 50).map((track, i) => ({ rowId: `rank-${i + 1}-${track.id}`, track }));
-
     while (rows.length < 50) {
       const source = ranked[rows.length % ranked.length];
       rows.push({ rowId: `fill-${rows.length + 1}-${source.id}`, track: source });
     }
-
     return rows;
   }, [tracks]);
 
   const visibleCarouselItems = useMemo(() => {
     if (forYouItems.length === 0) return [];
-
     return Array.from({ length: 7 }, (_, slot) => {
       const offset = slot - 3;
       const index = (carouselCenterIndex + offset + forYouItems.length) % forYouItems.length;
-      return {
-        offset,
-        index,
-        item: forYouItems[index],
-      };
+      return { offset, index, item: forYouItems[index] };
     });
   }, [forYouItems, carouselCenterIndex]);
 
@@ -411,11 +408,9 @@ export default function Discover() {
 
   useEffect(() => {
     if (forYouItems.length <= 1) return;
-
     const interval = setInterval(() => {
       setCarouselCenterIndex(prev => (prev + 1) % forYouItems.length);
     }, 3500);
-
     return () => clearInterval(interval);
   }, [forYouItems.length]);
 
@@ -448,7 +443,6 @@ export default function Discover() {
 
               {!searchQuery.trim() && (
                 <div>
-                  {/* ── Immersive Hero with Full-Viewport Carousel ── */}
                   <ImmersiveHeroSection
                     forYouItems={forYouItems}
                     carouselCenterIndex={carouselCenterIndex}
@@ -457,7 +451,6 @@ export default function Discover() {
                     onPlayTrack={handlePlayTrack}
                   />
 
-                  {/* ── Moodscapes (sticky between sections) ── */}
                   <div className="sticky top-0 z-30 py-4 px-4 sm:px-6 lg:px-8" style={{ background: "linear-gradient(to bottom, rgba(3,3,15,0.95), rgba(3,3,15,0.8))", backdropFilter: "blur(20px)" }}>
                     <div className="flex gap-2 overflow-x-auto scrollbar-hide max-w-5xl mx-auto">
                       {MOODS.map(m => {
@@ -484,7 +477,6 @@ export default function Discover() {
                     </div>
                   </div>
 
-                  {/* ── Popular Tracks (Full-width immersive section) ── */}
                   <ImmersiveTrackSection
                     title="POPULAR TRACKS"
                     subtitle="Top 10 on TDZ right now"
@@ -498,7 +490,6 @@ export default function Discover() {
                     maxTracks={10}
                   />
 
-                  {/* ── Featured Artists + Albums ── */}
                   <ImmersiveContentSection
                     artists={artists}
                     albums={albums}
@@ -506,7 +497,6 @@ export default function Discover() {
                     onAlbumClick={(a) => navigate(`/album/${a.id}`)}
                   />
 
-                  {/* ── New This Week (immersive section) ── */}
                   {newReleaseSingles.length > 0 && (
                     <ImmersiveTrackSection
                       title="NEW THIS WEEK"
@@ -522,7 +512,6 @@ export default function Discover() {
                     />
                   )}
 
-                  {/* ── User Playlists ── */}
                   <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
                     <ErrorBoundary fallback={null}>
                       <UserPlaylistsSection onPlaylistClick={id => navigate(`/playlist/${id}`)} onViewAll={() => setActiveTab("library")} />
@@ -538,7 +527,6 @@ export default function Discover() {
             <div>
               <CosmicTopBar activeTab={activeTab} onTabChange={setActiveTab} searchQuery={searchQuery} onSearchChange={setSearchQuery} userProfile={userProfile} />
               <div className="px-3 sm:px-5 md:px-6 lg:px-8 py-5 space-y-5">
-                {/* Search */}
                 <div className="relative">
                   <div className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: "var(--text-3)" }}>
                     <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
@@ -565,7 +553,6 @@ export default function Discover() {
 
                 {!searchQuery.trim() && exploreView === "main" && (
                   <>
-                    {/* 3 Glassmorphic playlist launchers — now navigate to real sections */}
                     <div className="space-y-3">
                       {[
                         { label: "TRENDING NOW", icon: TrendingUp, color: "#F43F5E", view: "trending" as const },
@@ -593,7 +580,6 @@ export default function Discover() {
                       ))}
                     </div>
 
-                    {/* Genre grid */}
                     <Section title="BROWSE GENRES">
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
                         {GENRES.map(g => {
@@ -620,12 +606,9 @@ export default function Discover() {
                   </>
                 )}
 
-                {/* ── TRENDING NOW sub-view ── */}
                 {!searchQuery.trim() && exploreView === "trending" && (
                   <div className="space-y-4">
-                    <button onClick={() => setExploreView("main")} className="flex items-center gap-1 font-body" style={{ fontSize: 12, color: "#00CFFF" }}>
-                      ← Back to Explore
-                    </button>
+                    <button onClick={() => setExploreView("main")} className="flex items-center gap-1 font-body" style={{ fontSize: 12, color: "#00CFFF" }}>← Back to Explore</button>
                     <h2 className="font-display" style={{ fontSize: 40, color: "var(--text-1)" }}>TRENDING NOW</h2>
                     <p className="font-body" style={{ fontSize: 13, color: "var(--text-3)" }}>The hottest tracks on TDZ right now</p>
                     <div className="rounded-[var(--radius-md)] overflow-hidden" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)", borderTop: "2px solid #F43F5E" }}>
@@ -637,15 +620,11 @@ export default function Discover() {
                   </div>
                 )}
 
-                {/* ── NEW RELEASES sub-view ── */}
                 {!searchQuery.trim() && exploreView === "new" && (
                   <div className="space-y-4">
-                    <button onClick={() => setExploreView("main")} className="flex items-center gap-1 font-body" style={{ fontSize: 12, color: "#00CFFF" }}>
-                      ← Back to Explore
-                    </button>
+                    <button onClick={() => setExploreView("main")} className="flex items-center gap-1 font-body" style={{ fontSize: 12, color: "#00CFFF" }}>← Back to Explore</button>
                     <h2 className="font-display" style={{ fontSize: 40, color: "var(--text-1)" }}>NEW RELEASES</h2>
                     <p className="font-body" style={{ fontSize: 13, color: "var(--text-3)" }}>Fresh drops from TDZ artists</p>
-                    {/* Album cards */}
                     {albums.length > 0 && (
                       <div className="flex gap-3.5 overflow-x-auto pb-3 scrollbar-hide">
                         {albums.map(album => (
@@ -662,16 +641,12 @@ export default function Discover() {
                   </div>
                 )}
 
-                {/* ── TOP CHARTS sub-view (Billboard-style 50 songs) ── */}
                 {!searchQuery.trim() && exploreView === "charts" && (
                   <div className="space-y-4">
-                    <button onClick={() => setExploreView("main")} className="flex items-center gap-1 font-body" style={{ fontSize: 12, color: "#00CFFF" }}>
-                      ← Back to Explore
-                    </button>
+                    <button onClick={() => setExploreView("main")} className="flex items-center gap-1 font-body" style={{ fontSize: 12, color: "#00CFFF" }}>← Back to Explore</button>
                     <h2 className="font-display" style={{ fontSize: 40, color: "var(--text-1)" }}>TDZ TOP 50</h2>
                     <p className="font-body" style={{ fontSize: 13, color: "var(--text-3)" }}>The official TDZ charts — updated weekly</p>
                     <div className="rounded-[var(--radius-md)] overflow-hidden" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)", borderTop: "2px solid #22C55E" }}>
-                      {/* Chart header */}
                       <div className="flex items-center px-4 py-2.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                         <span className="font-body w-10 text-center" style={{ fontSize: 9, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.1em" }}>#</span>
                         <span className="font-body flex-1" style={{ fontSize: 9, fontWeight: 700, color: "var(--text-4)", letterSpacing: "0.1em" }}>TITLE</span>
@@ -687,30 +662,15 @@ export default function Discover() {
                             style={{ borderBottom: i < 49 ? "1px solid rgba(255,255,255,0.03)" : "none" }}
                             onClick={() => handlePlayFromList(track, topChartRows.map(row => row.track))}
                           >
-                            {/* Chart position */}
-                            <span className="font-display w-10 text-center flex-shrink-0" style={{
-                              fontSize: isTop3 ? 28 : 18,
-                              color: isTop3 ? "#22C55E" : "var(--text-4)",
-                            }}>
-                              {i + 1}
-                            </span>
-                            {/* Artwork */}
+                            <span className="font-display w-10 text-center flex-shrink-0" style={{ fontSize: isTop3 ? 28 : 18, color: isTop3 ? "#22C55E" : "var(--text-4)" }}>{i + 1}</span>
                             <div className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0" style={{ background: "var(--glass-2)" }}>
-                              {coverUrl ? (
-                                <img src={coverUrl} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center"><Music className="w-4 h-4" style={{ color: "var(--text-4)" }} /></div>
-                              )}
+                              {coverUrl ? <img src={coverUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Music className="w-4 h-4" style={{ color: "var(--text-4)" }} /></div>}
                             </div>
-                            {/* Info */}
                             <div className="min-w-0 flex-1">
                               <p className="font-body truncate" style={{ fontSize: 13, fontWeight: 600, color: currentTrack?.id === track.id ? "#00CFFF" : "var(--text-1)" }}>{track.title}</p>
                               <p className="font-body truncate" style={{ fontSize: 11, color: "var(--text-3)" }}>{track.artist_name}</p>
                             </div>
-                            {/* Play count */}
-                            <span className="font-body flex-shrink-0 w-20 text-right" style={{ fontSize: 11, color: "var(--text-4)" }}>
-                              {(track.play_count || 0).toLocaleString()}
-                            </span>
+                            <span className="font-body flex-shrink-0 w-20 text-right" style={{ fontSize: 11, color: "var(--text-4)" }}>{(track.play_count || 0).toLocaleString()}</span>
                             <Play className="w-3.5 h-3.5 flex-shrink-0 opacity-30" style={{ color: "var(--text-2)" }} />
                           </div>
                         );
@@ -719,7 +679,6 @@ export default function Discover() {
                   </div>
                 )}
 
-                {/* ── GENRE PLAYLIST sub-view ── */}
                 {!searchQuery.trim() && exploreView === "genre" && exploreGenre && (
                   <GenrePlaylistDetail genre={exploreGenre} onBack={() => setExploreView("main")} />
                 )}
@@ -727,48 +686,97 @@ export default function Discover() {
             </div>
           );
 
+        /* ── PHASE 4: Library = User's Collection Only ── */
         case "library":
           return (
             <div>
               <CosmicTopBar activeTab={activeTab} onTabChange={setActiveTab} searchQuery={searchQuery} onSearchChange={setSearchQuery} userProfile={userProfile} />
-              <div className="px-3 sm:px-5 md:px-6 lg:px-8 py-5 space-y-4">
-                {/* Filter pills */}
-                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                  {["PLAYLISTS", "ALBUMS", "ARTISTS", "SONGS", "DOWNLOADED", "RECENT"].map(tab => (
-                    <FilterPill key={tab} label={tab.charAt(0) + tab.slice(1).toLowerCase()} active={libraryFilter === tab} onClick={() => setLibraryFilter(tab)} />
-                  ))}
+              <div className="px-3 sm:px-5 md:px-6 lg:px-8 py-5 space-y-5">
+                <h2 className="font-display" style={{ fontSize: 32, color: "var(--text-1)" }}>YOUR LIBRARY</h2>
+                <p className="font-body" style={{ fontSize: 12, color: "var(--text-3)" }}>Your playlists, liked songs, and listening history</p>
+
+                {/* Quick access cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {/* Liked Songs */}
+                  <div
+                    className="cursor-pointer transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] flex items-center gap-3 p-4"
+                    style={{ background: "linear-gradient(135deg, rgba(236,72,153,0.15), rgba(139,92,246,0.1))", border: "1px solid rgba(236,72,153,0.2)", borderRadius: "var(--radius-md)" }}
+                    onClick={() => navigate("/liked-songs")}
+                  >
+                    <Heart className="w-6 h-6 flex-shrink-0" style={{ color: "#EC4899" }} fill="#EC4899" />
+                    <div>
+                      <p className="font-body" style={{ fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>Liked Songs</p>
+                      <p className="font-body" style={{ fontSize: 10, color: "var(--text-4)" }}>{likedSongsCount} songs</p>
+                    </div>
+                  </div>
+
+                  {/* Recently Played */}
+                  <div
+                    className="cursor-pointer transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] flex items-center gap-3 p-4"
+                    style={{ background: "linear-gradient(135deg, rgba(0,207,255,0.1), rgba(34,197,94,0.08))", border: "1px solid rgba(0,207,255,0.15)", borderRadius: "var(--radius-md)" }}
+                    onClick={() => setLibraryFilter("RECENT")}
+                  >
+                    <Clock className="w-6 h-6 flex-shrink-0" style={{ color: "#00CFFF" }} />
+                    <div>
+                      <p className="font-body" style={{ fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>Recently Played</p>
+                      <p className="font-body" style={{ fontSize: 10, color: "var(--text-4)" }}>{recentHistory.length} tracks</p>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Hexagonal grid for albums — smaller cells */}
-                {(libraryFilter === "ALBUMS" || libraryFilter === "PLAYLISTS" || libraryFilter === "DOWNLOADED" || libraryFilter === "RECENT") && albums.length > 0 && (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-                    {albums.map(album => (
-                      <LibraryCard
-                        key={album.id}
-                        image={album.cover_art_path ? supabase.storage.from("album-covers").getPublicUrl(album.cover_art_path).data.publicUrl : null}
-                        label={album.title}
-                        onClick={() => navigate(`/album/${album.id}`)}
-                      />
-                    ))}
-                  </div>
-                )}
+                {/* User Playlists */}
+                <Section title="YOUR PLAYLISTS" subtitle={`${userPlaylists.length} playlists`}>
+                  {userPlaylists.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {userPlaylists.map(pl => (
+                        <LibraryCard
+                          key={pl.id}
+                          image={pl.cover_image_path ? supabase.storage.from("album-covers").getPublicUrl(pl.cover_image_path).data.publicUrl : null}
+                          label={pl.name}
+                          icon={ListMusic}
+                          onClick={() => navigate(`/playlist/${pl.id}`)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10" style={{ background: "var(--glass-1)", borderRadius: "var(--radius-md)", border: "1px solid var(--glass-border)" }}>
+                      <ListMusic className="w-10 h-10 mx-auto mb-3" style={{ color: "var(--text-4)" }} />
+                      <p className="font-body" style={{ fontSize: 13, color: "var(--text-3)" }}>No playlists yet. Create one from the search results!</p>
+                    </div>
+                  )}
+                </Section>
 
-                {libraryFilter === "SONGS" && (
-                  <div className="rounded-[var(--radius-md)] overflow-hidden" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)" }}>
-                    <SongListHeader />
-                    {genreFilteredSingles.map((track, i) => (
-                      <SongRow key={track.id} track={track} index={i + 1} isPlaying={currentTrack?.id === track.id} isLiked={likedTracks.has(track.id)} onPlay={handlePlayTrack} onToggleLike={toggleLike} onAddToQueue={handleAddToQueue} />
-                    ))}
-                  </div>
+                {/* Recently Played */}
+                {recentHistory.length > 0 && (
+                  <Section title="RECENTLY PLAYED" subtitle="Your listening history">
+                    <div className="rounded-[var(--radius-md)] overflow-hidden" style={{ background: "var(--glass-1)", border: "1px solid var(--glass-border)" }}>
+                      {recentHistory.slice(0, 15).map((item: any, i: number) => {
+                        const track = item.tracks;
+                        if (!track) return null;
+                        const coverUrl = track.album_cover_path ? supabase.storage.from(track.album_cover_bucket || "album-covers").getPublicUrl(track.album_cover_path).data.publicUrl : null;
+                        return (
+                          <div
+                            key={item.id}
+                            className="flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors hover:bg-white/[0.03]"
+                            style={{ borderBottom: i < recentHistory.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}
+                            onClick={() => handlePlayTrack({ id: item.track_id, title: track.title, artist_name: track.artist_name, album_cover_path: track.album_cover_path, album_cover_bucket: track.album_cover_bucket })}
+                          >
+                            <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0" style={{ background: "var(--glass-2)" }}>
+                              {coverUrl ? <img src={coverUrl} alt="" className="w-full h-full object-cover" /> : <Music className="w-4 h-4 m-auto" style={{ color: "var(--text-4)" }} />}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-body truncate" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-1)" }}>{track.title}</p>
+                              <p className="font-body truncate" style={{ fontSize: 11, color: "var(--text-3)" }}>{track.artist_name}</p>
+                            </div>
+                            <span className="font-body flex-shrink-0" style={{ fontSize: 10, color: "var(--text-4)" }}>
+                              {new Date(item.played_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Section>
                 )}
-
-                {libraryFilter === "ARTISTS" && (
-                  <div className="flex gap-4 flex-wrap">
-                    {artists.map(a => <ArtistPortal key={a.user_id} artist={a} onClick={ar => navigate(`/artist/${ar.user_id}`)} />)}
-                  </div>
-                )}
-
-                {/* Global library removed — search is in the top bar */}
               </div>
             </div>
           );
