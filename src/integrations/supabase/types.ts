@@ -521,9 +521,9 @@ export type Database = {
           payout_enabled: boolean
           square_access_token: string | null
           square_customer_id: string | null
-          square_merchant_id: string | null
           square_refresh_token: string | null
           square_token_expires_at: string | null
+          stripe_connect_id: string | null
           updated_at: string
         }
         Insert: {
@@ -536,9 +536,9 @@ export type Database = {
           payout_enabled?: boolean
           square_access_token?: string | null
           square_customer_id?: string | null
-          square_merchant_id?: string | null
           square_refresh_token?: string | null
           square_token_expires_at?: string | null
+          stripe_connect_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -551,9 +551,9 @@ export type Database = {
           payout_enabled?: boolean
           square_access_token?: string | null
           square_customer_id?: string | null
-          square_merchant_id?: string | null
           square_refresh_token?: string | null
           square_token_expires_at?: string | null
+          stripe_connect_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -4296,40 +4296,31 @@ export type Database = {
         Row: {
           account_holder_name: string | null
           artist_id: string | null
-          bank_token_reference: string | null
           created_at: string | null
-          has_square_connected: boolean | null
           id: string | null
           last_payout_date: string | null
           payout_enabled: boolean | null
-          square_customer_id: string | null
-          square_merchant_id: string | null
+          stripe_connect_id: string | null
           updated_at: string | null
         }
         Insert: {
           account_holder_name?: string | null
           artist_id?: string | null
-          bank_token_reference?: string | null
           created_at?: string | null
-          has_square_connected?: never
           id?: string | null
           last_payout_date?: string | null
           payout_enabled?: boolean | null
-          square_customer_id?: string | null
-          square_merchant_id?: string | null
+          stripe_connect_id?: string | null
           updated_at?: string | null
         }
         Update: {
           account_holder_name?: string | null
           artist_id?: string | null
-          bank_token_reference?: string | null
           created_at?: string | null
-          has_square_connected?: never
           id?: string | null
           last_payout_date?: string | null
           payout_enabled?: boolean | null
-          square_customer_id?: string | null
-          square_merchant_id?: string | null
+          stripe_connect_id?: string | null
           updated_at?: string | null
         }
         Relationships: []

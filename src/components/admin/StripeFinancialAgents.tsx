@@ -48,7 +48,7 @@ export function StripeFinancialAgents() {
         supabase.functions.invoke('stripe-balance'),
         supabase.from('artist_earnings').select('artist_id, streaming_revenue, download_revenue, total_earnings, payout_status'),
         supabase.from('artist_payouts').select('amount, status, artist_id'),
-        supabase.from('artist_payout_details_safe').select('artist_id, square_merchant_id, payout_enabled'),
+        supabase.from('artist_payout_details_safe').select('artist_id, stripe_connect_id, payout_enabled'),
         supabase.from('user_subscriptions').select('plan, status, expires_at'),
       ]);
 
@@ -76,7 +76,7 @@ export function StripeFinancialAgents() {
       ).size;
 
       const totalArtistsConnected = connected
-        .filter(c => c.square_merchant_id)
+        .filter(c => (c as any).stripe_connect_id)
         .length;
 
       setPayoutSummary({ totalPaid, totalPending, artistsWithPending, totalArtistsConnected });
