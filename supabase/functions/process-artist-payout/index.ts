@@ -55,7 +55,7 @@ serve(async (req) => {
       .eq("artist_id", artistId)
       .maybeSingle();
 
-    if (!payoutDetails?.square_merchant_id) {
+    if (!payoutDetails?.stripe_connect_id) {
       throw new Error("Artist has not set up Stripe Connect");
     }
 
@@ -95,7 +95,7 @@ serve(async (req) => {
     const transfer = await stripe.transfers.create({
       amount: Math.round(payoutAmount * 100),
       currency: "usd",
-      destination: payoutDetails.square_merchant_id,
+      destination: payoutDetails.stripe_connect_id,
       description: `TDZ artist payout for ${artistId}`,
       metadata: { artist_id: artistId },
     });
