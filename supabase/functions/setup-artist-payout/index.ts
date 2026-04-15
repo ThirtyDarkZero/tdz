@@ -54,7 +54,7 @@ serve(async (req) => {
     // Store the Stripe Connect account ID
     await supabase.from("artist_payout_details").upsert({
       artist_id: user.id,
-      square_merchant_id: account.id,
+      stripe_connect_id: account.id,
       payout_enabled: false,
       updated_at: new Date().toISOString(),
     }, { onConflict: "artist_id" });

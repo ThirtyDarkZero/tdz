@@ -51,7 +51,7 @@ serve(async (req) => {
     // Get artist's Stripe Connect account
     const { data: payoutDetails } = await supabase
       .from("artist_payout_details")
-      .select("square_merchant_id, payout_enabled")
+      .select("stripe_connect_id, payout_enabled")
       .eq("artist_id", artistId)
       .maybeSingle();
 

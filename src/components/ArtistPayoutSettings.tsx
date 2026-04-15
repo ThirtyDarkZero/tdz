@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 interface PayoutDetails {
-  square_merchant_id: string | null; // Actually stores Stripe Connect account ID
+  stripe_connect_id: string | null;
   account_holder_name: string | null;
   payout_enabled: boolean;
   last_payout_date: string | null;
@@ -70,7 +70,7 @@ export const ArtistPayoutSettings = () => {
       if (data) {
         const details = data as any;
         setPayoutDetails({
-          square_merchant_id: details.square_merchant_id,
+          stripe_connect_id: details.stripe_connect_id,
           account_holder_name: details.account_holder_name,
           payout_enabled: details.payout_enabled,
           last_payout_date: details.last_payout_date,
@@ -207,7 +207,7 @@ export const ArtistPayoutSettings = () => {
   }
 
   const MINIMUM_PAYOUT = 50;
-  const isConnected = !!payoutDetails?.square_merchant_id;
+  const isConnected = !!payoutDetails?.stripe_connect_id;
   const canRequestPayout = isConnected && payoutDetails?.payout_enabled && earnings.totalPending >= MINIMUM_PAYOUT;
 
   return (
@@ -299,7 +299,7 @@ export const ArtistPayoutSettings = () => {
                 <div>
                   <p className="font-medium">{payoutDetails?.account_holder_name || 'Stripe Connect Account'}</p>
                   <p className="text-sm text-muted-foreground">
-                    Account: {payoutDetails?.square_merchant_id?.slice(0, 12)}...
+                    Account: {payoutDetails?.stripe_connect_id?.slice(0, 12)}...
                   </p>
                 </div>
                 <CheckCircle className="h-5 w-5 text-green-500" />

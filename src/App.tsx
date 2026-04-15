@@ -38,7 +38,7 @@ const Support = lazy(() => import("./pages/Support"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
-const SquareOAuthCallback = lazy(() => import("./pages/SquareOAuthCallback"));
+
 const EventbriteOAuthCallback = lazy(() => import("./pages/EventbriteOAuthCallback"));
 
 const FanSettings = lazy(() => import("./pages/FanSettings"));
@@ -106,7 +106,7 @@ const App = () => (
                   <Route path="/pricing" element={<Pricing />} />
                   <Route path="/checkout" element={<Checkout />} />
                   <Route path="/subscription-success" element={<SubscriptionSuccess />} />
-                  <Route path="/square-callback" element={<SquareOAuthCallback />} />
+                  
                   <Route path="/eventbrite-callback" element={<EventbriteOAuthCallback />} />
                   <Route path="/settings" element={<FanSettings />} />
                   <Route path="*" element={<NotFound />} />
