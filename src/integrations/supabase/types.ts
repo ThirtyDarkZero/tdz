@@ -2213,6 +2213,66 @@ export type Database = {
         }
         Relationships: []
       }
+      merch_purchases: {
+        Row: {
+          amount: number
+          artist_id: string
+          artist_revenue: number
+          buyer_id: string
+          created_at: string
+          currency: string
+          id: string
+          item_id: string | null
+          item_name: string
+          metadata: Json | null
+          platform_fee: number
+          quantity: number
+          shipping_address: Json | null
+          status: string
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          artist_id: string
+          artist_revenue?: number
+          buyer_id: string
+          created_at?: string
+          currency?: string
+          id?: string
+          item_id?: string | null
+          item_name: string
+          metadata?: Json | null
+          platform_fee?: number
+          quantity?: number
+          shipping_address?: Json | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          artist_id?: string
+          artist_revenue?: number
+          buyer_id?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          item_id?: string | null
+          item_name?: string
+          metadata?: Json | null
+          platform_fee?: number
+          quantity?: number
+          shipping_address?: Json | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       milestone_definitions: {
         Row: {
           card_color: string | null
@@ -3332,6 +3392,45 @@ export type Database = {
         }
         Relationships: []
       }
+      stream_revenue_audit: {
+        Row: {
+          amount: number
+          created_at: string
+          earnings_id: string | null
+          id: string
+          reason: string | null
+          recorded_to_earnings: boolean
+          stream_id: string | null
+          track_id: string
+          user_id: string | null
+          validated: boolean
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          earnings_id?: string | null
+          id?: string
+          reason?: string | null
+          recorded_to_earnings?: boolean
+          stream_id?: string | null
+          track_id: string
+          user_id?: string | null
+          validated?: boolean
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          earnings_id?: string | null
+          id?: string
+          reason?: string | null
+          recorded_to_earnings?: boolean
+          stream_id?: string | null
+          track_id?: string
+          user_id?: string | null
+          validated?: boolean
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           album_id: string | null
@@ -3432,6 +3531,36 @@ export type Database = {
           id?: string
           metadata?: Json | null
           reason?: string
+        }
+        Relationships: []
+      }
+      system_health_log: {
+        Row: {
+          check_type: string
+          created_at: string
+          details: Json | null
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          status: string
+        }
+        Insert: {
+          check_type: string
+          created_at?: string
+          details?: Json | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          status: string
+        }
+        Update: {
+          check_type?: string
+          created_at?: string
+          details?: Json | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          status?: string
         }
         Relationships: []
       }
@@ -3998,6 +4127,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      unmatched_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          customer_email: string | null
+          id: string
+          match_confidence: number | null
+          metadata: Json | null
+          resolution_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          stripe_object_id: string
+          stripe_object_type: string
+          suggested_match_id: string | null
+          suggested_match_table: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          id?: string
+          match_confidence?: number | null
+          metadata?: Json | null
+          resolution_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          stripe_object_id: string
+          stripe_object_type: string
+          suggested_match_id?: string | null
+          suggested_match_table?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          id?: string
+          match_confidence?: number | null
+          metadata?: Json | null
+          resolution_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          stripe_object_id?: string
+          stripe_object_type?: string
+          suggested_match_id?: string | null
+          suggested_match_table?: string | null
+        }
+        Relationships: []
       }
       upload_drafts: {
         Row: {
