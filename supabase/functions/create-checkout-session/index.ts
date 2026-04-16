@@ -4,16 +4,16 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from '../_shared/cors.ts';
 
+// Live Stripe Price IDs (subscriptions)
 const PLAN_PRICES: Record<string, { priceId: string; name: string }> = {
-  starter:    { priceId: "price_1TH9duGDlrIEZIfWdKauk1UL", name: "TDZ Starter Plan" },
-  pro:        { priceId: "price_1TH9eCGDlrIEZIfWUyKZvvZK", name: "TDZ Pro Plan" },
-  enterprise: { priceId: "price_1TH9eUGDlrIEZIfWtn6MLHXB", name: "TDZ Enterprise Plan" },
-  fan:        { priceId: "price_1TH9ekGDlrIEZIfW8V2lClsD", name: "TDZ Fan Plan" },
+  starter:    { priceId: "price_1TMbKeGLQEZqkO65adCcqiRT", name: "TDZ Starter" },
+  pro:        { priceId: "price_1TMbQGGLQEZqkO65HKj9j9CP", name: "TDZ Pro" },
+  enterprise: { priceId: "price_1TMbTkGLQEZqkO65DlF54NhG", name: "TDZ Enterprise" },
+  fan:        { priceId: "price_1TMbY5GLQEZqkO65XMRXlj9c", name: "TDZ Fan" },
 };
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get('origin'));
-  
   const preflight = handleCorsPreflightWithOrigin(req);
   if (preflight) return preflight;
 
@@ -40,9 +40,10 @@ serve(async (req) => {
     }
 
     const planConfig = PLAN_PRICES[plan];
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-08-27.basil",
-    });
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) throw new Error("Stripe not configured");
+
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId: string | undefined;
@@ -59,7 +60,10 @@ serve(async (req) => {
       mode: "subscription",
       success_url: `${origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}&plan=${plan}`,
       cancel_url: `${origin}/pricing`,
-      metadata: { user_id: user.id, plan },
+      metadata: { user_id: user.id, plan, type: "subscription" },
+      subscription_data: {
+        metadata: { user_id: user.id, plan, type: "subscription" },
+      },
     });
 
     return new Response(JSON.stringify({ url: session.url }), {

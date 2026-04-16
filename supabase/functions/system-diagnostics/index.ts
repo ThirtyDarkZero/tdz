@@ -239,7 +239,75 @@ async function checkOpenAI(): Promise<DiagnosticResult> {
   }
 }
 
-// Check Square API
+// Check Stripe API
+async function checkStripe(): Promise<DiagnosticResult> {
+  const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
+  if (!stripeKey) {
+    return { name: 'Stripe Payments', status: 'error', message: 'STRIPE_SECRET_KEY not set' };
+  }
+  const start = performance.now();
+  try {
+    const res = await fetch('https://api.stripe.com/v1/balance', {
+      headers: { Authorization: `Bearer ${stripeKey}` },
+    });
+    const responseTime = performance.now() - start;
+    if (res.status === 401) {
+      return { name: 'Stripe Payments', status: 'error', responseTime, message: 'Invalid Stripe key' };
+    }
+    if (!res.ok) {
+      return { name: 'Stripe Payments', status: 'error', responseTime, message: `HTTP ${res.status}` };
+    }
+    return { name: 'Stripe Payments', status: 'healthy', responseTime, message: 'Connected' };
+  } catch (error) {
+    return {
+      name: 'Stripe Payments', status: 'error',
+      responseTime: performance.now() - start,
+      message: error instanceof Error ? error.message : 'Connection failed',
+    };
+  }
+}
+
+// Check unmatched transactions count
+async function checkUnmatched(supabase: SupabaseClient): Promise<DiagnosticResult> {
+  try {
+    const { count } = await supabase
+      .from('unmatched_transactions')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending');
+    const unmatched = count || 0;
+    return {
+      name: 'Financial Reconciliation',
+      status: unmatched === 0 ? 'healthy' : unmatched < 5 ? 'degraded' : 'error',
+      message: `${unmatched} unmatched transactions`,
+      details: { count: unmatched },
+    };
+  } catch {
+    return { name: 'Financial Reconciliation', status: 'unknown', message: 'Check failed' };
+  }
+}
+
+// Check stuck payouts (>7 days pending)
+async function checkStuckPayouts(supabase: SupabaseClient): Promise<DiagnosticResult> {
+  try {
+    const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const { count } = await supabase
+      .from('artist_payouts')
+      .select('id', { count: 'exact', head: true })
+      .in('status', ['pending', 'processing', 'pending_manual'])
+      .lt('created_at', cutoff);
+    const stuck = count || 0;
+    return {
+      name: 'Payout Pipeline',
+      status: stuck === 0 ? 'healthy' : stuck < 3 ? 'degraded' : 'error',
+      message: stuck === 0 ? 'No stuck payouts' : `${stuck} payouts stuck >7 days`,
+      details: { count: stuck },
+    };
+  } catch {
+    return { name: 'Payout Pipeline', status: 'unknown', message: 'Check failed' };
+  }
+}
+
+// Legacy Square check (kept for back-compat; will return unknown if not configured)
 async function checkSquare(): Promise<DiagnosticResult> {
   const accessToken = Deno.env.get('SQUARE_ACCESS_TOKEN');
   const appId = Deno.env.get('SQUARE_APPLICATION_ID');
@@ -392,14 +460,18 @@ serve(async (req) => {
       storageResult,
       aiResult,
       openaiResult,
-      squareResult,
+      stripeResult,
+      unmatchedResult,
+      stuckPayoutsResult,
       providerResults,
     ] = await Promise.all([
       checkDatabase(supabase),
       checkStorage(supabase),
       checkAIGateway(),
       checkOpenAI(),
-      checkSquare(),
+      checkStripe(),
+      checkUnmatched(supabase),
+      checkStuckPayouts(supabase),
       checkProviderHealth(supabase),
     ]);
 
@@ -408,9 +480,26 @@ serve(async (req) => {
       storageResult,
       aiResult,
       openaiResult,
-      squareResult,
+      stripeResult,
+      unmatchedResult,
+      stuckPayoutsResult,
       ...providerResults,
     ];
+
+    // Log to system_health_log
+    try {
+      await supabase.from('system_health_log').insert(
+        services.map(s => ({
+          check_type: s.name.toLowerCase().replace(/\s+/g, '_'),
+          status: s.status === 'healthy' ? 'healthy' : s.status === 'degraded' ? 'degraded' : 'error',
+          duration_ms: s.responseTime ? Math.round(s.responseTime) : null,
+          error_message: s.status === 'error' ? s.message : null,
+          details: s.details || null,
+        }))
+      );
+    } catch (e) {
+      console.error('Failed to log health:', e);
+    }
 
     // Calculate summary
     const summary = {
