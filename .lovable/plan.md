@@ -1,41 +1,108 @@
+# End-to-End Stripe Revenue System: Wire Up & Automate
 
+## Current State
 
-# Update Stripe Secret Key & Verify Stripe-Only Payment System
+- ✅ Stripe products exist (Starter $9.99, Pro $19.99, Enterprise $49.99, Fan $12, Free $0)
+- ❌ `create-checkout-session` uses **stale/invalid price IDs** → subscription failures
+- ❌ Artist payout flow references `artist_payout_info` view but column was renamed; setup fails
+- ❌ No Stripe webhook handler — subscriptions, downloads, and merch never get confirmed in DB
+- ❌ Merch store has no Stripe checkout function at all
+- ❌ No reconciliation system / financial agents for the CEO dashboard
+- ❌ Auto-payout on the 1st works but pulls $0 because earnings never get recorded (no webhook)
 
-## What's Happening
-The payment system code is already fully migrated to Stripe — the artist payout settings UI correctly shows "Stripe Connect Payouts" with no Square references. The main action needed is updating the Stripe secret key so all edge functions use the new credentials.
+## What I'll Build with the 5 credits we have today
 
-## Plan
+### 1. Wire the new Stripe Price IDs
 
-### 1. Update Stripe Secret Key
-Use the `update_stripe_secret_key` tool to let you securely enter the new key. This updates the `STRIPE_SECRET_KEY` secret used by all edge functions (checkout, payouts, balance checks, etc.).
+Update `create-checkout-session/index.ts` with the live IDs:
 
-### 2. Clean Up Legacy Square References
-- **Remove `SquareOAuthCallback` route** from `App.tsx` and delete `src/pages/SquareOAuthCallback.tsx`
-- **Remove `get-square-config` edge function** (no longer needed)
-- **Remove `create-square-subscription` edge function** (replaced by `create-checkout-session`)
-- **Rename DB column references**: The `artist_payout_details` table still uses `square_merchant_id` to store Stripe Connect account IDs — add a migration to rename it to `stripe_connect_id` for clarity, and update all code that references it
+- starter → `price_1TMbKeGLQEZqkO65adCcqiRT`
+- pro → `price_1TMbQGGLQEZqkO65HKj9j9CP`
+- enterprise → `price_1TMbTkGLQEZqkO65DlF54NhG`
+- fan → `price_1TMbY5GLQEZqkO65XMRXlj9c`
 
-### 3. Verify All Edge Functions Use STRIPE_SECRET_KEY
-These functions already use `STRIPE_SECRET_KEY` correctly:
-- `create-checkout-session` — Stripe Checkout subscriptions
-- `check-subscription` — subscription verification
-- `setup-artist-payout` — Stripe Connect onboarding
-- `process-artist-payout` — Stripe transfers to artists
-- `stripe-balance` — CEO balance monitoring
-- `create-tip-session` — artist tips
-- `scheduled-artist-payouts` — automated monthly payouts
+Add the matching product-id → tier map to `check-subscription` so plan resolution works.
 
-No code changes needed in these — they automatically pick up the new secret.
+### 2. Fix Artist Stripe Connect onboarding
 
-### 4. Update Frontend References
-- `ArtistPayoutSettings.tsx`: Change `square_merchant_id` references to `stripe_connect_id`
-- `StripeFinancialAgents.tsx`: Update safe view references if column is renamed
+- `ArtistPayoutSettings.tsx` reads from `artist_payout_info` view → repoint to `artist_payout_details_safe` (which has `stripe_connect_id`)
+- Add `account_holder_name` capture when Stripe onboarding returns
+- Add `/studio?payout=success` query handler to mark `payout_enabled=true`
 
-### Files Modified
-- `src/App.tsx` — remove Square OAuth route
-- `src/components/ArtistPayoutSettings.tsx` — rename column references
-- `src/components/admin/StripeFinancialAgents.tsx` — update column references
-- Delete: `src/pages/SquareOAuthCallback.tsx`, `supabase/functions/get-square-config/`, `supabase/functions/create-square-subscription/`
-- New migration: rename `square_merchant_id` → `stripe_connect_id` in `artist_payout_details`
+### 3. Stripe Webhook (`stripe-webhook` edge function, public, no JWT)
 
+Single source of truth that handles:
+
+- `checkout.session.completed` → route by metadata.type:
+  - `subscription` → upsert `user_subscriptions` (plan, status, expires_at)
+  - `download` → insert `download_purchases` + insert `artist_earnings` row (download_revenue) for the artist
+  - `merch` → insert `merch_purchases` + earnings row
+- `customer.subscription.updated/deleted` → sync subscription status
+- `invoice.payment_succeeded` → extend subscription
+- `account.updated` → set `payout_enabled` on `artist_payout_details` when Connect account is fully onboarded
+- Verifies Stripe signature with `STRIPE_WEBHOOK_SECRET` (will request from user)
+
+### 4. Merch Store checkout
+
+New `create-merch-checkout` edge function (mirrors `process-download-purchase`). Update `MerchStore.tsx` "Buy" button to invoke it. Adds `merch_purchases` table.
+
+### 5. Withdraw-after-50-streams (instant payout)
+
+Modify `process-artist-payout`:
+
+- Allow withdrawal when `total_pending >= $50` (already in code) OR when artist has ≥50 lifetime paid streams and pending > 0
+- Verifies Connect account capabilities before transfer; clear error if not onboarded
+
+### 6. Auto-payout on the 1st (already scheduled)
+
+Schema migration: add pg_cron job calling `scheduled-artist-payouts` at `0 0 1 * *`. Update the function to use Stripe `transfers.create` (currently it just marks rows; needs to actually move money).
+
+### 7. Income Tracking & Reconciliation Agent
+
+New `financial-reconciliation-agent` edge function (cron: every 6h):
+
+- Pulls last 24h of Stripe `charges`, `transfers`, `payouts`
+- Matches each to internal `artist_earnings` / `download_purchases` / `user_subscriptions` by `metadata.user_id`/`track_id`
+- Inserts `unmatched_transactions` rows when no match found
+- Inserts `platform_revenue` aggregates daily
+
+New tables:
+
+- `merch_purchases` (id, buyer_id, artist_id, item, amount, stripe_session_id)
+- `unmatched_transactions` (id, stripe_object_id, type, amount, suggested_match_id, status, reviewed_by)
+- `stream_revenue_audit` (track_id, stream_id, validated, amount, recorded_to_earnings)
+
+### 8. CEO Dashboard reconciliation panel
+
+Update `StripeFinancialAgents.tsx` to surface unmatched transactions, with one-click "Approve match" → updates record + marks reviewed.
+
+### 9. 24/7 Health Agent
+
+Existing `system-diagnostics` extended with:
+
+- Stripe API ping
+- Webhook delivery success rate (last 24h)
+- Pending-but-stuck payouts > 7 days
+- Unmatched transaction count
+Logged hourly to `system_health_log`; failures notify CEO via `notifications`.
+
+## Files Touched
+
+**Edit:** `create-checkout-session/index.ts`, `check-subscription/index.ts`, `process-artist-payout/index.ts`, `scheduled-artist-payouts/index.ts`, `setup-artist-payout/index.ts`, `system-diagnostics/index.ts`, `ArtistPayoutSettings.tsx`, `MerchStore.tsx`, `admin/StripeFinancialAgents.tsx`, `admin/CEORevenueControl.tsx`, `supabase/config.toml`
+
+**Create:** `stripe-webhook/index.ts`, `create-merch-checkout/index.ts`, `financial-reconciliation-agent/index.ts`
+
+**Migration:** new tables (`merch_purchases`, `unmatched_transactions`, `stream_revenue_audit`, `system_health_log`) + RLS + cron jobs (1st-of-month payouts, 6h reconciliation, hourly health)
+
+## What I'll Need From You
+
+1. **Approve adding** `STRIPE_WEBHOOK_SECRET` secret — required for webhook signature verification. After deploy I'll give you the webhook URL to paste in Stripe Dashboard → Webhooks. (approved already) 
+2. **Mock test** — I'll run a $0.50 test charge end-to-end via Stripe test mode to verify checkout → webhook → earnings → payout works.
+
+## Test Plan (autonomous after deploy)
+
+1. Invoke `create-checkout-session` with each plan → confirm session URL returned
+2. Curl `stripe-webhook` with a sample event payload → confirm DB updates
+3. Invoke `process-artist-payout` against a seeded artist with $60 pending → confirm transfer created
+4. Run `financial-reconciliation-agent` → confirm matches logged
+5. Verify CEO dashboard shows live Stripe balance + unmatched transaction
