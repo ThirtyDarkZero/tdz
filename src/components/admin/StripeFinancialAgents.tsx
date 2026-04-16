@@ -34,23 +34,39 @@ interface SubscriptionMetrics {
   churnedThisMonth: number;
 }
 
+interface UnmatchedTxn {
+  id: string;
+  stripe_object_id: string;
+  stripe_object_type: string;
+  amount: number;
+  currency: string;
+  customer_email: string | null;
+  suggested_match_table: string | null;
+  status: string;
+  created_at: string;
+}
+
 export function StripeFinancialAgents() {
   const [stripeBalance, setStripeBalance] = useState<StripeBalance | null>(null);
   const [payoutSummary, setPayoutSummary] = useState<PayoutSummary | null>(null);
   const [subMetrics, setSubMetrics] = useState<SubscriptionMetrics | null>(null);
+  const [unmatched, setUnmatched] = useState<UnmatchedTxn[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const loadAllData = async () => {
     try {
       // Parallel fetch: Stripe balance + DB metrics
-      const [balanceRes, earningsRes, payoutsRes, connectRes, subsRes] = await Promise.all([
+      const [balanceRes, earningsRes, payoutsRes, connectRes, subsRes, unmatchedRes] = await Promise.all([
         supabase.functions.invoke('stripe-balance'),
         supabase.from('artist_earnings').select('artist_id, streaming_revenue, download_revenue, total_earnings, payout_status'),
         supabase.from('artist_payouts').select('amount, status, artist_id'),
         supabase.from('artist_payout_details_safe').select('artist_id, stripe_connect_id, payout_enabled'),
         supabase.from('user_subscriptions').select('plan, status, expires_at'),
+        supabase.from('unmatched_transactions' as any).select('*').eq('status', 'pending').order('created_at', { ascending: false }).limit(20),
       ]);
+
+      setUnmatched((unmatchedRes.data as any) || []);
 
       // Stripe Balance
       if (balanceRes.data && !balanceRes.error) {
@@ -401,6 +417,50 @@ export function StripeFinancialAgents() {
               </div>
             ))}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Reconciliation: Unmatched Transactions */}
+      <Card className="border-destructive/30 bg-gradient-to-br from-destructive/5 to-transparent">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <div className="w-8 h-8 rounded-full bg-destructive/20 flex items-center justify-center">
+              <AlertCircle className="w-4 h-4 text-destructive" />
+            </div>
+            Reconciliation Queue
+            <Badge variant="outline" className="text-xs">{unmatched.length} pending</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {unmatched.length === 0 ? (
+            <p className="text-sm text-muted-foreground">All Stripe transactions matched ✓</p>
+          ) : (
+            <div className="space-y-2">
+              {unmatched.map((txn) => (
+                <div key={txn.id} className="flex items-center justify-between p-3 rounded-lg bg-card/50 border border-border/30">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-mono truncate">{txn.stripe_object_id}</p>
+                    <p className="text-xs text-muted-foreground">
+                      ${txn.amount.toFixed(2)} {txn.currency.toUpperCase()} · {txn.customer_email || 'no email'} · suggests: {txn.suggested_match_table || 'unknown'}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      const { error } = await supabase.from('unmatched_transactions' as any)
+                        .update({ status: 'reviewed', reviewed_at: new Date().toISOString() })
+                        .eq('id', txn.id);
+                      if (error) toast.error("Failed to mark reviewed");
+                      else { toast.success("Marked reviewed"); loadAllData(); }
+                    }}
+                  >
+                    Mark Reviewed
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
