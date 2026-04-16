@@ -4,21 +4,19 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Map Stripe product IDs to plan names
-const PRODUCT_TO_PLAN: Record<string, string> = {
-  "prod_UFexjZoMJLfOz6": "starter",
-  "prod_UFeyqA295Hetpo": "pro",
-  "prod_UFeyYa5KYI8wk4": "enterprise",
-  "prod_UFeyF5K74OP7e7": "fan",
+// Map Stripe price IDs to internal plan names (live IDs)
+const PRICE_TO_PLAN: Record<string, string> = {
+  "price_1TMbKeGLQEZqkO65adCcqiRT": "starter",
+  "price_1TMbQGGLQEZqkO65HKj9j9CP": "pro",
+  "price_1TMbTkGLQEZqkO65DlF54NhG": "enterprise",
+  "price_1TMbY5GLQEZqkO65XMRXlj9c": "fan",
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   const supabaseClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
@@ -59,18 +57,17 @@ serve(async (req) => {
     const hasActiveSub = subscriptions.data.length > 0;
     let plan: string | null = null;
     let subscriptionEnd: string | null = null;
-    let productId: string | null = null;
+    let priceId: string | null = null;
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-      productId = subscription.items.data[0].price.product as string;
-      plan = PRODUCT_TO_PLAN[productId] || null;
+      priceId = subscription.items.data[0].price.id;
+      plan = PRICE_TO_PLAN[priceId] || null;
 
-      // Sync to user_subscriptions table
       const endDate = new Date(subscription.current_period_end * 1000);
       const startDate = new Date(subscription.current_period_start * 1000);
-      
+
       if (plan) {
         await supabaseClient.from("user_subscriptions").upsert({
           user_id: user.id,
@@ -78,6 +75,7 @@ serve(async (req) => {
           status: "active",
           current_period_start: startDate.toISOString(),
           current_period_end: endDate.toISOString(),
+          expires_at: endDate.toISOString(),
           updated_at: new Date().toISOString(),
         }, { onConflict: "user_id" });
       }
@@ -86,7 +84,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
       plan,
-      product_id: productId,
+      price_id: priceId,
       subscription_end: subscriptionEnd,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
