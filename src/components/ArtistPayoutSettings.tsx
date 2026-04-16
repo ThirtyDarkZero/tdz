@@ -53,12 +53,28 @@ export const ArtistPayoutSettings = () => {
     }
   }, [user]);
 
+  // Handle return from Stripe Connect onboarding
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const payoutStatus = params.get('payout');
+    if (payoutStatus === 'success') {
+      toast.success("Stripe Connect setup complete! Verifying account...");
+      // Webhook account.updated will flip payout_enabled; refresh shortly.
+      setTimeout(() => loadPayoutDetails(), 2000);
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (payoutStatus === 'refresh') {
+      toast.info("Stripe onboarding incomplete — please finish setup");
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   const loadPayoutDetails = async () => {
     if (!user) return;
 
     try {
       const { data, error } = await supabase
-        .from('artist_payout_info' as any)
+        .from('artist_payout_details_safe' as any)
         .select('*')
         .eq('artist_id', user.id)
         .maybeSingle();
