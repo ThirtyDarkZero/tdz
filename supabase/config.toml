@@ -164,3 +164,15 @@ verify_jwt = true
 
 [functions.process-email-queue]
 verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.create-merch-checkout]
+verify_jwt = true
+
+[functions.financial-reconciliation-agent]
+verify_jwt = false
+
+[functions.check-subscription]
+verify_jwt = true

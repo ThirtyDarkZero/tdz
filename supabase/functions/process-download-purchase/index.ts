@@ -90,7 +90,7 @@ serve(async (req) => {
       mode: "payment",
       success_url: `${origin}/track/${trackId}?download=success`,
       cancel_url: `${origin}/track/${trackId}`,
-      metadata: { track_id: trackId, buyer_id: user.id, artist_id: track.user_id },
+      metadata: { type: "download", track_id: trackId, buyer_id: user.id, artist_id: track.user_id },
     });
 
     return new Response(JSON.stringify({ checkoutUrl: session.url }), {
