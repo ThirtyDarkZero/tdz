@@ -73,9 +73,13 @@ serve(async (req) => {
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("Checkout error:", msg);
-    return new Response(JSON.stringify({ error: msg }), {
+    // Only surface known user-facing errors; mask internals.
+    const safeMessages = ["Invalid plan", "User not authenticated", "No authorization header"];
+    const clientMsg = safeMessages.includes(msg) ? msg : "Unable to start checkout. Please try again.";
+    const status = msg === "User not authenticated" || msg === "No authorization header" ? 401 : 500;
+    return new Response(JSON.stringify({ error: clientMsg }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status,
     });
   }
 });

@@ -3,19 +3,51 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from '../_shared/cors.ts';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get('origin'));
   const preflight = handleCorsPreflightWithOrigin(req);
   if (preflight) return preflight;
 
   try {
+    // SECURITY: Require authentication — prevents anyone from inflating play counts.
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { trackId, artistId, listenerId, sessionId, durationSeconds, deviceType } = await req.json();
 
-    if (!trackId || !artistId) {
-      return new Response(JSON.stringify({ error: "trackId and artistId required" }), {
+    // SECURITY: Strict UUID validation before any DB writes.
+    if (!trackId || !artistId || !UUID_REGEX.test(trackId) || !UUID_REGEX.test(artistId)) {
+      return new Response(JSON.stringify({ error: "Invalid trackId or artistId" }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    if (listenerId && !UUID_REGEX.test(listenerId)) {
+      return new Response(JSON.stringify({ error: "Invalid listenerId" }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    // Listener id, if provided, must match the authenticated user.
+    const safeListenerId = listenerId && listenerId === user.id ? listenerId : user.id;
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -49,10 +81,10 @@ serve(async (req) => {
       .insert({
         track_id: trackId,
         artist_id: artistId,
-        listener_id: listenerId || null,
+        listener_id: safeListenerId,
         session_id: sessionId || null,
-        duration_seconds: durationSeconds || 0,
-        device_type: deviceType || 'web',
+        duration_seconds: Math.max(0, Math.min(Number(durationSeconds) || 0, 7200)),
+        device_type: typeof deviceType === 'string' ? deviceType.slice(0, 32) : 'web',
         platform: 'web',
         ...geoData,
         streamed_at: new Date().toISOString(),
@@ -60,14 +92,13 @@ serve(async (req) => {
 
     if (error) {
       console.error("Stream event insert error:", error);
-      return new Response(JSON.stringify({ success: false, error: error.message }), {
+      return new Response(JSON.stringify({ success: false, error: 'Failed to record stream' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     // Also increment track play_count
     await supabaseAdmin.rpc('increment_play_count_safe', { p_track_id: trackId }).catch(() => {
-      // Fallback: direct update
       supabaseAdmin.from('tracks').select('play_count').eq('id', trackId).single().then(({ data }) => {
         if (data) {
           supabaseAdmin.from('tracks').update({ play_count: (data.play_count || 0) + 1 }).eq('id', trackId);

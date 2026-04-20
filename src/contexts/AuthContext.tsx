@@ -406,8 +406,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = role === "admin" || role === "ceo";
   
   const plan: SubscriptionPlan = (() => {
-    // CEO always has enterprise
-    if (user?.email === 'info@thirtydarkzero.com') return "enterprise";
+    // CEO/admin role grants enterprise — server-side enforced via user_roles + RLS.
+    if (role === "ceo" || role === "admin") return "enterprise";
     if (!subscription) return "free";
     if (subscription.status !== "active" && subscription.status !== "trial") return "free";
     if (subscription.expires_at && new Date(subscription.expires_at) < new Date()) return "free";
