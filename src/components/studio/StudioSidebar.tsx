@@ -247,7 +247,7 @@ export const StudioSidebar = ({
         </div>
 
         {/* Navigation Groups */}
-        <nav className="flex-1 py-6 flex flex-col items-center">
+        <nav className="flex-1 py-6 flex flex-col items-center overflow-y-auto overscroll-contain min-h-0 [scrollbar-width:thin]">
           {navGroups.map((group, groupIndex) => (
             <div key={group.id} className={cn(
               "w-full",
