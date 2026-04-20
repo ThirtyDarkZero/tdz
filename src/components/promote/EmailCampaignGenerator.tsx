@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import DOMPurify from "dompurify";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -784,7 +785,12 @@ Return a JSON object with exactly these fields:
                       )}
                       <div
                         className="p-4 max-h-[500px] overflow-y-auto"
-                        dangerouslySetInnerHTML={{ __html: generatedHtml }}
+                        dangerouslySetInnerHTML={{
+                          __html: DOMPurify.sanitize(generatedHtml, {
+                            FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form'],
+                            FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur'],
+                          }),
+                        }}
                       />
                     </div>
                   </TabsContent>

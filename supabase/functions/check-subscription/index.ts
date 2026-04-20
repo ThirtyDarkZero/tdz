@@ -33,9 +33,12 @@ serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Auth error: ${userError.message}`);
+    if (userError) {
+      console.error("check-subscription auth error:", userError.message);
+      throw new Error("Unauthorized");
+    }
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated");
+    if (!user?.email) throw new Error("Unauthorized");
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
@@ -93,9 +96,13 @@ serve(async (req) => {
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("check-subscription error:", msg);
-    return new Response(JSON.stringify({ error: msg }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    const isAuth = msg === "Unauthorized" || msg === "No authorization header";
+    return new Response(
+      JSON.stringify({ error: isAuth ? "Unauthorized" : "Unable to verify subscription" }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: isAuth ? 401 : 500,
+      }
+    );
   }
 });

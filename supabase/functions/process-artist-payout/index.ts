@@ -124,8 +124,18 @@ serve(async (req) => {
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("process-artist-payout error:", msg);
-    return new Response(JSON.stringify({ error: msg }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    // Allow specific business-logic messages through; mask Stripe/internal errors.
+    const safe = [
+      "Unauthorized", "Invalid artistId", "Forbidden — CEO access required for payouts to other artists",
+      "Stripe Connect not set up. Connect your account first.",
+      "Stripe Connect onboarding incomplete. Complete it before withdrawing.",
+      "No pending earnings",
+    ];
+    const isSafe = safe.some((s) => msg.startsWith(s));
+    const status = msg === "Unauthorized" ? 401 : msg.startsWith("Forbidden") ? 403 : 500;
+    return new Response(
+      JSON.stringify({ error: isSafe ? msg : "Payout failed. Please try again or contact support." }),
+      { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 });
