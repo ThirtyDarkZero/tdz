@@ -2,14 +2,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, handleCorsPreflightWithOrigin } from "../_shared/cors.ts";
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const corsHeaders = getCorsHeaders(req.headers.get("origin"));
+  const preflight = handleCorsPreflightWithOrigin(req);
+  if (preflight) return preflight;
 
   try {
     const supabase = createClient(
@@ -68,8 +66,14 @@ serve(async (req) => {
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("setup-artist-payout error:", msg);
-    return new Response(JSON.stringify({ error: msg }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    let clientMsg = "Unable to start payout setup. Please try again.";
+    let status = 500;
+    if (msg === "Unauthorized") { clientMsg = "Unauthorized"; status = 401; }
+    else if (msg.includes("signed up for Connect")) {
+      clientMsg = "Stripe Connect is not enabled on this platform yet. Please contact support.";
+    }
+    return new Response(JSON.stringify({ error: clientMsg }), {
+      status, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
