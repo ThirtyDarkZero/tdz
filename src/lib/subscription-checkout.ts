@@ -10,6 +10,14 @@ export async function openStripeCheckout(plan: CheckoutPlan): Promise<void> {
   const loadingToast = toast.loading("Preparing checkout...");
   
   try {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      toast.dismiss(loadingToast);
+      window.location.href = `/auth?plan=${plan}`;
+      return;
+    }
+
     const { data, error } = await supabase.functions.invoke('create-checkout-session', {
       body: { plan },
     });
