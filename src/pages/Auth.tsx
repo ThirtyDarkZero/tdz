@@ -47,10 +47,31 @@ function AuthForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{ email?: string; password?: string }>({});
   
   const { signIn, signUp, signInWithGoogle } = useAuthContext();
   const navigate = useNavigate();
+
+  const handleAppleSignIn = async () => {
+    setAppleLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("apple", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) {
+        toast.error("Apple sign-in failed", {
+          description: result.error.message || "Please try again.",
+        });
+      }
+    } catch (e) {
+      toast.error("Apple sign-in failed", {
+        description: e instanceof Error ? e.message : "Please try again.",
+      });
+    } finally {
+      setAppleLoading(false);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
