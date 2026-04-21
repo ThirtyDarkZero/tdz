@@ -56,10 +56,21 @@ function AuthForm() {
     try {
       const { error } = await signInWithGoogle();
       if (error) {
-        toast.error("Failed to sign in with Google. Please try again.");
+        const msg = (error.message || "").toLowerCase();
+        if (msg.includes("provider is not enabled") || msg.includes("not enabled")) {
+          toast.error("Google sign-in is not enabled", {
+            description: "An admin needs to enable Google in Lovable Cloud → Auth Settings.",
+          });
+        } else if (msg.includes("popup") || msg.includes("blocked")) {
+          toast.error("Popup blocked", { description: "Allow popups for this site and try again." });
+        } else {
+          toast.error("Google sign-in failed", { description: error.message || "Please try again." });
+        }
       }
-    } catch {
-      toast.error("Failed to sign in with Google. Please try again.");
+    } catch (e) {
+      toast.error("Google sign-in failed", {
+        description: e instanceof Error ? e.message : "Please try again.",
+      });
     } finally {
       setGoogleLoading(false);
     }

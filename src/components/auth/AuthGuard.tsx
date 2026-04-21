@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuthContext, UserRole } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
@@ -105,13 +105,23 @@ interface RequireGuestProps {
 
 export function RequireGuest({ children }: RequireGuestProps) {
   const { authState, role, isRoleLoading } = useAuthContext();
+  const [roleTimeout, setRoleTimeout] = useState(false);
+
+  // Fallback: if role takes >2.5s, proceed anyway to avoid hang.
+  useEffect(() => {
+    if (authState !== "unauthenticated" && isRoleLoading) {
+      const t = setTimeout(() => setRoleTimeout(true), 2500);
+      return () => clearTimeout(t);
+    }
+    setRoleTimeout(false);
+  }, [authState, isRoleLoading]);
 
   if (authState === "loading") {
     return <AuthLoadingScreen message="Loading..." />;
   }
 
-  // Must wait for role loading before redirecting
-  if (authState !== "unauthenticated" && isRoleLoading) {
+  // Wait for role loading, but only briefly
+  if (authState !== "unauthenticated" && isRoleLoading && !roleTimeout) {
     return <AuthLoadingScreen message="Loading..." />;
   }
 

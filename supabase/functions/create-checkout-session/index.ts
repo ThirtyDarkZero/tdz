@@ -17,42 +17,73 @@ serve(async (req) => {
   const preflight = handleCorsPreflightWithOrigin(req);
   if (preflight) return preflight;
 
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-  );
+  // Always return 200 with structured body so the client can read errors.
+  const respond = (body: Record<string, unknown>) =>
+    new Response(JSON.stringify(body), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    });
 
+  let stage = "init";
   try {
+    stage = "auth";
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("Authorization required");
+    if (!authHeader) {
+      return respond({ ok: false, error: "Not authenticated", stage });
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    );
 
     const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseClient.auth.getUser(token);
-    const user = data.user;
-    if (!user?.email) throw new Error("User not authenticated");
+    const { data: userData, error: userErr } = await supabaseClient.auth.getUser(token);
+    if (userErr || !userData?.user?.email) {
+      console.error("auth error", userErr);
+      return respond({ ok: false, error: "Not authenticated", stage });
+    }
+    const user = userData.user;
 
-    const { plan } = await req.json();
+    stage = "parse";
+    const { plan } = await req.json().catch(() => ({ plan: null }));
     if (!plan || !PLAN_PRICES[plan]) {
-      return new Response(JSON.stringify({ error: "Invalid plan" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return respond({ ok: false, error: "Invalid plan", stage });
     }
-
     const planConfig = PLAN_PRICES[plan];
+
+    stage = "stripe_init";
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("Stripe not configured");
+    if (!stripeKey) {
+      console.error("STRIPE_SECRET_KEY missing");
+      return respond({ ok: false, error: "Stripe not configured", stage });
+    }
+    // Use account default API version (avoids version-pin incompatibilities).
+    const stripe = new Stripe(stripeKey);
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    let customerId: string | undefined;
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
+    stage = "price_validate";
+    try {
+      const price = await stripe.prices.retrieve(planConfig.priceId);
+      if (!price?.active) {
+        return respond({ ok: false, error: `Price ${planConfig.priceId} is not active`, stage });
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("price retrieve failed", msg);
+      return respond({ ok: false, error: `Price not found in active Stripe mode: ${msg}`, stage });
     }
 
-    const origin = req.headers.get("origin") || "https://tdz.lovable.app";
+    stage = "customer_lookup";
+    let customerId: string | undefined;
+    try {
+      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      if (customers.data.length > 0) customerId = customers.data[0].id;
+    } catch (e) {
+      console.warn("customer lookup failed (non-fatal):", e);
+    }
 
+    stage = "session_create";
+    const origin = req.headers.get("origin") || "https://tdz.lovable.app";
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -66,20 +97,14 @@ serve(async (req) => {
       },
     });
 
-    return new Response(JSON.stringify({ url: session.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    if (!session.url) {
+      return respond({ ok: false, error: "Stripe did not return a checkout URL", stage });
+    }
+
+    return respond({ ok: true, url: session.url });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
-    console.error("Checkout error:", msg);
-    // Only surface known user-facing errors; mask internals.
-    const safeMessages = ["Invalid plan", "User not authenticated", "No authorization header"];
-    const clientMsg = safeMessages.includes(msg) ? msg : "Unable to start checkout. Please try again.";
-    const status = msg === "User not authenticated" || msg === "No authorization header" ? 401 : 500;
-    return new Response(JSON.stringify({ error: clientMsg }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status,
-    });
+    console.error(`checkout failed at stage=${stage}:`, msg);
+    return respond({ ok: false, error: msg, stage });
   }
 });

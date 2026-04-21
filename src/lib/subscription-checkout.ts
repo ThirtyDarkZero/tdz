@@ -24,27 +24,27 @@ export async function openStripeCheckout(plan: CheckoutPlan): Promise<void> {
 
     toast.dismiss(loadingToast);
 
-    // Extract server-provided error body if present (FunctionsHttpError)
-    let serverError: string | null = null;
-    if (error) {
-      console.error('Checkout error:', error);
-      try {
-        const ctx: any = (error as any).context;
-        if (ctx && typeof ctx.json === 'function') {
-          const body = await ctx.json();
-          serverError = body?.error || null;
-        }
-      } catch (_) {
-        /* ignore */
-      }
+    // Network / unexpected transport-level error.
+    if (error && !data) {
+      console.error('Checkout transport error:', error);
+      toast.error("Failed to start checkout", {
+        description: error.message || "Please try again later"
+      });
+      return;
+    }
 
-      if (serverError && /auth|not authenticated/i.test(serverError)) {
+    // New always-200 response shape: { ok, url?, error?, stage? }
+    if (data && data.ok === false) {
+      console.error('Checkout error:', data);
+      const serverError: string = data.error || "Unknown error";
+
+      if (/auth|not authenticated/i.test(serverError)) {
         window.location.href = `/auth?plan=${plan}`;
         return;
       }
 
       toast.error("Failed to start checkout", {
-        description: serverError || error.message || "Please try again later"
+        description: serverError
       });
       return;
     }
@@ -52,7 +52,7 @@ export async function openStripeCheckout(plan: CheckoutPlan): Promise<void> {
     if (!data?.url) {
       console.error('No checkout URL returned:', data);
       toast.error("Payment system error", {
-        description: data?.error || "Could not create checkout session"
+        description: "Could not create checkout session"
       });
       return;
     }

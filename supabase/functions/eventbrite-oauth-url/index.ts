@@ -12,10 +12,11 @@ serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get("EVENTBRITE_API_TOKEN");
-    if (!apiKey) {
+    // Use the OAuth Client ID (NOT the private API token) for the authorize URL.
+    const clientId = Deno.env.get("EVENTBRITE_CLIENT_ID");
+    if (!clientId) {
       return new Response(
-        JSON.stringify({ error: "Eventbrite OAuth not configured. Missing EVENTBRITE_API_TOKEN." }),
+        JSON.stringify({ error: "Eventbrite OAuth not configured. Missing EVENTBRITE_CLIENT_ID." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -41,7 +42,7 @@ serve(async (req) => {
       );
     }
 
-    const { redirectUri } = await req.json();
+    const { redirectUri } = await req.json().catch(() => ({ redirectUri: null }));
     if (!redirectUri) {
       return new Response(
         JSON.stringify({ error: "Missing redirectUri" }),
@@ -55,11 +56,9 @@ serve(async (req) => {
       nonce: crypto.randomUUID(),
     }));
 
-    // Eventbrite OAuth2 authorize URL
-    // EVENTBRITE_API_TOKEN is the OAuth App API Key (client_id equivalent)
     const params = new URLSearchParams({
       response_type: "code",
-      client_id: apiKey,
+      client_id: clientId,
       redirect_uri: "https://tdz.lovable.app/eventbrite-callback",
       state,
     });
