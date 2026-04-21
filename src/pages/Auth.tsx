@@ -189,7 +189,7 @@ function AuthForm() {
           variant="outline"
           className="w-full h-12 gap-3 border-border/50 hover:bg-muted/50"
           onClick={handleGoogleSignIn}
-          disabled={googleLoading}
+          disabled={googleLoading || appleLoading}
         >
           {googleLoading ? (
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -197,6 +197,22 @@ function AuthForm() {
             <Chrome className="w-5 h-5" />
           )}
           Continue with Google
+        </Button>
+
+        {/* Apple Sign-In */}
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full h-12 gap-3 border-border/50 hover:bg-muted/50"
+          onClick={handleAppleSignIn}
+          disabled={googleLoading || appleLoading}
+        >
+          {appleLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Apple className="w-5 h-5" />
+          )}
+          Continue with Apple
         </Button>
 
         <div className="relative">
