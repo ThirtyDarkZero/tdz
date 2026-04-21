@@ -9,7 +9,8 @@ import { RequireGuest } from "@/components/auth/AuthGuard";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { z } from "zod";
-import { Chrome, Loader2 } from "lucide-react";
+import { Chrome, Loader2, Apple } from "lucide-react";
+import { lovable } from "@/integrations/lovable/index";
 
 // Security: Input validation schemas
 const authSchema = z.object({
@@ -46,10 +47,31 @@ function AuthForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{ email?: string; password?: string }>({});
   
   const { signIn, signUp, signInWithGoogle } = useAuthContext();
   const navigate = useNavigate();
+
+  const handleAppleSignIn = async () => {
+    setAppleLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("apple", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) {
+        toast.error("Apple sign-in failed", {
+          description: result.error.message || "Please try again.",
+        });
+      }
+    } catch (e) {
+      toast.error("Apple sign-in failed", {
+        description: e instanceof Error ? e.message : "Please try again.",
+      });
+    } finally {
+      setAppleLoading(false);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
@@ -167,7 +189,7 @@ function AuthForm() {
           variant="outline"
           className="w-full h-12 gap-3 border-border/50 hover:bg-muted/50"
           onClick={handleGoogleSignIn}
-          disabled={googleLoading}
+          disabled={googleLoading || appleLoading}
         >
           {googleLoading ? (
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -175,6 +197,22 @@ function AuthForm() {
             <Chrome className="w-5 h-5" />
           )}
           Continue with Google
+        </Button>
+
+        {/* Apple Sign-In */}
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full h-12 gap-3 border-border/50 hover:bg-muted/50"
+          onClick={handleAppleSignIn}
+          disabled={googleLoading || appleLoading}
+        >
+          {appleLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Apple className="w-5 h-5" />
+          )}
+          Continue with Apple
         </Button>
 
         <div className="relative">
