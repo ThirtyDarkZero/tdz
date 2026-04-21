@@ -1,108 +1,89 @@
-# End-to-End Stripe Revenue System: Wire Up & Automate
 
-## Current State
 
-- ✅ Stripe products exist (Starter $9.99, Pro $19.99, Enterprise $49.99, Fan $12, Free $0)
-- ❌ `create-checkout-session` uses **stale/invalid price IDs** → subscription failures
-- ❌ Artist payout flow references `artist_payout_info` view but column was renamed; setup fails
-- ❌ No Stripe webhook handler — subscriptions, downloads, and merch never get confirmed in DB
-- ❌ Merch store has no Stripe checkout function at all
-- ❌ No reconciliation system / financial agents for the CEO dashboard
-- ❌ Auto-payout on the 1st works but pulls $0 because earnings never get recorded (no webhook)
+# Fix Stripe Checkout, Auth, CEO Dashboard, Eventbrite, Support & Google Login
 
-## What I'll Build with the 5 credits we have today
+## Issues & Fixes
 
-### 1. Wire the new Stripe Price IDs
+### 1. Subscribe → "non-2xx" error
+**Root cause**: `create-checkout-session` masks the real Stripe error and returns 500. The failing call is most likely the Stripe API version (`2025-08-27.basil`) or a price ID that doesn't exist in the active Stripe mode (test vs live).
 
-Update `create-checkout-session/index.ts` with the live IDs:
+**Fix**:
+- Replace pinned API version with the SDK default (drop `apiVersion` so account default is used).
+- Verify each plan's `priceId` exists at runtime; on missing/invalid, return a clear error.
+- Always return `200` with `{ ok, url?, error?, stage? }` so the client can read the body (Supabase functions client treats non-2xx as opaque error).
+- Log detailed `stage` markers (`auth`, `parse`, `stripe_init`, `customer_lookup`, `session_create`).
+- Update `src/lib/subscription-checkout.ts` to read the new `{ ok, url, error }` shape.
 
-- starter → `price_1TMbKeGLQEZqkO65adCcqiRT`
-- pro → `price_1TMbQGGLQEZqkO65HKj9j9CP`
-- enterprise → `price_1TMbTkGLQEZqkO65DlF54NhG`
-- fan → `price_1TMbY5GLQEZqkO65XMRXlj9c`
+### 2. Login hangs on /auth
+**Root cause**: `RequireGuest` blocks rendering while `isRoleLoading` is true. If `loadRole` errors silently (RLS / network), the page never advances.
 
-Add the matching product-id → tier map to `check-subscription` so plan resolution works.
+**Fix**:
+- In `RequireGuest`, add a 2.5 s timeout fallback so authenticated users redirect even if role load stalls.
+- In `AuthContext.loadRole`, ensure `setIsRoleLoading(false)` runs on every code path (already in `finally`, but add an outer try guard for sync throws).
 
-### 2. Fix Artist Stripe Connect onboarding
+### 3. CEO Dashboard missing / `/ceo` redirects to /studio
+**Root cause**: `CEODashboard` redirects on first render because `isCEO=false` by default, and the role check runs in a separate effect after mount. Sidebar Crown also depends on async check.
 
-- `ArtistPayoutSettings.tsx` reads from `artist_payout_info` view → repoint to `artist_payout_details_safe` (which has `stripe_connect_id`)
-- Add `account_holder_name` capture when Stripe onboarding returns
-- Add `/studio?payout=success` query handler to mark `payout_enabled=true`
+**Fix**:
+- Gate the redirect on `roleChecked && !isCEO` only (already partial — verify ordering and add explicit loading screen until role known).
+- Add a top-bar/sidebar always-visible "CEO" entry for the verified CEO email (`info@thirtydarkzero.com`) using server `has_role('ceo')` cached in `AuthContext` so it's available everywhere instantly after login.
 
-### 3. Stripe Webhook (`stripe-webhook` edge function, public, no JWT)
+### 4. /checkout redirects to /pricing
+**Root cause**: `src/pages/Checkout.tsx` still calls deleted Square endpoints (`get-square-config`, `create-square-subscription`). It also auto-redirects when Square config fails.
 
-Single source of truth that handles:
+**Fix**:
+- Replace the entire `Checkout.tsx` body with a simple Stripe redirect: read `?plan=` → call `openStripeCheckout(plan)` → on error show retry button (no redirect to /pricing).
 
-- `checkout.session.completed` → route by metadata.type:
-  - `subscription` → upsert `user_subscriptions` (plan, status, expires_at)
-  - `download` → insert `download_purchases` + insert `artist_earnings` row (download_revenue) for the artist
-  - `merch` → insert `merch_purchases` + earnings row
-- `customer.subscription.updated/deleted` → sync subscription status
-- `invoice.payment_succeeded` → extend subscription
-- `account.updated` → set `payout_enabled` on `artist_payout_details` when Connect account is fully onboarded
-- Verifies Stripe signature with `STRIPE_WEBHOOK_SECRET` (will request from user)
+### 5. /eventbrite-callback "missing authorization code"
+**Root cause**: `eventbrite-oauth-url` uses `EVENTBRITE_API_TOKEN` (the private API token) as the OAuth `client_id`. Eventbrite rejects the authorize request silently and redirects back without `?code=`.
 
-### 4. Merch Store checkout
+**Fix**:
+- Add new secret `EVENTBRITE_CLIENT_ID` (OAuth App Client ID from Eventbrite App Management).
+- Update `eventbrite-oauth-url` to use `EVENTBRITE_CLIENT_ID` as `client_id` (keep `EVENTBRITE_API_TOKEN` for API calls).
+- Update `eventbrite-oauth-callback` to also use `EVENTBRITE_CLIENT_ID` + `EVENTBRITE_CLIENT_SECRET` for the token exchange.
 
-New `create-merch-checkout` edge function (mirrors `process-download-purchase`). Update `MerchStore.tsx` "Buy" button to invoke it. Adds `merch_purchases` table.
+### 6. Support tickets not visible in CEO Dashboard
+**Root cause**: No admin tickets view exists. Tickets save to `support_tickets` table but no UI surfaces them for the CEO.
 
-### 5. Withdraw-after-50-streams (instant payout)
+**Fix**:
+- Create `src/components/admin/SupportTicketsAdmin.tsx`: lists all tickets (CEO RLS already allows via role), shows status/priority filters, lets CEO update status & add `resolution_notes`.
+- Add new sidebar entry `support` (LifeBuoy icon) in `AdminSidebar` and render the new component in `CEODashboard`'s tab switch.
 
-Modify `process-artist-payout`:
+### 7. "Continue with Google" not working on /auth
+**Root cause**: Likely Google provider isn't enabled in Lovable Cloud Auth settings; current code uses `supabase.auth.signInWithOAuth({ provider: 'google' })` which requires the provider to be enabled.
 
-- Allow withdrawal when `total_pending >= $50` (already in code) OR when artist has ≥50 lifetime paid streams and pending > 0
-- Verifies Connect account capabilities before transfer; clear error if not onboarded
+**Fix**:
+- Verify Google provider is enabled in Lovable Cloud → Users → Auth Settings (managed credentials work out of the box).
+- Improve error surface: when `signInWithOAuth` returns a "provider not enabled" error, show a clear toast guiding the user instead of generic "Failed to sign in with Google."
 
-### 6. Auto-payout on the 1st (already scheduled)
+## Files to Edit / Create
 
-Schema migration: add pg_cron job calling `scheduled-artist-payouts` at `0 0 1 * *`. Update the function to use Stripe `transfers.create` (currently it just marks rows; needs to actually move money).
+| File | Action |
+|---|---|
+| `supabase/functions/create-checkout-session/index.ts` | Always-200 response shape + stage logging + drop API version pin |
+| `src/lib/subscription-checkout.ts` | Read new `{ ok, url, error }` shape |
+| `src/components/auth/AuthGuard.tsx` | Timeout fallback in `RequireGuest` |
+| `src/contexts/AuthContext.tsx` | Harden `loadRole` error path; expose `isCEO` flag |
+| `src/pages/CEODashboard.tsx` | Show loader until `roleChecked`, then decide |
+| `src/components/studio/StudioSidebar.tsx` | Use `isCEO` from context (immediate render) |
+| `src/pages/Checkout.tsx` | Rewrite as Stripe redirect page |
+| `supabase/functions/eventbrite-oauth-url/index.ts` | Use `EVENTBRITE_CLIENT_ID` |
+| `supabase/functions/eventbrite-oauth-callback/index.ts` | Use `EVENTBRITE_CLIENT_ID` + secret |
+| `src/components/admin/SupportTicketsAdmin.tsx` | New: CEO ticket queue UI |
+| `src/components/admin/AdminSidebar.tsx` | Add "Support" tab |
+| `src/pages/CEODashboard.tsx` | Render `SupportTicketsAdmin` for `support` tab |
+| `src/pages/Auth.tsx` | Better Google error surfacing |
 
-### 7. Income Tracking & Reconciliation Agent
+## Required User Action After Approval
+1. Add secret `EVENTBRITE_CLIENT_ID` (OAuth Client ID from Eventbrite App Management).
+2. Confirm Google provider is enabled in Lovable Cloud → Auth Settings (managed credentials).
 
-New `financial-reconciliation-agent` edge function (cron: every 6h):
+## Test Plan (autonomous)
+1. `curl create-checkout-session` for each plan (starter/pro/enterprise/fan) — expect `{ ok: true, url }`.
+2. Verify `/checkout?plan=pro` redirects to Stripe.
+3. Sign in with email/password — confirm redirect to /studio within 3s.
+4. Visit `/ceo` as CEO — confirm dashboard renders, sidebar Crown visible.
+5. Open new "Support" tab — list of tickets renders.
+6. Click "Connect Eventbrite" in Studio — confirm authorize URL has correct `client_id` and Eventbrite returns a `code`.
+7. Click "Continue with Google" — confirm OAuth popup or clear error.
 
-- Pulls last 24h of Stripe `charges`, `transfers`, `payouts`
-- Matches each to internal `artist_earnings` / `download_purchases` / `user_subscriptions` by `metadata.user_id`/`track_id`
-- Inserts `unmatched_transactions` rows when no match found
-- Inserts `platform_revenue` aggregates daily
-
-New tables:
-
-- `merch_purchases` (id, buyer_id, artist_id, item, amount, stripe_session_id)
-- `unmatched_transactions` (id, stripe_object_id, type, amount, suggested_match_id, status, reviewed_by)
-- `stream_revenue_audit` (track_id, stream_id, validated, amount, recorded_to_earnings)
-
-### 8. CEO Dashboard reconciliation panel
-
-Update `StripeFinancialAgents.tsx` to surface unmatched transactions, with one-click "Approve match" → updates record + marks reviewed.
-
-### 9. 24/7 Health Agent
-
-Existing `system-diagnostics` extended with:
-
-- Stripe API ping
-- Webhook delivery success rate (last 24h)
-- Pending-but-stuck payouts > 7 days
-- Unmatched transaction count
-Logged hourly to `system_health_log`; failures notify CEO via `notifications`.
-
-## Files Touched
-
-**Edit:** `create-checkout-session/index.ts`, `check-subscription/index.ts`, `process-artist-payout/index.ts`, `scheduled-artist-payouts/index.ts`, `setup-artist-payout/index.ts`, `system-diagnostics/index.ts`, `ArtistPayoutSettings.tsx`, `MerchStore.tsx`, `admin/StripeFinancialAgents.tsx`, `admin/CEORevenueControl.tsx`, `supabase/config.toml`
-
-**Create:** `stripe-webhook/index.ts`, `create-merch-checkout/index.ts`, `financial-reconciliation-agent/index.ts`
-
-**Migration:** new tables (`merch_purchases`, `unmatched_transactions`, `stream_revenue_audit`, `system_health_log`) + RLS + cron jobs (1st-of-month payouts, 6h reconciliation, hourly health)
-
-## What I'll Need From You
-
-1. **Approve adding** `STRIPE_WEBHOOK_SECRET` secret — required for webhook signature verification. After deploy I'll give you the webhook URL to paste in Stripe Dashboard → Webhooks. (approved already) 
-2. **Mock test** — I'll run a $0.50 test charge end-to-end via Stripe test mode to verify checkout → webhook → earnings → payout works.
-
-## Test Plan (autonomous after deploy)
-
-1. Invoke `create-checkout-session` with each plan → confirm session URL returned
-2. Curl `stripe-webhook` with a sample event payload → confirm DB updates
-3. Invoke `process-artist-payout` against a seeded artist with $60 pending → confirm transfer created
-4. Run `financial-reconciliation-agent` → confirm matches logged
-5. Verify CEO dashboard shows live Stripe balance + unmatched transaction
