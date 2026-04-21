@@ -9,7 +9,8 @@ import { RequireGuest } from "@/components/auth/AuthGuard";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { z } from "zod";
-import { Chrome, Loader2 } from "lucide-react";
+import { Chrome, Loader2, Apple } from "lucide-react";
+import { lovable } from "@/integrations/lovable/index";
 
 // Security: Input validation schemas
 const authSchema = z.object({
