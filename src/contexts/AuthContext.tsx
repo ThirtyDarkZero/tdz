@@ -58,6 +58,7 @@ interface AuthContextType {
   isListener: boolean;
   isManager: boolean;
   isAdmin: boolean;
+  isCEO: boolean;
   plan: SubscriptionPlan;
   
   // Actions
@@ -404,6 +405,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isListener = role === "listener";
   const isManager = role === "manager";
   const isAdmin = role === "admin" || role === "ceo";
+  const isCEO = role === "ceo";
   
   const plan: SubscriptionPlan = (() => {
     // CEO/admin role grants enterprise — server-side enforced via user_roles + RLS.
@@ -438,6 +440,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isListener,
     isManager,
     isAdmin,
+    isCEO,
     plan,
     
     signUp,
