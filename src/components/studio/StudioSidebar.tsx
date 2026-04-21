@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuthContext } from "@/contexts/AuthContext";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { 
   Plus, 
@@ -91,7 +92,7 @@ export const StudioSidebar = ({
 }: StudioSidebarProps) => {
   const navigate = useNavigate();
   const [isHovering, setIsHovering] = useState(false);
-  const [isCEO, setIsCEO] = useState(false);
+  const { isCEO } = useAuthContext();
   const [showHighlights, setShowHighlights] = useState(true);
   const [realStats, setRealStats] = useState<RealStats>({
     totalPlays: 0,
@@ -104,12 +105,6 @@ export const StudioSidebar = ({
     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      
-      // Check CEO status using server-side role
-      const { data: hasCeoRole } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'ceo' });
-      if (hasCeoRole) {
-        setIsCEO(true);
-      }
 
       // Load real stats from database
       try {

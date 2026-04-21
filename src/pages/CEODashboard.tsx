@@ -9,7 +9,7 @@ import {
   MessageCircle, Zap, Crown, Menu
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { Navigate, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -22,6 +22,7 @@ import { CEOArtistMessaging } from "@/components/CEOArtistMessaging";
 import { SystemDiagnosticsPanel } from "@/components/SystemDiagnosticsPanel";
 import { AdminSidebar, CEORevenueControl } from "@/components/admin";
 import { StripeFinancialAgents } from "@/components/admin/StripeFinancialAgents";
+import { SupportTicketsAdmin } from "@/components/admin/SupportTicketsAdmin";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -60,38 +61,24 @@ type DashboardMetrics = {
 const COLORS = ['#22c55e', '#8B5CF6', '#EC4899', '#06B6D4', '#10B981', '#F59E0B'];
 
 export default function CEODashboard() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, isAuthLoading, isRoleLoading, isCEO } = useAuthContext();
   const navigate = useNavigate();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("executive");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Check if user is CEO using server-side role check
-  const [isCEO, setIsCEO] = useState(false);
-  const [roleChecked, setRoleChecked] = useState(false);
+  const roleChecked = !isAuthLoading && !isRoleLoading;
 
   useEffect(() => {
-    if (!user) return;
-    supabase.rpc('has_role', { _user_id: user.id, _role: 'ceo' })
-      .then(({ data }) => {
-        setIsCEO(!!data);
-        setRoleChecked(true);
-      });
-  }, [user]);
-
-  useEffect(() => {
-    if (authLoading || !roleChecked) return;
-    if (!isCEO) {
-      navigate('/studio');
-      return;
-    }
+    if (!roleChecked || !isCEO) return;
     loadDashboardMetrics();
-    
+
     // Refresh every 30 seconds
     const interval = setInterval(loadDashboardMetrics, 30000);
     return () => clearInterval(interval);
-  }, [isCEO, authLoading, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCEO, roleChecked]);
 
   const loadDashboardMetrics = async () => {
     try {
@@ -290,8 +277,8 @@ export default function CEODashboard() {
     }
   };
 
-  // Wait for auth to load before checking CEO access
-  if (authLoading) {
+  // Wait for auth + role to load before deciding access
+  if (!roleChecked) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -300,6 +287,10 @@ export default function CEODashboard() {
         </div>
       </div>
     );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
   }
 
   if (!isCEO) {
@@ -625,6 +616,13 @@ export default function CEODashboard() {
                   </Card>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Support Tickets Tab */}
+          {activeTab === "support" && (
+            <div className="animate-fade-in">
+              <SupportTicketsAdmin />
             </div>
           )}
 

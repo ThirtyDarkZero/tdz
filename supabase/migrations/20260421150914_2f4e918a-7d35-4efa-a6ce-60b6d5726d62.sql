@@ -1,0 +1,2 @@
+CREATE POLICY "CEO can view all tickets" ON public.support_tickets FOR SELECT USING (public.has_role(auth.uid(), 'ceo') OR public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "CEO can update all tickets" ON public.support_tickets FOR UPDATE USING (public.has_role(auth.uid(), 'ceo') OR public.has_role(auth.uid(), 'admin'));

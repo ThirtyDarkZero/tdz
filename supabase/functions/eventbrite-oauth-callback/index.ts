@@ -12,12 +12,12 @@ serve(async (req) => {
   }
 
   try {
-    const apiKey = Deno.env.get("EVENTBRITE_API_TOKEN");
+    const clientId = Deno.env.get("EVENTBRITE_CLIENT_ID");
     const clientSecret = Deno.env.get("EVENTBRITE_CLIENT_SECRET");
 
-    if (!apiKey || !clientSecret) {
+    if (!clientId || !clientSecret) {
       return new Response(
-        JSON.stringify({ error: "Eventbrite OAuth not configured" }),
+        JSON.stringify({ error: "Eventbrite OAuth not configured. Missing EVENTBRITE_CLIENT_ID or EVENTBRITE_CLIENT_SECRET." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -59,7 +59,7 @@ serve(async (req) => {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         grant_type: "authorization_code",
-        client_id: apiKey,
+        client_id: clientId,
         client_secret: clientSecret,
         code,
         redirect_uri: "https://tdz.lovable.app/eventbrite-callback",

@@ -21,7 +21,8 @@ import {
   BarChart3,
   Bot,
   Compass,
-  FileText
+  FileText,
+  LifeBuoy
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -37,6 +38,7 @@ const adminNavItems = [
   { id: "users", icon: Users, label: "Users" },
   { id: "content", icon: Music, label: "Content" },
   { id: "messaging", icon: MessageCircle, label: "Messages" },
+  { id: "support", icon: LifeBuoy, label: "Support" },
   { id: "health", icon: Activity, label: "System Health" },
 ];
 
