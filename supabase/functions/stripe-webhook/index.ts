@@ -207,13 +207,35 @@ serve(async (req) => {
 
       default:
         console.log(`[stripe-webhook] unhandled event ${event.type}`);
+        await supabase.from("stripe_webhook_events").update({
+          status: "ignored",
+          processing_ms: Date.now() - startedAt,
+          processed_at: new Date().toISOString(),
+        }).eq("stripe_event_id", event.id);
+        return new Response(JSON.stringify({ received: true, ignored: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
     }
+
+    await supabase.from("stripe_webhook_events").update({
+      status: "processed",
+      processing_ms: Date.now() - startedAt,
+      processed_at: new Date().toISOString(),
+    }).eq("stripe_event_id", event.id);
 
     return new Response(JSON.stringify({ received: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
     console.error("[stripe-webhook] processing error:", err);
+    try {
+      await supabase.from("stripe_webhook_events").update({
+        status: "failed",
+        processing_ms: Date.now() - startedAt,
+        processed_at: new Date().toISOString(),
+        error_message: err instanceof Error ? err.message : String(err),
+      }).eq("stripe_event_id", event.id);
+    } catch (_) { /* ignore */ }
     return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
