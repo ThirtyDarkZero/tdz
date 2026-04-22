@@ -102,9 +102,17 @@ export function ProfileHub({ userProfile, likedTracks, followedArtists, playlist
 
   const [formData, setFormData] = useState({ display_name: "", bio: "", location: "" });
 
+  const [isCEO, setIsCEO] = useState(false);
+
   useEffect(() => {
     if (user) loadProfile();
     else setLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) { setIsCEO(false); return; }
+    supabase.rpc('has_role', { _user_id: user.id, _role: 'ceo' as any })
+      .then(({ data }) => setIsCEO(!!data));
   }, [user]);
 
   const loadProfile = async () => {
