@@ -222,17 +222,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isRoleLoading, setIsRoleLoading] = useState(true);
   const [isSubscriptionLoading, setIsSubscriptionLoading] = useState(true);
   
-  // Prevent concurrent loads
-  const loadingRoleRef = useRef(false);
-  const loadingSubRef = useRef(false);
-  const lastUserIdRef = useRef<string | null>(null);
+  // Track latest load request to ignore stale results
+  const roleRequestIdRef = useRef(0);
+  const subRequestIdRef = useRef(0);
+  const initializedRef = useRef(false);
 
   // ========== Load Role ==========
   const loadRole = useCallback(async (userId: string) => {
-    if (loadingRoleRef.current && lastUserIdRef.current === userId) return;
-    
-    loadingRoleRef.current = true;
-    lastUserIdRef.current = userId;
+    const reqId = ++roleRequestIdRef.current;
     setIsRoleLoading(true);
 
     try {
@@ -244,26 +241,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .limit(1)
         .maybeSingle();
 
+      // Ignore if a newer request started
+      if (reqId !== roleRequestIdRef.current) return;
+
       if (error) {
-        console.error("Error loading role:", error);
+        console.error("[Auth] Error loading role:", error);
         setRole(null);
       } else {
         setRole((data?.role as UserRole) ?? null);
       }
     } catch (error) {
-      console.error("Error loading role:", error);
+      if (reqId !== roleRequestIdRef.current) return;
+      console.error("[Auth] Error loading role:", error);
       setRole(null);
     } finally {
-      loadingRoleRef.current = false;
-      setIsRoleLoading(false);
+      if (reqId === roleRequestIdRef.current) {
+        setIsRoleLoading(false);
+      }
     }
   }, []);
 
   // ========== Load Subscription ==========
   const loadSubscription = useCallback(async (userId: string) => {
-    if (loadingSubRef.current) return;
-    
-    loadingSubRef.current = true;
+    const reqId = ++subRequestIdRef.current;
     setIsSubscriptionLoading(true);
 
     try {
@@ -273,61 +273,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq("user_id", userId)
         .maybeSingle();
 
+      if (reqId !== subRequestIdRef.current) return;
+
       if (error) {
-        console.error("Error loading subscription:", error);
+        console.error("[Auth] Error loading subscription:", error);
         setSubscription(null);
       } else {
         setSubscription(data as unknown as Subscription | null);
       }
     } catch (error) {
-      console.error("Error loading subscription:", error);
+      if (reqId !== subRequestIdRef.current) return;
+      console.error("[Auth] Error loading subscription:", error);
       setSubscription(null);
     } finally {
-      loadingSubRef.current = false;
-      setIsSubscriptionLoading(false);
+      if (reqId === subRequestIdRef.current) {
+        setIsSubscriptionLoading(false);
+      }
     }
   }, []);
 
   // ========== Auth State Listener ==========
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        setIsAuthLoading(false);
+    let lastLoadedUserId: string | null = null;
 
-        // When user changes, load role and subscription
-        if (newSession?.user) {
-          // Use setTimeout to avoid Supabase deadlock
-          setTimeout(() => {
-            loadRole(newSession.user.id);
-            loadSubscription(newSession.user.id);
-          }, 0);
-        } else {
-          // Clear all state on sign out
-          setRole(null);
-          setSubscription(null);
-          setIsRoleLoading(false);
-          setIsSubscriptionLoading(false);
-          lastUserIdRef.current = null;
-        }
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
-      setSession(existingSession);
-      setUser(existingSession?.user ?? null);
+    const handleSession = (newSession: Session | null, source: string) => {
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
       setIsAuthLoading(false);
 
-      if (existingSession?.user) {
-        loadRole(existingSession.user.id);
-        loadSubscription(existingSession.user.id);
+      const newUserId = newSession?.user?.id ?? null;
+
+      if (newUserId) {
+        // Avoid duplicate load if same user already loaded
+        if (newUserId === lastLoadedUserId) return;
+        lastLoadedUserId = newUserId;
+        // Defer to avoid potential Supabase deadlock
+        setTimeout(() => {
+          loadRole(newUserId);
+          loadSubscription(newUserId);
+        }, 0);
       } else {
+        lastLoadedUserId = null;
+        setRole(null);
+        setSubscription(null);
         setIsRoleLoading(false);
         setIsSubscriptionLoading(false);
       }
+    };
+
+    // Set up auth state listener FIRST
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
+      (event, newSession) => {
+        console.log("[Auth] event:", event, "user:", newSession?.user?.email ?? "none");
+        initializedRef.current = true;
+        handleSession(newSession, "listener");
+      }
+    );
+
+    // THEN check for existing session (only if listener hasn't already fired)
+    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      if (initializedRef.current) return; // listener already handled it
+      initializedRef.current = true;
+      handleSession(existingSession, "getSession");
     });
 
     return () => authSubscription.unsubscribe();
@@ -382,14 +389,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ========== Refresh Functions ==========
   const refreshRole = useCallback(async () => {
     if (user) {
-      loadingRoleRef.current = false;
       await loadRole(user.id);
     }
   }, [user, loadRole]);
 
   const refreshSubscription = useCallback(async () => {
     if (user) {
-      loadingSubRef.current = false;
       await loadSubscription(user.id);
     }
   }, [user, loadSubscription]);

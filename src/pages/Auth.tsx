@@ -49,9 +49,34 @@ function AuthForm() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [appleLoading, setAppleLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{ email?: string; password?: string }>({});
-  
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
+  const [resending, setResending] = useState(false);
+
   const { signIn, signUp, signInWithGoogle } = useAuthContext();
   const navigate = useNavigate();
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      toast.error("Enter your email above first.");
+      return;
+    }
+    setResending(true);
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: email.trim().toLowerCase(),
+        options: { emailRedirectTo: `${window.location.origin}/` },
+      });
+      if (error) {
+        toast.error("Could not resend", { description: error.message });
+      } else {
+        toast.success("Confirmation email sent. Check your inbox.");
+      }
+    } finally {
+      setResending(false);
+    }
+  };
 
   const handleAppleSignIn = async () => {
     setAppleLoading(true);
@@ -141,18 +166,26 @@ function AuthForm() {
         const { error } = await signIn(result.data.email, result.data.password);
         if (error) {
           const message = error.message?.toLowerCase?.() || "";
+          const code = (error as any)?.code || (error as any)?.status || "";
+          console.error("[Auth] Sign-in error:", { code, message: error.message });
+
           if (message.includes("email not confirmed") || message.includes("email_not_confirmed")) {
-            toast.error("Please confirm your email before signing in.");
+            setNeedsConfirmation(true);
+            toast.error("Please confirm your email", {
+              description: "We can resend the confirmation link below.",
+            });
           } else if (message.includes("too many requests") || message.includes("rate limit")) {
             toast.error("Too many sign-in attempts. Please wait a moment and try again.");
-          } else if (message.includes("invalid login credentials")) {
+          } else if (message.includes("invalid login credentials") || message.includes("invalid_credentials")) {
             toast.error("Invalid email or password.");
           } else {
-            toast.error(error.message || "Unable to sign in right now.");
+            // Surface real error so future failures are diagnosable
+            toast.error("Sign-in failed", { description: error.message || "Unknown error" });
           }
           setLoading(false);
           return;
         }
+        setNeedsConfirmation(false);
         toast.success("Signed in successfully!");
         // AuthContext will handle the redirect via RequireGuest
       }
@@ -269,6 +302,16 @@ function AuthForm() {
               <p className="text-xs text-muted-foreground">
                 Min 8 characters with uppercase, lowercase, and numbers
               </p>
+            )}
+            {!isSignUp && needsConfirmation && (
+              <button
+                type="button"
+                onClick={handleResendConfirmation}
+                disabled={resending}
+                className="text-xs text-primary hover:underline disabled:opacity-50"
+              >
+                {resending ? "Sending…" : "Resend confirmation email"}
+              </button>
             )}
           </div>
 
