@@ -49,9 +49,34 @@ function AuthForm() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [appleLoading, setAppleLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{ email?: string; password?: string }>({});
-  
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
+  const [resending, setResending] = useState(false);
+
   const { signIn, signUp, signInWithGoogle } = useAuthContext();
   const navigate = useNavigate();
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      toast.error("Enter your email above first.");
+      return;
+    }
+    setResending(true);
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: email.trim().toLowerCase(),
+        options: { emailRedirectTo: `${window.location.origin}/` },
+      });
+      if (error) {
+        toast.error("Could not resend", { description: error.message });
+      } else {
+        toast.success("Confirmation email sent. Check your inbox.");
+      }
+    } finally {
+      setResending(false);
+    }
+  };
 
   const handleAppleSignIn = async () => {
     setAppleLoading(true);
