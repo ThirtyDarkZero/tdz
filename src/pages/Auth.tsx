@@ -303,6 +303,16 @@ function AuthForm() {
                 Min 8 characters with uppercase, lowercase, and numbers
               </p>
             )}
+            {!isSignUp && needsConfirmation && (
+              <button
+                type="button"
+                onClick={handleResendConfirmation}
+                disabled={resending}
+                className="text-xs text-primary hover:underline disabled:opacity-50"
+              >
+                {resending ? "Sending…" : "Resend confirmation email"}
+              </button>
+            )}
           </div>
 
           <Button
