@@ -36,15 +36,42 @@ serve(async (req) => {
   if (!signature) return new Response("Missing signature", { status: 400 });
 
   const body = await req.text();
+  const startedAt = Date.now();
   let event: Stripe.Event;
   try {
     event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
   } catch (err) {
     console.error("Signature verification failed:", err);
+    // Log invalid-signature attempts so CEO can see them in the monitor.
+    try {
+      await supabase.from("stripe_webhook_events").insert({
+        stripe_event_id: `invalid_${crypto.randomUUID()}`,
+        event_type: "signature.invalid",
+        status: "failed",
+        signature_valid: false,
+        error_message: err instanceof Error ? err.message : "invalid signature",
+        payload: { raw_preview: body.slice(0, 2000) },
+      });
+    } catch (_) { /* don't block error response */ }
     return new Response(`Webhook Error: ${err instanceof Error ? err.message : "invalid"}`, { status: 400 });
   }
 
   console.log(`[stripe-webhook] event=${event.type} id=${event.id}`);
+
+  // Insert/upsert the received event row up front (status: received)
+  try {
+    await supabase.from("stripe_webhook_events").upsert({
+      stripe_event_id: event.id,
+      event_type: event.type,
+      status: "received",
+      livemode: !!event.livemode,
+      signature_valid: true,
+      payload: event as unknown as Record<string, unknown>,
+      received_at: new Date(event.created * 1000).toISOString(),
+    }, { onConflict: "stripe_event_id" });
+  } catch (e) {
+    console.error("[stripe-webhook] failed to log event:", e);
+  }
 
   try {
     switch (event.type) {
