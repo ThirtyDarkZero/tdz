@@ -734,8 +734,23 @@ export function ProfileHub({ userProfile, likedTracks, followedArtists, playlist
               </GlassCard>
             )}
 
-            {/* Sign Out + Danger */}
+            {/* CEO Dashboard (CEO-only) + Sign Out + Danger */}
             <div className="space-y-3 pt-2">
+              {isCEO && (
+                <button
+                  onClick={() => navigate("/ceo")}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl transition-all hover:opacity-90"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(255,99,71,0.18), rgba(139,92,246,0.18))",
+                    border: "1px solid rgba(255,99,71,0.45)",
+                  }}
+                >
+                  <Crown className="w-4 h-4" style={{ color: CORAL }} />
+                  <span className="font-body" style={{ fontSize: 13, fontWeight: 700, color: "var(--text-1)" }}>
+                    CEO Dashboard
+                  </span>
+                </button>
+              )}
               <button
                 onClick={handleSignOut}
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl transition-all"
