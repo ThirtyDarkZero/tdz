@@ -23,6 +23,7 @@ import { SystemDiagnosticsPanel } from "@/components/SystemDiagnosticsPanel";
 import { AdminSidebar, CEORevenueControl } from "@/components/admin";
 import { StripeFinancialAgents } from "@/components/admin/StripeFinancialAgents";
 import { SupportTicketsAdmin } from "@/components/admin/SupportTicketsAdmin";
+import { StripeWebhookMonitor } from "@/components/admin/StripeWebhookMonitor";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -630,6 +631,13 @@ export default function CEODashboard() {
           {activeTab === "finance" && (
             <div className="animate-fade-in">
               <StripeFinancialAgents />
+            </div>
+          )}
+
+          {/* Stripe Webhook Monitor Tab */}
+          {activeTab === "webhooks" && (
+            <div className="animate-fade-in">
+              <StripeWebhookMonitor />
             </div>
           )}
 
