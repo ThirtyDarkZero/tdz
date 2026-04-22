@@ -21,7 +21,7 @@ import {
   User, Camera, Edit, Save, X, Heart, ListMusic, Play, Settings,
   MessageCircle, Users, Share2, LogOut, ChevronRight, Music, Sparkles,
   Shield, Headphones, CreditCard, Link2, LifeBuoy, Trash2,
-  FolderOpen, Image, Plus, MoreHorizontal, Bell, Globe, Lock
+  FolderOpen, Image, Plus, MoreHorizontal, Bell, Globe, Lock, Crown
 } from "lucide-react";
 
 const CORAL = "#FF6347";
