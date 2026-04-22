@@ -389,14 +389,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ========== Refresh Functions ==========
   const refreshRole = useCallback(async () => {
     if (user) {
-      loadingRoleRef.current = false;
       await loadRole(user.id);
     }
   }, [user, loadRole]);
 
   const refreshSubscription = useCallback(async () => {
     if (user) {
-      loadingSubRef.current = false;
       await loadSubscription(user.id);
     }
   }, [user, loadSubscription]);
