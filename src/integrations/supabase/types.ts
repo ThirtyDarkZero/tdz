@@ -3431,6 +3431,57 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_webhook_events: {
+        Row: {
+          error_message: string | null
+          event_type: string
+          id: string
+          livemode: boolean
+          payload: Json
+          processed_at: string | null
+          processing_ms: number | null
+          received_at: string
+          related_resource_id: string | null
+          related_resource_type: string | null
+          related_user_id: string | null
+          signature_valid: boolean
+          status: string
+          stripe_event_id: string
+        }
+        Insert: {
+          error_message?: string | null
+          event_type: string
+          id?: string
+          livemode?: boolean
+          payload: Json
+          processed_at?: string | null
+          processing_ms?: number | null
+          received_at?: string
+          related_resource_id?: string | null
+          related_resource_type?: string | null
+          related_user_id?: string | null
+          signature_valid?: boolean
+          status?: string
+          stripe_event_id: string
+        }
+        Update: {
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          livemode?: boolean
+          payload?: Json
+          processed_at?: string | null
+          processing_ms?: number | null
+          received_at?: string
+          related_resource_id?: string | null
+          related_resource_type?: string | null
+          related_user_id?: string | null
+          signature_valid?: boolean
+          status?: string
+          stripe_event_id?: string
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           album_id: string | null
