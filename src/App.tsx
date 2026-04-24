@@ -30,6 +30,7 @@ const TrackDetail = lazy(() => import("./pages/TrackDetail"));
 const AlbumDetail = lazy(() => import("./pages/AlbumDetail"));
 const PlaylistDetail = lazy(() => import("./pages/PlaylistDetail"));
 const Investors = lazy(() => import("./pages/Investors"));
+const CapTable = lazy(() => import("./pages/CapTable"));
 const CEODashboard = lazy(() => import("./pages/CEODashboard"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Terms = lazy(() => import("./pages/Terms"));
@@ -98,6 +99,7 @@ const App = () => (
                   <Route path="/album/:albumId" element={<AlbumDetail />} />
                   <Route path="/playlist/:playlistId" element={<PlaylistDetail />} />
                   <Route path="/investors" element={<Investors />} />
+                  <Route path="/investors/cap-table" element={<CapTable />} />
                   <Route path="/ceo" element={<CEODashboard />} />
                   <Route path="/faq" element={<FAQ />} />
                   <Route path="/terms" element={<Terms />} />
