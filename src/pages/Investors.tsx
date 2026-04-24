@@ -976,8 +976,8 @@ function Investors() {
         </div>
       </section>
 
-      {/* ─── INVESTOR SUMMARY ─── */}
-      <section className="py-20 px-4 md:px-6">
+      {/* ─── INVESTOR SUMMARY (THE ASK) ─── */}
+      <section id="ask" className="py-20 px-4 md:px-6 scroll-mt-20">
         <div className="max-w-5xl mx-auto">
           <Reveal>
             <div className="rounded-2xl border border-[#22C55E]/30 p-10 md:p-14 text-center" style={{ background: "linear-gradient(180deg, #0A1A0A 0%, #111 100%)" }}>
