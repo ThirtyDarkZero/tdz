@@ -5,13 +5,17 @@ import {
   LineChart, Target, Rocket, Globe, Zap, Brain, Star,
   ArrowRight, CheckCircle2, Crown, Shield, AlertTriangle,
   Swords, TrendingDown, CreditCard, Download, Radio,
-  Layers, PiggyBank
+  Layers, PiggyBank, Tv, Trophy
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { Play } from "lucide-react";
 import { LineChart as RechartsLine, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { JargonProvider, useJargon } from "@/components/investor/JargonContext";
+import { StickyDeckNav } from "@/components/investor/StickyDeckNav";
+import { LiveTraction } from "@/components/investor/LiveTraction";
+import { LastStageStanding } from "@/components/investor/LastStageStanding";
 
 /* ─── Scroll reveal ─── */
 function useReveal() {
