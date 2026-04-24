@@ -16,6 +16,7 @@ import { JargonProvider, useJargon } from "@/components/investor/JargonContext";
 import { StickyDeckNav } from "@/components/investor/StickyDeckNav";
 import { LiveTraction } from "@/components/investor/LiveTraction";
 import { LastStageStanding } from "@/components/investor/LastStageStanding";
+import { FounderBio } from "@/components/investor/FounderBio";
 
 /* ─── Scroll reveal ─── */
 function useReveal() {
@@ -976,6 +977,9 @@ function Investors() {
         </div>
       </section>
 
+      {/* ─── FOUNDER BIO ─── */}
+      <FounderBio />
+
       {/* ─── INVESTOR SUMMARY (THE ASK) ─── */}
       <section id="ask" className="py-20 px-4 md:px-6 scroll-mt-20">
         <div className="max-w-5xl mx-auto">
@@ -1011,14 +1015,15 @@ function Investors() {
           <TDZBadge size={60} />
           <SectionTitle chrome>JOIN THE REVOLUTION</SectionTitle>
           <p className="mx-auto mt-6 text-center" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 17, color: "#888", maxWidth: 700 }}>
-            We're raising $10M to scale the platform that will change how artists get paid forever.
+            We're raising <span style={{ color: "#E8C76A", fontWeight: 600 }}>$10M for 15%</span> to scale the platform that will change how artists get paid forever.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
             <button
+              onClick={() => navigate("/investors/cap-table")}
               className="px-10 py-4 rounded-full text-black font-semibold hover:scale-105 transition-transform"
-              style={{ background: "#22C55E", fontFamily: "'Raleway', sans-serif", fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase" }}
+              style={{ background: "#E8C76A", fontFamily: "'Raleway', sans-serif", fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase" }}
             >
-              Request Investor Deck →
+              See Cap Table →
             </button>
             <button
               onClick={() => navigate("/")}
