@@ -203,8 +203,17 @@ function InvestorDiscoveryDemo() {
   );
 }
 
-export default function Investors() {
+export default function InvestorsPage() {
+  return (
+    <JargonProvider>
+      <Investors />
+    </JargonProvider>
+  );
+}
+
+function Investors() {
   const navigate = useNavigate();
+  const { t } = useJargon();
   const [activeGraph, setActiveGraph] = useState("revenue");
 
   // ─── DATA (preserved exactly) ───
