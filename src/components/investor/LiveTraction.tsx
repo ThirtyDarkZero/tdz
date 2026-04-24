@@ -19,11 +19,12 @@ export function LiveTraction() {
       monthStart.setDate(1);
       monthStart.setHours(0, 0, 0, 0);
 
+      const sb = supabase as any;
       const [a, s, p, sub] = await Promise.all([
-        supabase.from("artist_profiles").select("*", { count: "exact", head: true }),
-        supabase.from("stream_events").select("*", { count: "exact", head: true }).eq("eligible_for_payout", true),
-        supabase.from("artist_payouts").select("amount").gte("created_at", monthStart.toISOString()),
-        supabase.from("user_subscriptions").select("*", { count: "exact", head: true }).eq("status", "active"),
+        sb.from("artist_profiles").select("*", { count: "exact", head: true }),
+        sb.from("stream_events").select("*", { count: "exact", head: true }).eq("eligible_for_payout", true),
+        sb.from("artist_payouts").select("amount").gte("created_at", monthStart.toISOString()),
+        sb.from("user_subscriptions").select("*", { count: "exact", head: true }).eq("status", "active"),
       ]);
 
       if (cancelled) return;
