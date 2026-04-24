@@ -431,8 +431,8 @@ function Investors() {
         </div>
       </section>
 
-      <div id="market" />
-      <div id="ask" className="hidden" />
+      <div id="ask-anchor" className="hidden" />
+
 
       {/* ─── THE SOLUTION ─── */}
       <section className="py-20 px-4 md:px-6">
@@ -464,7 +464,7 @@ function Investors() {
       </section>
 
       {/* ─── MARKET OPPORTUNITY (TAM/SAM/SOM) ─── */}
-      <section className="py-20 px-4 md:px-6">
+      <section id="market" className="py-20 px-4 md:px-6 scroll-mt-20">
         <div className="max-w-6xl mx-auto">
           <Reveal>
             <TDZBadge />
