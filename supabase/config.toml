@@ -1,178 +1,123 @@
 project_id = "rcjzvfskkoqygnlolrcs"
 
-[functions.get-square-config]
-verify_jwt = false
-
-[functions.create-square-subscription]
-verify_jwt = true
-
-[functions.process-download-purchase]
-verify_jwt = true
-
-[functions.process-artist-payout]
-verify_jwt = true
-
-[functions.setup-artist-payout]
-verify_jwt = true
-
-[functions.scheduled-artist-payouts]
-verify_jwt = false
-
-[functions.square-oauth-url]
-verify_jwt = true
-
-[functions.square-oauth-callback]
-verify_jwt = false
-
-[functions.label-staff-chat]
-verify_jwt = true
-
-[functions.quantum-advisor]
-verify_jwt = true
-
-[functions.quantum-distribution]
-verify_jwt = true
-
-[functions.align-lyrics]
-verify_jwt = true
-
-[functions.analyze-audio]
-verify_jwt = true
-
-[functions.analyze-lyrics]
-verify_jwt = true
-
-[functions.analyze-tempo]
-verify_jwt = true
-
-[functions.analyze-track-metadata]
-verify_jwt = true
-
-[functions.auto-publish-tracks]
-verify_jwt = true
-
-[functions.check-provider-health]
-verify_jwt = true
-
-[functions.create-upload-session]
-verify_jwt = true
-
-[functions.create-version]
-verify_jwt = true
-
-[functions.deduct-credits]
-verify_jwt = true
-
-[functions.export-video]
-verify_jwt = true
-
-[functions.export-analytics]
-verify_jwt = true
-
-[functions.extract-lyrics]
-verify_jwt = true
-
-[functions.generate-scenes]
-verify_jwt = true
-
-[functions.generate-video]
-verify_jwt = true
-
-[functions.generate-video-kling]
-verify_jwt = true
-
-[functions.generate-video-runway]
-verify_jwt = true
-
-[functions.generate-video-sora]
-verify_jwt = true
-
-[functions.generate-video-veo]
-verify_jwt = true
-
-[functions.get-recommendations]
-verify_jwt = true
-
-[functions.process-export]
-verify_jwt = true
-
-[functions.upload-chunk]
-verify_jwt = true
-
-[functions.validate-track-upload]
-verify_jwt = true
-
-[functions.system-diagnostics]
-verify_jwt = true
-
-[functions.record-stream]
-verify_jwt = false
-
-[functions.youtube-search]
-verify_jwt = false
-
-[functions.discogs-api]
-verify_jwt = false
-
-[functions.musicbrainz-api]
-verify_jwt = false
-
-[functions.exec-agent-chat]
-verify_jwt = true
-
-[functions.track-listener-demographics]
-verify_jwt = true
-
-[functions.unified-music-search]
-verify_jwt = false
-
-[functions.allmusic-artist]
-verify_jwt = false
-
-[functions.spotify-trending]
-verify_jwt = false
-
-[functions.genre-top50]
-verify_jwt = false
-
-[functions.editorial-charts]
-verify_jwt = false
-
-[functions.create-checkout-session]
-verify_jwt = false
-
-[functions.square-account-balance]
-verify_jwt = true
-
-[functions.generate-mood-mix]
-verify_jwt = false
-
-[functions.create-tip-session]
-verify_jwt = true
-
-[functions.agent-orchestrator]
-verify_jwt = true
-
-[functions.ai-release-optimizer]
-verify_jwt = true
-
-[functions.ai-fan-intelligence]
-verify_jwt = true
-
-[functions.ai-advisor]
-verify_jwt = true
-
-[functions.process-email-queue]
-verify_jwt = true
-
-[functions.stripe-webhook]
-verify_jwt = false
-
-[functions.create-merch-checkout]
-verify_jwt = true
-
-[functions.financial-reconciliation-agent]
-verify_jwt = false
-
-[functions.check-subscription]
-verify_jwt = true
+[functions]
+  [functions.agent-orchestrator]
+    verify_jwt = true
+  [functions.ai-advisor]
+    verify_jwt = true
+  [functions.ai-fan-intelligence]
+    verify_jwt = true
+  [functions.ai-release-optimizer]
+    verify_jwt = true
+  [functions.align-lyrics]
+    verify_jwt = true
+  [functions.allmusic-artist]
+    verify_jwt = false
+  [functions.analyze-audio]
+    verify_jwt = true
+  [functions.analyze-lyrics]
+    verify_jwt = true
+  [functions.analyze-tempo]
+    verify_jwt = true
+  [functions.analyze-track-metadata]
+    verify_jwt = true
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.auto-publish-tracks]
+    verify_jwt = true
+  [functions.check-provider-health]
+    verify_jwt = true
+  [functions.check-subscription]
+    verify_jwt = true
+  [functions.create-checkout-session]
+    verify_jwt = false
+  [functions.create-merch-checkout]
+    verify_jwt = true
+  [functions.create-square-subscription]
+    verify_jwt = true
+  [functions.create-tip-session]
+    verify_jwt = true
+  [functions.create-upload-session]
+    verify_jwt = true
+  [functions.create-version]
+    verify_jwt = true
+  [functions.deduct-credits]
+    verify_jwt = true
+  [functions.discogs-api]
+    verify_jwt = false
+  [functions.editorial-charts]
+    verify_jwt = false
+  [functions.exec-agent-chat]
+    verify_jwt = true
+  [functions.export-analytics]
+    verify_jwt = true
+  [functions.export-video]
+    verify_jwt = true
+  [functions.extract-lyrics]
+    verify_jwt = true
+  [functions.financial-reconciliation-agent]
+    verify_jwt = false
+  [functions.generate-mood-mix]
+    verify_jwt = false
+  [functions.generate-scenes]
+    verify_jwt = true
+  [functions.generate-video]
+    verify_jwt = true
+  [functions.generate-video-kling]
+    verify_jwt = true
+  [functions.generate-video-runway]
+    verify_jwt = true
+  [functions.generate-video-sora]
+    verify_jwt = true
+  [functions.generate-video-veo]
+    verify_jwt = true
+  [functions.genre-top50]
+    verify_jwt = false
+  [functions.get-recommendations]
+    verify_jwt = true
+  [functions.get-square-config]
+    verify_jwt = false
+  [functions.label-staff-chat]
+    verify_jwt = true
+  [functions.musicbrainz-api]
+    verify_jwt = false
+  [functions.process-artist-payout]
+    verify_jwt = true
+  [functions.process-download-purchase]
+    verify_jwt = true
+  [functions.process-email-queue]
+    verify_jwt = true
+  [functions.process-export]
+    verify_jwt = true
+  [functions.quantum-advisor]
+    verify_jwt = true
+  [functions.quantum-distribution]
+    verify_jwt = true
+  [functions.record-stream]
+    verify_jwt = false
+  [functions.scheduled-artist-payouts]
+    verify_jwt = false
+  [functions.setup-artist-payout]
+    verify_jwt = true
+  [functions.spotify-trending]
+    verify_jwt = false
+  [functions.square-account-balance]
+    verify_jwt = true
+  [functions.square-oauth-callback]
+    verify_jwt = false
+  [functions.square-oauth-url]
+    verify_jwt = true
+  [functions.stripe-webhook]
+    verify_jwt = false
+  [functions.system-diagnostics]
+    verify_jwt = true
+  [functions.track-listener-demographics]
+    verify_jwt = true
+  [functions.unified-music-search]
+    verify_jwt = false
+  [functions.upload-chunk]
+    verify_jwt = true
+  [functions.validate-track-upload]
+    verify_jwt = true
+  [functions.youtube-search]
+    verify_jwt = false

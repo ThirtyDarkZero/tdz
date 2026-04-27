@@ -1,15 +1,17 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { RequireGuest } from "@/components/auth/AuthGuard";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { z } from "zod";
-import { Chrome, Loader2, Apple } from "lucide-react";
+import { Chrome, Loader2, Apple, ArrowLeft } from "lucide-react";
 import { lovable } from "@/integrations/lovable/index";
 
 // Security: Input validation schemas
@@ -51,31 +53,52 @@ function AuthForm() {
   const [validationErrors, setValidationErrors] = useState<{ email?: string; password?: string }>({});
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [resending, setResending] = useState(false);
+  const [pendingVerifyEmail, setPendingVerifyEmail] = useState<string | null>(null);
+  const [otpCode, setOtpCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
 
   const { signIn, signUp, signInWithGoogle } = useAuthContext();
   const navigate = useNavigate();
 
-  const handleResendConfirmation = async () => {
-    if (!email) {
+  const handleResendConfirmation = async (targetEmail?: string) => {
+    const e = (targetEmail || email).trim().toLowerCase();
+    if (!e) {
       toast.error("Enter your email above first.");
       return;
     }
     setResending(true);
     try {
-      const { supabase } = await import("@/integrations/supabase/client");
       const { error } = await supabase.auth.resend({
         type: "signup",
-        email: email.trim().toLowerCase(),
+        email: e,
         options: { emailRedirectTo: `${window.location.origin}/` },
       });
       if (error) {
         toast.error("Could not resend", { description: error.message });
       } else {
-        toast.success("Confirmation email sent. Check your inbox.");
+        toast.success("New code sent. Check your inbox.");
       }
     } finally {
       setResending(false);
     }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pendingVerifyEmail || otpCode.length !== 6) return;
+    setVerifying(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email: pendingVerifyEmail,
+      token: otpCode,
+      type: "signup",
+    });
+    setVerifying(false);
+    if (error) {
+      toast.error("Invalid or expired code", { description: error.message });
+      return;
+    }
+    toast.success("Email verified! Welcome to TDZ.");
+    // AuthContext listener will pick up the session and RequireGuest will redirect.
   };
 
   const handleAppleSignIn = async () => {
@@ -160,8 +183,12 @@ function AuthForm() {
           setLoading(false);
           return;
         }
-        toast.success("Account created!");
-        // AuthContext will handle the redirect via RequireGuest
+        // Switch to OTP verification view
+        setPendingVerifyEmail(result.data.email);
+        setOtpCode("");
+        setLoading(false);
+        toast.success("We sent a 6-digit code to your email.");
+        return;
       } else {
         const { error } = await signIn(result.data.email, result.data.password);
         if (error) {
@@ -216,6 +243,56 @@ function AuthForm() {
           </div>
         </div>
 
+        {pendingVerifyEmail ? (
+          <form onSubmit={handleVerifyOtp} className="space-y-5">
+            <div className="text-center space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Enter the 6-digit code we sent to
+              </p>
+              <p className="font-medium text-foreground">{pendingVerifyEmail}</p>
+            </div>
+            <div className="flex justify-center">
+              <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+            <Button
+              type="submit"
+              disabled={verifying || otpCode.length !== 6}
+              className="w-full h-11 bg-gradient-to-r from-primary via-violet-500 to-fuchsia-500 font-semibold"
+            >
+              {verifying ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify & Continue"}
+            </Button>
+            <div className="flex items-center justify-between text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setPendingVerifyEmail(null);
+                  setOtpCode("");
+                }}
+                className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+              >
+                <ArrowLeft className="w-3 h-3" /> Use a different email
+              </button>
+              <button
+                type="button"
+                disabled={resending}
+                onClick={() => handleResendConfirmation(pendingVerifyEmail)}
+                className="text-primary hover:underline disabled:opacity-50"
+              >
+                {resending ? "Sending…" : "Resend code"}
+              </button>
+            </div>
+          </form>
+        ) : (
+        <>
         {/* Google Sign-In */}
         <Button
           type="button"
@@ -306,7 +383,7 @@ function AuthForm() {
             {!isSignUp && needsConfirmation && (
               <button
                 type="button"
-                onClick={handleResendConfirmation}
+                onClick={() => handleResendConfirmation()}
                 disabled={resending}
                 className="text-xs text-primary hover:underline disabled:opacity-50"
               >
@@ -335,7 +412,15 @@ function AuthForm() {
               ? "Already have an account? Sign in"
               : "Don't have an account? Sign up"}
           </button>
-          
+
+          {!isSignUp && (
+            <div>
+              <Link to="/forgot-password" className="text-xs text-muted-foreground hover:text-primary">
+                Forgot your password?
+              </Link>
+            </div>
+          )}
+
           <div>
             <Button
               variant="ghost"
@@ -347,6 +432,8 @@ function AuthForm() {
             </Button>
           </div>
         </div>
+        </>
+        )}
 
         {/* Security note */}
         <p className="text-[10px] text-center text-muted-foreground/60">
