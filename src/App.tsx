@@ -17,6 +17,8 @@ import { GlobalMusicPlayer } from "@/components/GlobalMusicPlayer";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 // Lazy-loaded heavy pages for code splitting
 const Studio = lazy(() => import("./pages/Studio"));
@@ -70,6 +72,8 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Landing />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/role-selection" element={<RoleSelection />} />
                   <Route
                     path="/studio"
