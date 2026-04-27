@@ -243,6 +243,56 @@ function AuthForm() {
           </div>
         </div>
 
+        {pendingVerifyEmail ? (
+          <form onSubmit={handleVerifyOtp} className="space-y-5">
+            <div className="text-center space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Enter the 6-digit code we sent to
+              </p>
+              <p className="font-medium text-foreground">{pendingVerifyEmail}</p>
+            </div>
+            <div className="flex justify-center">
+              <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+            <Button
+              type="submit"
+              disabled={verifying || otpCode.length !== 6}
+              className="w-full h-11 bg-gradient-to-r from-primary via-violet-500 to-fuchsia-500 font-semibold"
+            >
+              {verifying ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify & Continue"}
+            </Button>
+            <div className="flex items-center justify-between text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setPendingVerifyEmail(null);
+                  setOtpCode("");
+                }}
+                className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+              >
+                <ArrowLeft className="w-3 h-3" /> Use a different email
+              </button>
+              <button
+                type="button"
+                disabled={resending}
+                onClick={() => handleResendConfirmation(pendingVerifyEmail)}
+                className="text-primary hover:underline disabled:opacity-50"
+              >
+                {resending ? "Sending…" : "Resend code"}
+              </button>
+            </div>
+          </form>
+        ) : (
+        <>
         {/* Google Sign-In */}
         <Button
           type="button"
