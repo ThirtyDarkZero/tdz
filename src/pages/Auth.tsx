@@ -124,18 +124,13 @@ function AuthForm() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      const { error } = await signInWithGoogle();
-      if (error) {
-        const msg = (error.message || "").toLowerCase();
-        if (msg.includes("provider is not enabled") || msg.includes("not enabled")) {
-          toast.error("Google sign-in is not enabled", {
-            description: "An admin needs to enable Google in Lovable Cloud → Auth Settings.",
-          });
-        } else if (msg.includes("popup") || msg.includes("blocked")) {
-          toast.error("Popup blocked", { description: "Allow popups for this site and try again." });
-        } else {
-          toast.error("Google sign-in failed", { description: error.message || "Please try again." });
-        }
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) {
+        toast.error("Google sign-in failed", {
+          description: result.error.message || "Please try again.",
+        });
       }
     } catch (e) {
       toast.error("Google sign-in failed", {
