@@ -8,9 +8,11 @@ import {
   Container,
   Head,
   Heading,
+  Hr,
   Html,
   Link,
   Preview,
+  Section,
   Text,
 } from 'npm:@react-email/components@0.0.22'
 
@@ -19,6 +21,7 @@ interface SignupEmailProps {
   siteUrl: string
   recipient: string
   confirmationUrl: string
+  token?: string
 }
 
 export const SignupEmail = ({
@@ -26,32 +29,62 @@ export const SignupEmail = ({
   siteUrl,
   recipient,
   confirmationUrl,
+  token,
 }: SignupEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Confirm your email for {siteName}</Preview>
+    <Preview>Your TDZ verification code{token ? `: ${token}` : ''}</Preview>
     <Body style={main}>
       <Container style={container}>
+        <Section style={brandBar}>
+          <Text style={brandMark}>TDZ</Text>
+          <Text style={brandSub}>THIRTY DARK ZERO</Text>
+        </Section>
+
         <Heading style={h1}>Confirm your email</Heading>
         <Text style={text}>
-          Thanks for signing up for{' '}
-          <Link href={siteUrl} style={link}>
-            <strong>{siteName}</strong>
-          </Link>
-          !
+          Welcome to <strong>{siteName.toUpperCase()}</strong> — the streaming
+          platform built to pay artists what they're worth.
         </Text>
-        <Text style={text}>
-          Please confirm your email address (
-          <Link href={`mailto:${recipient}`} style={link}>
-            {recipient}
-          </Link>
-          ) by clicking the button below:
-        </Text>
-        <Button style={button} href={confirmationUrl}>
-          Verify Email
-        </Button>
+
+        {token ? (
+          <>
+            <Text style={text}>
+              Enter this 6-digit code in the app to verify{' '}
+              <Link href={`mailto:${recipient}`} style={link}>
+                {recipient}
+              </Link>
+              :
+            </Text>
+            <Section style={codeBox}>
+              <Text style={codeText}>{token}</Text>
+            </Section>
+            <Text style={muted}>
+              This code expires in 1 hour. If you didn't create an account, you
+              can safely ignore this email.
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text style={text}>
+              Tap the button below to verify{' '}
+              <Link href={`mailto:${recipient}`} style={link}>
+                {recipient}
+              </Link>
+              .
+            </Text>
+            <Button style={button} href={confirmationUrl}>
+              Verify Email
+            </Button>
+          </>
+        )}
+
+        <Hr style={hr} />
         <Text style={footer}>
-          If you didn't create an account, you can safely ignore this email.
+          <Link href={siteUrl} style={footerLink}>
+            {siteUrl.replace(/^https?:\/\//, '')}
+          </Link>
+          {' · '}Made for artists, powered by participants.
         </Text>
       </Container>
     </Body>
@@ -60,27 +93,67 @@ export const SignupEmail = ({
 
 export default SignupEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
+const main = { backgroundColor: '#ffffff', fontFamily: "'Helvetica Neue', Arial, sans-serif" }
+const container = { padding: '32px 28px', maxWidth: '560px', margin: '0 auto' }
+const brandBar = {
+  borderBottom: '2px solid #FF6347',
+  paddingBottom: '12px',
+  marginBottom: '28px',
+}
+const brandMark = {
+  fontSize: '34px',
+  fontWeight: 900 as const,
+  letterSpacing: '4px',
+  color: '#0D0D0D',
+  margin: '0',
+  lineHeight: 1,
+}
+const brandSub = {
+  fontSize: '10px',
+  letterSpacing: '3px',
+  color: '#FF6347',
+  margin: '4px 0 0',
+  fontWeight: 600 as const,
+}
 const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
+  fontSize: '24px',
+  fontWeight: 700 as const,
+  color: '#0D0D0D',
+  margin: '0 0 16px',
 }
 const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
+  fontSize: '15px',
+  color: '#3a3a3a',
+  lineHeight: '1.6',
+  margin: '0 0 18px',
 }
-const link = { color: 'inherit', textDecoration: 'underline' }
+const link = { color: '#FF6347', textDecoration: 'underline' }
+const codeBox = {
+  backgroundColor: '#0D0D0D',
+  borderRadius: '12px',
+  padding: '24px',
+  textAlign: 'center' as const,
+  margin: '8px 0 20px',
+}
+const codeText = {
+  fontSize: '38px',
+  fontWeight: 800 as const,
+  letterSpacing: '12px',
+  color: '#FF6347',
+  margin: 0,
+  fontFamily: "'Courier New', monospace",
+}
+const muted = { fontSize: '13px', color: '#888888', lineHeight: '1.5', margin: '0 0 12px' }
 const button = {
-  backgroundColor: '#000000',
+  backgroundColor: '#FF6347',
   color: '#ffffff',
-  fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
+  fontSize: '15px',
+  fontWeight: 700 as const,
+  borderRadius: '10px',
+  padding: '14px 28px',
   textDecoration: 'none',
+  display: 'inline-block',
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+const hr = { borderColor: '#eaeaea', margin: '28px 0 16px' }
+const footer = { fontSize: '12px', color: '#999999', margin: 0, textAlign: 'center' as const }
+const footerLink = { color: '#999999', textDecoration: 'none' }
