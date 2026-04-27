@@ -53,6 +53,9 @@ function AuthForm() {
   const [validationErrors, setValidationErrors] = useState<{ email?: string; password?: string }>({});
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [resending, setResending] = useState(false);
+  const [pendingVerifyEmail, setPendingVerifyEmail] = useState<string | null>(null);
+  const [otpCode, setOtpCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
 
   const { signIn, signUp, signInWithGoogle } = useAuthContext();
   const navigate = useNavigate();
