@@ -412,7 +412,15 @@ function AuthForm() {
               ? "Already have an account? Sign in"
               : "Don't have an account? Sign up"}
           </button>
-          
+
+          {!isSignUp && (
+            <div>
+              <Link to="/forgot-password" className="text-xs text-muted-foreground hover:text-primary">
+                Forgot your password?
+              </Link>
+            </div>
+          )}
+
           <div>
             <Button
               variant="ghost"
@@ -424,6 +432,8 @@ function AuthForm() {
             </Button>
           </div>
         </div>
+        </>
+        )}
 
         {/* Security note */}
         <p className="text-[10px] text-center text-muted-foreground/60">
