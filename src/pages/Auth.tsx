@@ -1,15 +1,17 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { RequireGuest } from "@/components/auth/AuthGuard";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import tdzLogo from "@/assets/tdz-logo.png";
 import { z } from "zod";
-import { Chrome, Loader2, Apple } from "lucide-react";
+import { Chrome, Loader2, Apple, ArrowLeft } from "lucide-react";
 import { lovable } from "@/integrations/lovable/index";
 
 // Security: Input validation schemas
