@@ -333,7 +333,7 @@ function AuthForm() {
             {!isSignUp && needsConfirmation && (
               <button
                 type="button"
-                onClick={handleResendConfirmation}
+                onClick={() => handleResendConfirmation()}
                 disabled={resending}
                 className="text-xs text-primary hover:underline disabled:opacity-50"
               >
