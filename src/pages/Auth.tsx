@@ -60,27 +60,45 @@ function AuthForm() {
   const { signIn, signUp, signInWithGoogle } = useAuthContext();
   const navigate = useNavigate();
 
-  const handleResendConfirmation = async () => {
-    if (!email) {
+  const handleResendConfirmation = async (targetEmail?: string) => {
+    const e = (targetEmail || email).trim().toLowerCase();
+    if (!e) {
       toast.error("Enter your email above first.");
       return;
     }
     setResending(true);
     try {
-      const { supabase } = await import("@/integrations/supabase/client");
       const { error } = await supabase.auth.resend({
         type: "signup",
-        email: email.trim().toLowerCase(),
+        email: e,
         options: { emailRedirectTo: `${window.location.origin}/` },
       });
       if (error) {
         toast.error("Could not resend", { description: error.message });
       } else {
-        toast.success("Confirmation email sent. Check your inbox.");
+        toast.success("New code sent. Check your inbox.");
       }
     } finally {
       setResending(false);
     }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pendingVerifyEmail || otpCode.length !== 6) return;
+    setVerifying(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email: pendingVerifyEmail,
+      token: otpCode,
+      type: "signup",
+    });
+    setVerifying(false);
+    if (error) {
+      toast.error("Invalid or expired code", { description: error.message });
+      return;
+    }
+    toast.success("Email verified! Welcome to TDZ.");
+    // AuthContext listener will pick up the session and RequireGuest will redirect.
   };
 
   const handleAppleSignIn = async () => {
@@ -165,8 +183,12 @@ function AuthForm() {
           setLoading(false);
           return;
         }
-        toast.success("Account created!");
-        // AuthContext will handle the redirect via RequireGuest
+        // Switch to OTP verification view
+        setPendingVerifyEmail(result.data.email);
+        setOtpCode("");
+        setLoading(false);
+        toast.success("We sent a 6-digit code to your email.");
+        return;
       } else {
         const { error } = await signIn(result.data.email, result.data.password);
         if (error) {
