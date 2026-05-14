@@ -443,12 +443,8 @@ function AuthForm() {
 export default function Auth() {
   return (
     <RequireGuest>
-      <Seo
-        title="Sign In or Create Account | TDZ Distribution"
-        description="Sign in to TDZ Distribution to upload music, track $1-per-stream payouts, and manage your artist career on a creator-first streaming platform."
-        path="/auth"
-      />
       <AuthForm />
     </RequireGuest>
   );
 }
+
