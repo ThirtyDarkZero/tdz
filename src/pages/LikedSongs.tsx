@@ -22,7 +22,7 @@ export default function LikedSongs() {
         <link rel="canonical" href={canonical} />
       </Helmet>
 
-      <main className="min-h-screen bg-background text-foreground">
+      <div className="min-h-screen bg-background text-foreground">
         {/* Back button header */}
         <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/50 px-4 py-3">
           <div className="flex items-center gap-3 max-w-screen-sm mx-auto sm:max-w-none">
@@ -41,7 +41,7 @@ export default function LikedSongs() {
         <section className="px-4 sm:px-6 lg:px-8 py-6 max-w-screen-sm mx-auto sm:max-w-none">
           <LikedSongsPlaylist />
         </section>
-      </main>
+      </div>
     </>
   );
 }

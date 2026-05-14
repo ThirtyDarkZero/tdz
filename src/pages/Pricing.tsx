@@ -166,7 +166,7 @@ export default function Pricing() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-12">
+      <div className="max-w-7xl mx-auto px-4 py-12">
         {/* Hero */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-black glow-text mb-4">
@@ -271,7 +271,7 @@ export default function Pricing() {
             Have questions? Check our FAQ
           </Button>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
