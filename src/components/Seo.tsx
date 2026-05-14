@@ -7,6 +7,7 @@ interface SeoProps {
   type?: "website" | "article" | "profile";
   image?: string;
   noindex?: boolean;
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
 
 const SITE = "https://www.thirtydarkzero.net";
@@ -45,9 +46,11 @@ export function Seo({
   type = "website",
   image = DEFAULT_IMAGE,
   noindex = false,
+  jsonLd,
   children,
 }: SeoProps & { children?: React.ReactNode }) {
   const url = `${SITE}${path}`;
+  const jsonLdString = jsonLd ? JSON.stringify(jsonLd) : "";
   useEffect(() => {
     document.title = title;
     setMeta(`meta[name="description"]`, "name", "description", description);
@@ -62,7 +65,21 @@ export function Seo({
     setMeta(`meta[name="twitter:title"]`, "name", "twitter:title", title);
     setMeta(`meta[name="twitter:description"]`, "name", "twitter:description", description);
     setMeta(`meta[name="twitter:image"]`, "name", "twitter:image", image);
-  }, [title, description, url, type, image, noindex]);
+
+    const ID = "seo-route-jsonld";
+    let script = document.head.querySelector<HTMLScriptElement>(`script#${ID}`);
+    if (jsonLdString) {
+      if (!script) {
+        script = document.createElement("script");
+        script.type = "application/ld+json";
+        script.id = ID;
+        document.head.appendChild(script);
+      }
+      script.textContent = jsonLdString;
+    } else if (script) {
+      script.remove();
+    }
+  }, [title, description, url, type, image, noindex, jsonLdString]);
 
   if (children !== undefined) {
     return <main>{children}</main>;
