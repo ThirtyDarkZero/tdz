@@ -7,6 +7,7 @@ interface SeoProps {
   type?: "website" | "article" | "profile";
   image?: string;
   noindex?: boolean;
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
 
 const SITE = "https://www.thirtydarkzero.net";
