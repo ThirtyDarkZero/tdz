@@ -95,6 +95,33 @@ export default function FAQ() {
     }
   ];
 
+  // FAQPage JSON-LD for rich search results
+  useEffect(() => {
+    const ID = "faq-jsonld";
+    const data = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: faqs.flatMap((s) =>
+        s.questions.map((q) => ({
+          "@type": "Question",
+          name: q.q,
+          acceptedAnswer: { "@type": "Answer", text: q.a },
+        }))
+      ),
+    };
+    let script = document.head.querySelector<HTMLScriptElement>(`script#${ID}`);
+    if (!script) {
+      script = document.createElement("script");
+      script.type = "application/ld+json";
+      script.id = ID;
+      document.head.appendChild(script);
+    }
+    script.textContent = JSON.stringify(data);
+    return () => {
+      document.head.querySelector(`script#${ID}`)?.remove();
+    };
+  }, []);
+
   return (
     <div className="min-h-screen" style={{ background: "#000", fontFamily: "'Raleway', sans-serif" }}>
       {/* Nav */}
