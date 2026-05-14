@@ -55,7 +55,7 @@ export default function Checkout() {
         </div>
       </header>
 
-      <main className="max-w-xl mx-auto px-4 py-16">
+      <div className="max-w-xl mx-auto px-4 py-16">
         <Card className="glass-card border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">Stripe Checkout</CardTitle>
@@ -99,7 +99,7 @@ export default function Checkout() {
             )}
           </CardContent>
         </Card>
-      </main>
+      </div>
     </div>
   );
 }

@@ -170,7 +170,7 @@ function StudioContent() {
         />
 
         {/* Main Content */}
-        <main className={cn(
+        <div className={cn(
           "transition-all duration-300 min-h-screen pb-32",
           "ml-0",
           sidebarCollapsed ? "md:ml-16" : "md:ml-[240px] lg:ml-[350px]"
@@ -185,7 +185,7 @@ function StudioContent() {
             <PendingInvitesPanel />
             {renderContent()}
           </div>
-        </main>
+        </div>
 
 
 
