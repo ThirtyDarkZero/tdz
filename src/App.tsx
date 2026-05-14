@@ -12,6 +12,7 @@ import { PlayerProvider } from "@/contexts/PlayerContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { MoodProvider } from "@/contexts/MoodContext";
 import { GlobalMusicPlayer } from "@/components/GlobalMusicPlayer";
+import { Seo } from "@/components/Seo";
 
 // Eagerly loaded lightweight pages
 import Landing from "./pages/Landing";
@@ -70,15 +71,16 @@ const App = () => (
               <CommandPalette />
               <Suspense fallback={<PageLoader />}>
                 <Routes>
-                  <Route path="/" element={<Landing />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/forgot-password" element={<ForgotPassword />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/role-selection" element={<RoleSelection />} />
+                  <Route path="/" element={<><Seo title="TDZ Distribution — $1 Per Stream Music Platform" description="TDZ is the creator-first streaming platform paying artists $1 per qualified stream. Upload, distribute, and monetize your music with built-in AI tools." path="/" /><Landing /></>} />
+                  <Route path="/auth" element={<><Seo title="Sign In or Create Account | TDZ" description="Sign in to TDZ Distribution to upload music, track $1-per-stream payouts, and grow your fanbase on a creator-first streaming platform." path="/auth" /><Auth /></>} />
+                  <Route path="/forgot-password" element={<><Seo title="Reset Your Password | TDZ" description="Recover access to your TDZ Distribution account. Request a secure password reset link delivered to your verified email address." path="/forgot-password" noindex /><ForgotPassword /></>} />
+                  <Route path="/reset-password" element={<><Seo title="Set a New Password | TDZ" description="Choose a new password for your TDZ Distribution account and securely return to your studio, fan profile, or artist dashboard." path="/reset-password" noindex /><ResetPassword /></>} />
+                  <Route path="/role-selection" element={<><Seo title="Choose Your Role | TDZ" description="Tell TDZ whether you are an artist, manager, or fan so we can route you to the right studio, dashboard, or discovery experience." path="/role-selection" noindex /><RoleSelection /></>} />
                   <Route
                     path="/studio"
                     element={
                       <ErrorBoundary fallback={<AppErrorFallback title="Studio failed to load" />}>
+                        <Seo title="Artist Studio | TDZ Distribution" description="Manage releases, track earnings, run AI-powered campaigns, and grow your audience inside the TDZ Artist Studio." path="/studio" noindex />
                         <Studio />
                       </ErrorBoundary>
                     }
@@ -87,32 +89,37 @@ const App = () => (
                     path="/discover"
                     element={
                       <ErrorBoundary fallback={<AppErrorFallback title="Discover failed to load" />}>
+                        <Seo title="Discover New Music | TDZ" description="Stream new artists, curated playlists, and trending releases on TDZ — the platform paying creators $1 per qualified stream." path="/discover" />
                         <Discover />
                       </ErrorBoundary>
                     }
                   />
-                  <Route path="/browse" element={<Discover />} />
+                  <Route path="/browse" element={<><Seo title="Browse Music & Artists | TDZ" description="Browse genres, moods, and trending artists on TDZ Distribution and find your next favorite song on the creator-first streaming platform." path="/browse" /><Discover /></>} />
                   <Route path="/artist/:artistId" element={<ArtistProfile />} />
                   <Route path="/artist/youtube/:artistId" element={<UnifiedArtistProfile />} />
                   <Route path="/artist/global/:artistName" element={<GlobalArtistPage />} />
                   <Route path="/album/global/:albumId" element={<GlobalAlbumPage />} />
-                  <Route path="/profile" element={<ListenerProfile />} />
-                  <Route path="/liked-songs" element={<LikedSongs />} />
+                  <Route path="/profile" element={<><Seo title="Your Listener Profile | TDZ" description="View your TDZ listening history, liked songs, badges, and the artists you support most on the creator-first streaming platform." path="/profile" noindex /><ListenerProfile /></>} />
+                  <Route path="/liked-songs" element={<><Seo title="Liked Songs | TDZ" description="Replay every track you have liked on TDZ Distribution and revisit the artists you support on the creator-first streaming platform." path="/liked-songs" noindex /><LikedSongs /></>} />
                   <Route path="/fan/:fanId" element={<ListenerProfile />} />
                   <Route path="/track/:trackId" element={<TrackDetail />} />
                   <Route path="/album/:albumId" element={<AlbumDetail />} />
                   <Route path="/playlist/:playlistId" element={<PlaylistDetail />} />
-                  <Route path="/investors" element={<Investors />} />
-                  <Route path="/investors/cap-table" element={<CapTable />} />
-                  <Route path="/ceo" element={<CEODashboard />} />
-                  <Route path="/faq" element={<FAQ />} />
-                  <Route path="/terms" element={<Terms />} />
-                  <Route path="/privacy" element={<Privacy />} />
-                  <Route path="/support" element={<Support />} />
-                  <Route path="/pricing" element={<Pricing />} />
-                  <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/subscription-success" element={<SubscriptionSuccess />} />
+                  <Route path="/investors" element={<><Seo title="TDZ Investor Deck — $10M Series Seed at 15%" description="Review the TDZ Distribution investor deck: live traction, market positioning, founder bio, and the $10M raise at 15% to scale the $1-per-stream platform." path="/investors" /><Investors /></>} />
+                  <Route path="/investors/cap-table" element={<><Seo title="TDZ Cap Table | Investor Disclosures" description="Detailed TDZ Distribution cap table covering founder equity, employee pool, and the proposed $10M Series Seed allocation at a 15% dilution." path="/investors/cap-table" /><CapTable /></>} />
+                  <Route path="/ceo" element={<><Seo title="CEO Operations Dashboard | TDZ" description="Internal CEO dashboard for TDZ Distribution covering revenue, treasury, payouts, and platform health." path="/ceo" noindex /><CEODashboard /></>} />
+                  <Route path="/faq" element={<><Seo title="Frequently Asked Questions | TDZ Distribution" description="How TDZ pays artists $1 per qualified stream, subscription tiers, payout requirements, and answers to the most common questions about the platform." path="/faq" /><FAQ /></>} />
+                  <Route path="/terms" element={<><Seo title="Terms of Service | TDZ Distribution" description="Read the TDZ Distribution Terms of Service covering account use, content licensing, payouts, and the rules that govern the streaming platform." path="/terms" /><Terms /></>} />
+                  <Route path="/privacy" element={<><Seo title="Privacy Policy | TDZ Distribution" description="Learn how TDZ Distribution collects, anonymizes, and protects listener and artist data on the creator-first streaming platform." path="/privacy" /><Privacy /></>} />
+                  <Route path="/support" element={<><Seo title="Help & Support | TDZ Distribution" description="Get help with TDZ uploads, payouts, account issues, and platform features. Open a support ticket or browse common solutions." path="/support" /><Support /></>} />
+                  <Route path="/pricing" element={<><Seo title="Artist & Fan Pricing Plans | TDZ" description="Compare TDZ Distribution plans: Starter $10, Pro $20, Enterprise $50, and the $12 Fan subscription that unlocks $1-per-stream artist payouts." path="/pricing" /><Pricing /></>} />
+                  <Route path="/checkout" element={<><Seo title="Secure Checkout | TDZ" description="Complete your TDZ Distribution subscription securely with Stripe and unlock artist tools or the Fan plan that funds $1-per-stream payouts." path="/checkout" noindex /><Checkout /></>} />
+                  <Route path="/subscription-success" element={<><Seo title="Subscription Activated | TDZ" description="Your TDZ Distribution subscription is now active. Jump back into the studio or start streaming on the creator-first platform." path="/subscription-success" noindex /><SubscriptionSuccess /></>} />
                   
+                  <Route path="/eventbrite-callback" element={<EventbriteOAuthCallback />} />
+                  <Route path="/settings" element={<><Seo title="Account Settings | TDZ" description="Update your TDZ Distribution profile, notifications, audio quality, and connected services from the unified settings dashboard." path="/settings" noindex /><FanSettings /></>} />
+                  <Route path="*" element={<><Seo title="Page Not Found | TDZ" description="The page you are looking for does not exist on TDZ Distribution. Head back to Discover or the homepage to keep exploring." path="/404" noindex /><NotFound /></>} />
+
                   <Route path="/eventbrite-callback" element={<EventbriteOAuthCallback />} />
                   <Route path="/settings" element={<FanSettings />} />
                   <Route path="*" element={<NotFound />} />
