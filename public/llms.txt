@@ -1,0 +1,22 @@
+# TDZ Distribution
+
+> Creator-first streaming platform paying artists $1 per qualified stream. Upload, distribute, stream, and monetize music with built-in AI tools.
+
+TDZ is a standalone music streaming and distribution platform. Artists upload music, fans subscribe to listen, and qualified streams pay artists $1 each (playback over 30 seconds or 50% of a track, by an active paid subscriber, with the tab focused — no self-plays). The platform includes an Artist Studio with AI-powered campaigns, analytics, and release tools, plus a fan Discovery experience with playlists, social features, and live listening.
+
+## Pages
+
+- [Home](/): Overview of the $1-per-stream platform and creator pitch.
+- [Discover](/discover): Stream new releases, curated playlists, and trending artists.
+- [Browse](/browse): Browse genres, moods, and trending artists.
+- [Pricing](/pricing): Artist plans (Starter $10, Pro $20, Enterprise $50) and Fan $12 subscription.
+- [FAQ](/faq): How $1-per-stream payouts, tiers, and qualification rules work.
+- [Investors](/investors): Investor deck — $10M Series Seed at 15%, traction, and market.
+- [Cap Table](/investors/cap-table): Detailed equity and Series Seed allocation.
+- [Support](/support): Help with uploads, payouts, account, and platform features.
+- [Terms](/terms): Terms of service covering accounts, licensing, and payouts.
+- [Privacy](/privacy): Data collection, anonymization, and protection practices.
+
+## Optional
+
+- [Sign In](/auth): Account sign-in and registration.
