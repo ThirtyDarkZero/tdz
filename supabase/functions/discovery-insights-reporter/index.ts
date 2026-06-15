@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { requireUser, unauthorized } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,6 +16,10 @@ serve(async (req) => {
   }
 
   try {
+    // Require authentication
+    const auth = await requireUser(req);
+    if (!auth.user) return unauthorized(corsHeaders);
+
     const { artistId } = await req.json();
     if (!artistId) {
       return new Response(JSON.stringify({ error: 'artistId required' }), {
@@ -23,6 +28,20 @@ serve(async (req) => {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Authorization: caller must own the artistId OR be ceo/admin
+    if (auth.user.id !== artistId) {
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', auth.user.id)
+        .in('role', ['ceo', 'admin']);
+      if (!roles || roles.length === 0) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), {
+          status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
 
     // Get artist profile
     const { data: artist } = await supabase
@@ -37,13 +56,7 @@ serve(async (req) => {
       });
     }
 
-    // Aggregate listening demographics
-    const { data: demographics } = await supabase
-      .from('listener_demographics')
-      .select('country, city, device_type, browser, os, language, gender, age_range')
-      .limit(1000);
-
-    // Aggregate stream data for this artist's tracks
+    // Get this artist's tracks (used to scope demographics + history)
     const { data: tracks } = await supabase
       .from('tracks')
       .select('id, title, play_count')
@@ -51,12 +64,20 @@ serve(async (req) => {
       .eq('is_published', true);
 
     const trackIds = tracks?.map(t => t.id) || [];
+    const safeTrackIds = trackIds.length > 0 ? trackIds : ['00000000-0000-0000-0000-000000000000'];
+
+    // Aggregate listening demographics — scoped to this artist's tracks only
+    const { data: demographics } = await supabase
+      .from('listener_demographics')
+      .select('country, city, device_type, browser, os, language, gender, age_range')
+      .in('track_id', safeTrackIds)
+      .limit(1000);
 
     // Get listening history stats
     const { data: history } = await supabase
       .from('listening_history')
       .select('user_id, played_at, duration_listened')
-      .in('track_id', trackIds.length > 0 ? trackIds : ['00000000-0000-0000-0000-000000000000'])
+      .in('track_id', safeTrackIds)
       .order('played_at', { ascending: false })
       .limit(500);
 
