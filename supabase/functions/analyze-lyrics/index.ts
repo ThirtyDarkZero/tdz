@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { requireUser, unauthorized } from "../_shared/auth.ts";
 
 serve(async (req) => {
   const origin = req.headers.get('origin');
@@ -7,6 +8,12 @@ serve(async (req) => {
   
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Require authenticated user
+  {
+    const __auth = await requireUser(req);
+    if (!__auth.user) return unauthorized(corsHeaders);
   }
 
   try {
