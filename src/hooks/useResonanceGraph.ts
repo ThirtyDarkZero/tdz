@@ -26,13 +26,13 @@ export function useResonanceGraph(trackId?: string | null) {
       try {
         // Public signals only.
         const [sharesRes, likesRes] = await Promise.all([
-          supabase
+          (supabase as any)
             .from("user_shares")
             .select("id, user_id, created_at, share_type, content_id")
             .eq("content_id", trackId)
             .order("created_at", { ascending: true })
             .limit(40),
-          supabase
+          (supabase as any)
             .from("track_likes")
             .select("id, user_id, created_at")
             .eq("track_id", trackId)
