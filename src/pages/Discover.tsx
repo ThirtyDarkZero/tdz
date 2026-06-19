@@ -859,6 +859,7 @@ export default function Discover() {
   return (
     <PersistentLayout activeTab={activeTab} onTabChange={setActiveTab} searchQuery={searchQuery} onSearchChange={setSearchQuery} showSearch={showSearch} onToggleSearch={() => setShowSearch(!showSearch)}>
       {renderContent()}
+      <ResonanceGraphModal track={resonanceTrack} onClose={() => setResonanceTrack(null)} />
     </PersistentLayout>
   );
 }
