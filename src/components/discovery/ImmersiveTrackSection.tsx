@@ -81,6 +81,7 @@ export const ImmersiveTrackSection = memo(function ImmersiveTrackSection({
                 onPlay={onPlayTrack}
                 onToggleLike={onToggleLike}
                 onAddToQueue={onAddToQueue}
+                onShowResonance={onShowResonance}
               />
             ))}
           </div>
