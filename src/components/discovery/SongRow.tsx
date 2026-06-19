@@ -73,9 +73,14 @@ export const SongRow = memo(function SongRow({ track, index, isPlaying, onPlay }
         <p className="truncate font-body" style={{ fontSize: 14, fontWeight: 700, color: isPlaying ? "#00CFFF" : "var(--text-1)" }}>
           {track.title}
         </p>
-        <p className="truncate font-body" style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>
-          {track.artist_name || "Unknown Artist"}
-        </p>
+        <div className="flex items-center gap-2 mt-0.5 min-w-0">
+          <p className="truncate font-body" style={{ fontSize: 12, color: "var(--text-3)" }}>
+            {track.artist_name || "Unknown Artist"}
+          </p>
+          <span className="hidden md:inline-flex flex-shrink-0">
+            <WhyThisTrackBadge track={track} compact />
+          </span>
+        </div>
       </div>
 
       {/* Duration */}
