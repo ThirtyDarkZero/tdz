@@ -26,6 +26,10 @@ import { GenrePlaylistDetail } from "@/components/discovery/GenrePlaylistDetail"
 import { ImmersiveHeroSection } from "@/components/discovery/ImmersiveHeroSection";
 import { ImmersiveTrackSection } from "@/components/discovery/ImmersiveTrackSection";
 import { ImmersiveContentSection } from "@/components/discovery/ImmersiveContentSection";
+import { PulseRail } from "@/components/discovery/PulseRail";
+import { MoodCastBar } from "@/components/discovery/MoodCastBar";
+import { MomentumRow } from "@/components/discovery/MomentumRow";
+import { ResonanceGraphModal } from "@/components/discovery/ResonanceGraphModal";
 
 type FeaturedItem = {
   id: string;
@@ -263,6 +267,11 @@ export default function Discover() {
   const [userPlaylists, setUserPlaylists] = useState<any[]>([]);
   const [likedSongsCount, setLikedSongsCount] = useState(0);
   const [recentHistory, setRecentHistory] = useState<any[]>([]);
+
+  // Resonance graph modal target
+  const [resonanceTrack, setResonanceTrack] = useState<any | null>(null);
+  // City filter from PulseRail
+  const [pulseCity, setPulseCity] = useState<string | null>(null);
 
   const { currentTrack, playTrack, addToQueue } = usePlayer();
   const { tracks, singles, artists, albums, playlists, likedTracks, followedArtists, loading, user, toggleLike, toggleFollow } = useDiscoveryData();
