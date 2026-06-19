@@ -11,9 +11,10 @@ interface SongRowProps {
   onPlay?: (track: any) => void;
   onToggleLike?: (trackId: string) => void;
   onAddToQueue?: (track: any) => void;
+  onShowResonance?: (track: any) => void;
 }
 
-export const SongRow = memo(function SongRow({ track, index, isPlaying, onPlay }: SongRowProps) {
+export const SongRow = memo(function SongRow({ track, index, isPlaying, onPlay, onShowResonance }: SongRowProps) {
   const [imgError, setImgError] = useState(false);
 
   const getCoverUrl = () => {
