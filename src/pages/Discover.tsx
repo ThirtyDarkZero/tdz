@@ -26,6 +26,10 @@ import { GenrePlaylistDetail } from "@/components/discovery/GenrePlaylistDetail"
 import { ImmersiveHeroSection } from "@/components/discovery/ImmersiveHeroSection";
 import { ImmersiveTrackSection } from "@/components/discovery/ImmersiveTrackSection";
 import { ImmersiveContentSection } from "@/components/discovery/ImmersiveContentSection";
+import { PulseRail } from "@/components/discovery/PulseRail";
+import { MoodCastBar } from "@/components/discovery/MoodCastBar";
+import { MomentumRow } from "@/components/discovery/MomentumRow";
+import { ResonanceGraphModal } from "@/components/discovery/ResonanceGraphModal";
 
 type FeaturedItem = {
   id: string;
@@ -264,6 +268,11 @@ export default function Discover() {
   const [likedSongsCount, setLikedSongsCount] = useState(0);
   const [recentHistory, setRecentHistory] = useState<any[]>([]);
 
+  // Resonance graph modal target
+  const [resonanceTrack, setResonanceTrack] = useState<any | null>(null);
+  // City filter from PulseRail
+  const [pulseCity, setPulseCity] = useState<string | null>(null);
+
   const { currentTrack, playTrack, addToQueue } = usePlayer();
   const { tracks, singles, artists, albums, playlists, likedTracks, followedArtists, loading, user, toggleLike, toggleFollow } = useDiscoveryData();
   const { role } = useUserRole(user);
@@ -451,6 +460,36 @@ export default function Discover() {
                     onPlayTrack={handlePlayTrack}
                   />
 
+                  {/* 1. Live Pulse Rail — what the world is resonating right now */}
+                  <ErrorBoundary fallback={null}>
+                    <PulseRail
+                      onCityClick={(city) => {
+                        setPulseCity(city);
+                        toast.success(`Filtering by ${city}`);
+                      }}
+                    />
+                  </ErrorBoundary>
+
+                  {/* 2. AI Mood Cast — one-tap natural-language mix into the Orb Player */}
+                  <ErrorBoundary fallback={null}>
+                    <MoodCastBar
+                      onCast={(castTracks) => {
+                        if (!castTracks?.length) return;
+                        const first = castTracks[0];
+                        handlePlayFromList(first, castTracks);
+                      }}
+                    />
+                  </ErrorBoundary>
+
+                  {/* 3. Momentum — velocity not volume */}
+                  <ErrorBoundary fallback={null}>
+                    <MomentumRow
+                      tracks={singles}
+                      cityName={pulseCity}
+                      onPlay={(t, list) => handlePlayFromList(t, list)}
+                    />
+                  </ErrorBoundary>
+
                   <div className="sticky top-0 z-30 py-4 px-4 sm:px-6 lg:px-8" style={{ background: "linear-gradient(to bottom, rgba(3,3,15,0.95), rgba(3,3,15,0.8))", backdropFilter: "blur(20px)" }}>
                     <div className="flex gap-2 overflow-x-auto scrollbar-hide max-w-5xl mx-auto">
                       {MOODS.map(m => {
@@ -486,6 +525,7 @@ export default function Discover() {
                     onPlayTrack={handlePlayTrack}
                     onToggleLike={toggleLike}
                     onAddToQueue={handleAddToQueue}
+                    onShowResonance={setResonanceTrack}
                     accentColor="#00CFFF"
                     maxTracks={10}
                   />
@@ -507,6 +547,7 @@ export default function Discover() {
                       onPlayTrack={(t) => handlePlayFromList(t, newReleaseSingles)}
                       onToggleLike={toggleLike}
                       onAddToQueue={handleAddToQueue}
+                      onShowResonance={setResonanceTrack}
                       accentColor="#8B5CF6"
                       maxTracks={10}
                     />
@@ -818,6 +859,7 @@ export default function Discover() {
   return (
     <PersistentLayout activeTab={activeTab} onTabChange={setActiveTab} searchQuery={searchQuery} onSearchChange={setSearchQuery} showSearch={showSearch} onToggleSearch={() => setShowSearch(!showSearch)}>
       {renderContent()}
+      <ResonanceGraphModal track={resonanceTrack} onClose={() => setResonanceTrack(null)} />
     </PersistentLayout>
   );
 }

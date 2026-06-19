@@ -13,6 +13,7 @@ interface ImmersiveTrackSectionProps {
   onPlayTrack: (track: any) => void;
   onToggleLike: (trackId: string) => void;
   onAddToQueue: (track: any) => void;
+  onShowResonance?: (track: any) => void;
   accentColor?: string;
   maxTracks?: number;
 }
@@ -26,6 +27,7 @@ export const ImmersiveTrackSection = memo(function ImmersiveTrackSection({
   onPlayTrack,
   onToggleLike,
   onAddToQueue,
+  onShowResonance,
   accentColor = "#00CFFF",
   maxTracks = 10,
 }: ImmersiveTrackSectionProps) {
@@ -79,6 +81,7 @@ export const ImmersiveTrackSection = memo(function ImmersiveTrackSection({
                 onPlay={onPlayTrack}
                 onToggleLike={onToggleLike}
                 onAddToQueue={onAddToQueue}
+                onShowResonance={onShowResonance}
               />
             ))}
           </div>
