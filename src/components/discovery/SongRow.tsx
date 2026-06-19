@@ -91,9 +91,11 @@ export const SongRow = memo(function SongRow({ track, index, isPlaying, onPlay, 
 
       {/* Menu */}
       <button
-        onClick={(e) => { e.stopPropagation(); }}
+        onClick={(e) => { e.stopPropagation(); onShowResonance?.(track); }}
         className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 flex-shrink-0"
         style={{ color: "var(--text-3)" }}
+        title="Show resonance graph"
+        aria-label="Show resonance graph"
       >
         <MoreHorizontal className="w-[18px] h-[18px]" />
       </button>
