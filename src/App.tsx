@@ -48,6 +48,7 @@ const EventbriteOAuthCallback = lazy(() => import("./pages/EventbriteOAuthCallba
 const FanSettings = lazy(() => import("./pages/FanSettings"));
 const GlobalArtistPage = lazy(() => import("./pages/GlobalArtistPage"));
 const GlobalAlbumPage = lazy(() => import("./pages/GlobalAlbumPage"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,8 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Seo title="TDZ Distribution — $1 Per Stream Music Platform" description="TDZ is the creator-first streaming platform paying artists $1 per qualified stream. Upload, distribute, and monetize your music with built-in AI tools." path="/"><Landing /></Seo>} />
                   <Route path="/auth" element={<Seo title="Sign In or Create Account | TDZ" description="Sign in to TDZ Distribution to upload music, track $1-per-stream payouts, and grow your fanbase on a creator-first streaming platform." path="/auth"><Auth /></Seo>} />
+                  <Route path="/.lovable/oauth/consent" element={<Seo title="Authorize app · TDZ" description="Approve or deny an app that is requesting access to your TDZ account." path="/.lovable/oauth/consent" noindex><OAuthConsent /></Seo>} />
+
                   <Route path="/forgot-password" element={<Seo title="Reset Your Password | TDZ" description="Recover access to your TDZ Distribution account. Request a secure password reset link delivered to your verified email address." path="/forgot-password" noindex><ForgotPassword /></Seo>} />
                   <Route path="/reset-password" element={<Seo title="Set a New Password | TDZ" description="Choose a new password for your TDZ Distribution account and securely return to your studio, fan profile, or artist dashboard." path="/reset-password" noindex><ResetPassword /></Seo>} />
                   <Route path="/role-selection" element={<Seo title="Choose Your Role | TDZ" description="Tell TDZ whether you are an artist, manager, or fan so we can route you to the right studio, dashboard, or discovery experience." path="/role-selection" noindex><RoleSelection /></Seo>} />
