@@ -49,6 +49,7 @@ const FanSettings = lazy(() => import("./pages/FanSettings"));
 const GlobalArtistPage = lazy(() => import("./pages/GlobalArtistPage"));
 const GlobalAlbumPage = lazy(() => import("./pages/GlobalAlbumPage"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
+const ConnectMcp = lazy(() => import("./pages/ConnectMcp"));
 
 const queryClient = new QueryClient();
 
@@ -123,7 +124,9 @@ const App = () => (
                   
                   <Route path="/eventbrite-callback" element={<EventbriteOAuthCallback />} />
                   <Route path="/settings" element={<Seo title="Account Settings | TDZ" description="Update your TDZ Distribution profile, notifications, audio quality, and connected services from the unified settings dashboard." path="/settings" noindex><FanSettings /></Seo>} />
+                  <Route path="/connect" element={<Seo title="Connect TDZ to ChatGPT or Claude" description="Connect TDZ to your AI assistant using MCP. Step-by-step setup for ChatGPT and Claude." path="/connect"><ConnectMcp /></Seo>} />
                   <Route path="*" element={<Seo title="Page Not Found | TDZ" description="The page you are looking for does not exist on TDZ Distribution. Head back to Discover or the homepage to keep exploring." path="/404" noindex><NotFound /></Seo>} />
+
 
                   <Route path="/eventbrite-callback" element={<EventbriteOAuthCallback />} />
                   <Route path="/settings" element={<FanSettings />} />
