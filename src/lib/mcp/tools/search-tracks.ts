@@ -1,0 +1,48 @@
+declare const process: { env: Record<string, string | undefined> };
+import { createClient } from "@supabase/supabase-js";
+import { defineTool, type ToolContext } from "@lovable.dev/mcp-js";
+import { z } from "zod";
+
+function supabaseForUser(ctx: ToolContext) {
+  return createClient(
+    process.env.SUPABASE_URL!,
+    (process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY)!,
+    {
+      global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    },
+  );
+}
+
+export default defineTool({
+  name: "search_tracks",
+  title: "Search tracks",
+  description:
+    "Search TDZ's published catalog by title or genre. Returns id, title, genre, and play_count for matches.",
+  inputSchema: {
+    query: z.string().trim().min(1).describe("Search text matched against title/genre."),
+    limit: z.number().int().min(1).max(50).optional().describe("Max results (default 20)."),
+  },
+  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
+  handler: async ({ query, limit }, ctx) => {
+    if (!ctx.isAuthenticated()) {
+      return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
+    }
+    const supabase = supabaseForUser(ctx);
+    const q = query.replace(/[%_]/g, "\\$&");
+    const { data, error } = await supabase
+      .from("tracks")
+      .select("id, title, genre, play_count")
+      .eq("is_published", true)
+      .or(`title.ilike.%${q}%,genre.ilike.%${q}%`)
+      .order("play_count", { ascending: false })
+      .limit(limit ?? 20);
+    if (error) {
+      return { content: [{ type: "text", text: error.message }], isError: true };
+    }
+    return {
+      content: [{ type: "text", text: JSON.stringify(data ?? [], null, 2) }],
+      structuredContent: { results: data ?? [] },
+    };
+  },
+});
