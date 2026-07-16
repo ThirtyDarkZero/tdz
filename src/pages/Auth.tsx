@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -59,6 +59,14 @@ function AuthForm() {
 
   const { signIn, signUp, signInWithGoogle } = useAuthContext();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // Same-origin relative path only. Used to return the user to a preserved URL
+  // (e.g. the OAuth consent page) after any sign-in method.
+  const rawNext = searchParams.get("next");
+  const nextPath = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
+  const redirectUri = nextPath
+    ? `${window.location.origin}/auth?next=${encodeURIComponent(nextPath)}`
+    : window.location.origin;
 
   const handleResendConfirmation = async (targetEmail?: string) => {
     const e = (targetEmail || email).trim().toLowerCase();
@@ -105,7 +113,7 @@ function AuthForm() {
     setAppleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("apple", {
-        redirect_uri: window.location.origin,
+        redirect_uri: redirectUri,
       });
       if (result.error) {
         toast.error("Apple sign-in failed", {
@@ -125,7 +133,7 @@ function AuthForm() {
     setGoogleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: redirectUri,
       });
       if (result.error) {
         toast.error("Google sign-in failed", {
