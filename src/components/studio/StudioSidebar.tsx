@@ -30,7 +30,8 @@ import {
   Menu,
   LogOut,
   Brain,
-  Bot
+  Bot,
+  Plug
 } from "lucide-react";
 
 interface StudioSidebarProps {
