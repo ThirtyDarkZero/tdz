@@ -1168,7 +1168,7 @@ function Section11Footer({ navigate }: { navigate: (p: string) => void }) {
           { label: "SIGNUP", path: "/auth" }, { label: "STUDIO", path: "/studio" },
           { label: "DISCOVERY", path: "/discover" }, { label: "STORE", path: "/pricing" },
           { label: "INVESTORS", path: "/investors" }, { label: "ABOUT", path: "/faq" },
-          { label: "CONTACT", path: "/support" },
+          { label: "CONTACT", path: "/support" }, { label: "CONNECT AI", path: "/connect" },
         ].map((l) => (
           <span key={l.label} onClick={() => navigate(l.path)}
             className="cursor-pointer transition-colors hover:text-[#888]"
