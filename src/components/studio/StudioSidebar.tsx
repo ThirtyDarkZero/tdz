@@ -72,6 +72,7 @@ const navGroups = [
     items: [
       { id: "agent", icon: Brain, label: "AI Agent" },
       { id: "autopilot", icon: Bot, label: "Autopilot" },
+      { id: "connect-ai", icon: Plug, label: "Connect AI" },
     ]
   },
   {
