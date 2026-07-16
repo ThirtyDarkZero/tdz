@@ -107,6 +107,12 @@ export function RequireGuest({ children }: RequireGuestProps) {
   const { authState, role, isRoleLoading } = useAuthContext();
   const [roleTimeout, setRoleTimeout] = useState(false);
 
+  // Consume ?next= to return the user to a preserved URL (e.g. OAuth consent).
+  const rawNext = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("next")
+    : null;
+  const nextPath = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
+
   // Fallback: if role takes >2.5s, proceed anyway to avoid hang.
   useEffect(() => {
     if (authState !== "unauthenticated" && isRoleLoading) {
@@ -126,6 +132,9 @@ export function RequireGuest({ children }: RequireGuestProps) {
   }
 
   if (authState === "authenticated") {
+    if (nextPath) {
+      return <Navigate to={nextPath} replace />;
+    }
     // Redirect based on role
     const studioRoles: UserRole[] = ["artist", "verified_artist", "manager", "ceo", "admin"];
     if (role && studioRoles.includes(role)) {
@@ -135,6 +144,9 @@ export function RequireGuest({ children }: RequireGuestProps) {
   }
 
   if (authState === "needs_role") {
+    if (nextPath) {
+      return <Navigate to={`/role-selection?next=${encodeURIComponent(nextPath)}`} replace />;
+    }
     return <Navigate to="/role-selection" replace />;
   }
 
