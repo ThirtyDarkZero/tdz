@@ -16,6 +16,7 @@ import { StudioAutopilot } from "@/components/studio/StudioAutopilot";
 import { StudioPromote } from "@/components/studio/StudioPromote";
 import { StudioLearn } from "@/components/studio/StudioLearn";
 import { StudioSettings } from "@/components/studio/StudioSettings";
+import { StudioConnectAI } from "@/components/studio/StudioConnectAI";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { StudioGuard } from "@/components/auth/AuthGuard";
 import { supabase } from "@/integrations/supabase/client";
