@@ -140,6 +140,8 @@ function StudioContent() {
         return <StudioAgentPanel />;
       case "autopilot":
         return <StudioAutopilot />;
+      case "connect-ai":
+        return <StudioConnectAI />;
       case "learn":
         setActiveSection("home");
         return null;
