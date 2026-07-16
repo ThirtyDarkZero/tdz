@@ -49,6 +49,7 @@ const FanSettings = lazy(() => import("./pages/FanSettings"));
 const GlobalArtistPage = lazy(() => import("./pages/GlobalArtistPage"));
 const GlobalAlbumPage = lazy(() => import("./pages/GlobalAlbumPage"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
+const ConnectMcp = lazy(() => import("./pages/ConnectMcp"));
 
 const queryClient = new QueryClient();
 
