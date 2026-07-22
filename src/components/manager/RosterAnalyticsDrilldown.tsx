@@ -6,6 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Download, ChevronRight, ChevronDown, Search, Music, Disc3, TrendingUp } from "lucide-react";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  AreaChart,
+  Area,
+  Cell,
+} from "recharts";
 
 interface TrackRow {
   id: string;
