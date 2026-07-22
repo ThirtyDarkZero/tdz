@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from "../_shared/cors.ts";
+import { makeIdempotencyKey, withStripeRetry } from "../_shared/stripeRetry.ts";
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get("origin"));
@@ -37,30 +38,41 @@ serve(async (req) => {
 
     let accountId = existing?.stripe_connect_id || null;
     if (!accountId) {
-      // Use controller API to explicitly declare loss/fee/stripe-dashboard
-      // responsibilities at the account level. This bypasses the platform
-      // profile requirement that otherwise blocks account creation with
-      // "Please review the responsibilities of managing losses..."
-      const account = await stripe.accounts.create({
-        email: user.email!,
-        metadata: { user_id: user.id },
-        capabilities: { transfers: { requested: true } },
-        controller: {
-          losses: { payments: "application" },
-          fees: { payer: "application" },
-          stripe_dashboard: { type: "express" },
-          requirement_collection: "stripe",
-        },
-      });
+      // Idempotency key scoped to user — retries never create duplicate Connect accounts.
+      const account = await withStripeRetry(
+        () => stripe.accounts.create({
+          email: user.email!,
+          metadata: { user_id: user.id },
+          capabilities: { transfers: { requested: true } },
+          controller: {
+            losses: { payments: "application" },
+            fees: { payer: "application" },
+            stripe_dashboard: { type: "express" },
+            requirement_collection: "stripe",
+          },
+        }, { idempotencyKey: makeIdempotencyKey("connect_account", user.id) }),
+        { label: "accounts.create" }
+      );
       accountId = account.id;
+      // Persist immediately so a later failure doesn't orphan the Stripe account.
+      await supabase.from("artist_payout_details").upsert({
+        artist_id: user.id,
+        stripe_connect_id: accountId,
+        payout_enabled: false,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "artist_id" });
     }
 
-    const accountLink = await stripe.accountLinks.create({
-      account: accountId,
-      refresh_url: `${origin}/studio?payout=refresh`,
-      return_url: `${origin}/studio?payout=success&account=${accountId}`,
-      type: "account_onboarding",
-    });
+    // Account links are single-use and time-bound; retry only on transient errors, no idempotency key.
+    const accountLink = await withStripeRetry(
+      () => stripe.accountLinks.create({
+        account: accountId!,
+        refresh_url: `${origin}/studio?payout=refresh`,
+        return_url: `${origin}/studio?payout=success&account=${accountId}`,
+        type: "account_onboarding",
+      }),
+      { label: "accountLinks.create" }
+    );
 
     await supabase.from("artist_payout_details").upsert({
       artist_id: user.id,

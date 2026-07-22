@@ -3,6 +3,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { makeIdempotencyKey, withStripeRetry } from "../_shared/stripeRetry.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -95,13 +96,24 @@ serve(async (req) => {
       }
     }
 
-    const transfer = await stripe.transfers.create({
-      amount: Math.round(payoutAmount * 100),
-      currency: "usd",
-      destination: payoutDetails.stripe_connect_id,
-      description: `TDZ artist payout`,
-      metadata: { artist_id: artistId, type: "manual_payout" },
-    });
+    // Idempotency key derived from artist + amount + earnings ids so client retries
+    // (or edge function reinvocations) never double-transfer funds.
+    const idemKey = makeIdempotencyKey(
+      "transfer",
+      artistId,
+      Math.round(payoutAmount * 100),
+      selectedIds.slice().sort().join(",") || "adhoc"
+    );
+    const transfer = await withStripeRetry(
+      () => stripe.transfers.create({
+        amount: Math.round(payoutAmount * 100),
+        currency: "usd",
+        destination: payoutDetails.stripe_connect_id,
+        description: `TDZ artist payout`,
+        metadata: { artist_id: artistId, type: "manual_payout" },
+      }, { idempotencyKey: idemKey }),
+      { label: "transfers.create" }
+    );
 
     await supabase.from("artist_payouts").insert({
       artist_id: artistId, amount: payoutAmount, status: "completed",
