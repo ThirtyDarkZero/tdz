@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StudioGuard } from "@/components/auth/AuthGuard";
 import { RosterManager } from "@/components/manager/RosterManager";
 import { RosterInsights } from "@/components/manager/RosterInsights";
+import { RosterAnalyticsDrilldown } from "@/components/manager/RosterAnalyticsDrilldown";
 import { BrandingStudio } from "@/components/manager/BrandingStudio";
 import { IntegrationsHub } from "@/components/manager/IntegrationsHub";
 import { Building2, Users, TrendingUp, Palette, Plug, Upload, Sparkles, ArrowLeft } from "lucide-react";
