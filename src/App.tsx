@@ -10,6 +10,7 @@ import { GlobalErrorTrap } from "@/components/GlobalErrorTrap";
 import { CommandPalette } from "@/components/CommandPalette";
 import { PlayerProvider } from "@/contexts/PlayerContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ActingArtistProvider } from "@/contexts/ActingArtistContext";
 import { MoodProvider } from "@/contexts/MoodContext";
 import { GlobalMusicPlayer } from "@/components/GlobalMusicPlayer";
 import { Seo } from "@/components/Seo";
@@ -65,6 +66,7 @@ const PageLoader = () => (
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <ActingArtistProvider>
       <MoodProvider>
         <TooltipProvider>
           <PlayerProvider>
