@@ -61,6 +61,8 @@ interface ReleaseNode {
   streams: number;
   tracks: TrackRow[];
 }
+  const [streamSeries, setStreamSeries] = useState<{ date: string; streams: number; revenue: number; artistId: string }[]>([]);
+
 
 const REVENUE_PER_STREAM = 1; // TDZ $1/stream model
 
