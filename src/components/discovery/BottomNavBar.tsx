@@ -54,10 +54,17 @@ export function BottomNavBar({ activeTab, onTabChange }: BottomNavBarProps) {
           )}
           {BASE_NAV_ITEMS.map((item) => {
             const isActive = activeTab === item.id;
+            const handleClick = () => {
+              if (item.id === "store") {
+                window.open("https://thirtydarkzerorecords.com/store", "_blank", "noopener,noreferrer");
+                return;
+              }
+              onTabChange(item.id);
+            };
             return (
               <button
                 key={item.id}
-                onClick={() => onTabChange(item.id)}
+                onClick={handleClick}
                 className="flex flex-col items-center gap-1 min-w-[56px] border-none bg-transparent transition-all duration-200"
                 style={{
                   padding: "6px 12px",
