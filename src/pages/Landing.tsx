@@ -131,7 +131,7 @@ function NavPill() {
       {items.map((item: any, i) => (
         <button
           key={i}
-          onClick={() => item.external ? window.open(item.path, "_blank", "noopener,noreferrer") : navigate(item.path)}
+          onClick={() => item.external ? (item.storeSource ? openStore(item.storeSource) : window.open(item.path, "_blank", "noopener,noreferrer")) : navigate(item.path)}
           className="flex flex-col items-center gap-0.5 px-3 sm:px-5 md:px-7 py-1.5 sm:py-2 rounded-full transition-colors"
           style={i === 0 ? { background: "rgba(80,80,80,0.5)" } : {}}
         >
