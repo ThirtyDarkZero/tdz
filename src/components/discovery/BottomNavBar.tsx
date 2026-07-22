@@ -2,6 +2,7 @@ import { Home, Compass, LayoutGrid, User, ShoppingBag, Disc3 } from "lucide-reac
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
+import { openStore } from "@/lib/analytics";
 
 interface BottomNavBarProps {
   activeTab: string;
