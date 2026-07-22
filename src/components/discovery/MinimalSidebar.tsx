@@ -50,8 +50,7 @@ const NAV_SECTIONS = [
 
 export function MinimalSidebar({ open, onClose, activeTab, onTabChange }: MinimalSidebarProps) {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { role } = useUserRole(user);
+  const { role, isCEO } = useAuthContext();
   const isArtist = role === 'artist' || role === 'verified_artist' || role === 'manager';
 
   if (!open) return null;
