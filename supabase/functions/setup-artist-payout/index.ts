@@ -54,6 +54,13 @@ serve(async (req) => {
         { label: "accounts.create" }
       );
       accountId = account.id;
+      // Persist immediately so a later failure doesn't orphan the Stripe account.
+      await supabase.from("artist_payout_details").upsert({
+        artist_id: user.id,
+        stripe_connect_id: accountId,
+        payout_enabled: false,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "artist_id" });
     }
 
     // Account links are single-use and time-bound; retry only on transient errors, no idempotency key.
