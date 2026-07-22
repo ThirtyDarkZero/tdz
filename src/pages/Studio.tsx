@@ -90,7 +90,7 @@ function StudioContent() {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, effectiveUserId]);
 
   const handlePlayTrack = (track: Track, trackQueue: Track[]) => {
     setCurrentTrack(track);
@@ -189,6 +189,23 @@ function StudioContent() {
           </div>
 
           <div className="relative z-10 p-3 pt-16 sm:p-4 sm:pt-16 md:pt-6 md:p-6 lg:p-10 max-w-7xl mx-auto">
+            {canDelegate && (
+              <div className="mb-4 flex items-center justify-between gap-3 flex-wrap p-3 rounded-lg glass-card border border-primary/20">
+                <div className="text-xs">
+                  {isDelegated ? (
+                    <span className="text-white/90">
+                      You are currently releasing music &amp; viewing analytics as{" "}
+                      <b className="text-primary">{actingArtistName}</b>. Actions taken here belong to that artist.
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      Enterprise manager mode — switch to any roster artist to release music or view their analytics.
+                    </span>
+                  )}
+                </div>
+                <ActingArtistSwitcher />
+              </div>
+            )}
             <PendingInvitesPanel />
             {renderContent()}
           </div>
@@ -205,7 +222,11 @@ function StudioContent() {
                 Upload Your Music
               </DialogTitle>
             </DialogHeader>
-            <MultiTrackUploader onSuccess={() => setUploadDialogOpen(false)} />
+            <MultiTrackUploader
+              onSuccess={() => setUploadDialogOpen(false)}
+              targetUserId={isDelegated ? effectiveUserId ?? undefined : undefined}
+              targetArtistName={isDelegated ? actingArtistName ?? undefined : undefined}
+            />
           </DialogContent>
         </Dialog>
       </div>
