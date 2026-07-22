@@ -7,8 +7,10 @@ import { StudioGuard } from "@/components/auth/AuthGuard";
 import { RosterManager } from "@/components/manager/RosterManager";
 import { RosterInsights } from "@/components/manager/RosterInsights";
 import { RosterAnalyticsDrilldown } from "@/components/manager/RosterAnalyticsDrilldown";
+import { RosterReleasesPanel } from "@/components/manager/RosterReleasesPanel";
 import { BrandingStudio } from "@/components/manager/BrandingStudio";
 import { IntegrationsHub } from "@/components/manager/IntegrationsHub";
+import { ActingArtistSwitcher } from "@/components/manager/ActingArtistSwitcher";
 import { Building2, Users, TrendingUp, Palette, Plug, Upload, Sparkles, ArrowLeft } from "lucide-react";
 
 function ManagerHQContent() {
@@ -83,7 +85,8 @@ function ManagerHQContent() {
               <p className="text-xs text-muted-foreground">Enterprise · Full roster management</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <ActingArtistSwitcher />
             <Button variant="outline" size="sm" onClick={() => navigate("/studio")}>
               <Upload className="w-3 h-3 mr-1" /> Studio
             </Button>
@@ -105,15 +108,7 @@ function ManagerHQContent() {
           </TabsContent>
 
           <TabsContent value="releases" className="mt-6">
-            <Card className="p-8 glass-card text-center">
-              <Upload className="w-10 h-10 mx-auto text-primary mb-3" />
-              <h3 className="font-semibold mb-2">Release music on behalf of your roster</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Open Studio to upload tracks. As an enterprise manager, uploads you make against an accepted
-                roster invite are published to that artist's profile.
-              </p>
-              <Button onClick={() => navigate("/studio")}>Open Studio</Button>
-            </Card>
+            <RosterReleasesPanel />
           </TabsContent>
 
           <TabsContent value="insights" className="mt-6">

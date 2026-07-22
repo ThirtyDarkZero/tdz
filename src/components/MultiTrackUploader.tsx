@@ -69,7 +69,7 @@ interface TrackFile {
 
 type ReleaseType = 'single' | 'ep' | 'album';
 
-export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) => {
+export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName }: { onSuccess?: () => void; targetUserId?: string; targetArtistName?: string }) => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [releaseType, setReleaseType] = useState<ReleaseType>('single');
@@ -411,11 +411,14 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
     let createdTrackIds: string[] = [];
 
     try {
-      // Step 1: Verify authentication
+      // Step 1: Verify authentication (uploader) and resolve effective owner
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) {
         throw new Error("Authentication required. Please sign in again.");
       }
+      // If a manager is acting on behalf of a roster artist, the owner id is the artist,
+      // but auth/rate limits still key off the manager (auth.uid()).
+      const ownerId = targetUserId || user.id;
 
       let albumId: string | null = null;
 
@@ -426,7 +429,7 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
           const { data: albumData, error: albumError } = await supabase
             .from('albums')
             .insert({
-              user_id: user.id,
+              user_id: ownerId,
               title: releaseTitle.trim().slice(0, 200),
               artist_name: artistName.trim().slice(0, 100),
               genre: genre?.trim() || null,
@@ -469,7 +472,7 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
             .replace(/[^a-zA-Z0-9.-]/g, '_')
             .slice(0, 100);
           const uniqueId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-          const filePath = `${user.id}/${uniqueId}-${sanitizedFileName}`;
+          const filePath = `${ownerId}/${uniqueId}-${sanitizedFileName}`;
           
           // Upload file with retry logic
           let uploadSuccess = false;
@@ -523,7 +526,7 @@ export const MultiTrackUploader = ({ onSuccess }: { onSuccess?: () => void }) =>
           while (dbRetries > 0 && !trackCreated) {
             // Use type assertion for new columns until types are regenerated
             const trackInsertData = {
-              user_id: user.id,
+              user_id: ownerId,
               title: track.title.trim().slice(0, 200),
               artist_name: metadata!.artistName.trim().slice(0, 100),
               duration: track.duration || 0,
