@@ -585,20 +585,44 @@ export function RosterAnalyticsDrilldown() {
                             </div>
                           </button>
                           {rOpen && (
-                            <div className="border-t border-border/20 divide-y divide-border/20">
-                              {r.tracks.map((t) => (
-                                <div key={t.id} className="flex items-center gap-3 px-3 py-2 pl-9 text-xs">
-                                  <Music className="w-3 h-3 text-muted-foreground" />
-                                  <div className="flex-1 truncate">{t.title}</div>
-                                  {!t.is_published && <Badge variant="outline" className="text-[9px]">draft</Badge>}
-                                  <div className="w-20 text-right font-mono">
-                                    {(t.play_count || 0).toLocaleString()}
-                                  </div>
-                                  <div className="w-16 text-right text-muted-foreground font-mono">
-                                    ${((t.play_count || 0) * REVENUE_PER_STREAM).toLocaleString()}
-                                  </div>
+                            <div className="border-t border-border/20">
+                              {r.tracks.length > 1 && (
+                                <div className="px-3 py-2 border-b border-border/20 bg-black/20" style={{ height: 140 }}>
+                                  <ResponsiveContainer>
+                                    <BarChart
+                                      data={r.tracks.map((t) => ({
+                                        name: t.title.length > 14 ? t.title.slice(0, 13) + "…" : t.title,
+                                        fullTitle: t.title,
+                                        artist: a.artist_name,
+                                        streams: t.play_count || 0,
+                                        revenue: (t.play_count || 0) * REVENUE_PER_STREAM,
+                                      }))}
+                                      margin={{ top: 4, right: 8, left: -20, bottom: 4 }}
+                                    >
+                                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.2)" />
+                                      <XAxis dataKey="name" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} interval={0} />
+                                      <YAxis tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
+                                      <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--primary) / 0.08)" }} />
+                                      <Bar dataKey="streams" fill="#FF6347" radius={[3, 3, 0, 0]} />
+                                    </BarChart>
+                                  </ResponsiveContainer>
                                 </div>
-                              ))}
+                              )}
+                              <div className="divide-y divide-border/20">
+                                {r.tracks.map((t) => (
+                                  <div key={t.id} className="flex items-center gap-3 px-3 py-2 pl-9 text-xs">
+                                    <Music className="w-3 h-3 text-muted-foreground" />
+                                    <div className="flex-1 truncate">{t.title}</div>
+                                    {!t.is_published && <Badge variant="outline" className="text-[9px]">draft</Badge>}
+                                    <div className="w-20 text-right font-mono">
+                                      {(t.play_count || 0).toLocaleString()}
+                                    </div>
+                                    <div className="w-16 text-right text-muted-foreground font-mono">
+                                      ${((t.play_count || 0) * REVENUE_PER_STREAM).toLocaleString()}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>
