@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useActingArtist } from "@/contexts/ActingArtistContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { UserPlus, Trash2, ExternalLink, Loader2 } from "lucide-react";
+import { UserPlus, Trash2, ExternalLink, Loader2, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface RosterRow {
@@ -19,6 +20,7 @@ interface RosterRow {
 
 export function RosterManager() {
   const { user } = useAuthContext();
+  const { setActingArtist, refresh: refreshActing } = useActingArtist();
   const navigate = useNavigate();
   const [roster, setRoster] = useState<RosterRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,6 +152,17 @@ export function RosterManager() {
                     </div>
                   )}
                 </div>
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    await refreshActing();
+                    setActingArtist(r.artist_id);
+                    toast.success(`Studio switched — releasing as ${r.artist_name}`);
+                    navigate(`/studio?as=${r.artist_id}`);
+                  }}
+                >
+                  <Upload className="w-3 h-3 mr-1" /> Release as
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"
