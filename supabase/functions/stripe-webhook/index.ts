@@ -210,17 +210,104 @@ serve(async (req) => {
         break;
       }
 
-      case "account.updated": {
-        const account = event.data.object as Stripe.Account;
-        const userId = account.metadata?.user_id;
-        if (userId) {
-          const ready = !!(account.charges_enabled && account.payouts_enabled && account.details_submitted);
-          await supabase.from("artist_payout_details").update({
-            payout_enabled: ready,
-            updated_at: new Date().toISOString(),
-          }).eq("artist_id", userId);
-          console.log(`[stripe-webhook] account.updated user=${userId} payout_enabled=${ready}`);
+      case "account.updated":
+      case "capability.updated": {
+        // capability.updated arrives on the connected account object; fetch the
+        // parent account to get a consistent readiness view.
+        let account: Stripe.Account;
+        if (event.type === "account.updated") {
+          account = event.data.object as Stripe.Account;
+        } else {
+          const cap = event.data.object as Stripe.Capability;
+          const acctId = typeof cap.account === "string" ? cap.account : cap.account?.id;
+          if (!acctId) break;
+          account = await stripe.accounts.retrieve(acctId);
         }
+        const userId = account.metadata?.user_id;
+        const ready = !!(account.charges_enabled && account.payouts_enabled && account.details_submitted);
+        const needsAttention =
+          (account.requirements?.currently_due?.length ?? 0) > 0 ||
+          (account.requirements?.past_due?.length ?? 0) > 0 ||
+          !!account.requirements?.disabled_reason;
+
+        // Prefer metadata user_id, fall back to matching by stripe_connect_id so
+        // reconciliation still works if metadata was ever stripped.
+        const query = supabase.from("artist_payout_details").update({
+          payout_enabled: ready,
+          updated_at: new Date().toISOString(),
+        });
+        if (userId) await query.eq("artist_id", userId);
+        else await query.eq("stripe_connect_id", account.id);
+
+        console.log(`[stripe-webhook] ${event.type} account=${account.id} user=${userId ?? "?"} ready=${ready} attention=${needsAttention}`);
+        break;
+      }
+
+      case "account.application.deauthorized": {
+        // Artist disconnected our platform from their Stripe. Mark payouts disabled
+        // and clear the connect id so re-onboarding creates a fresh account.
+        const account = event.data.object as Stripe.Account;
+        await supabase.from("artist_payout_details")
+          .update({
+            payout_enabled: false,
+            stripe_connect_id: null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("stripe_connect_id", account.id);
+        console.log(`[stripe-webhook] account.deauthorized account=${account.id}`);
+        break;
+      }
+
+      case "transfer.created":
+      case "transfer.updated":
+      case "transfer.paid": {
+        // Confirm the transfer row exists and mark completed. Idempotent — matches
+        // on square_payout_id (which holds the Stripe transfer id).
+        const transfer = event.data.object as Stripe.Transfer;
+        await supabase.from("artist_payouts")
+          .update({
+            status: "completed",
+            completed_at: new Date().toISOString(),
+          })
+          .eq("square_payout_id", transfer.id);
+        console.log(`[stripe-webhook] ${event.type} transfer=${transfer.id}`);
+        break;
+      }
+
+      case "transfer.reversed":
+      case "transfer.failed": {
+        // Reverse the payout: mark failed, flip linked earnings back to pending
+        // so the artist can retry withdrawal without losing the balance.
+        const transfer = event.data.object as Stripe.Transfer;
+        const { data: payout } = await supabase.from("artist_payouts")
+          .select("id, earnings_ids, artist_id")
+          .eq("square_payout_id", transfer.id)
+          .maybeSingle();
+
+        await supabase.from("artist_payouts")
+          .update({
+            status: event.type === "transfer.reversed" ? "reversed" : "failed",
+            completed_at: null,
+          })
+          .eq("square_payout_id", transfer.id);
+
+        if (payout?.earnings_ids?.length) {
+          await supabase.from("artist_earnings")
+            .update({ payout_status: "pending", payout_date: null })
+            .in("id", payout.earnings_ids);
+        }
+        console.log(`[stripe-webhook] ${event.type} transfer=${transfer.id} payout=${payout?.id ?? "?"}`);
+        break;
+      }
+
+      case "payout.paid":
+      case "payout.failed":
+      case "payout.canceled": {
+        // Stripe -> artist bank leg (fires on the connected account for Express).
+        // We only log for observability; the platform-side artist_payouts row
+        // already reflects the transfer state above.
+        const payout = event.data.object as Stripe.Payout;
+        console.log(`[stripe-webhook] ${event.type} payout=${payout.id} amount=${payout.amount} account=${event.account ?? "?"}`);
         break;
       }
 
@@ -235,6 +322,7 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
     }
+
 
     await supabase.from("stripe_webhook_events").update({
       status: "processed",
