@@ -330,6 +330,74 @@ export function RosterAnalyticsDrilldown() {
     { streams: 0, tracks: 0, releases: 0, revenue: 0 },
   );
 
+  const filteredIds = new Set(filtered.map((a) => a.artist_id));
+  // Top 10 tracks by streams across filtered roster
+  const topTracks = filtered
+    .flatMap((a) =>
+      [...a.releases.flatMap((r) => r.tracks), ...a.singles].map((t) => ({
+        name: t.title.length > 18 ? t.title.slice(0, 17) + "…" : t.title,
+        fullTitle: t.title,
+        artist: a.artist_name,
+        streams: t.play_count || 0,
+        revenue: (t.play_count || 0) * REVENUE_PER_STREAM,
+      })),
+    )
+    .sort((a, b) => b.streams - a.streams)
+    .slice(0, 10);
+
+  // Revenue per artist
+  const artistRevenue = filtered
+    .map((a) => ({
+      name: a.artist_name.length > 14 ? a.artist_name.slice(0, 13) + "…" : a.artist_name,
+      fullName: a.artist_name,
+      revenue: a.totalStreams * REVENUE_PER_STREAM,
+      paid: a.totalRevenue,
+      streams: a.totalStreams,
+    }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 12);
+
+  // Streams + revenue over last 30 days (conversion over time)
+  const seriesMap = new Map<string, { date: string; streams: number; revenue: number }>();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+    seriesMap.set(d, { date: d.slice(5), streams: 0, revenue: 0 });
+  }
+  streamSeries
+    .filter((e) => filteredIds.has(e.artistId))
+    .forEach((e) => {
+      const key = e.date;
+      const bucket = seriesMap.get(key);
+      if (bucket) {
+        bucket.streams += e.streams;
+        bucket.revenue += e.revenue;
+      }
+    });
+  const timeSeries = Array.from(seriesMap.values());
+
+  const barColors = ["#FF6347", "#FF8C69", "#FFA07A", "#FFB08A"];
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload?.length) return null;
+    const d = payload[0].payload;
+    return (
+      <div className="rounded-md border border-border/60 bg-black/90 backdrop-blur px-3 py-2 text-xs shadow-xl">
+        <div className="font-semibold text-foreground mb-1">{d.fullTitle || d.fullName || label}</div>
+        {d.artist && <div className="text-muted-foreground">{d.artist}</div>}
+        {payload.map((p: any) => (
+          <div key={p.dataKey} className="flex justify-between gap-3">
+            <span className="text-muted-foreground capitalize">{p.dataKey}:</span>
+            <span className="font-mono" style={{ color: p.color }}>
+              {p.dataKey === "revenue" || p.dataKey === "paid"
+                ? `$${Number(p.value).toLocaleString()}`
+                : Number(p.value).toLocaleString()}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
