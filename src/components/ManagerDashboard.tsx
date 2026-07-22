@@ -409,7 +409,15 @@ export const ManagerDashboard = () => {
           <h1 className="text-4xl font-bold">Manager Dashboard</h1>
           <p className="text-muted-foreground mt-2">Manage your roster like a sports team</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="default"
+            onClick={() => (window.location.href = "/manager-hq")}
+            className="gap-2 bg-gradient-to-r from-primary via-violet-500 to-fuchsia-500"
+          >
+            <Users className="h-4 w-4" />
+            Open Manager HQ
+          </Button>
           <Button
             variant={activeManagerTab === "roster" ? "default" : "outline"}
             onClick={() => setActiveManagerTab("roster")}
