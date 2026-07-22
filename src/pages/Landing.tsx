@@ -330,6 +330,179 @@ function Section1Hero() {
 }
 
 // ═══════════════════════════════════════
+// MARKETING REEL — cinematic AI artist gallery
+// ═══════════════════════════════════════
+const MARKETING_REEL = [
+  {
+    src: heroArtistStudio,
+    kicker: "SMART DISTRIBUTION, ZERO LIMITS",
+    headline: "THE FIRST PLATFORM",
+    line2: "THAT PAYS $1 PER STREAM",
+    sub: "Independent artists earn 333× more than legacy streaming. 100% of download revenue goes to artists. Keep your rights. Build your legacy.",
+    cta: "SUBSCRIBE NOW",
+    tint: "linear-gradient(135deg, rgba(88,28,135,0.55), rgba(30,64,175,0.55))",
+  },
+  {
+    src: heroArtistStreet,
+    kicker: "FAN TIPPING",
+    headline: "TIP THE ARTIST",
+    line2: "$1 PER STREAM · DIRECT TO CREATOR",
+    sub: "Fans tip artists directly from Discovery. Every dollar goes straight to the creator — no middlemen, no games.",
+    cta: "TIP NOW",
+    tint: "linear-gradient(135deg, rgba(219,39,119,0.55), rgba(88,28,135,0.55))",
+  },
+  {
+    src: heroArtistHeadphones,
+    kicker: "ADVANCED ANALYTICS FOR ARTISTS",
+    headline: "REAL-TIME DATA.",
+    line2: "REAL FAN DEMOGRAPHICS.",
+    sub: "Live streaming data. Geographic heat maps. Revenue tracking. AI strategic insights. Everything Spotify hides — we surface.",
+    cta: "UNLOCK YOUR DATA",
+    tint: "linear-gradient(135deg, rgba(30,64,175,0.55), rgba(6,182,212,0.55))",
+  },
+];
+
+function SectionMarketingReel() {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setI((n) => (n + 1) % MARKETING_REEL.length), 7000);
+    return () => clearInterval(t);
+  }, []);
+  const slide = MARKETING_REEL[i];
+
+  return (
+    <section className="relative py-16 sm:py-24 px-4" style={{ background: "#000" }}>
+      <div className="max-w-6xl mx-auto">
+        <Reveal>
+          <p
+            className="text-center mb-6"
+            style={{
+              fontFamily: "'Raleway', sans-serif",
+              fontWeight: 500,
+              fontSize: 12,
+              color: "#666",
+              letterSpacing: "0.35em",
+              textTransform: "uppercase" as const,
+            }}
+          >
+            THE MOVEMENT · THE ARTISTS · THE PLATFORM
+          </p>
+        </Reveal>
+
+        <div
+          className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10"
+          style={{ aspectRatio: "16 / 10", maxHeight: 720, boxShadow: "0 40px 120px rgba(139,92,246,0.35)" }}
+        >
+          {MARKETING_REEL.map((s, idx) => (
+            <div
+              key={idx}
+              className="absolute inset-0 transition-opacity duration-[1400ms] ease-out"
+              style={{ opacity: i === idx ? 1 : 0 }}
+              aria-hidden={i !== idx}
+            >
+              <img
+                src={s.src}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ transform: "scale(1.05)" }}
+              />
+              <div className="absolute inset-0" style={{ background: s.tint, mixBlendMode: "multiply" }} />
+              <div
+                className="absolute inset-0"
+                style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.85) 100%)" }}
+              />
+            </div>
+          ))}
+
+          {/* Content */}
+          <div key={i} className="absolute inset-0 p-6 sm:p-10 md:p-16 flex flex-col justify-end">
+            <div className="animate-in fade-in slide-in-from-bottom-6 duration-700">
+              <p
+                className="mb-3 sm:mb-4"
+                style={{
+                  fontFamily: "'Raleway', sans-serif",
+                  fontWeight: 600,
+                  fontSize: 12,
+                  color: "#FFF",
+                  letterSpacing: "0.35em",
+                  textShadow: "0 2px 12px rgba(0,0,0,0.6)",
+                }}
+              >
+                {slide.kicker}
+              </p>
+              <h2
+                style={{
+                  fontFamily: "'Six Caps', sans-serif",
+                  fontSize: "clamp(44px, 8vw, 120px)",
+                  color: "#FFF",
+                  lineHeight: 0.92,
+                  letterSpacing: "0.02em",
+                  textShadow: "0 4px 40px rgba(0,0,0,0.5)",
+                }}
+              >
+                {slide.headline}
+              </h2>
+              <h3
+                style={{
+                  fontFamily: "'Six Caps', sans-serif",
+                  fontSize: "clamp(28px, 5vw, 72px)",
+                  color: "#FFF",
+                  lineHeight: 0.95,
+                  letterSpacing: "0.02em",
+                  marginTop: 6,
+                  textShadow: "0 4px 40px rgba(0,0,0,0.5)",
+                }}
+              >
+                {slide.line2}
+              </h3>
+              <p
+                className="mt-4 sm:mt-6 max-w-2xl"
+                style={{
+                  fontFamily: "'Raleway', sans-serif",
+                  fontWeight: 300,
+                  fontSize: 15,
+                  color: "rgba(255,255,255,0.85)",
+                  lineHeight: 1.6,
+                }}
+              >
+                {slide.sub}
+              </p>
+            </div>
+
+            {/* Reel dots */}
+            <div className="mt-6 flex items-center gap-2">
+              {MARKETING_REEL.map((_, idx) => (
+                <button
+                  key={idx}
+                  aria-label={`Slide ${idx + 1}`}
+                  onClick={() => setI(idx)}
+                  className="h-1.5 rounded-full transition-all"
+                  style={{
+                    width: i === idx ? 40 : 12,
+                    background: i === idx ? "#FFF" : "rgba(255,255,255,0.35)",
+                  }}
+                />
+              ))}
+              <span
+                className="ml-auto text-white/60"
+                style={{
+                  fontFamily: "'Raleway', sans-serif",
+                  fontWeight: 600,
+                  fontSize: 11,
+                  letterSpacing: "0.3em",
+                }}
+              >
+                www.thirtydarkzero.net
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ═══════════════════════════════════════
 // SECTION 2 — APP MOCKUPS (Interactive Demos)
 // ═══════════════════════════════════════
 function PhoneFrame({ children, style, className = "" }: { children: React.ReactNode; style?: React.CSSProperties; className?: string }) {
