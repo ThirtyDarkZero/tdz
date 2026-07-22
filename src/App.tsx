@@ -145,6 +145,7 @@ const App = () => (
           </PlayerProvider>
         </TooltipProvider>
       </MoodProvider>
+      </ActingArtistProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
