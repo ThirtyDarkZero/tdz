@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StudioGuard } from "@/components/auth/AuthGuard";
 import { RosterManager } from "@/components/manager/RosterManager";
 import { RosterInsights } from "@/components/manager/RosterInsights";
+import { RosterAnalyticsDrilldown } from "@/components/manager/RosterAnalyticsDrilldown";
 import { BrandingStudio } from "@/components/manager/BrandingStudio";
 import { IntegrationsHub } from "@/components/manager/IntegrationsHub";
 import { Building2, Users, TrendingUp, Palette, Plug, Upload, Sparkles, ArrowLeft } from "lucide-react";
@@ -90,10 +91,11 @@ function ManagerHQContent() {
         </div>
 
         <Tabs defaultValue="roster">
-          <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full">
+          <TabsList className="grid grid-cols-2 md:grid-cols-6 w-full">
             <TabsTrigger value="roster"><Users className="w-3 h-3 mr-1" /> Roster</TabsTrigger>
             <TabsTrigger value="releases"><Upload className="w-3 h-3 mr-1" /> Releases</TabsTrigger>
             <TabsTrigger value="insights"><TrendingUp className="w-3 h-3 mr-1" /> Insights</TabsTrigger>
+            <TabsTrigger value="drilldown"><TrendingUp className="w-3 h-3 mr-1" /> Drilldown</TabsTrigger>
             <TabsTrigger value="branding"><Palette className="w-3 h-3 mr-1" /> Branding</TabsTrigger>
             <TabsTrigger value="integrations"><Plug className="w-3 h-3 mr-1" /> Integrations</TabsTrigger>
           </TabsList>
@@ -116,6 +118,10 @@ function ManagerHQContent() {
 
           <TabsContent value="insights" className="mt-6">
             <RosterInsights />
+          </TabsContent>
+
+          <TabsContent value="drilldown" className="mt-6">
+            <RosterAnalyticsDrilldown />
           </TabsContent>
 
           <TabsContent value="branding" className="mt-6">
