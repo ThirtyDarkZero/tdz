@@ -4887,6 +4887,10 @@ export type Database = {
         Args: { p_short_code: string }
         Returns: undefined
       }
+      is_manager_of: {
+        Args: { _artist: string; _manager: string }
+        Returns: boolean
+      }
       log_audit: {
         Args: {
           p_action: string
