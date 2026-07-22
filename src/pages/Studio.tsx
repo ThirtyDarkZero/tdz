@@ -18,6 +18,8 @@ import { StudioLearn } from "@/components/studio/StudioLearn";
 import { StudioSettings } from "@/components/studio/StudioSettings";
 import { StudioConnectAI } from "@/components/studio/StudioConnectAI";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useActingArtist } from "@/contexts/ActingArtistContext";
+import { ActingArtistSwitcher } from "@/components/manager/ActingArtistSwitcher";
 import { StudioGuard } from "@/components/auth/AuthGuard";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -36,6 +38,7 @@ interface Track {
 
 function StudioContent() {
   const { user, role, isManager } = useAuthContext();
+  const { isDelegated, effectiveUserId, actingArtistName, canDelegate } = useActingArtist();
   const navigate = useNavigate();
   
   const [activeSection, setActiveSection] = useState("home");
@@ -50,17 +53,18 @@ function StudioContent() {
     typeof window !== 'undefined' && window.innerWidth < 768
   );
 
-  // Load artist profile
+  // Load artist profile (or delegated roster artist's profile when acting on their behalf)
   useEffect(() => {
     if (!user) return;
 
     let cancelled = false;
+    const loadFor = effectiveUserId || user.id;
 
     const fetchArtistProfile = async () => {
       const { data, error } = await supabase
         .from("artist_profiles")
         .select("artist_name, profile_image_path")
-        .eq("user_id", user.id)
+        .eq("user_id", loadFor)
         .maybeSingle();
 
       if (cancelled) return;
