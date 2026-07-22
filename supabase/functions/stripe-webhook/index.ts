@@ -276,22 +276,29 @@ serve(async (req) => {
 
       case "transfer.reversed":
       case "transfer.failed": {
-        // Reverse the payout: mark failed, flip linked earnings back to pending
-        // so the artist can retry withdrawal without losing the balance.
+        // Reverse the payout: mark failed/reversed and flip linked earnings back
+        // to pending so the artist can retry withdrawal without losing balance.
+        // The DB state machine blocks illegal transitions (e.g. reversed -> failed);
+        // we swallow those errors so out-of-order webhook delivery still 200s.
         const transfer = event.data.object as Stripe.Transfer;
         const { data: payout } = await supabase.from("artist_payouts")
-          .select("id, earnings_ids, artist_id")
+          .select("id, earnings_ids, artist_id, status")
           .eq("square_payout_id", transfer.id)
           .maybeSingle();
 
-        await supabase.from("artist_payouts")
+        const nextStatus = event.type === "transfer.reversed" ? "reversed" : "failed";
+        const { error: transitionErr } = await supabase.from("artist_payouts")
           .update({
-            status: event.type === "transfer.reversed" ? "reversed" : "failed",
-            completed_at: null,
+            status: nextStatus,
+            completed_at: nextStatus === "reversed" ? new Date().toISOString() : null,
           })
           .eq("square_payout_id", transfer.id);
 
-        if (payout?.earnings_ids?.length) {
+        if (transitionErr) {
+          console.warn(`[stripe-webhook] ${event.type} blocked by state machine (payout=${payout?.id} current=${payout?.status} -> ${nextStatus}): ${transitionErr.message}`);
+        } else if (nextStatus === "failed" && payout?.earnings_ids?.length) {
+          // Only re-open earnings on true failure. Reversed transfers are a
+          // clawback — earnings stay marked paid until finance reviews.
           await supabase.from("artist_earnings")
             .update({ payout_status: "pending", payout_date: null })
             .in("id", payout.earnings_ids);
@@ -299,6 +306,7 @@ serve(async (req) => {
         console.log(`[stripe-webhook] ${event.type} transfer=${transfer.id} payout=${payout?.id ?? "?"}`);
         break;
       }
+
 
       case "payout.paid":
       case "payout.failed":
