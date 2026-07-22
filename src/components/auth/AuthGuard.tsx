@@ -70,7 +70,7 @@ export function RequireRole({
   }
 
   if (authState === "needs_role") {
-    return <Navigate to="/role-selection" replace />;
+    return <Navigate to="/onboarding" replace />;
   }
 
   // Check if user has an allowed role
