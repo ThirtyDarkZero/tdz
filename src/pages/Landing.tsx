@@ -1167,11 +1167,11 @@ function Section11Footer({ navigate }: { navigate: (p: string) => void }) {
       <div className="flex flex-wrap justify-center gap-8 mt-6">
         {[
           { label: "SIGNUP", path: "/auth" }, { label: "STUDIO", path: "/studio" },
-          { label: "DISCOVERY", path: "/discover" }, { label: "STORE", path: "https://thirtydarkzerorecords.com/store", external: true },
+          { label: "DISCOVERY", path: "/discover" }, { label: "STORE", path: "https://thirtydarkzerorecords.com/store", external: true, storeSource: "landing_footer" as StoreClickSource },
           { label: "INVESTORS", path: "/investors" }, { label: "ABOUT", path: "/faq" },
           { label: "CONTACT", path: "/support" }, { label: "CONNECT AI", path: "/connect" },
         ].map((l: any) => (
-          <span key={l.label} onClick={() => l.external ? window.open(l.path, "_blank", "noopener,noreferrer") : navigate(l.path)}
+          <span key={l.label} onClick={() => l.external ? (l.storeSource ? openStore(l.storeSource) : window.open(l.path, "_blank", "noopener,noreferrer")) : navigate(l.path)}
             className="cursor-pointer transition-colors hover:text-[#888]"
             style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 13, color: "#444", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>
             {l.label}
