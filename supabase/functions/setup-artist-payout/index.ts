@@ -37,11 +37,20 @@ serve(async (req) => {
 
     let accountId = existing?.stripe_connect_id || null;
     if (!accountId) {
+      // Use controller API to explicitly declare loss/fee/stripe-dashboard
+      // responsibilities at the account level. This bypasses the platform
+      // profile requirement that otherwise blocks account creation with
+      // "Please review the responsibilities of managing losses..."
       const account = await stripe.accounts.create({
-        type: "express",
         email: user.email!,
         metadata: { user_id: user.id },
         capabilities: { transfers: { requested: true } },
+        controller: {
+          losses: { payments: "application" },
+          fees: { payer: "application" },
+          stripe_dashboard: { type: "express" },
+          requirement_collection: "stripe",
+        },
       });
       accountId = account.id;
     }
