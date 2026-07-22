@@ -58,6 +58,24 @@ serve(async (req) => {
 
   console.log(`[stripe-webhook] event=${event.type} id=${event.id}`);
 
+  // Idempotency: if this event id was already fully processed, ack and return.
+  // We still upsert-received below for first-time events so retries can be traced.
+  try {
+    const { data: existing } = await supabase
+      .from("stripe_webhook_events")
+      .select("status")
+      .eq("stripe_event_id", event.id)
+      .maybeSingle();
+    if (existing?.status === "processed" || existing?.status === "ignored") {
+      console.log(`[stripe-webhook] duplicate event ${event.id} status=${existing.status}; acking`);
+      return new Response(JSON.stringify({ received: true, duplicate: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  } catch (e) {
+    console.error("[stripe-webhook] dedupe check failed:", e);
+  }
+
   // Insert/upsert the received event row up front (status: received)
   try {
     await supabase.from("stripe_webhook_events").upsert({
@@ -72,6 +90,7 @@ serve(async (req) => {
   } catch (e) {
     console.error("[stripe-webhook] failed to log event:", e);
   }
+
 
   try {
     switch (event.type) {
