@@ -124,7 +124,7 @@ function NavPill() {
     { sub: "START HERE", main: "SIGNUP", path: "/auth" },
     { sub: "ARTISTS", main: "STUDIO", path: "/studio" },
     { sub: "FANS", main: "DISCOVERY", path: "/discover" },
-    { sub: "SHOP", main: "STORE", path: "https://thirtydarkzerorecords.com/store", external: true },
+    { sub: "SHOP", main: "STORE", path: "https://thirtydarkzerorecords.com/store", external: true, storeSource: "landing_nav_pill" as StoreClickSource },
   ];
   return (
     <div className="flex gap-0 mx-auto w-fit rounded-full px-1.5 sm:px-2 py-2 sm:py-2.5" style={{ background: "rgba(55,55,55,0.5)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(20px)" }}>
