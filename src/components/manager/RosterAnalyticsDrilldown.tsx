@@ -107,6 +107,23 @@ export function RosterAnalyticsDrilldown() {
             .in("artist_id", artistIds),
         ]);
 
+      // Fetch 30-day stream event series for conversion-over-time chart
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: events } = await supabase
+        .from("stream_events")
+        .select("artist_id, streamed_at, duration_seconds")
+        .in("artist_id", artistIds)
+        .gte("streamed_at", since);
+      const series = (events || [])
+        .filter((e: any) => e.streamed_at)
+        .map((e: any) => {
+          const d = new Date(e.streamed_at as string);
+          const date = d.toISOString().slice(0, 10);
+          const qualified = (e.duration_seconds || 0) >= 30;
+          return { date, streams: qualified ? 1 : 0, revenue: qualified ? REVENUE_PER_STREAM : 0, artistId: e.artist_id as string };
+        });
+      setStreamSeries(series);
+
       const nodes: ArtistNode[] = artistIds.map((id) => {
         const p = profiles?.find((x: any) => x.user_id === id);
         const artistTracks = ((tracks as TrackRow[]) || []).filter((t) => t.user_id === id);
