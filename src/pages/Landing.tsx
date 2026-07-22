@@ -2,6 +2,9 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Users, MessageCircle, Play, Palette, Heart, Star, SkipBack, SkipForward, Shuffle, Compass, BarChart3, Globe, User, Bookmark, Settings, Moon, Crown, Music, Upload, TrendingUp, LayoutDashboard, BookOpen, Zap, Check, Pause, Volume2 } from "lucide-react";
 import tdzLogo from "@/assets/tdz-logo.png";
+import heroArtistStudio from "@/assets/hero-artist-studio.jpg";
+import heroArtistStreet from "@/assets/hero-artist-street.jpg";
+import heroArtistHeadphones from "@/assets/hero-artist-headphones.jpg";
 import { supabase } from "@/integrations/supabase/client";
 import { MotionCover } from "@/components/MotionCover";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -241,6 +244,7 @@ export default function Landing() {
     <div className="min-h-screen" style={{ background: "#000", overflowX: "hidden" }}>
       <Section1Hero />
       <Section2Mockups />
+      <SectionMarketingReel />
       <Ticker text="AI FRIENDLY. ARTIST FIRST. YOUR MUSIC, YOUR PROFITS 100% OF DOWNLOAD REVENUE, $1 FOR EVERY STREAM, AND REAL TIME EARNINGS." />
       <Section4Studio navigate={navigate} />
       <Ticker text="EARN REAL MONEY FOR YOUR MUSIC $1 PER STREAM.  SET YOUR OWN DOWNLOAD PRICES. KEEP 100% OF DOWNLOAD REVENUE." />
