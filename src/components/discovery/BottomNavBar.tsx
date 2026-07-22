@@ -2,6 +2,7 @@ import { Home, Compass, LayoutGrid, User, ShoppingBag, Disc3 } from "lucide-reac
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
+import { openStore } from "@/lib/analytics";
 
 interface BottomNavBarProps {
   activeTab: string;
@@ -56,7 +57,7 @@ export function BottomNavBar({ activeTab, onTabChange }: BottomNavBarProps) {
             const isActive = activeTab === item.id;
             const handleClick = () => {
               if (item.id === "store") {
-                window.open("https://thirtydarkzerorecords.com/store", "_blank", "noopener,noreferrer");
+                openStore("discovery_bottom_nav");
                 return;
               }
               onTabChange(item.id);

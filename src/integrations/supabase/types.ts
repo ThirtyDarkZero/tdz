@@ -3308,6 +3308,42 @@ export type Database = {
         }
         Relationships: []
       }
+      store_click_events: {
+        Row: {
+          campaign: string | null
+          content: string | null
+          created_at: string
+          destination: string
+          id: string
+          path: string | null
+          referrer: string | null
+          source: string
+          user_id: string | null
+        }
+        Insert: {
+          campaign?: string | null
+          content?: string | null
+          created_at?: string
+          destination: string
+          id?: string
+          path?: string | null
+          referrer?: string | null
+          source: string
+          user_id?: string | null
+        }
+        Update: {
+          campaign?: string | null
+          content?: string | null
+          created_at?: string
+          destination?: string
+          id?: string
+          path?: string | null
+          referrer?: string | null
+          source?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       stream_events: {
         Row: {
           artist_id: string

@@ -13,6 +13,7 @@ import "swiper/css/effect-coverflow";
 // @ts-ignore
 import "swiper/css/navigation";
 import { openStripeCheckout, isCheckoutPlan } from "@/lib/subscription-checkout";
+import { openStore, type StoreClickSource } from "@/lib/analytics";
 
 // ─── Types ───
 interface Track {
@@ -123,14 +124,14 @@ function NavPill() {
     { sub: "START HERE", main: "SIGNUP", path: "/auth" },
     { sub: "ARTISTS", main: "STUDIO", path: "/studio" },
     { sub: "FANS", main: "DISCOVERY", path: "/discover" },
-    { sub: "SHOP", main: "STORE", path: "https://thirtydarkzerorecords.com/store", external: true },
+    { sub: "SHOP", main: "STORE", path: "https://thirtydarkzerorecords.com/store", external: true, storeSource: "landing_nav_pill" as StoreClickSource },
   ];
   return (
     <div className="flex gap-0 mx-auto w-fit rounded-full px-1.5 sm:px-2 py-2 sm:py-2.5" style={{ background: "rgba(55,55,55,0.5)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(20px)" }}>
       {items.map((item: any, i) => (
         <button
           key={i}
-          onClick={() => item.external ? window.open(item.path, "_blank", "noopener,noreferrer") : navigate(item.path)}
+          onClick={() => item.external ? (item.storeSource ? openStore(item.storeSource) : window.open(item.path, "_blank", "noopener,noreferrer")) : navigate(item.path)}
           className="flex flex-col items-center gap-0.5 px-3 sm:px-5 md:px-7 py-1.5 sm:py-2 rounded-full transition-colors"
           style={i === 0 ? { background: "rgba(80,80,80,0.5)" } : {}}
         >
@@ -1166,11 +1167,11 @@ function Section11Footer({ navigate }: { navigate: (p: string) => void }) {
       <div className="flex flex-wrap justify-center gap-8 mt-6">
         {[
           { label: "SIGNUP", path: "/auth" }, { label: "STUDIO", path: "/studio" },
-          { label: "DISCOVERY", path: "/discover" }, { label: "STORE", path: "https://thirtydarkzerorecords.com/store", external: true },
+          { label: "DISCOVERY", path: "/discover" }, { label: "STORE", path: "https://thirtydarkzerorecords.com/store", external: true, storeSource: "landing_footer" as StoreClickSource },
           { label: "INVESTORS", path: "/investors" }, { label: "ABOUT", path: "/faq" },
           { label: "CONTACT", path: "/support" }, { label: "CONNECT AI", path: "/connect" },
         ].map((l: any) => (
-          <span key={l.label} onClick={() => l.external ? window.open(l.path, "_blank", "noopener,noreferrer") : navigate(l.path)}
+          <span key={l.label} onClick={() => l.external ? (l.storeSource ? openStore(l.storeSource) : window.open(l.path, "_blank", "noopener,noreferrer")) : navigate(l.path)}
             className="cursor-pointer transition-colors hover:text-[#888]"
             style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 13, color: "#444", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>
             {l.label}
