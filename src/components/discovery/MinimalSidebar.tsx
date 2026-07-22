@@ -10,11 +10,11 @@ import {
   Home,
   Mic2,
   Settings,
-  Heart
+  Heart,
+  LayoutDashboard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 interface MinimalSidebarProps {
   open: boolean;
