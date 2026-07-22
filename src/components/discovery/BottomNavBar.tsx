@@ -57,7 +57,7 @@ export function BottomNavBar({ activeTab, onTabChange }: BottomNavBarProps) {
             const isActive = activeTab === item.id;
             const handleClick = () => {
               if (item.id === "store") {
-                window.open("https://thirtydarkzerorecords.com/store", "_blank", "noopener,noreferrer");
+                openStore("discovery_bottom_nav");
                 return;
               }
               onTabChange(item.id);
