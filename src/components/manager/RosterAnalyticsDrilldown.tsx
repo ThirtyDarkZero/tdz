@@ -420,6 +420,86 @@ export function RosterAnalyticsDrilldown() {
         </Card>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <Card className="p-4 glass-card">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <div className="text-sm font-semibold">Top tracks by streams</div>
+              <div className="text-[10px] text-muted-foreground">Hover for artist + revenue</div>
+            </div>
+            <Badge variant="outline" className="text-[10px]">Top {topTracks.length}</Badge>
+          </div>
+          <div style={{ width: "100%", height: 240 }}>
+            <ResponsiveContainer>
+              <BarChart data={topTracks} margin={{ top: 8, right: 8, left: -12, bottom: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.3)" />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} interval={0} angle={-25} textAnchor="end" height={50} />
+                <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--primary) / 0.08)" }} />
+                <Bar dataKey="streams" radius={[4, 4, 0, 0]}>
+                  {topTracks.map((_, i) => (
+                    <Cell key={i} fill={barColors[i % barColors.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card className="p-4 glass-card">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <div className="text-sm font-semibold">Revenue per artist</div>
+              <div className="text-[10px] text-muted-foreground">Attributed at $1 / qualified stream</div>
+            </div>
+          </div>
+          <div style={{ width: "100%", height: 240 }}>
+            <ResponsiveContainer>
+              <BarChart data={artistRevenue} margin={{ top: 8, right: 8, left: -12, bottom: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.3)" />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} interval={0} angle={-25} textAnchor="end" height={50} />
+                <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => `$${v}`} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--primary) / 0.08)" }} />
+                <Bar dataKey="revenue" fill="#FF6347" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="paid" fill="#4ade80" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </div>
+
+      <Card className="p-4 glass-card">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <div className="text-sm font-semibold">Conversion over time · last 30 days</div>
+            <div className="text-[10px] text-muted-foreground">Qualified streams (≥30s) and attributed revenue</div>
+          </div>
+        </div>
+        <div style={{ width: "100%", height: 220 }}>
+          <ResponsiveContainer>
+            <AreaChart data={timeSeries} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
+              <defs>
+                <linearGradient id="gStreams" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#FF6347" stopOpacity={0.6} />
+                  <stop offset="100%" stopColor="#FF6347" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="gRevenue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#4ade80" stopOpacity={0.5} />
+                  <stop offset="100%" stopColor="#4ade80" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.3)" />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+              <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+              <Tooltip content={<CustomTooltip />} />
+              <Area type="monotone" dataKey="streams" stroke="#FF6347" fill="url(#gStreams)" strokeWidth={2} />
+              <Area type="monotone" dataKey="revenue" stroke="#4ade80" fill="url(#gRevenue)" strokeWidth={2} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
+
       <Card className="p-4 glass-card">
         <div className="flex flex-wrap items-center gap-2 mb-4">
           <div className="relative flex-1 min-w-[200px]">
