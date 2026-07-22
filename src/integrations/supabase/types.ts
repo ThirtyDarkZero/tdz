@@ -1992,6 +1992,7 @@ export type Database = {
           id: string
           is_public: boolean | null
           location: string | null
+          onboarding_completed: boolean
           profile_image_path: string | null
           social_links: Json | null
           updated_at: string
@@ -2011,6 +2012,7 @@ export type Database = {
           id?: string
           is_public?: boolean | null
           location?: string | null
+          onboarding_completed?: boolean
           profile_image_path?: string | null
           social_links?: Json | null
           updated_at?: string
@@ -2030,6 +2032,7 @@ export type Database = {
           id?: string
           is_public?: boolean | null
           location?: string | null
+          onboarding_completed?: boolean
           profile_image_path?: string | null
           social_links?: Json | null
           updated_at?: string
@@ -2162,6 +2165,45 @@ export type Database = {
           id?: string
           manager_id?: string
           notes?: string | null
+        }
+        Relationships: []
+      }
+      manager_integrations: {
+        Row: {
+          config: Json
+          created_at: string
+          credentials: Json
+          display_name: string | null
+          id: string
+          last_sync_at: string | null
+          manager_id: string
+          provider: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          credentials?: Json
+          display_name?: string | null
+          id?: string
+          last_sync_at?: string | null
+          manager_id: string
+          provider: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          credentials?: Json
+          display_name?: string | null
+          id?: string
+          last_sync_at?: string | null
+          manager_id?: string
+          provider?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }

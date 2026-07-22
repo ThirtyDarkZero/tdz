@@ -25,6 +25,8 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Studio = lazy(() => import("./pages/Studio"));
 const Discover = lazy(() => import("./pages/Discover"));
 const RoleSelection = lazy(() => import("./pages/RoleSelection"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const ManagerHQ = lazy(() => import("./pages/ManagerHQ"));
 const ArtistProfile = lazy(() => import("./pages/ArtistProfile"));
 const UnifiedArtistProfile = lazy(() => import("./pages/UnifiedArtistProfile"));
 const ListenerProfile = lazy(() => import("./pages/ListenerProfile"));
@@ -81,6 +83,8 @@ const App = () => (
                   <Route path="/forgot-password" element={<Seo title="Reset Your Password | TDZ" description="Recover access to your TDZ Distribution account. Request a secure password reset link delivered to your verified email address." path="/forgot-password" noindex><ForgotPassword /></Seo>} />
                   <Route path="/reset-password" element={<Seo title="Set a New Password | TDZ" description="Choose a new password for your TDZ Distribution account and securely return to your studio, fan profile, or artist dashboard." path="/reset-password" noindex><ResetPassword /></Seo>} />
                   <Route path="/role-selection" element={<Seo title="Choose Your Role | TDZ" description="Tell TDZ whether you are an artist, manager, or fan so we can route you to the right studio, dashboard, or discovery experience." path="/role-selection" noindex><RoleSelection /></Seo>} />
+                  <Route path="/onboarding" element={<Seo title="Welcome to TDZ | Get Started" description="Set up your TDZ account in under a minute — pick a role, add basic info, and jump into your studio, manager HQ, or discovery." path="/onboarding" noindex><Onboarding /></Seo>} />
+                  <Route path="/manager-hq" element={<ErrorBoundary fallback={<AppErrorFallback title="Manager HQ failed to load" />}><Seo title="Manager HQ | TDZ Enterprise" description="Enterprise roster management, aggregated analytics, white-label branding, and custom integrations for TDZ managers and labels." path="/manager-hq" noindex><ManagerHQ /></Seo></ErrorBoundary>} />
                   <Route
                     path="/studio"
                     element={
