@@ -612,6 +612,97 @@ function Investors() {
         </div>
       </section>
 
+      {/* ─── FOUNDER & TEAM ─── */}
+      <section id="team" className="py-20 px-4 md:px-6 border-y border-[#111] scroll-mt-20" style={{ background: "linear-gradient(180deg, #050505, #000)" }}>
+        <div className="max-w-6xl mx-auto">
+          <Reveal>
+            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#D4A017", letterSpacing: "0.4em", textTransform: "uppercase", fontWeight: 700 }} className="text-center">
+              Section 04 · Founder & Team
+            </p>
+            <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(44px, 7vw, 88px)", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 0.9, color: "#fff" }} className="text-center mt-3">
+              Lived Experience, <span style={{ color: "#D4A017" }}>Not Theory</span>
+            </h2>
+            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 16, color: "#888", maxWidth: 760 }} className="mx-auto text-center mt-5">
+              Marine → Live Nation → Roc Nation → Artist → Builder. This company was built from the inside of the industry, not from a whiteboard.
+            </p>
+          </Reveal>
+
+          <div className="grid lg:grid-cols-2 gap-6 mt-12">
+            <Reveal>
+              <div className="rounded-2xl border border-[#D4A017]/20 bg-[#0a0a0a] p-8 h-full">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-[#D4A017]/10 flex items-center justify-center">
+                    <Crown className="w-6 h-6" style={{ color: "#D4A017" }} />
+                  </div>
+                  <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 32, color: "#fff", letterSpacing: "0.04em" }}>THE FOUNDER'S PATH</h3>
+                </div>
+                <div className="space-y-4">
+                  {[
+                    { stage: "U.S. Marine Corps", detail: "Discipline, logistics, and execution under pressure." },
+                    { stage: "Live Nation", detail: "Global arena tour operations at the highest scale." },
+                    { stage: "Roc Nation / Three Six Zero", detail: "Artist management strategy for A-list talent." },
+                    { stage: "Working Artist", detail: "Lived the payout problem firsthand." },
+                    { stage: "Builder", detail: "Building the infrastructure artists were never given." },
+                  ].map((item, i) => (
+                    <div key={i} className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-3 h-3 rounded-full bg-[#D4A017]" />
+                        {i < 4 && <div className="w-px h-full bg-[#D4A017]/20" style={{ minHeight: 40 }} />}
+                      </div>
+                      <div className="pb-4">
+                        <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 14, color: "#fff", fontWeight: 600 }}>{item.stage}</p>
+                        <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#666", marginTop: 2 }}>{item.detail}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Reveal>
+
+            <Reveal delay={0.1}>
+              <div className="rounded-2xl border border-[#222] bg-[#111] p-8 h-full flex flex-col">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-[#00CFFF]/10 flex items-center justify-center">
+                    <Shield className="w-6 h-6" style={{ color: "#00CFFF" }} />
+                  </div>
+                  <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 32, color: "#fff", letterSpacing: "0.04em" }}>HONEST GAPS</h3>
+                </div>
+                <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 14, color: "#888", lineHeight: 1.7 }}>
+                  We don't pretend to have every answer. Here is where we are strong, where we are building, and where a strategic partner changes the game.
+                </p>
+                <div className="space-y-3 mt-6 flex-1">
+                  {[
+                    { label: "Operational strength", status: "Proven", color: "#22C55E", desc: "Tour ops, artist relations, logistics, and execution." },
+                    { label: "Product & engineering", status: "Building", color: "#00CFFF", desc: "Platform is live; scaling to millions requires capital and senior hires." },
+                    { label: "Capital markets", status: "Seeking partner", color: "#D4A017", desc: "We need a lead who understands media, fintech, and marketplace scale." },
+                    { label: "AI / data science", status: "Partner-ready", color: "#8B5CF6", desc: "Architecture in place; ready to integrate best-in-class models." },
+                  ].map((item, i) => (
+                    <div key={i} className="p-4 rounded-xl bg-[#0a0a0a] border border-[#222]">
+                      <div className="flex items-center justify-between">
+                        <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "#ccc", fontWeight: 600 }}>{item.label}</p>
+                        <span className="px-2 py-1 rounded-full text-[10px] uppercase tracking-wider font-bold" style={{ background: `${item.color}15`, color: item.color, fontFamily: "'Raleway', sans-serif" }}>{item.status}</span>
+                      </div>
+                      <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#666", marginTop: 4 }}>{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Reveal>
+          </div>
+
+          <Reveal className="mt-10">
+            <div className="rounded-2xl border border-[#D4A017]/20 p-8 md:p-12 text-center" style={{ background: "linear-gradient(180deg, #0F0E08 0%, #050505 100%)" }}>
+              <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 28, color: "#E8C76A", letterSpacing: "0.04em", lineHeight: 1.2, textTransform: "uppercase" }}>
+                We Are Looking For A Partner, Not Just A Check.
+              </p>
+              <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 15, color: "#888", lineHeight: 1.8, maxWidth: 700 }} className="mx-auto mt-4">
+                The right investor brings more than capital. They bring operating experience in streaming, payments, or AI; they open doors to talent and enterprise partnerships; and they help us scale without losing the artist-first mission.
+              </p>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
       {/* ─── GTM HERO — LAST STAGE STANDING ─── */}
       <section id="show" className="py-20 px-4 md:px-6 border-y border-[#111]" style={{ background: "linear-gradient(180deg, #000, #060000, #000)" }}>
         <div className="max-w-6xl mx-auto">
