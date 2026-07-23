@@ -34,7 +34,7 @@ const ROLE_META: Record<
     tagline: string;
     hero: string;
     accent: string;
-    icon: React.ComponentType<{ className?: string }>;
+    icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
     perks: string[];
     xp: number;
   }
@@ -564,7 +564,7 @@ function QuestPanel({
   children,
 }: {
   accent: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   chapter: string;
   title: string;
   subtitle: string;
