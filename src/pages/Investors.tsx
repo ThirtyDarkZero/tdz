@@ -708,7 +708,7 @@ function Investors() {
         <div className="max-w-6xl mx-auto">
           <Reveal>
             <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#FF6347", letterSpacing: "0.4em", textTransform: "uppercase", fontWeight: 700 }} className="text-center">
-              Section 04 · {t("The Go-To-Market", "GTM Wedge")}
+              Section 05 · {t("The Go-To-Market", "GTM Wedge")}
             </p>
             <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(44px, 7vw, 88px)", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 0.9, color: "#fff" }} className="text-center mt-3 mb-12">
               The Show That Builds The Audience
