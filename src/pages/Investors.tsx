@@ -538,7 +538,7 @@ function Investors() {
         <div className="max-w-6xl mx-auto">
           <Reveal>
             <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#666", letterSpacing: "0.4em", textTransform: "uppercase", fontWeight: 700 }} className="text-center">
-              Section 02 · The Customer
+              Section 03 · The Customer
             </p>
             <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(44px, 7vw, 88px)", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 0.9, color: "#fff" }} className="text-center mt-3">
               <span style={{ color: "#00CFFF" }}>187,000</span> Working Artists
