@@ -788,6 +788,59 @@ function Investors() {
             ))}
           </div>
 
+          {/* Competition Moat */}
+          <Reveal className="mt-12">
+            <div className="rounded-2xl border border-[#222] bg-[#111] p-8 md:p-10">
+              <div className="text-center mb-10">
+                <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 48, color: "#fff", letterSpacing: "0.04em", lineHeight: 1 }}>
+                  Why They Can't Copy Us
+                </h3>
+                <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 14, color: "#888", maxWidth: 700 }} className="mx-auto mt-3">
+                  Spotify and Apple Music are not competitors we out-feature. They are structurally trapped.
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-6">
+                {[
+                  { title: "The Data Moat", icon: Brain, color: "#8B5CF6", desc: "Every stream, tip, download, share, and comment on TDZ is tied to a real fan identity and a real artist wallet. That first-party data trains our discovery engine and makes the platform stickier with every play." },
+                  { title: "Why They Missed It", icon: Target, color: "#00CFFF", desc: "Incumbents optimized for ad-supported scale and major-label catalogs. They built a royalty system that punishes independents. Fixing it would collapse their label deals and ad model." },
+                  { title: "Why They Can't Copy", icon: Shield, color: "#22C55E", desc: "Paying $1/stream would vaporize Spotify's ~25% gross margin and violate pro-rata label contracts. They cannot pivot without destroying their own business." },
+                ].map((item, i) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={i} className="rounded-2xl border border-[#222] bg-[#0a0a0a] p-6">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ background: `${item.color}10` }}>
+                        <Icon className="w-6 h-6" style={{ color: item.color }} />
+                      </div>
+                      <h4 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 28, color: "#fff", letterSpacing: "0.03em" }}>{item.title}</h4>
+                      <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "#777", lineHeight: 1.7, marginTop: 8 }}>{item.desc}</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-10 p-6 rounded-2xl border border-[#D4A017]/20" style={{ background: "#0a0a0a" }}>
+                <h4 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 28, color: "#D4A017", letterSpacing: "0.03em", marginBottom: 16 }}>
+                  Competitive Validation — Market Signals, Not Our Claims
+                </h4>
+                <div className="grid md:grid-cols-4 gap-4">
+                  {[
+                    { label: "Spotify Loud & Clear", value: "187K", sub: "artists earn >$500/yr; only 11K earn >$10K", color: "#00CFFF" },
+                    { label: "Suno / Udio", value: "$125M+", sub: "AI music funding validates creator demand", color: "#8B5CF6" },
+                    { label: "Major Labels", value: "AI Arms", sub: "labels investing in AI tools, not artist economics", color: "#D4A017" },
+                    { label: "Indie Market", value: "19.8%", sub: "CAGR through 2029 — fastest-growing segment", color: "#22C55E" },
+                  ].map((item, i) => (
+                    <div key={i} className="text-center p-4 rounded-xl border border-[#222] bg-[#111]">
+                      <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#666", letterSpacing: "0.15em", textTransform: "uppercase" }}>{item.label}</p>
+                      <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 36, color: item.color, marginTop: 8 }}>{item.value}</p>
+                      <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#555", marginTop: 4, lineHeight: 1.4 }}>{item.sub}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Reveal>
+
           {/* Market Growth Chart */}
           <ScreenPopReveal className="mt-12">
             <div className="rounded-2xl border border-[#222] bg-[#111] p-8">
