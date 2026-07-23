@@ -27,11 +27,58 @@ export async function requireUser(req: Request): Promise<AuthResult> {
   return { user: { id: data.user.id, email: data.user.email ?? undefined }, error: null, status: 200 };
 }
 
-export function unauthorized(corsHeaders: Record<string, string>, message = "Unauthorized") {
-  return new Response(JSON.stringify({ error: message }), {
-    status: 401,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+// Consistent error shape across all endpoints:
+//   { error: string, code: string, request_id: string }
+function errorBody(message: string, code: string) {
+  return JSON.stringify({
+    error: message,
+    code,
+    request_id: crypto.randomUUID(),
   });
+}
+
+export function unauthorized(corsHeaders: Record<string, string>, message = "Unauthorized") {
+  return new Response(errorBody(message, "unauthorized"), {
+    status: 401,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+      "WWW-Authenticate": 'Bearer realm="tdz", error="invalid_token"',
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
+export function forbidden(corsHeaders: Record<string, string>, message = "Forbidden") {
+  return new Response(errorBody(message, "forbidden"), {
+    status: 403,
+    headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" },
+  });
+}
+
+export function methodNotAllowed(corsHeaders: Record<string, string>, allow: string[]) {
+  return new Response(errorBody("Method Not Allowed", "method_not_allowed"), {
+    status: 405,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+      "Allow": allow.join(", "),
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
+// Enforce that the request uses one of the allowed methods.
+// Returns a 405 Response when it doesn't, otherwise null.
+export function enforceMethod(
+  req: Request,
+  allow: string[],
+  corsHeaders: Record<string, string>,
+): Response | null {
+  const method = req.method.toUpperCase();
+  const allowed = allow.map((m) => m.toUpperCase());
+  if (allowed.includes(method)) return null;
+  return methodNotAllowed(corsHeaders, allow);
 }
 
 // Verify a shared cron secret for scheduler-only endpoints
