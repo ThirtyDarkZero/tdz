@@ -1,7 +1,8 @@
 import { JargonToggle } from "./JargonContext";
 
 const ANCHORS = [
-  { id: "traction", label: "Traction" },
+  { id: "problem", label: "Problem" },
+  { id: "advantage", label: "Advantage" },
   { id: "market", label: "Market" },
   { id: "show", label: "The Show" },
   { id: "ask", label: "The Ask" },
