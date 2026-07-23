@@ -534,35 +534,81 @@ function Investors() {
       </section>
 
       {/* ─── THE CUSTOMER ─── */}
-      <section className="py-20 px-4 md:px-6">
+      <section id="customer" className="py-20 px-4 md:px-6 scroll-mt-20">
         <div className="max-w-6xl mx-auto">
           <Reveal>
             <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#666", letterSpacing: "0.4em", textTransform: "uppercase", fontWeight: 700 }} className="text-center">
               Section 03 · The Customer
             </p>
             <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(44px, 7vw, 88px)", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 0.9, color: "#fff" }} className="text-center mt-3">
-              <span style={{ color: "#00CFFF" }}>187,000</span> Working Artists
+              A Two-Sided Movement: <span style={{ color: "#00CFFF" }}>Artists</span> + <span style={{ color: "#FF6347" }}>Fans</span>
             </h2>
             <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 16, color: "#888", maxWidth: 760 }} className="mx-auto text-center mt-5">
-              Not the majors. Not bedroom hobbyists. The working middle: artists already earning <span className="text-white font-semibold">$500–$50,000/yr</span> in royalties — the cohort Spotify abandoned and labels ignore.
+              Our customers are not just artists. They are also the fans and music streamers actively looking for an alternative to Spotify and Apple Music — listeners who want their money to reach the creators they love.
             </p>
           </Reveal>
 
-          <div className="grid md:grid-cols-3 gap-4 mt-12">
-            {[
-              { stat: "187K", label: "Artists earn >$500/yr on Spotify", source: "Spotify Loud&Clear 2024", color: "#00CFFF" },
-              { stat: "94%", label: "Income cliff: only 11K earn >$10K", source: "The missing middle", color: "#D4A017" },
-              { stat: "20K", label: t("Plays needed on TDZ to earn $20K", "Streams to $20K ARPS on TDZ"), source: "vs 6.7M on Spotify", color: "#22C55E" },
-            ].map((x, i) => (
-              <Reveal key={i} delay={i * 0.1}>
-                <div className="rounded-2xl p-7 border border-[#222] bg-[#0a0a0a] h-full">
-                  <div style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 80, color: x.color, lineHeight: 1, letterSpacing: "0.03em" }}>{x.stat}</div>
-                  <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 14, color: "#ccc", fontWeight: 500 }} className="mt-4">{x.label}</div>
-                  <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#555", letterSpacing: "0.15em", textTransform: "uppercase" }} className="mt-2">{x.source}</div>
+          <div className="grid md:grid-cols-2 gap-6 mt-12">
+            <Reveal>
+              <div className="rounded-2xl border border-[#00CFFF]/20 bg-[#0a0a0a] p-8 h-full">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-[#00CFFF]/10 flex items-center justify-center">
+                    <Users className="w-6 h-6" style={{ color: "#00CFFF" }} />
+                  </div>
+                  <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 32, color: "#fff", letterSpacing: "0.04em" }}>THE ARTISTS</h3>
                 </div>
-              </Reveal>
-            ))}
+                <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 14, color: "#888", lineHeight: 1.7 }}>
+                  Not the majors. Not bedroom hobbyists. The working middle: artists already earning <span className="text-white font-semibold">$500–$50,000/yr</span> in royalties — the cohort Spotify abandoned and labels ignore.
+                </p>
+                <div className="grid grid-cols-3 gap-3 mt-6">
+                  {[
+                    { stat: "187K", label: "Earn >$500/yr", color: "#00CFFF" },
+                    { stat: "11K", label: "Earn >$10K/yr", color: "#D4A017" },
+                    { stat: "20K", label: "TDZ streams = $20K", color: "#22C55E" },
+                  ].map((x, i) => (
+                    <div key={i} className="rounded-xl border border-[#222] bg-[#111] p-4 text-center">
+                      <div style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 36, color: x.color, lineHeight: 1 }}>{x.stat}</div>
+                      <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#666", letterSpacing: "0.1em", textTransform: "uppercase" }} className="mt-2">{x.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Reveal>
+
+            <Reveal delay={0.1}>
+              <div className="rounded-2xl border border-[#FF6347]/20 bg-[#0a0a0a] p-8 h-full">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-[#FF6347]/10 flex items-center justify-center">
+                    <Music className="w-6 h-6" style={{ color: "#FF6347" }} />
+                  </div>
+                  <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 32, color: "#fff", letterSpacing: "0.04em" }}>THE FANS</h3>
+                </div>
+                <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 14, color: "#888", lineHeight: 1.7 }}>
+                  Music streamers tired of watching their subscription fees disappear into opaque royalty pools. They want transparency, direct artist connection, exclusive content, and the knowledge that <span className="text-white font-semibold">every stream pays $1</span>.
+                </p>
+                <div className="grid grid-cols-3 gap-3 mt-6">
+                  {[
+                    { stat: "616M", label: "Paid music subs globally", color: "#FF6347" },
+                    { stat: "$12/mo", label: "Fan subscription", color: "#E8C76A" },
+                    { stat: "94%", label: "Target retention", color: "#22C55E" },
+                  ].map((x, i) => (
+                    <div key={i} className="rounded-xl border border-[#222] bg-[#111] p-4 text-center">
+                      <div style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 36, color: x.color, lineHeight: 1 }}>{x.stat}</div>
+                      <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#666", letterSpacing: "0.1em", textTransform: "uppercase" }} className="mt-2">{x.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Reveal>
           </div>
+
+          <Reveal className="mt-10">
+            <div className="rounded-2xl border border-[#222] bg-[#111] p-8 text-center">
+              <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 16, color: "#aaa", lineHeight: 1.8 }}>
+                TDZ is the first platform where <span className="text-[#00CFFF] font-semibold">the customer is also the product's champion</span>. Artists bring fans. Fans bring artists. The flywheel is built into the business model.
+              </p>
+            </div>
+          </Reveal>
         </div>
       </section>
 
