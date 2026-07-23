@@ -754,7 +754,9 @@ function Investors() {
       <section id="market" className="py-20 px-4 md:px-6 scroll-mt-20">
         <div className="max-w-6xl mx-auto">
           <Reveal>
-            <TDZBadge />
+            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#666", letterSpacing: "0.4em", textTransform: "uppercase", fontWeight: 700 }} className="text-center">
+              Section 06 · Market / Competition
+            </p>
             <SectionTitle>$100B+ MARKET OPPORTUNITY</SectionTitle>
             <p className="text-center mt-4" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 15, color: "#777" }}>
               The global music streaming market is exploding—and independent + AI music is the fastest-growing segment.
