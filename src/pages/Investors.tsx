@@ -353,8 +353,8 @@ function Investors() {
               Spotify pays <span className="text-[#EF4444] font-bold">$0.003</span> per stream. We pay <span className="text-[#22C55E] font-bold">$1.00</span>. Built for the <span className="text-white font-bold">187,000 working independent artists</span> who already earn over $500/yr in royalties — and the fans who fund them.
             </p>
             <div className="mt-10 flex items-center justify-center gap-3 flex-wrap">
-              <a href="#traction" className="px-6 py-3 rounded-full bg-white text-black font-semibold text-sm uppercase tracking-wider hover:scale-105 transition-transform" style={{ fontFamily: "'Raleway', sans-serif", letterSpacing: "0.18em" }}>
-                See The Traction →
+              <a href="#problem" className="px-6 py-3 rounded-full bg-white text-black font-semibold text-sm uppercase tracking-wider hover:scale-105 transition-transform" style={{ fontFamily: "'Raleway', sans-serif", letterSpacing: "0.18em" }}>
+                See The Problem →
               </a>
               <a href="#show" className="px-6 py-3 rounded-full border border-[#FF6347] text-[#FF6347] font-semibold text-sm uppercase tracking-wider hover:bg-[#FF6347]/10 transition-all" style={{ fontFamily: "'Raleway', sans-serif", letterSpacing: "0.18em" }}>
                 The $250K GTM
