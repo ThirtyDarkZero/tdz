@@ -14,7 +14,7 @@ import { Play } from "lucide-react";
 import { LineChart as RechartsLine, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { JargonProvider, useJargon } from "@/components/investor/JargonContext";
 import { StickyDeckNav } from "@/components/investor/StickyDeckNav";
-import { LiveTraction } from "@/components/investor/LiveTraction";
+
 import { LastStageStanding } from "@/components/investor/LastStageStanding";
 import { FounderBio } from "@/components/investor/FounderBio";
 
@@ -353,8 +353,8 @@ function Investors() {
               Spotify pays <span className="text-[#EF4444] font-bold">$0.003</span> per stream. We pay <span className="text-[#22C55E] font-bold">$1.00</span>. Built for the <span className="text-white font-bold">187,000 working independent artists</span> who already earn over $500/yr in royalties — and the fans who fund them.
             </p>
             <div className="mt-10 flex items-center justify-center gap-3 flex-wrap">
-              <a href="#traction" className="px-6 py-3 rounded-full bg-white text-black font-semibold text-sm uppercase tracking-wider hover:scale-105 transition-transform" style={{ fontFamily: "'Raleway', sans-serif", letterSpacing: "0.18em" }}>
-                See The Traction →
+              <a href="#problem" className="px-6 py-3 rounded-full bg-white text-black font-semibold text-sm uppercase tracking-wider hover:scale-105 transition-transform" style={{ fontFamily: "'Raleway', sans-serif", letterSpacing: "0.18em" }}>
+                See The Problem →
               </a>
               <a href="#show" className="px-6 py-3 rounded-full border border-[#FF6347] text-[#FF6347] font-semibold text-sm uppercase tracking-wider hover:bg-[#FF6347]/10 transition-all" style={{ fontFamily: "'Raleway', sans-serif", letterSpacing: "0.18em" }}>
                 The $250K GTM
@@ -364,23 +364,172 @@ function Investors() {
         </div>
       </section>
 
-      {/* ─── TRACTION FIRST ─── */}
-      <section id="traction" className="py-20 px-4 md:px-6 border-y border-[#111]" style={{ background: "linear-gradient(180deg, #050505, #000)" }}>
+      {/* ─── ① PROBLEM OVERVIEW ─── */}
+      <section id="problem" className="py-20 px-4 md:px-6 border-y border-[#111]" style={{ background: "linear-gradient(180deg, #050505, #000)" }}>
         <div className="max-w-6xl mx-auto">
           <Reveal>
             <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#666", letterSpacing: "0.4em", textTransform: "uppercase", fontWeight: 700 }} className="text-center">
-              Section 01 · Traction
+              Section 01 · Problem Overview
             </p>
             <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(44px, 7vw, 88px)", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 0.9, color: "#fff" }} className="text-center mt-3">
-              The Platform Is <span style={{ color: "#22C55E" }}>Live</span>
+              The Middle Class of Music Is <span style={{ color: "#EF4444" }}>Disappearing</span>
             </h2>
-            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 14, color: "#666", maxWidth: 600 }} className="mx-auto text-center mt-4">
-              Pulled live from production. {t("Real artists, real streams, real payouts.", "Live counts from production DB; payouts via Stripe Connect.")}
+            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 16, color: "#888", maxWidth: 760 }} className="mx-auto text-center mt-5">
+              Streaming pays artists <span className="text-[#EF4444] font-bold">$0.003</span> per play. The economics are structurally designed to reward scale, not craft — and the working artist is being left behind.
             </p>
           </Reveal>
-          <div className="mt-12">
-            <LiveTraction />
+
+          <div className="grid md:grid-cols-3 gap-6 mt-12">
+            <Reveal>
+              <div className="rounded-2xl border border-[#222] bg-[#111] p-8 h-full flex flex-col">
+                <div className="w-12 h-12 rounded-xl bg-[#EF4444]/10 flex items-center justify-center mb-6">
+                  <AlertTriangle className="w-6 h-6" style={{ color: "#EF4444" }} />
+                </div>
+                <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 32, color: "#fff", letterSpacing: "0.04em" }}>STRUCTURAL PROBLEM</h3>
+                <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "#777", lineHeight: 1.7, marginTop: 12, flex: 1 }}>
+                  The pro-rata royalty model pools all subscriber revenue and pays artists by share of total streams. A Spotify stream is worth roughly <span style={{ color: "#EF4444", fontWeight: 700 }}>$0.003</span>. Labels and platforms capture the margin; creators absorb the risk.
+                </p>
+                <div className="mt-6 p-4 rounded-xl" style={{ background: "#EF444408", border: "1px solid #EF444420" }}>
+                  <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "#aaa" }}>
+                    <span style={{ color: "#EF4444", fontWeight: 700 }}>187,000</span> artists earn &gt;$500/yr, but only <span style={{ color: "#EF4444", fontWeight: 700 }}>11,000</span> earn &gt;$10K.
+                  </p>
+                </div>
+              </div>
+            </Reveal>
+
+            <Reveal delay={0.1}>
+              <div className="rounded-2xl border border-[#222] bg-[#111] p-8 h-full flex flex-col">
+                <div className="w-12 h-12 rounded-xl bg-[#00CFFF]/10 flex items-center justify-center mb-6">
+                  <Globe className="w-6 h-6" style={{ color: "#00CFFF" }} />
+                </div>
+                <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 32, color: "#fff", letterSpacing: "0.04em" }}>LARGE MARKET</h3>
+                <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "#777", lineHeight: 1.7, marginTop: 12, flex: 1 }}>
+                  Global music streaming will reach <span style={{ color: "#00CFFF", fontWeight: 700 }}>$106.6B by 2029</span>. Independent and AI-generated music are the fastest-growing segments, with a combined CAGR of 28%. Demand is massive — and underserved.
+                </p>
+                <div className="mt-6 space-y-2">
+                  {[
+                    ["2024 Market", "$43.7B"],
+                    ["2029 Projection", "$106.6B"],
+                    ["Indie + AI CAGR", "28%"]
+                  ].map(([label, value], i) => (
+                    <div key={i} className="flex justify-between py-2 border-b border-[#1A1A1A]">
+                      <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#666" }}>{label}</span>
+                      <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#00CFFF", fontWeight: 700 }}>{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Reveal>
+
+            <Reveal delay={0.2}>
+              <div className="rounded-2xl border border-[#222] bg-[#111] p-8 h-full flex flex-col">
+                <div className="w-12 h-12 rounded-xl bg-[#D4A017]/10 flex items-center justify-center mb-6">
+                  <Shield className="w-6 h-6" style={{ color: "#D4A017" }} />
+                </div>
+                <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 32, color: "#fff", letterSpacing: "0.04em" }}>WHY IT HASN'T BEEN SOLVED</h3>
+                <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "#777", lineHeight: 1.7, marginTop: 12, flex: 1 }}>
+                  Incumbents are locked into long-term label agreements, ad-supported freemium models, and legacy cost structures. Paying $1/stream would vaporize their margins and violate their label economics. They cannot pivot without imploding their existing business.
+                </p>
+                <div className="mt-6 p-4 rounded-xl" style={{ background: "#D4A01708", border: "1px solid #D4A01720" }}>
+                  <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "#aaa" }}>
+                    TDZ was built from a blank sheet: <span style={{ color: "#D4A017", fontWeight: 700 }}>artist-owned, AI-native, subscription-pool first</span>.
+                  </p>
+                </div>
+              </div>
+            </Reveal>
           </div>
+        </div>
+      </section>
+
+      {/* ─── ② UNFAIR ADVANTAGE ─── */}
+      <section id="advantage" className="py-20 px-4 md:px-6" style={{ background: "#000" }}>
+        <div className="max-w-6xl mx-auto">
+          <Reveal>
+            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#666", letterSpacing: "0.4em", textTransform: "uppercase", fontWeight: 700 }} className="text-center">
+              Section 02 · Unfair Advantage
+            </p>
+            <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(44px, 7vw, 88px)", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 0.9, color: "#fff" }} className="text-center mt-3">
+              A Business Model They <span style={{ color: "#22C55E" }}>Can't Copy</span>
+            </h2>
+            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 16, color: "#888", maxWidth: 760 }} className="mx-auto text-center mt-5">
+              Subscription pool + AI cost reduction = <span className="text-[#22C55E] font-bold">$1 per stream</span>. We make the math work by redesigning both sides of the equation.
+            </p>
+          </Reveal>
+
+          <div className="grid lg:grid-cols-3 gap-6 mt-12">
+            <Reveal className="lg:col-span-1">
+              <div className="rounded-2xl border border-[#1A3A1A] bg-[#0A1A0A] p-8 h-full flex flex-col">
+                <div className="w-12 h-12 rounded-xl bg-[#22C55E]/10 flex items-center justify-center mb-6">
+                  <DollarSign className="w-6 h-6" style={{ color: "#22C55E" }} />
+                </div>
+                <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 32, color: "#fff", letterSpacing: "0.04em" }}>BUSINESS MODEL INNOVATION</h3>
+                <div className="mt-4 space-y-3 flex-1">
+                  {[
+                    ["Fan subscription pool", "$12/mo × 1M fans = $144M/yr"],
+                    ["Artist subscriptions", "$25/mo × 400K artists = $120M/yr"],
+                    ["AI cost reduction", "95% cheaper video, lyrics, promo"],
+                    ["ARPS target", "$1.35 — $0.35 cushion above payout"]
+                  ].map(([title, desc], i) => (
+                    <div key={i} className="p-3 rounded-xl bg-[#050A05] border border-[#1A3A1A]">
+                      <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#fff", fontWeight: 600 }}>{title}</p>
+                      <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#777" }}>{desc}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6 p-4 rounded-xl text-center" style={{ background: "#22C55E10", border: "1px solid #22C55E30" }}>
+                  <div style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 48, color: "#22C55E" }}>$1.35</div>
+                  <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#888", letterSpacing: "0.15em", textTransform: "uppercase" }}>Target ARPS</div>
+                </div>
+              </div>
+            </Reveal>
+
+            <Reveal className="lg:col-span-2" delay={0.1}>
+              <div className="rounded-2xl border border-[#222] bg-[#111] p-8 h-full flex flex-col">
+                <div className="w-12 h-12 rounded-xl bg-[#FF6347]/10 flex items-center justify-center mb-6">
+                  <Target className="w-6 h-6" style={{ color: "#FF6347" }} />
+                </div>
+                <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 32, color: "#fff", letterSpacing: "0.04em" }}>WHAT COULD GO WRONG + MITIGATIONS</h3>
+                <div className="grid md:grid-cols-2 gap-4 mt-6 flex-1">
+                  {[
+                    { risk: "ARPS falls below $1", mitigation: "Diversified revenue, fraud detection, controlled stream ramp, and dynamic pricing keep ARPS above payout.", color: "#EF4444" },
+                    { risk: "Spotify/Apple copy us", mitigation: "They can't abandon pro-rata label deals. TDZ is natively artist-owned and AI-first — a clean-sheet advantage.", color: "#00CFFF" },
+                    { risk: "AI copyright disputes", mitigation: "Rights verification, fingerprinting, transparent reporting, and opt-in AI licensing protect the platform.", color: "#D4A017" },
+                    { risk: "Fan subscription churn", mitigation: "Exclusive content, Last Stage Standing, direct artist connection, and fan rewards drive 94% retention.", color: "#22C55E" }
+                  ].map((item, i) => (
+                    <div key={i} className="p-4 rounded-xl bg-[#0A0A0A] border border-[#1A1A1A]">
+                      <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: item.color, fontWeight: 700, marginBottom: 6 }}>{item.risk}</p>
+                      <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#777", lineHeight: 1.6 }}>{item.mitigation}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Reveal>
+          </div>
+
+          <Reveal className="mt-12">
+            <div className="rounded-2xl border border-[#222] bg-[#111] p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-xl bg-[#8B5CF6]/10 flex items-center justify-center">
+                  <Star className="w-6 h-6" style={{ color: "#8B5CF6" }} />
+                </div>
+                <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 32, color: "#fff", letterSpacing: "0.04em" }}>THIRD-PARTY VALIDATION</h3>
+              </div>
+              <div className="grid md:grid-cols-4 gap-4">
+                {[
+                  { label: "Suno / Udio", value: "$125M+", sub: "AI music generation funding" },
+                  { label: "Mogul", value: "Acquired", sub: "Artist financial services" },
+                  { label: "Major Labels", value: "AI Arms", sub: "Investing in AI music tools" },
+                  { label: "Indie Market", value: "19.8%", sub: "CAGR through 2029" }
+                ].map((item, i) => (
+                  <div key={i} className="text-center p-5 rounded-xl bg-[#0A0A0A] border border-[#1A1A1A]">
+                    <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#666", letterSpacing: "0.15em", textTransform: "uppercase" }}>{item.label}</div>
+                    <div style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 40, color: "#8B5CF6", marginTop: 8 }}>{item.value}</div>
+                    <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#555", marginTop: 4 }}>{item.sub}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Reveal>
         </div>
       </section>
 
@@ -389,7 +538,7 @@ function Investors() {
         <div className="max-w-6xl mx-auto">
           <Reveal>
             <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#666", letterSpacing: "0.4em", textTransform: "uppercase", fontWeight: 700 }} className="text-center">
-              Section 02 · The Customer
+              Section 03 · The Customer
             </p>
             <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(44px, 7vw, 88px)", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 0.9, color: "#fff" }} className="text-center mt-3">
               <span style={{ color: "#00CFFF" }}>187,000</span> Working Artists
@@ -422,7 +571,7 @@ function Investors() {
         <div className="max-w-6xl mx-auto">
           <Reveal>
             <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#FF6347", letterSpacing: "0.4em", textTransform: "uppercase", fontWeight: 700 }} className="text-center">
-              Section 03 · {t("The Go-To-Market", "GTM Wedge")}
+              Section 04 · {t("The Go-To-Market", "GTM Wedge")}
             </p>
             <h2 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(44px, 7vw, 88px)", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 0.9, color: "#fff" }} className="text-center mt-3 mb-12">
               The Show That Builds The Audience
