@@ -1,18 +1,72 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Music, Users, Headphones, ArrowRight, Loader2, Sparkles, Building2 } from "lucide-react";
+import {
+  Music,
+  Users,
+  Headphones,
+  ArrowRight,
+  Loader2,
+  Sparkles,
+  Building2,
+  Trophy,
+  Zap,
+  Star,
+  Rocket,
+} from "lucide-react";
 import tdzLogo from "@/assets/tdz-logo.png";
+import heroArtistStudio from "@/assets/hero-artist-studio.jpg";
+import heroArtistStreet from "@/assets/hero-artist-street.jpg";
+import heroArtistHeadphones from "@/assets/hero-artist-headphones.jpg";
 import { RequireAuth } from "@/components/auth/AuthGuard";
 
 type Role = "artist" | "manager" | "listener";
+
+const ROLE_META: Record<
+  Role,
+  {
+    label: string;
+    tagline: string;
+    hero: string;
+    accent: string;
+    icon: React.ComponentType<{ className?: string }>;
+    perks: string[];
+    xp: number;
+  }
+> = {
+  artist: {
+    label: "THE ARTIST",
+    tagline: "Drop tracks. Earn $1/stream. Build your empire.",
+    hero: heroArtistStudio,
+    accent: "#FF6347",
+    icon: Music,
+    perks: ["+1000 XP Boost", "Studio Unlocked", "Fan Tips ON"],
+    xp: 1000,
+  },
+  manager: {
+    label: "THE MOGUL",
+    tagline: "Command your roster. White-label your empire.",
+    hero: heroArtistStreet,
+    accent: "#e879f9",
+    icon: Building2,
+    perks: ["+2500 XP Boost", "Manager HQ", "Enterprise Ready"],
+    xp: 2500,
+  },
+  listener: {
+    label: "THE TASTEMAKER",
+    tagline: "Discover heat. Tip the artist. Shape the sound.",
+    hero: heroArtistHeadphones,
+    accent: "#a78bfa",
+    icon: Headphones,
+    perks: ["+500 XP Boost", "Early Access", "Vote On LSS"],
+    xp: 500,
+  },
+};
 
 function OnboardingFlow() {
   const { user, refreshRole, role: existingRole } = useAuthContext();
@@ -20,7 +74,10 @@ function OnboardingFlow() {
 
   const [step, setStep] = useState(1);
   const [role, setRole] = useState<Role | null>(null);
+  const [hoveredRole, setHoveredRole] = useState<Role | null>(null);
   const [saving, setSaving] = useState(false);
+  const [xp, setXp] = useState(0);
+  const [levelUp, setLevelUp] = useState(false);
 
   // Artist fields
   const [artistName, setArtistName] = useState("");
@@ -30,7 +87,6 @@ function OnboardingFlow() {
   const [labelName, setLabelName] = useState("");
   const [rosterEmails, setRosterEmails] = useState("");
 
-  // If user already has a role, skip past step 1
   useEffect(() => {
     if (existingRole === "artist" || existingRole === "verified_artist") {
       setRole("artist");
@@ -39,13 +95,29 @@ function OnboardingFlow() {
       setRole("manager");
       setStep(2);
     } else if (existingRole === "listener") {
-      // Already fully onboarded — send home
       navigate("/discover", { replace: true });
     }
   }, [existingRole, navigate]);
 
   const totalSteps = role === "listener" ? 1 : 3;
   const progress = (step / totalSteps) * 100;
+  const activeRole = hoveredRole || role;
+  const activeMeta = activeRole ? ROLE_META[activeRole] : null;
+
+  const triggerXP = (amount: number) => {
+    setLevelUp(true);
+    const start = xp;
+    const target = xp + amount;
+    const dur = 900;
+    const t0 = performance.now();
+    const animate = (t: number) => {
+      const p = Math.min((t - t0) / dur, 1);
+      setXp(Math.round(start + (target - start) * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) requestAnimationFrame(animate);
+      else setTimeout(() => setLevelUp(false), 400);
+    };
+    requestAnimationFrame(animate);
+  };
 
   const persistRole = async (chosen: Role) => {
     if (!user) return false;
@@ -63,31 +135,28 @@ function OnboardingFlow() {
   const handlePickRole = async (chosen: Role) => {
     setSaving(true);
     setRole(chosen);
+    triggerXP(ROLE_META[chosen].xp);
     const ok = await persistRole(chosen);
     setSaving(false);
     if (!ok) return;
     await refreshRole();
     if (chosen === "listener") {
-      toast.success("Welcome to TDZ.");
-      navigate("/discover", { replace: true });
+      toast.success("🎧 CLASS SELECTED — TASTEMAKER", { description: "Welcome to the frontline." });
+      setTimeout(() => navigate("/discover", { replace: true }), 800);
       return;
     }
-    setStep(2);
+    setTimeout(() => setStep(2), 700);
   };
 
   const finishArtist = async () => {
     if (!user) return;
     if (!artistName.trim()) {
-      toast.error("Enter an artist name to continue.");
+      toast.error("Every legend needs a name.");
       return;
     }
     setSaving(true);
     const { error } = await supabase.from("artist_profiles").upsert(
-      {
-        user_id: user.id,
-        artist_name: artistName.trim(),
-        genre: genre.trim() || null,
-      },
+      { user_id: user.id, artist_name: artistName.trim(), genre: genre.trim() || null },
       { onConflict: "user_id" }
     );
     setSaving(false);
@@ -95,23 +164,22 @@ function OnboardingFlow() {
       toast.error("Could not save artist profile", { description: error.message });
       return;
     }
+    triggerXP(500);
     setStep(3);
   };
 
   const finishManager = async () => {
     if (!user) return;
     if (!labelName.trim()) {
-      toast.error("Enter a label or company name to continue.");
+      toast.error("Name your empire to continue.");
       return;
     }
     setSaving(true);
-    // Save label name into enterprise_branding (used by ManagerHQ branding studio)
     await supabase.from("enterprise_branding").upsert(
       { user_id: user.id, label_name: labelName.trim() },
       { onConflict: "user_id" }
     );
 
-    // Send roster invites (soft-fail if collaborator_invites schema differs)
     const emails = rosterEmails
       .split(/[\n,;]+/)
       .map((e) => e.trim().toLowerCase())
@@ -126,10 +194,12 @@ function OnboardingFlow() {
           permissions: { manager: true },
         } as any);
       }
-      toast.success(`${emails.length} roster invite${emails.length > 1 ? "s" : ""} queued.`);
+      triggerXP(emails.length * 250);
+      toast.success(`🚀 ${emails.length} recruit${emails.length > 1 ? "s" : ""} summoned.`);
     }
 
     setSaving(false);
+    triggerXP(1000);
     setStep(3);
   };
 
@@ -139,154 +209,466 @@ function OnboardingFlow() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[150px]" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-fuchsia-500/10 rounded-full blur-[120px]" />
+    <div className="min-h-screen relative overflow-hidden" style={{ background: "#050505" }}>
+      {/* Cinematic backdrop */}
+      <div className="absolute inset-0">
+        {(Object.keys(ROLE_META) as Role[]).map((r) => (
+          <div
+            key={r}
+            className="absolute inset-0 transition-opacity duration-[1200ms] ease-out"
+            style={{ opacity: activeRole === r ? 0.55 : 0 }}
+          >
+            <img
+              src={ROLE_META[r].hero}
+              alt=""
+              className="w-full h-full object-cover"
+              style={{ filter: "saturate(1.2) contrast(1.1)", transform: "scale(1.08)" }}
+            />
+          </div>
+        ))}
+        {!activeRole && (
+          <>
+            <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full blur-[180px]" style={{ background: "rgba(255,99,71,0.25)" }} />
+            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full blur-[150px]" style={{ background: "rgba(167,139,250,0.25)" }} />
+          </>
+        )}
+        {/* Vignette + scanlines */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.85) 90%), linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.9) 100%)",
+          }}
+        />
+        <div
+          className="absolute inset-0 opacity-[0.06] pointer-events-none"
+          style={{
+            backgroundImage: "repeating-linear-gradient(0deg, rgba(255,255,255,0.4) 0px, rgba(255,255,255,0.4) 1px, transparent 1px, transparent 3px)",
+          }}
+        />
       </div>
 
-      <Card className="glass-card p-8 w-full max-w-xl space-y-6 relative z-10">
-        <div className="flex flex-col items-center gap-2">
-          <img src={tdzLogo} alt="TDZ" className="h-14 w-auto" style={{ mixBlendMode: "screen" }} />
-          <h1 className="text-2xl font-display font-bold">Welcome to TDZ</h1>
-          <p className="text-sm text-muted-foreground">Let's get you set up in under a minute.</p>
+      {/* HUD frame */}
+      <div className="relative z-10 min-h-screen flex flex-col p-4 sm:p-8">
+        {/* Top HUD bar */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <img src={tdzLogo} alt="TDZ" className="h-10 w-auto" style={{ mixBlendMode: "screen" }} />
+            <div className="hidden sm:block">
+              <div className="text-[10px] tracking-[0.3em] text-white/50" style={{ fontFamily: "'Raleway',sans-serif" }}>
+                PLAYER SETUP
+              </div>
+              <div className="text-xs tracking-widest text-white/80 font-bold">STAGE {step} / {totalSteps}</div>
+            </div>
+          </div>
+
+          {/* XP counter */}
+          <div className="flex items-center gap-3">
+            <div
+              className="flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-xl transition-all"
+              style={{
+                borderColor: levelUp ? "#FF6347" : "rgba(255,255,255,0.15)",
+                background: "rgba(0,0,0,0.5)",
+                boxShadow: levelUp ? "0 0 30px rgba(255,99,71,0.6)" : "none",
+              }}
+            >
+              <Star className={`w-4 h-4 ${levelUp ? "animate-spin" : ""}`} style={{ color: "#FFD700", fill: "#FFD700" }} />
+              <span className="tabular-nums font-bold text-white text-sm tracking-wider">
+                {xp.toLocaleString()} XP
+              </span>
+            </div>
+          </div>
         </div>
 
-        <Progress value={progress} className="h-1" />
-
-        {/* Step 1: Role */}
-        {step === 1 && (
-          <div className="space-y-3">
-            <p className="text-center text-sm text-muted-foreground">I'm here as a...</p>
-            <button
-              disabled={saving}
-              onClick={() => handlePickRole("artist")}
-              className="w-full flex items-center gap-4 p-4 rounded-lg border border-border/50 hover:border-primary hover:bg-primary/5 transition-all text-left disabled:opacity-50"
-            >
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Music className="w-6 h-6 text-primary" />
-              </div>
-              <div className="flex-1">
-                <div className="font-semibold">Artist</div>
-                <div className="text-xs text-muted-foreground">Upload music, get paid $1/stream, grow your fanbase</div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-muted-foreground" />
-            </button>
-
-            <button
-              disabled={saving}
-              onClick={() => handlePickRole("manager")}
-              className="w-full flex items-center gap-4 p-4 rounded-lg border border-border/50 hover:border-primary hover:bg-primary/5 transition-all text-left disabled:opacity-50"
-            >
-              <div className="w-12 h-12 rounded-lg bg-fuchsia-500/10 flex items-center justify-center">
-                <Users className="w-6 h-6 text-fuchsia-400" />
-              </div>
-              <div className="flex-1">
-                <div className="font-semibold">Manager / Label</div>
-                <div className="text-xs text-muted-foreground">Manage an entire roster of artists (Enterprise features)</div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-muted-foreground" />
-            </button>
-
-            <button
-              disabled={saving}
-              onClick={() => handlePickRole("listener")}
-              className="w-full flex items-center gap-4 p-4 rounded-lg border border-border/50 hover:border-primary hover:bg-primary/5 transition-all text-left disabled:opacity-50"
-            >
-              <div className="w-12 h-12 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                <Headphones className="w-6 h-6 text-violet-400" />
-              </div>
-              <div className="flex-1">
-                <div className="font-semibold">Fan / Listener</div>
-                <div className="text-xs text-muted-foreground">Discover new artists and support them directly</div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-muted-foreground" />
-            </button>
+        {/* Progress bar — game style */}
+        <div className="mb-8 max-w-2xl mx-auto w-full">
+          <div className="relative h-2 rounded-full overflow-hidden border border-white/10" style={{ background: "rgba(255,255,255,0.05)" }}>
+            <div
+              className="h-full transition-all duration-700 ease-out"
+              style={{
+                width: `${progress}%`,
+                background: `linear-gradient(90deg, ${activeMeta?.accent || "#FF6347"}, #a78bfa, ${activeMeta?.accent || "#FF6347"})`,
+                backgroundSize: "200% 100%",
+                animation: "shimmer 2s linear infinite",
+                boxShadow: `0 0 20px ${activeMeta?.accent || "#FF6347"}`,
+              }}
+            />
           </div>
-        )}
+          <style>{`@keyframes shimmer { 0%{background-position:0% 0%} 100%{background-position:200% 0%} }`}</style>
+        </div>
 
-        {/* Step 2: Artist profile */}
-        {step === 2 && role === "artist" && (
-          <div className="space-y-4">
-            <div className="text-center">
-              <h2 className="font-semibold">Tell us about your project</h2>
-              <p className="text-xs text-muted-foreground">You can refine this later in Studio.</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="artist-name">Artist name</Label>
-              <Input id="artist-name" value={artistName} onChange={(e) => setArtistName(e.target.value)} placeholder="e.g. Ghost Signal" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="genre">Primary genre (optional)</Label>
-              <Input id="genre" value={genre} onChange={(e) => setGenre(e.target.value)} placeholder="e.g. Alt R&B" />
-            </div>
-            <Button
-              onClick={finishArtist}
-              disabled={saving}
-              className="w-full h-11 bg-gradient-to-r from-primary via-violet-500 to-fuchsia-500 font-semibold"
-            >
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Continue"}
-            </Button>
-          </div>
-        )}
+        {/* Main content */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-full max-w-5xl">
+            {/* STEP 1 — Class selection */}
+            {step === 1 && (
+              <div className="space-y-8 animate-fade-in">
+                <div className="text-center space-y-2">
+                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/20 backdrop-blur-xl" style={{ background: "rgba(255,99,71,0.1)" }}>
+                    <Zap className="w-3.5 h-3.5" style={{ color: "#FF6347" }} />
+                    <span className="text-[10px] tracking-[0.3em] text-white/80 font-bold">SELECT YOUR CLASS</span>
+                  </div>
+                  <h1
+                    className="text-5xl sm:text-6xl md:text-7xl text-white leading-none"
+                    style={{ fontFamily: "'Six Caps', sans-serif", letterSpacing: "0.02em" }}
+                  >
+                    WHO ARE YOU<br />
+                    <span style={{ color: activeMeta?.accent || "#FF6347" }}>IN THIS GAME?</span>
+                  </h1>
+                  <p className="text-white/60 text-sm max-w-md mx-auto" style={{ fontFamily: "'Raleway',sans-serif" }}>
+                    {activeMeta?.tagline || "Hover a class to preview. Click to lock in your journey."}
+                  </p>
+                </div>
 
-        {/* Step 2: Manager profile */}
-        {step === 2 && role === "manager" && (
-          <div className="space-y-4">
-            <div className="text-center">
-              <h2 className="font-semibold flex items-center justify-center gap-2">
-                <Building2 className="w-4 h-4" /> Set up your label
-              </h2>
-              <p className="text-xs text-muted-foreground">Manager HQ unlocks full roster tools at Enterprise.</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="label-name">Label / company name</Label>
-              <Input id="label-name" value={labelName} onChange={(e) => setLabelName(e.target.value)} placeholder="e.g. Midnight Records" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="roster">Invite roster artists (optional)</Label>
-              <textarea
-                id="roster"
-                value={rosterEmails}
-                onChange={(e) => setRosterEmails(e.target.value)}
-                placeholder="artist1@example.com, artist2@example.com"
-                rows={3}
-                className="w-full rounded-md border border-border/50 bg-background/50 px-3 py-2 text-sm"
-              />
-              <p className="text-xs text-muted-foreground">Comma or newline separated. They'll receive an invite to join your roster.</p>
-            </div>
-            <Button
-              onClick={finishManager}
-              disabled={saving}
-              className="w-full h-11 bg-gradient-to-r from-fuchsia-500 via-violet-500 to-primary font-semibold"
-            >
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Continue"}
-            </Button>
-          </div>
-        )}
+                <div className="grid md:grid-cols-3 gap-4">
+                  {(Object.keys(ROLE_META) as Role[]).map((r) => {
+                    const meta = ROLE_META[r];
+                    const Icon = meta.icon;
+                    const isActive = activeRole === r;
+                    return (
+                      <button
+                        key={r}
+                        disabled={saving}
+                        onMouseEnter={() => setHoveredRole(r)}
+                        onMouseLeave={() => setHoveredRole(null)}
+                        onClick={() => handlePickRole(r)}
+                        className="group relative overflow-hidden rounded-2xl border text-left transition-all duration-500 disabled:opacity-50"
+                        style={{
+                          borderColor: isActive ? meta.accent : "rgba(255,255,255,0.12)",
+                          background: "rgba(10,10,10,0.6)",
+                          backdropFilter: "blur(24px)",
+                          transform: isActive ? "translateY(-6px) scale(1.02)" : "translateY(0)",
+                          boxShadow: isActive
+                            ? `0 20px 60px -20px ${meta.accent}80, inset 0 0 40px ${meta.accent}20`
+                            : "0 4px 20px rgba(0,0,0,0.4)",
+                        }}
+                      >
+                        {/* Portrait */}
+                        <div className="relative h-56 overflow-hidden">
+                          <img
+                            src={meta.hero}
+                            alt={meta.label}
+                            className="w-full h-full object-cover transition-transform duration-700"
+                            style={{ transform: isActive ? "scale(1.12)" : "scale(1)", filter: "saturate(1.15) contrast(1.1)" }}
+                          />
+                          <div
+                            className="absolute inset-0"
+                            style={{
+                              background: `linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.95) 100%), linear-gradient(135deg, ${meta.accent}30 0%, transparent 60%)`,
+                            }}
+                          />
+                          {/* Corner brackets — HUD style */}
+                          <div className="absolute inset-3 pointer-events-none">
+                            {["top-0 left-0 border-t-2 border-l-2", "top-0 right-0 border-t-2 border-r-2", "bottom-0 left-0 border-b-2 border-l-2", "bottom-0 right-0 border-b-2 border-r-2"].map((pos, k) => (
+                              <div
+                                key={k}
+                                className={`absolute w-5 h-5 ${pos} transition-all duration-300`}
+                                style={{ borderColor: isActive ? meta.accent : "rgba(255,255,255,0.4)" }}
+                              />
+                            ))}
+                          </div>
+                          <div className="absolute top-3 right-3 px-2 py-1 rounded-md text-[9px] font-bold tracking-widest backdrop-blur-xl" style={{ background: "rgba(0,0,0,0.7)", color: meta.accent, border: `1px solid ${meta.accent}60` }}>
+                            +{meta.xp} XP
+                          </div>
+                        </div>
 
-        {/* Step 3: Done */}
-        {step === 3 && (
-          <div className="space-y-4 text-center">
-            <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-primary" />
-            </div>
-            <h2 className="text-xl font-semibold">You're all set!</h2>
-            <p className="text-sm text-muted-foreground">
-              {role === "manager"
-                ? "Manager HQ is ready. Enterprise unlocks full roster management, white-label branding, and custom integrations."
-                : "Studio is ready. Upload your first track and start earning $1 per qualified stream."}
-            </p>
-            <Button
-              onClick={handleFinish}
-              className="w-full h-11 bg-gradient-to-r from-primary via-violet-500 to-fuchsia-500 font-semibold"
-            >
-              {role === "manager" ? "Open Manager HQ" : "Open Studio"} <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+                        {/* Info */}
+                        <div className="p-5 space-y-3">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-10 h-10 rounded-lg flex items-center justify-center transition-all"
+                              style={{
+                                background: `${meta.accent}20`,
+                                border: `1px solid ${meta.accent}60`,
+                                boxShadow: isActive ? `0 0 20px ${meta.accent}80` : "none",
+                              }}
+                            >
+                              <Icon className="w-5 h-5" style={{ color: meta.accent }} />
+                            </div>
+                            <div>
+                              <div className="text-[9px] tracking-[0.3em] text-white/40 font-bold">CLASS</div>
+                              <div className="text-lg font-bold text-white tracking-wide" style={{ fontFamily: "'Six Caps',sans-serif", letterSpacing: "0.05em" }}>
+                                {meta.label}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            {meta.perks.map((p) => (
+                              <div key={p} className="flex items-center gap-2 text-xs text-white/70">
+                                <div className="w-1 h-1 rounded-full" style={{ background: meta.accent }} />
+                                <span style={{ fontFamily: "'Raleway',sans-serif" }}>{p}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div
+                            className="flex items-center justify-between pt-3 border-t transition-colors"
+                            style={{ borderColor: isActive ? `${meta.accent}40` : "rgba(255,255,255,0.08)" }}
+                          >
+                            <span className="text-[10px] tracking-[0.25em] font-bold" style={{ color: isActive ? meta.accent : "rgba(255,255,255,0.4)" }}>
+                              {isActive ? "► PRESS TO SELECT" : "HOVER TO PREVIEW"}
+                            </span>
+                            <ArrowRight className="w-4 h-4 transition-transform" style={{ color: isActive ? meta.accent : "rgba(255,255,255,0.4)", transform: isActive ? "translateX(4px)" : "translateX(0)" }} />
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* STEP 2 — Artist */}
+            {step === 2 && role === "artist" && (
+              <div className="max-w-xl mx-auto animate-fade-in">
+                <QuestPanel accent={ROLE_META.artist.accent} icon={Music} chapter="CHAPTER 02" title="FORGE YOUR IDENTITY" subtitle="Every legend starts with a name.">
+                  <div className="space-y-4">
+                    <GameField label="Artist Name" value={artistName} onChange={setArtistName} placeholder="e.g. Ghost Signal" accent={ROLE_META.artist.accent} />
+                    <GameField label="Primary Genre (optional)" value={genre} onChange={setGenre} placeholder="e.g. Alt R&B" accent={ROLE_META.artist.accent} />
+                    <QuestButton onClick={finishArtist} saving={saving} accent={ROLE_META.artist.accent}>
+                      Continue Quest → +500 XP
+                    </QuestButton>
+                  </div>
+                </QuestPanel>
+              </div>
+            )}
+
+            {/* STEP 2 — Manager */}
+            {step === 2 && role === "manager" && (
+              <div className="max-w-xl mx-auto animate-fade-in">
+                <QuestPanel accent={ROLE_META.manager.accent} icon={Building2} chapter="CHAPTER 02" title="BUILD YOUR EMPIRE" subtitle="Command your roster. Own your brand.">
+                  <div className="space-y-4">
+                    <GameField label="Label / Company Name" value={labelName} onChange={setLabelName} placeholder="e.g. Midnight Records" accent={ROLE_META.manager.accent} />
+                    <div className="space-y-2">
+                      <Label className="text-[10px] tracking-[0.3em] text-white/60 font-bold">RECRUIT ROSTER (OPTIONAL)</Label>
+                      <textarea
+                        value={rosterEmails}
+                        onChange={(e) => setRosterEmails(e.target.value)}
+                        placeholder="artist1@example.com, artist2@example.com"
+                        rows={3}
+                        className="w-full rounded-lg border px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none transition-all"
+                        style={{
+                          background: "rgba(0,0,0,0.4)",
+                          borderColor: "rgba(255,255,255,0.15)",
+                          fontFamily: "'Raleway',sans-serif",
+                        }}
+                      />
+                      <p className="text-[10px] text-white/40 tracking-wider">+250 XP per recruit summoned</p>
+                    </div>
+                    <QuestButton onClick={finishManager} saving={saving} accent={ROLE_META.manager.accent}>
+                      Build Empire → +1000 XP
+                    </QuestButton>
+                  </div>
+                </QuestPanel>
+              </div>
+            )}
+
+            {/* STEP 3 — Victory */}
+            {step === 3 && role && (
+              <div className="max-w-2xl mx-auto animate-fade-in">
+                <div
+                  className="relative overflow-hidden rounded-3xl border p-10 text-center"
+                  style={{
+                    borderColor: ROLE_META[role].accent,
+                    background: "rgba(0,0,0,0.7)",
+                    backdropFilter: "blur(24px)",
+                    boxShadow: `0 30px 80px -20px ${ROLE_META[role].accent}80, inset 0 0 60px ${ROLE_META[role].accent}20`,
+                  }}
+                >
+                  {/* Confetti dots */}
+                  <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                    {Array.from({ length: 24 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="absolute w-1.5 h-1.5 rounded-full"
+                        style={{
+                          left: `${(i * 37) % 100}%`,
+                          top: `${(i * 53) % 100}%`,
+                          background: i % 2 ? ROLE_META[role].accent : "#FFD700",
+                          opacity: 0.6,
+                          animation: `float${i % 3} ${3 + (i % 4)}s ease-in-out infinite`,
+                        }}
+                      />
+                    ))}
+                    <style>{`
+                      @keyframes float0 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-20px)} }
+                      @keyframes float1 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-30px)} }
+                      @keyframes float2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-15px)} }
+                    `}</style>
+                  </div>
+
+                  <div className="relative z-10 space-y-6">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border" style={{ borderColor: "#FFD700", background: "rgba(255,215,0,0.1)" }}>
+                      <Trophy className="w-3.5 h-3.5" style={{ color: "#FFD700" }} />
+                      <span className="text-[10px] tracking-[0.3em] font-bold" style={{ color: "#FFD700" }}>
+                        ACHIEVEMENT UNLOCKED
+                      </span>
+                    </div>
+
+                    <div
+                      className="w-24 h-24 mx-auto rounded-full flex items-center justify-center border-4"
+                      style={{
+                        borderColor: ROLE_META[role].accent,
+                        background: `radial-gradient(circle, ${ROLE_META[role].accent}40, transparent 70%)`,
+                        boxShadow: `0 0 60px ${ROLE_META[role].accent}`,
+                      }}
+                    >
+                      <Sparkles className="w-12 h-12" style={{ color: ROLE_META[role].accent }} />
+                    </div>
+
+                    <div>
+                      <h2 className="text-5xl sm:text-6xl text-white leading-none" style={{ fontFamily: "'Six Caps',sans-serif", letterSpacing: "0.02em" }}>
+                        LEVEL UP
+                      </h2>
+                      <p className="text-white/70 mt-3 max-w-md mx-auto text-sm" style={{ fontFamily: "'Raleway',sans-serif" }}>
+                        {role === "manager"
+                          ? "Manager HQ is online. Your empire awaits — roster tools, white-label branding, and enterprise integrations are all unlocked."
+                          : "Studio is armed. Upload your first track and start banking $1 per qualified stream."}
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={handleFinish}
+                      className="group relative overflow-hidden rounded-xl px-8 py-4 font-bold text-white tracking-widest text-sm transition-all hover:scale-105"
+                      style={{
+                        background: `linear-gradient(135deg, ${ROLE_META[role].accent}, #a78bfa)`,
+                        boxShadow: `0 10px 40px ${ROLE_META[role].accent}80`,
+                      }}
+                    >
+                      <span className="relative z-10 flex items-center gap-2">
+                        <Rocket className="w-4 h-4" />
+                        {role === "manager" ? "ENTER MANAGER HQ" : "ENTER STUDIO"}
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </Card>
+        </div>
+      </div>
     </div>
+  );
+}
+
+/* ---------------- Sub-components ---------------- */
+
+function QuestPanel({
+  accent,
+  icon: Icon,
+  chapter,
+  title,
+  subtitle,
+  children,
+}: {
+  accent: string;
+  icon: React.ComponentType<{ className?: string }>;
+  chapter: string;
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="relative overflow-hidden rounded-2xl border p-8"
+      style={{
+        borderColor: `${accent}60`,
+        background: "rgba(5,5,5,0.75)",
+        backdropFilter: "blur(24px)",
+        boxShadow: `0 20px 60px -20px ${accent}60, inset 0 0 40px ${accent}10`,
+      }}
+    >
+      <div className="flex items-center gap-3 mb-6">
+        <div
+          className="w-12 h-12 rounded-lg flex items-center justify-center"
+          style={{
+            background: `${accent}20`,
+            border: `1px solid ${accent}80`,
+            boxShadow: `0 0 20px ${accent}60`,
+          }}
+        >
+          <Icon className="w-5 h-5" style={{ color: accent }} />
+        </div>
+        <div>
+          <div className="text-[10px] tracking-[0.3em] font-bold" style={{ color: accent }}>
+            {chapter}
+          </div>
+          <h2 className="text-3xl text-white leading-none" style={{ fontFamily: "'Six Caps',sans-serif", letterSpacing: "0.03em" }}>
+            {title}
+          </h2>
+          <p className="text-xs text-white/50 mt-1" style={{ fontFamily: "'Raleway',sans-serif" }}>
+            {subtitle}
+          </p>
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function GameField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  accent,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  accent: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label className="text-[10px] tracking-[0.3em] text-white/60 font-bold">{label.toUpperCase()}</Label>
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="h-12 text-white placeholder:text-white/30 border-white/15 focus-visible:ring-0 transition-all"
+        style={{
+          background: "rgba(0,0,0,0.4)",
+          fontFamily: "'Raleway',sans-serif",
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = accent;
+          e.currentTarget.style.boxShadow = `0 0 20px ${accent}40`;
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)";
+          e.currentTarget.style.boxShadow = "none";
+        }}
+      />
+    </div>
+  );
+}
+
+function QuestButton({
+  children,
+  onClick,
+  saving,
+  accent,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  saving: boolean;
+  accent: string;
+}) {
+  return (
+    <Button
+      onClick={onClick}
+      disabled={saving}
+      className="w-full h-12 font-bold tracking-widest text-sm text-white border-0 transition-all hover:scale-[1.02]"
+      style={{
+        background: `linear-gradient(135deg, ${accent}, #a78bfa)`,
+        boxShadow: `0 10px 30px ${accent}60`,
+      }}
+    >
+      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : children}
+    </Button>
   );
 }
 
