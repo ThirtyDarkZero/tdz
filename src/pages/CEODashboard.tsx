@@ -26,6 +26,7 @@ import { SupportTicketsAdmin } from "@/components/admin/SupportTicketsAdmin";
 import { StripeWebhookMonitor } from "@/components/admin/StripeWebhookMonitor";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { AdminMfaGate } from "@/components/security/AdminMfaGate";
 
 type DashboardMetrics = {
   totalUsers: number;
@@ -959,3 +960,11 @@ function CEODashboardInner() {
 }
 
 const Upload = Download;
+
+export default function CEODashboard() {
+  return (
+    <AdminMfaGate>
+      <CEODashboardInner />
+    </AdminMfaGate>
+  );
+}
