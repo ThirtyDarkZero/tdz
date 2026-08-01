@@ -26,6 +26,7 @@ import { SupportTicketsAdmin } from "@/components/admin/SupportTicketsAdmin";
 import { StripeWebhookMonitor } from "@/components/admin/StripeWebhookMonitor";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { AdminMfaGate } from "@/components/security/AdminMfaGate";
 
 type DashboardMetrics = {
   totalUsers: number;
@@ -61,7 +62,7 @@ type DashboardMetrics = {
 
 const COLORS = ['#22c55e', '#8B5CF6', '#EC4899', '#06B6D4', '#10B981', '#F59E0B'];
 
-export default function CEODashboard() {
+function CEODashboardInner() {
   const { user, isAuthLoading, isRoleLoading, isCEO } = useAuthContext();
   const navigate = useNavigate();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
@@ -959,3 +960,11 @@ export default function CEODashboard() {
 }
 
 const Upload = Download;
+
+export default function CEODashboard() {
+  return (
+    <AdminMfaGate>
+      <CEODashboardInner />
+    </AdminMfaGate>
+  );
+}
