@@ -21,6 +21,8 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
+
 
 // Lazy-loaded heavy pages for code splitting
 const Studio = lazy(() => import("./pages/Studio"));
