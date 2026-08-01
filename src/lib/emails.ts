@@ -4,7 +4,11 @@ export type AppEmailTemplate =
   | "welcome"
   | "track-uploaded"
   | "release-live"
-  | "weekly-stats";
+  | "weekly-stats"
+  | "tutorial-first-upload"
+  | "tutorial-smart-link"
+  | "tutorial-payouts"
+  | "tutorial-discovery";
 
 /**
  * Fire-and-forget app email. Never throws — email failures must not break UX.
@@ -28,4 +32,22 @@ export async function sendAppEmail(params: {
   } catch (e) {
     console.warn(`[email] ${params.templateName} threw`, e);
   }
+}
+
+/**
+ * Event-triggered tutorial email. Sends at most once per user per tutorial —
+ * the idempotency key is derived from the user id + template name.
+ */
+export async function sendTutorialEmail(params: {
+  templateName: AppEmailTemplate;
+  userId: string;
+  recipientEmail: string;
+  templateData?: Record<string, unknown>;
+}): Promise<void> {
+  await sendAppEmail({
+    templateName: params.templateName,
+    recipientEmail: params.recipientEmail,
+    idempotencyKey: `${params.templateName}-${params.userId}`,
+    templateData: params.templateData ?? {},
+  });
 }

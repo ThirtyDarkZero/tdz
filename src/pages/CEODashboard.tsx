@@ -24,6 +24,7 @@ import { AdminSidebar, CEORevenueControl } from "@/components/admin";
 import { StripeFinancialAgents } from "@/components/admin/StripeFinancialAgents";
 import { SupportTicketsAdmin } from "@/components/admin/SupportTicketsAdmin";
 import { StripeWebhookMonitor } from "@/components/admin/StripeWebhookMonitor";
+import { MarketingBrainPanel } from "@/components/admin/MarketingBrainPanel";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AdminMfaGate } from "@/components/security/AdminMfaGate";
@@ -622,6 +623,10 @@ function CEODashboardInner() {
           )}
 
           {/* Support Tickets Tab */}
+          {activeTab === "marketing" && (
+            <MarketingBrainPanel />
+          )}
+
           {activeTab === "support" && (
             <div className="animate-fade-in">
               <SupportTicketsAdmin />

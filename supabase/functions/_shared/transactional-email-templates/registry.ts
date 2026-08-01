@@ -5,6 +5,10 @@ import { template as welcome } from './welcome.tsx'
 import { template as trackUploaded } from './track-uploaded.tsx'
 import { template as releaseLive } from './release-live.tsx'
 import { template as weeklyStats } from './weekly-stats.tsx'
+import { template as tutorialFirstUpload } from './tutorial-first-upload.tsx'
+import { template as tutorialSmartLink } from './tutorial-smart-link.tsx'
+import { template as tutorialPayouts } from './tutorial-payouts.tsx'
+import { template as tutorialDiscovery } from './tutorial-discovery.tsx'
 
 export interface TemplateEntry {
   // deno-lint-ignore no-explicit-any
@@ -22,4 +26,8 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'track-uploaded': trackUploaded,
   'release-live': releaseLive,
   'weekly-stats': weeklyStats,
+  'tutorial-first-upload': tutorialFirstUpload,
+  'tutorial-smart-link': tutorialSmartLink,
+  'tutorial-payouts': tutorialPayouts,
+  'tutorial-discovery': tutorialDiscovery,
 }

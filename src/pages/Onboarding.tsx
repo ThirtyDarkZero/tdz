@@ -1,4 +1,4 @@
-import { sendAppEmail } from "@/lib/emails";
+import { sendAppEmail, sendTutorialEmail } from "@/lib/emails";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -157,6 +157,18 @@ function OnboardingFlow() {
     await refreshRole();
     if (chosen === "listener") {
       toast.success("🎧 CLASS SELECTED — TASTEMAKER", { description: "Welcome to the frontline." });
+      if (user?.email) {
+        void sendTutorialEmail({
+          templateName: "tutorial-discovery",
+          userId: user.id,
+          recipientEmail: user.email,
+          templateData: {
+            name:
+              (user.user_metadata as any)?.full_name?.split(" ")?.[0] ||
+              user.email.split("@")[0],
+          },
+        });
+      }
       setTimeout(() => navigate("/discover", { replace: true }), 800);
       return;
     }
@@ -178,6 +190,14 @@ function OnboardingFlow() {
     if (error) {
       toast.error("Could not save artist profile", { description: error.message });
       return;
+    }
+    if (user.email) {
+      void sendTutorialEmail({
+        templateName: "tutorial-first-upload",
+        userId: user.id,
+        recipientEmail: user.email,
+        templateData: { name: artistName.trim() },
+      });
     }
     triggerXP(500);
     setStep(3);

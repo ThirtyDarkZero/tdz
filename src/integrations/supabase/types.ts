@@ -2207,6 +2207,66 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_drafts: {
+        Row: {
+          audience: string
+          body_markdown: string
+          channel: string
+          created_at: string
+          cta_label: string | null
+          cta_url: string | null
+          draft_date: string
+          feature_focus: string | null
+          funnel_stage: string
+          generated_by: string
+          id: string
+          metadata: Json
+          preview_text: string | null
+          screenshot_hint: string | null
+          status: string
+          subject_line: string
+          updated_at: string
+        }
+        Insert: {
+          audience: string
+          body_markdown: string
+          channel?: string
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          draft_date?: string
+          feature_focus?: string | null
+          funnel_stage: string
+          generated_by?: string
+          id?: string
+          metadata?: Json
+          preview_text?: string | null
+          screenshot_hint?: string | null
+          status?: string
+          subject_line: string
+          updated_at?: string
+        }
+        Update: {
+          audience?: string
+          body_markdown?: string
+          channel?: string
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          draft_date?: string
+          feature_focus?: string | null
+          funnel_stage?: string
+          generated_by?: string
+          id?: string
+          metadata?: Json
+          preview_text?: string | null
+          screenshot_hint?: string | null
+          status?: string
+          subject_line?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       master_classes: {
         Row: {
           available: boolean

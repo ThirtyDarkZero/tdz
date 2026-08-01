@@ -23,7 +23,8 @@ import {
   Compass,
   FileText,
   LifeBuoy,
-  Webhook
+  Webhook,
+  Megaphone
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -34,6 +35,7 @@ interface AdminSidebarProps {
 const adminNavItems = [
   { id: "executive", icon: Bot, label: "Executive AI", badge: "AI" },
   { id: "overview", icon: LayoutDashboard, label: "Overview" },
+  { id: "marketing", icon: Megaphone, label: "Marketing Brain", badge: "AI" },
   { id: "finance", icon: BarChart3, label: "Financial Agents", badge: "STRIPE" },
   { id: "webhooks", icon: Webhook, label: "Stripe Webhooks", badge: "DEBUG" },
   { id: "revenue", icon: DollarSign, label: "Revenue Pool" },
