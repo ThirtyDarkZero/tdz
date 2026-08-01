@@ -602,10 +602,48 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName }
 
       setProgress(100);
 
+      // Email confirmations: upload receipt (+ release announcement for multi-track releases)
+      try {
+        const { data: userRes } = await supabase.auth.getUser();
+        const email = userRes?.user?.email;
+        if (email && createdTrackIds.length > 0) {
+          const { count } = await supabase
+            .from('tracks')
+            .select('id', { count: 'exact', head: true })
+            .eq('artist_id', userRes!.user!.id);
+          await sendAppEmail({
+            templateName: 'track-uploaded',
+            recipientEmail: email,
+            idempotencyKey: `track-uploaded-${createdTrackIds[0]}`,
+            templateData: {
+              trackTitle: tracks[0]?.title || releaseTitle,
+              artistName: artistName || undefined,
+              trackCount: count ?? createdTrackIds.length,
+            },
+          });
+          if (releaseType !== 'single' && !scheduledReleaseDate) {
+            await sendAppEmail({
+              templateName: 'release-live',
+              recipientEmail: email,
+              idempotencyKey: `release-live-${albumId || createdTrackIds[0]}`,
+              templateData: {
+                releaseTitle: releaseTitle || tracks[0]?.title,
+                artistName: artistName || undefined,
+                releaseType,
+                trackCount: createdTrackIds.length,
+              },
+            });
+          }
+        }
+      } catch (emailErr) {
+        console.warn('Upload email notification failed', emailErr);
+      }
+
       toast({ 
         title: "Upload successful!",
         description: `${tracks.length} track(s) uploaded to your library`
       });
+
       
       // Clear draft after successful upload
       await clearDraft();

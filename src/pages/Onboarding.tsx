@@ -129,8 +129,22 @@ function OnboardingFlow() {
       toast.error("Could not save role", { description: error.message });
       return false;
     }
+    if (user.email) {
+      void sendAppEmail({
+        templateName: "welcome",
+        recipientEmail: user.email,
+        idempotencyKey: `welcome-${user.id}`,
+        templateData: {
+          name:
+            (user.user_metadata as any)?.full_name?.split(" ")?.[0] ||
+            user.email.split("@")[0],
+          role: dbRole,
+        },
+      });
+    }
     return true;
   };
+
 
   const handlePickRole = async (chosen: Role) => {
     setSaving(true);
