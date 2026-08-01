@@ -61,7 +61,7 @@ type DashboardMetrics = {
 
 const COLORS = ['#22c55e', '#8B5CF6', '#EC4899', '#06B6D4', '#10B981', '#F59E0B'];
 
-export default function CEODashboard() {
+function CEODashboardInner() {
   const { user, isAuthLoading, isRoleLoading, isCEO } = useAuthContext();
   const navigate = useNavigate();
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
