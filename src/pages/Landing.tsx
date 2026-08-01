@@ -1346,7 +1346,7 @@ function Section11Footer({ navigate }: { navigate: (p: string) => void }) {
           { label: "SIGNUP", path: "/auth" }, { label: "STUDIO", path: "/studio" },
           { label: "DISCOVERY", path: "/discover" }, { label: "STORE", path: "https://thirtydarkzerorecords.com/store", external: true, storeSource: "landing_footer" as StoreClickSource },
           { label: "INVESTORS", path: "/investors" }, { label: "ABOUT", path: "/faq" },
-          { label: "CONTACT", path: "/support" }, { label: "CONNECT AI", path: "/connect" },
+          { label: "CONTACT", path: "/support" }, { label: "LEARN", path: "/learn" }, { label: "CONNECT AI", path: "/connect" },
         ].map((l: any) => (
           <span key={l.label} onClick={() => l.external ? (l.storeSource ? openStore(l.storeSource) : window.open(l.path, "_blank", "noopener,noreferrer")) : navigate(l.path)}
             className="cursor-pointer transition-colors hover:text-[#888]"

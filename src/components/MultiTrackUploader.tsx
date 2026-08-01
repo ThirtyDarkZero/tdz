@@ -1,4 +1,4 @@
-import { sendAppEmail } from "@/lib/emails";
+import { sendAppEmail, sendTutorialEmail } from "@/lib/emails";
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { Upload, Music, Disc, Album as AlbumIcon, GripVertical, Edit, Sparkles, AlertTriangle, Lock, Shield, ChevronDown, ChevronUp, CalendarIcon, RefreshCw, X, Save, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -621,6 +621,16 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName }
               trackTitle: tracks[0]?.title || releaseTitle,
               artistName: artistName || undefined,
               trackCount: count ?? createdTrackIds.length,
+            },
+          });
+          // Follow-up tutorial: how to promote the release with a smart link (once per artist)
+          void sendTutorialEmail({
+            templateName: 'tutorial-smart-link',
+            userId: userRes!.user!.id,
+            recipientEmail: email,
+            templateData: {
+              name: artistName || undefined,
+              trackTitle: tracks[0]?.title || releaseTitle,
             },
           });
           if (releaseType !== 'single' && !scheduledReleaseDate) {

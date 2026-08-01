@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { sendTutorialEmail } from "@/lib/emails";
 import { useAuth } from "@/hooks/useAuth";
 import { 
   DollarSign, 
@@ -227,6 +228,18 @@ export const ArtistPayoutSettings = () => {
 
   const MINIMUM_PAYOUT = 50;
   const isConnected = !!payoutDetails?.stripe_connect_id;
+
+  // Once the payout account is live, send the "how payouts work" tutorial (once per artist).
+  useEffect(() => {
+    if (!user?.email) return;
+    if (!payoutDetails?.stripe_connect_id || !payoutDetails?.payout_enabled) return;
+    void sendTutorialEmail({
+      templateName: "tutorial-payouts",
+      userId: user.id,
+      recipientEmail: user.email,
+      templateData: { name: payoutDetails?.account_holder_name || undefined },
+    });
+  }, [user?.id, user?.email, payoutDetails?.stripe_connect_id, payoutDetails?.payout_enabled, payoutDetails?.account_holder_name]);
   const canRequestPayout = isConnected && payoutDetails?.payout_enabled && earnings.totalPending >= MINIMUM_PAYOUT;
 
   return (
