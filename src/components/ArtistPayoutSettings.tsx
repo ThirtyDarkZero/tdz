@@ -156,22 +156,25 @@ export const ArtistPayoutSettings = () => {
     try {
       const response = await supabase.functions.invoke('setup-artist-payout', {});
 
-      if (response.error) {
-        throw new Error(response.error.message);
+      const data = response.data;
+
+      // Transport-level failure only (function now always returns 200 + body).
+      if (response.error && !data) {
+        throw new Error(response.error.message || 'Could not reach the payout service');
       }
 
-      const data = response.data;
-      
-      if (data.success && data.onboardingUrl) {
+      if (data?.success && data?.onboardingUrl) {
         window.location.href = data.onboardingUrl;
       } else {
-        throw new Error(data.error || 'Failed to get onboarding URL');
+        console.error('Stripe connect failed:', data);
+        throw new Error(data?.error || 'Failed to get onboarding URL');
       }
     } catch (error: any) {
       console.error('Connect error:', error);
       toast.error(error.message || "Failed to connect to Stripe");
       setConnectLoading(false);
     }
+
   };
 
   const handleRequestPayout = async () => {
