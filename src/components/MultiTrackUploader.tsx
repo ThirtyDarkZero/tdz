@@ -1,3 +1,4 @@
+import { sendAppEmail } from "@/lib/emails";
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { Upload, Music, Disc, Album as AlbumIcon, GripVertical, Edit, Sparkles, AlertTriangle, Lock, Shield, ChevronDown, ChevronUp, CalendarIcon, RefreshCw, X, Save, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
