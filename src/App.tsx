@@ -85,6 +85,7 @@ const App = () => (
                   <Route path="/.lovable/oauth/consent" element={<Seo title="Authorize app · TDZ" description="Approve or deny an app that is requesting access to your TDZ account." path="/.lovable/oauth/consent" noindex><OAuthConsent /></Seo>} />
 
                   <Route path="/forgot-password" element={<Seo title="Reset Your Password | TDZ" description="Recover access to your TDZ Distribution account. Request a secure password reset link delivered to your verified email address." path="/forgot-password" noindex><ForgotPassword /></Seo>} />
+                  <Route path="/unsubscribe" element={<Unsubscribe />} />
                   <Route path="/reset-password" element={<Seo title="Set a New Password | TDZ" description="Choose a new password for your TDZ Distribution account and securely return to your studio, fan profile, or artist dashboard." path="/reset-password" noindex><ResetPassword /></Seo>} />
                   <Route path="/role-selection" element={<Seo title="Choose Your Role | TDZ" description="Tell TDZ whether you are an artist, manager, or fan so we can route you to the right studio, dashboard, or discovery experience." path="/role-selection" noindex><RoleSelection /></Seo>} />
                   <Route path="/onboarding" element={<Seo title="Welcome to TDZ | Get Started" description="Set up your TDZ account in under a minute — pick a role, add basic info, and jump into your studio, manager HQ, or discovery." path="/onboarding" noindex><Onboarding /></Seo>} />
