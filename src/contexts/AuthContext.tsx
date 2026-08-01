@@ -236,10 +236,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", userId)
-        .order("granted_at", { ascending: false, nullsFirst: false })
-        .limit(1)
-        .maybeSingle();
+        .eq("user_id", userId);
 
       // Ignore if a newer request started
       if (reqId !== roleRequestIdRef.current) return;
@@ -248,8 +245,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error("[Auth] Error loading role:", error);
         setRole(null);
       } else {
-        setRole((data?.role as UserRole) ?? null);
+        // Highest-privilege role wins, regardless of grant order.
+        const priority: UserRole[] = [
+          "ceo",
+          "admin",
+          "manager",
+          "verified_artist",
+          "artist",
+          "listener",
+          "user",
+        ] as UserRole[];
+        const held = new Set((data ?? []).map((r) => r.role as UserRole));
+        setRole(priority.find((r) => held.has(r)) ?? null);
       }
+
     } catch (error) {
       if (reqId !== roleRequestIdRef.current) return;
       console.error("[Auth] Error loading role:", error);
