@@ -608,10 +608,11 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName }
         const { data: userRes } = await supabase.auth.getUser();
         const email = userRes?.user?.email;
         if (email && createdTrackIds.length > 0) {
-          const { count } = await supabase
+          const { count } = await (supabase as any)
             .from('tracks')
             .select('id', { count: 'exact', head: true })
             .eq('artist_id', userRes!.user!.id);
+
           await sendAppEmail({
             templateName: 'track-uploaded',
             recipientEmail: email,
