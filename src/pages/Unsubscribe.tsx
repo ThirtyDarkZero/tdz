@@ -52,7 +52,7 @@ export default function Unsubscribe() {
 
   return (
     <main className="min-h-screen bg-background flex items-center justify-center p-6">
-      <Seo title="Unsubscribe | Thirty Dark Zero" description="Manage your Thirty Dark Zero email preferences." />
+      <Seo title="Unsubscribe | Thirty Dark Zero" description="Manage your Thirty Dark Zero email preferences." path="/unsubscribe" />
       <Card className="w-full max-w-md p-8 text-center space-y-5 bg-card/70 backdrop-blur-xl border-border/60">
         {state === "loading" && (
           <>
