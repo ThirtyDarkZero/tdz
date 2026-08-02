@@ -614,8 +614,9 @@ export default function ListenerProfile() {
               </div>
             </div>
           </div>
-        </div>
+        </main>
       </ScrollArea>
+
 
       {/* Modals */}
       <ShareProfileModal
