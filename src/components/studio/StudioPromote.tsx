@@ -9,6 +9,7 @@ import { SmartLinkBuilder } from "@/components/promote/SmartLinkBuilder";
 import { TourDatesManager } from "@/components/promote/TourDatesManager";
 import { FanHub } from "@/components/promote/FanHub";
 import { StorytellingAIGenerator } from "@/components/promote/StorytellingAIGenerator";
+import { AdsAnalyticsHub } from "@/components/promote/AdsAnalyticsHub";
 
 export const StudioPromote = () => {
   return (
