@@ -25,6 +25,8 @@ import heroArtistStudio from "@/assets/hero-artist-studio.jpg";
 import heroArtistStreet from "@/assets/hero-artist-street.jpg";
 import heroArtistHeadphones from "@/assets/hero-artist-headphones.jpg";
 import { RequireAuth } from "@/components/auth/AuthGuard";
+import { openStripeCheckout, type CheckoutPlan } from "@/lib/subscription-checkout";
+import { CreditCard, Banknote, CheckCircle2, ShieldCheck } from "lucide-react";
 
 type Role = "artist" | "manager" | "listener";
 
@@ -86,6 +88,12 @@ function OnboardingFlow() {
 
   // Manager fields
   const [labelName, setLabelName] = useState("");
+
+  // Stripe (step 3)
+  const [payoutConnected, setPayoutConnected] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+  const [payoutLoading, setPayoutLoading] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<CheckoutPlan | null>(null);
   const [rosterEmails, setRosterEmails] = useState("");
 
   useEffect(() => {
@@ -100,7 +108,67 @@ function OnboardingFlow() {
     }
   }, [existingRole, navigate]);
 
-  const totalSteps = role === "listener" ? 1 : 3;
+  // Returning from Stripe (checkout or Connect onboarding) lands back here.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("payout") || params.get("checkout")) {
+      setStep(3);
+      if (params.get("checkout") === "success") toast.success("Subscription active. Welcome aboard.");
+      if (params.get("payout") === "success") toast.success("Payout account connected.");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    const load = async () => {
+      const [{ data: payout }, { data: sub }] = await Promise.all([
+        supabase
+          .from("artist_payout_details")
+          .select("stripe_connect_id, payout_enabled")
+          .eq("artist_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("user_subscriptions")
+          .select("status")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+      ]);
+      if (cancelled) return;
+      setPayoutConnected(Boolean(payout?.stripe_connect_id));
+      setSubscribed(sub?.status === "active" || sub?.status === "trialing");
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, step]);
+
+  const connectPayouts = async () => {
+    setPayoutLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("setup-artist-payout", {
+        body: { returnTo: "/onboarding" },
+      });
+      if (error && !data) throw new Error(error.message || "Could not reach the payout service");
+      if (data?.success && data?.onboardingUrl) {
+        window.location.href = data.onboardingUrl;
+        return;
+      }
+      throw new Error(data?.error || "Failed to start payout onboarding");
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to connect Stripe");
+      setPayoutLoading(false);
+    }
+  };
+
+  const startPlanCheckout = async (plan: CheckoutPlan) => {
+    setSelectedPlan(plan);
+    await openStripeCheckout(plan, "/onboarding");
+    setSelectedPlan(null);
+  };
+
+  const totalSteps = role === "listener" ? 1 : 4;
   const progress = (step / totalSteps) * 100;
   const activeRole = hoveredRole || role;
   const activeMeta = activeRole ? ROLE_META[activeRole] : null;
@@ -501,6 +569,115 @@ function OnboardingFlow() {
 
             {/* STEP 3 — Victory */}
             {step === 3 && role && (
+              <div className="max-w-2xl mx-auto animate-fade-in space-y-4">
+                <QuestPanel
+                  accent={ROLE_META[role].accent}
+                  icon={CreditCard}
+                  chapter="CHAPTER 03"
+                  title="POWER UP"
+                  subtitle="Activate your plan and connect payouts — both run on Stripe."
+                >
+                  <div className="space-y-6">
+                    {/* Subscription */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[10px] tracking-[0.3em] text-white/60 font-bold">
+                          1 · CHOOSE YOUR PLAN
+                        </span>
+                        {subscribed && (
+                          <span className="flex items-center gap-1 text-[10px] font-bold" style={{ color: "#4ade80" }}>
+                            <CheckCircle2 className="w-3.5 h-3.5" /> ACTIVE
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        {(role === "manager"
+                          ? ([{ id: "enterprise", name: "ENTERPRISE", price: "$50/mo", perks: "Full roster, white-label, integrations" }] as const)
+                          : ([
+                              { id: "starter", name: "STARTER", price: "$10/mo", perks: "Upload, payouts, core analytics" },
+                              { id: "pro", name: "PRO", price: "$20/mo", perks: "Advanced tools, AI, unlimited releases" },
+                            ] as const)
+                        ).map((p) => (
+                          <button
+                            key={p.id}
+                            disabled={subscribed || selectedPlan !== null}
+                            onClick={() => startPlanCheckout(p.id as CheckoutPlan)}
+                            className="text-left rounded-xl border p-4 transition-all hover:scale-[1.02] disabled:opacity-50"
+                            style={{
+                              borderColor: `${ROLE_META[role].accent}60`,
+                              background: "rgba(0,0,0,0.4)",
+                            }}
+                          >
+                            <div className="flex items-baseline justify-between">
+                              <span className="text-white font-bold tracking-widest text-sm">{p.name}</span>
+                              <span className="text-white/80 text-sm">{p.price}</span>
+                            </div>
+                            <p className="text-xs text-white/50 mt-1" style={{ fontFamily: "'Raleway',sans-serif" }}>
+                              {p.perks}
+                            </p>
+                            <span className="inline-flex items-center gap-1 mt-3 text-[10px] font-bold tracking-widest" style={{ color: ROLE_META[role].accent }}>
+                              {selectedPlan === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CreditCard className="w-3 h-3" />}
+                              {subscribed ? "SUBSCRIBED" : "SUBSCRIBE"}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Payouts */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[10px] tracking-[0.3em] text-white/60 font-bold">
+                          2 · GET PAID — $1 / STREAM
+                        </span>
+                        {payoutConnected && (
+                          <span className="flex items-center gap-1 text-[10px] font-bold" style={{ color: "#4ade80" }}>
+                            <CheckCircle2 className="w-3.5 h-3.5" /> CONNECTED
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={connectPayouts}
+                        disabled={payoutLoading}
+                        className="w-full rounded-xl border p-4 flex items-center gap-3 transition-all hover:scale-[1.01] disabled:opacity-50"
+                        style={{ borderColor: "rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.4)" }}
+                      >
+                        {payoutLoading ? (
+                          <Loader2 className="w-5 h-5 animate-spin text-white" />
+                        ) : (
+                          <Banknote className="w-5 h-5" style={{ color: ROLE_META[role].accent }} />
+                        )}
+                        <span className="text-left">
+                          <span className="block text-white font-bold tracking-widest text-sm">
+                            {payoutConnected ? "MANAGE PAYOUT ACCOUNT" : "CONNECT STRIPE PAYOUTS"}
+                          </span>
+                          <span className="block text-xs text-white/50" style={{ fontFamily: "'Raleway',sans-serif" }}>
+                            Bank details are collected securely by Stripe. Auto-payouts at $50.
+                          </span>
+                        </span>
+                      </button>
+                      <p className="flex items-center gap-1.5 text-[10px] text-white/40 mt-2">
+                        <ShieldCheck className="w-3 h-3" /> TDZ never sees or stores your bank credentials.
+                      </p>
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                      <QuestButton onClick={() => setStep(4)} saving={false} accent={ROLE_META[role].accent}>
+                        CONTINUE
+                      </QuestButton>
+                    </div>
+                    <button
+                      onClick={() => setStep(4)}
+                      className="w-full text-[10px] tracking-[0.3em] text-white/40 hover:text-white/70 transition-colors"
+                    >
+                      SKIP FOR NOW — SET UP LATER IN STUDIO
+                    </button>
+                  </div>
+                </QuestPanel>
+              </div>
+            )}
+
+            {step === 4 && role && (
               <div className="max-w-2xl mx-auto animate-fade-in">
                 <div
                   className="relative overflow-hidden rounded-3xl border p-10 text-center"
