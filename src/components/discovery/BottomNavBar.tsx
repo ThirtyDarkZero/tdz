@@ -25,7 +25,7 @@ export function BottomNavBar({ activeTab, onTabChange }: BottomNavBarProps) {
   const isArtist = role === "artist" || role === "verified_artist" || role === "manager";
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[100]">
+    <nav data-bottom-nav aria-label="Primary" className="fixed bottom-0 left-0 right-0 z-[100]">
       <div
         style={{
           background: "rgba(3, 3, 15, 0.92)",
