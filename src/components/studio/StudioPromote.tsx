@@ -9,6 +9,7 @@ import { SmartLinkBuilder } from "@/components/promote/SmartLinkBuilder";
 import { TourDatesManager } from "@/components/promote/TourDatesManager";
 import { FanHub } from "@/components/promote/FanHub";
 import { StorytellingAIGenerator } from "@/components/promote/StorytellingAIGenerator";
+import { AdsAnalyticsHub } from "@/components/promote/AdsAnalyticsHub";
 
 export const StudioPromote = () => {
   return (
@@ -38,7 +39,11 @@ export const StudioPromote = () => {
           <TabsTrigger value="tour" className="data-[state=active]:bg-background">
             Tour
           </TabsTrigger>
+          <TabsTrigger value="ads" className="data-[state=active]:bg-background">
+            Ads &amp; Analytics
+          </TabsTrigger>
         </TabsList>
+
 
         {/* FANS — Fan Hub + CSV Import + Contacts List */}
         <TabsContent value="fans" className="mt-0">
@@ -75,7 +80,13 @@ export const StudioPromote = () => {
         <TabsContent value="tour" className="mt-0">
           <TourDatesManager />
         </TabsContent>
+
+        {/* ADS & ANALYTICS */}
+        <TabsContent value="ads" className="mt-0">
+          <AdsAnalyticsHub />
+        </TabsContent>
       </Tabs>
+
     </div>
   );
 };
