@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/card";
@@ -11,13 +12,57 @@ import { RosterReleasesPanel } from "@/components/manager/RosterReleasesPanel";
 import { BrandingStudio } from "@/components/manager/BrandingStudio";
 import { IntegrationsHub } from "@/components/manager/IntegrationsHub";
 import { ActingArtistSwitcher } from "@/components/manager/ActingArtistSwitcher";
-import { Building2, Users, TrendingUp, Palette, Plug, Upload, Sparkles, ArrowLeft } from "lucide-react";
+import { Building2, Users, TrendingUp, Palette, Plug, Upload, Sparkles, ArrowLeft, Loader2 } from "lucide-react";
+
+const MAX_SYNC_ATTEMPTS = 10; // ~20s of polling while Stripe's webhook lands
 
 function ManagerHQContent() {
-  const { plan, isManager, isAdmin } = useAuthContext();
+  const { plan, isManager, isAdmin, refreshAll } = useAuthContext();
   const navigate = useNavigate();
 
   const isEnterprise = plan === "enterprise" || isAdmin;
+
+  // After Stripe checkout the local subscription snapshot is stale, so the page
+  // would flash the paywall ("failed to load"). Re-sync plan + role before gating.
+  const [syncing, setSyncing] = useState(!isEnterprise);
+  const attemptsRef = useRef(0);
+  const cancelledRef = useRef(false);
+
+  useEffect(() => {
+    cancelledRef.current = false;
+    if (isEnterprise) {
+      setSyncing(false);
+      return;
+    }
+    if (!syncing) return;
+
+    let timer: ReturnType<typeof setTimeout>;
+    const poll = async () => {
+      if (cancelledRef.current) return;
+      attemptsRef.current += 1;
+      try {
+        await refreshAll();
+      } catch {
+        /* transient network issue — retry below */
+      }
+      if (cancelledRef.current) return;
+      if (attemptsRef.current >= MAX_SYNC_ATTEMPTS) {
+        setSyncing(false);
+        return;
+      }
+      timer = setTimeout(poll, 2000);
+    };
+
+    poll();
+
+    return () => {
+      cancelledRef.current = true;
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEnterprise, syncing]);
+
+
 
   if (!isManager && !isAdmin) {
     return (
@@ -33,7 +78,23 @@ function ManagerHQContent() {
     );
   }
 
+  if (!isEnterprise && syncing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6" style={{ background: "#0D0D0D" }}>
+        <Card className="p-10 max-w-md text-center glass-card space-y-3">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+          <h2 className="text-lg font-bold">Activating Manager HQ</h2>
+          <p className="text-sm text-muted-foreground">
+            Confirming your Enterprise subscription with our payment processor. This usually takes a few
+            seconds.
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
   if (!isEnterprise) {
+
     return (
       <div className="min-h-screen p-6 md:p-10" style={{ background: "#0D0D0D" }}>
         <div className="max-w-3xl mx-auto space-y-6">
@@ -66,6 +127,18 @@ function ManagerHQContent() {
             <Button onClick={() => navigate("/pricing")} className="w-full h-11 bg-gradient-to-r from-primary via-violet-500 to-fuchsia-500 font-semibold">
               Upgrade to Enterprise
             </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-3 w-full"
+              onClick={() => {
+                attemptsRef.current = 0;
+                setSyncing(true);
+              }}
+            >
+              Already subscribed? Re-check my plan
+            </Button>
+
           </Card>
         </div>
       </div>
