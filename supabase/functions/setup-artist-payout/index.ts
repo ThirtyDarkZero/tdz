@@ -47,6 +47,7 @@ serve(async (req) => {
     // Use the account's default API version — avoids version-pin incompatibilities.
     const stripe = new Stripe(stripeKey);
     const origin = req.headers.get("origin") || "https://tdz.lovable.app";
+    const reqBody = await req.json().catch(() => ({} as any));
 
     stage = "load_existing";
     const { data: existing } = await supabase
