@@ -299,6 +299,7 @@ function OnboardingFlow() {
       return;
     }
     setSaving(true);
+    if (!(await dossier.save())) { setSaving(false); return; }
     const genres = favoriteGenres
       .split(/[\n,;]+/)
       .map((g) => g.trim())
@@ -327,6 +328,7 @@ function OnboardingFlow() {
       return;
     }
     setSaving(true);
+    if (!(await dossier.save())) { setSaving(false); return; }
     const { error } = await supabase.from("artist_profiles").upsert(
       { user_id: user.id, artist_name: artistName.trim(), genre: genre.trim() || null },
       { onConflict: "user_id" }
@@ -355,6 +357,7 @@ function OnboardingFlow() {
       return;
     }
     setSaving(true);
+    if (!(await dossier.save())) { setSaving(false); return; }
     await supabase.from("enterprise_branding").upsert(
       { user_id: user.id, label_name: labelName.trim() },
       { onConflict: "user_id" }
