@@ -331,29 +331,35 @@ export default function ListenerProfile() {
 
             {/* ── CENTER COLUMN: Profile Hero ── */}
             <div className="flex flex-col items-center text-center order-1 lg:order-2 pt-4">
-              {/* Centered Circular Photo with Glow */}
-              <div className="relative mb-6">
-                <div className="absolute inset-0 rounded-full" style={{ background: `radial-gradient(circle, ${CORAL}40 0%, transparent 70%)`, transform: "scale(1.5)", filter: "blur(30px)" }} />
+              {/* Avatar in HUD frame */}
+              <div className="relative mb-6 p-5">
+                <div className="absolute inset-0 rounded-full" style={{ background: `radial-gradient(circle, ${CORAL}40 0%, transparent 70%)`, transform: "scale(1.4)", filter: "blur(30px)" }} />
+                {/* Corner brackets — HUD style */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {["top-0 left-0 border-t-2 border-l-2", "top-0 right-0 border-t-2 border-r-2", "bottom-0 left-0 border-b-2 border-l-2", "bottom-0 right-0 border-b-2 border-r-2"].map((pos, k) => (
+                    <div key={k} className={`absolute w-6 h-6 ${pos}`} style={{ borderColor: `${CORAL}` }} />
+                  ))}
+                </div>
                 <div className="relative w-44 h-44 md:w-52 md:h-52 rounded-full overflow-hidden" style={{ border: `3px solid ${CORAL}60`, boxShadow: `0 0 40px ${CORAL}30, inset 0 0 20px rgba(0,0,0,0.3)` }}>
                   {getProfileImageUrl() ? (
-                    <img src={getProfileImageUrl()!} alt={formData.display_name} className="w-full h-full object-cover" />
+                    <img src={getProfileImageUrl()!} alt={formData.display_name} className="w-full h-full object-cover" style={{ filter: "saturate(1.15) contrast(1.1)" }} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center" style={{ background: `${CORAL}10` }}>
-                      <span className="text-6xl font-black" style={{ color: CORAL }}>{formData.display_name?.charAt(0)?.toUpperCase() || 'U'}</span>
+                      <span className="text-7xl" style={{ color: CORAL, fontFamily: "'Six Caps', sans-serif" }}>{formData.display_name?.charAt(0)?.toUpperCase() || 'U'}</span>
                     </div>
                   )}
                 </div>
                 {isOwnProfile && (
                   <>
                     <input ref={fileInputRef} type="file" accept="image/*,.heic,.heif" className="hidden" onChange={handlePhotoUpload} />
-                    <Button size="icon" className="absolute bottom-2 right-2 h-10 w-10 rounded-full" style={{ background: CORAL, color: "#fff" }} onClick={() => fileInputRef.current?.click()} disabled={uploadingPhoto}>
+                    <Button size="icon" className="absolute bottom-4 right-4 h-10 w-10 rounded-full" style={{ background: CORAL, color: "#fff" }} onClick={() => fileInputRef.current?.click()} disabled={uploadingPhoto}>
                       <Camera className="w-5 h-5" />
                     </Button>
                   </>
                 )}
                 {engagement && (
-                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2">
-                    <FanLevel level={engagement.level || 1} xp={engagement.xp_total || 0} />
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
+                    <FanLevel level={fanLevel} xp={fanXp} />
                   </div>
                 )}
               </div>
@@ -361,22 +367,24 @@ export default function ListenerProfile() {
               {/* Badges */}
               {badges.length > 0 && <div className="mb-2"><FanBadges badges={badges} size="md" /></div>}
 
-              {/* Type Badge */}
+              {/* Class chip */}
               <div className="flex items-center gap-2 mb-2">
-                <Badge className="text-xs px-3 py-1 rounded-full" style={{ background: `${CORAL}20`, border: `1px solid ${CORAL}30`, color: CORAL }}>
-                  <Sparkles className="w-3 h-3 mr-1" /> Fan
-                </Badge>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/20 backdrop-blur-xl" style={{ background: "rgba(255,99,71,0.1)" }}>
+                  <Sparkles className="w-3.5 h-3.5" style={{ color: CORAL }} />
+                  <span className="text-[10px] tracking-[0.3em] text-white/80 font-bold">THE TASTEMAKER</span>
+                </div>
                 {formData.location && <span className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>📍 {formData.location}</span>}
               </div>
 
               {/* Name */}
               {editing ? (
-                <Input value={formData.display_name} onChange={(e) => setFormData({ ...formData, display_name: e.target.value })} className="text-3xl font-black bg-transparent border-white/20 text-center max-w-sm mb-3" />
+                <Input value={formData.display_name} onChange={(e) => setFormData({ ...formData, display_name: e.target.value })} className="text-3xl bg-transparent border-white/20 text-center max-w-sm mb-3" />
               ) : (
-                <h1 className="text-4xl md:text-5xl font-black mb-2 tracking-tight" style={{ color: "#fff" }}>
-                  {formData.display_name || "Music Explorer"}
+                <h1 className="text-5xl md:text-7xl text-white leading-none mb-2" style={{ fontFamily: "'Six Caps', sans-serif", letterSpacing: "0.02em" }}>
+                  {(formData.display_name || "Music Explorer").toUpperCase()}
                 </h1>
               )}
+
 
               {/* Stats */}
               <div className="flex items-center gap-6 text-sm mb-4">
