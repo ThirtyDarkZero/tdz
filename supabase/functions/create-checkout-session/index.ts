@@ -46,7 +46,11 @@ serve(async (req) => {
     const user = userData.user;
 
     stage = "parse";
-    const { plan } = await req.json().catch(() => ({ plan: null }));
+    const body = await req.json().catch(() => ({} as any));
+    const plan = body?.plan ?? null;
+    const rawReturn = typeof body?.returnTo === "string" ? body.returnTo : "";
+    // Only allow same-origin relative paths.
+    const returnTo = /^\/[A-Za-z0-9\-_/?=&.]*$/.test(rawReturn) ? rawReturn : "";
     if (!plan || !PLAN_PRICES[plan]) {
       return respond({ ok: false, error: "Invalid plan", stage });
     }
@@ -89,8 +93,12 @@ serve(async (req) => {
       customer_email: customerId ? undefined : user.email,
       line_items: [{ price: planConfig.priceId, quantity: 1 }],
       mode: "subscription",
-      success_url: `${origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}&plan=${plan}`,
-      cancel_url: `${origin}/pricing`,
+      success_url: returnTo
+        ? `${origin}${returnTo}${returnTo.includes("?") ? "&" : "?"}checkout=success&plan=${plan}`
+        : `${origin}/subscription-success?session_id={CHECKOUT_SESSION_ID}&plan=${plan}`,
+      cancel_url: returnTo
+        ? `${origin}${returnTo}${returnTo.includes("?") ? "&" : "?"}checkout=cancelled`
+        : `${origin}/pricing`,
       metadata: { user_id: user.id, plan, type: "subscription" },
       subscription_data: {
         metadata: { user_id: user.id, plan, type: "subscription" },

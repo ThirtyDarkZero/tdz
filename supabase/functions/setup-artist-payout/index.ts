@@ -117,12 +117,14 @@ serve(async (req) => {
     }
 
     stage = "account_link";
+    const rawReturn = typeof reqBody?.returnTo === "string" ? reqBody.returnTo : "";
+    const returnBase = /^\/[A-Za-z0-9\-_/?=&.]*$/.test(rawReturn) ? rawReturn : "/studio";
     // Account links are single-use and time-bound; retry only on transient errors.
     const accountLink = await withStripeRetry(
       () => stripe.accountLinks.create({
         account: accountId!,
-        refresh_url: `${origin}/studio?payout=refresh`,
-        return_url: `${origin}/studio?payout=success&account=${accountId}`,
+        refresh_url: `${origin}${returnBase}${returnBase.includes("?") ? "&" : "?"}payout=refresh`,
+        return_url: `${origin}${returnBase}${returnBase.includes("?") ? "&" : "?"}payout=success&account=${accountId}`,
         type: "account_onboarding",
       }),
       { label: "accountLinks.create" }
