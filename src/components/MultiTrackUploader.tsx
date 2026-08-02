@@ -72,7 +72,18 @@ type ReleaseType = 'single' | 'ep' | 'album';
 
 export type ReleaseQuestStage = 'files' | 'details' | 'uploading' | 'done';
 
-export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, onStage }: { onSuccess?: () => void; targetUserId?: string; targetArtistName?: string; onStage?: (stage: ReleaseQuestStage) => void }) => {
+export type ReleaseSummary = {
+  title: string;
+  artistName: string;
+  coverUrl: string | null;
+  trackCount: number;
+  releaseType: ReleaseType;
+  albumId: string | null;
+  trackId: string | null;
+};
+
+export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, onStage }: { onSuccess?: (summary?: ReleaseSummary) => void; targetUserId?: string; targetArtistName?: string; onStage?: (stage: ReleaseQuestStage) => void }) => {
+
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [releaseType, setReleaseType] = useState<ReleaseType>('single');
@@ -668,6 +679,17 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, 
       });
 
       
+      // Snapshot the release details before the form is reset (used for the victory card)
+      const summary: ReleaseSummary = {
+        title: (releaseTitle || tracks[0]?.title || 'Untitled Release').trim(),
+        artistName: (artistName || targetArtistName || '').trim(),
+        coverUrl: coverArtUrl,
+        trackCount: createdTrackIds.length || tracks.length,
+        releaseType,
+        albumId: albumId,
+        trackId: createdTrackIds[0] ?? null,
+      };
+
       // Clear draft after successful upload
       await clearDraft();
       
@@ -688,7 +710,8 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, 
       // Refetch limits
       refetchLimits();
       
-      onSuccess?.();
+      onSuccess?.(summary);
+
     } catch (error: any) {
       console.error('Upload error:', error);
       
