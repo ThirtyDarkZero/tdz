@@ -637,7 +637,9 @@ function OnboardingFlow() {
                   icon={CreditCard}
                   chapter="CHAPTER 03"
                   title="POWER UP"
-                  subtitle="Activate your plan and connect payouts — both run on Stripe."
+                  subtitle={role === "listener"
+                    ? "Activate your Fan plan — every play sends $1 straight to the artist."
+                    : "Activate your plan and connect payouts — both run on Stripe."}
                 >
                   <div className="space-y-6">
                     {/* Subscription */}
