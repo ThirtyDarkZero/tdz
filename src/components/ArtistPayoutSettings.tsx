@@ -51,6 +51,8 @@ export const ArtistPayoutSettings = () => {
     if (user) {
       loadPayoutDetails();
       loadEarnings();
+    } else {
+      setLoading(false);
     }
   }, [user]);
 
@@ -213,6 +215,19 @@ export const ArtistPayoutSettings = () => {
     }
   };
 
+  // Once the payout account is live, send the "how payouts work" tutorial (once per artist).
+  // NOTE: must stay above the early return below — hooks cannot run conditionally.
+  useEffect(() => {
+    if (!user?.email) return;
+    if (!payoutDetails?.stripe_connect_id || !payoutDetails?.payout_enabled) return;
+    void sendTutorialEmail({
+      templateName: "tutorial-payouts",
+      userId: user.id,
+      recipientEmail: user.email,
+      templateData: { name: payoutDetails?.account_holder_name || undefined },
+    });
+  }, [user?.id, user?.email, payoutDetails?.stripe_connect_id, payoutDetails?.payout_enabled, payoutDetails?.account_holder_name]);
+
   if (loading) {
     return (
       <Card className="bg-card/50 backdrop-blur border-border/50">
@@ -228,18 +243,6 @@ export const ArtistPayoutSettings = () => {
 
   const MINIMUM_PAYOUT = 50;
   const isConnected = !!payoutDetails?.stripe_connect_id;
-
-  // Once the payout account is live, send the "how payouts work" tutorial (once per artist).
-  useEffect(() => {
-    if (!user?.email) return;
-    if (!payoutDetails?.stripe_connect_id || !payoutDetails?.payout_enabled) return;
-    void sendTutorialEmail({
-      templateName: "tutorial-payouts",
-      userId: user.id,
-      recipientEmail: user.email,
-      templateData: { name: payoutDetails?.account_holder_name || undefined },
-    });
-  }, [user?.id, user?.email, payoutDetails?.stripe_connect_id, payoutDetails?.payout_enabled, payoutDetails?.account_holder_name]);
   const canRequestPayout = isConnected && payoutDetails?.payout_enabled && earnings.totalPending >= MINIMUM_PAYOUT;
 
   return (
