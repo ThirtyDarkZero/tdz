@@ -6,7 +6,7 @@ export type CheckoutPlan = "starter" | "pro" | "enterprise" | "fan";
 
 const VALID_PLANS: CheckoutPlan[] = ["starter", "pro", "enterprise", "fan"];
 
-export async function openStripeCheckout(plan: CheckoutPlan): Promise<void> {
+export async function openStripeCheckout(plan: CheckoutPlan, returnTo?: string): Promise<void> {
   const loadingToast = toast.loading("Preparing checkout...");
 
   try {
@@ -19,7 +19,7 @@ export async function openStripeCheckout(plan: CheckoutPlan): Promise<void> {
     }
 
     const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-      body: { plan },
+      body: { plan, returnTo },
     });
 
     toast.dismiss(loadingToast);
