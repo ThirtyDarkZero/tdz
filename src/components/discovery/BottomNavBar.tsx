@@ -96,6 +96,6 @@ export function BottomNavBar({ activeTab, onTabChange }: BottomNavBarProps) {
           })}
         </div>
       </div>
-    </div>
+    </nav>
   );
 }
