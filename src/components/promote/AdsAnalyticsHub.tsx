@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, BarChart3, Megaphone, Check, Copy, Link2 } from "lucide-react";
+import { Loader2, BarChart3, Megaphone, Check, Copy, Link2, Facebook, Music2 } from "lucide-react";
 
 interface IntegrationRow {
   id: string;
