@@ -44,7 +44,9 @@ const signInSchema = z.object({
 });
 
 function AuthForm() {
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(
+    () => new URLSearchParams(window.location.search).get("mode") === "signup"
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
