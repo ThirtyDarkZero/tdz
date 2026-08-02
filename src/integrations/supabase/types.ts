@@ -4556,6 +4556,60 @@ export type Database = {
           },
         ]
       }
+      user_profiles: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          date_of_birth: string | null
+          display_name: string | null
+          email: string | null
+          email_verified_at: string | null
+          full_name: string | null
+          gender: string | null
+          id: string
+          marketing_opt_in: boolean
+          phone: string | null
+          phone_verified_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          display_name?: string | null
+          email?: string | null
+          email_verified_at?: string | null
+          full_name?: string | null
+          gender?: string | null
+          id?: string
+          marketing_opt_in?: boolean
+          phone?: string | null
+          phone_verified_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          display_name?: string | null
+          email?: string | null
+          email_verified_at?: string | null
+          full_name?: string | null
+          gender?: string | null
+          id?: string
+          marketing_opt_in?: boolean
+          phone?: string | null
+          phone_verified_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           granted_at: string | null
