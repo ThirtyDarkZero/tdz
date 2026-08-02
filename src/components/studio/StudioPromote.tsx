@@ -1,92 +1,154 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
 import { StorytellingStudio } from "@/components/StorytellingStudio";
 import { MerchStore } from "@/components/MerchStore";
 import { PreSaveCampaignManager } from "@/components/PreSaveCampaignManager";
 import { FeatureGate } from "@/components/FeatureGate";
-import { CSVFanImport } from "@/components/promote/CSVFanImport";
 import { EmailCampaignGenerator } from "@/components/promote/EmailCampaignGenerator";
 import { SmartLinkBuilder } from "@/components/promote/SmartLinkBuilder";
 import { TourDatesManager } from "@/components/promote/TourDatesManager";
 import { FanHub } from "@/components/promote/FanHub";
 import { StorytellingAIGenerator } from "@/components/promote/StorytellingAIGenerator";
 import { AdsAnalyticsHub } from "@/components/promote/AdsAnalyticsHub";
+import { PromoteCommandCenter, type PromoteSectionId } from "@/components/promote/PromoteCommandCenter";
+import {
+  LayoutDashboard, Users, Mail, Link2, BookOpen, ShoppingBag, Calendar, BarChart3,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const heading = { fontFamily: "'Six Caps', sans-serif", letterSpacing: "0.04em" } as const;
+const body = { fontFamily: "'Raleway', sans-serif" } as const;
+
+type SectionId = "overview" | PromoteSectionId;
+
+const GROUPS: {
+  group: string;
+  items: { id: SectionId; label: string; icon: typeof Users; hint: string }[];
+}[] = [
+  {
+    group: "Command",
+    items: [{ id: "overview", label: "Overview", icon: LayoutDashboard, hint: "Readiness & next actions" }],
+  },
+  {
+    group: "Attract",
+    items: [
+      { id: "ads", label: "Ads & Analytics", icon: BarChart3, hint: "Google, Meta, TikTok, GA4" },
+      { id: "smart-links", label: "Smart Links", icon: Link2, hint: "Links & pre-saves" },
+      { id: "storytelling", label: "Storytelling", icon: BookOpen, hint: "Narrative & AI copy" },
+    ],
+  },
+  {
+    group: "Capture",
+    items: [{ id: "fans", label: "Fan Hub", icon: Users, hint: "Contacts, tags, insights" }],
+  },
+  {
+    group: "Convert",
+    items: [
+      { id: "campaigns", label: "Campaigns", icon: Mail, hint: "Email & press" },
+      { id: "merch", label: "Merch", icon: ShoppingBag, hint: "Store & drops" },
+      { id: "tour", label: "Tour", icon: Calendar, hint: "Dates & ticketing" },
+    ],
+  },
+];
+
+const TITLES: Record<SectionId, { title: string; sub: string }> = {
+  overview: { title: "Promote", sub: "One connected funnel: attract, capture, convert." },
+  fans: { title: "Fan Hub", sub: "Own your audience — every contact, tagged and reachable." },
+  campaigns: { title: "Campaigns", sub: "Turn your story into email and press that lands." },
+  "smart-links": { title: "Smart Links", sub: "One link per release. Every click measured." },
+  storytelling: { title: "Storytelling", sub: "The narrative that makes the rest of the funnel work." },
+  merch: { title: "Merch", sub: "Convert attention into owned revenue." },
+  tour: { title: "Tour", sub: "Announce, sell and route your live run." },
+  ads: { title: "Ads & Analytics", sub: "Paid reach, pixels and UTM attribution in one place." },
+};
 
 export const StudioPromote = () => {
+  const [section, setSection] = useState<SectionId>("overview");
+  const meta = TITLES[section];
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 style={{ fontFamily: "'Six Caps', sans-serif", letterSpacing: "0.04em", fontSize: "2rem" }}>Promote</h1>
-        <p style={{ fontFamily: "'Raleway', sans-serif" }} className="text-muted-foreground">Grow your audience and engage with fans</p>
-      </div>
-
-      <Tabs defaultValue="fans" className="space-y-6">
-        <TabsList className="bg-muted/50 p-1 flex-wrap h-auto">
-          <TabsTrigger value="fans" className="data-[state=active]:bg-background">
-            Fans
-          </TabsTrigger>
-          <TabsTrigger value="campaigns" className="data-[state=active]:bg-background">
-            Campaigns
-          </TabsTrigger>
-          <TabsTrigger value="smart-links" className="data-[state=active]:bg-background">
-            Smart Links
-          </TabsTrigger>
-          <TabsTrigger value="storytelling" className="data-[state=active]:bg-background">
-            Storytelling
-          </TabsTrigger>
-          <TabsTrigger value="merch" className="data-[state=active]:bg-background">
-            Merch
-          </TabsTrigger>
-          <TabsTrigger value="tour" className="data-[state=active]:bg-background">
-            Tour
-          </TabsTrigger>
-          <TabsTrigger value="ads" className="data-[state=active]:bg-background">
-            Ads &amp; Analytics
-          </TabsTrigger>
-        </TabsList>
-
-
-        {/* FANS — Fan Hub + CSV Import + Contacts List */}
-        <TabsContent value="fans" className="mt-0">
-          <FanHub />
-        </TabsContent>
-
-        {/* CAMPAIGNS — Email + Press Release */}
-        <TabsContent value="campaigns" className="mt-0">
-          <EmailCampaignGenerator />
-        </TabsContent>
-
-        {/* SMART LINKS — Smart Links + Pre-Save combined */}
-        <TabsContent value="smart-links" className="mt-0 space-y-6">
-          <SmartLinkBuilder />
-          <FeatureGate feature="presaveCampaigns">
-            <PreSaveCampaignManager />
-          </FeatureGate>
-        </TabsContent>
-
-        {/* STORYTELLING — Simple story + AI generator */}
-        <TabsContent value="storytelling" className="mt-0 space-y-8">
-          <StorytellingStudio />
-          <div className="border-t border-border/20 pt-8">
-            <StorytellingAIGenerator />
+      <div className="flex flex-col gap-6 lg:flex-row">
+        {/* Nav rail */}
+        <aside className="lg:w-60 shrink-0">
+          <div className="rounded-xl border border-border/40 bg-background/40 p-3 backdrop-blur-2xl lg:sticky lg:top-4">
+            <div className="mb-3 px-2">
+              <h1 style={heading} className="text-3xl leading-none">Promote</h1>
+              <p style={body} className="text-[11px] text-muted-foreground">Growth command center</p>
+            </div>
+            <nav className="flex gap-1 overflow-x-auto lg:block lg:space-y-3 lg:overflow-visible">
+              {GROUPS.map((g) => (
+                <div key={g.group} className="shrink-0 lg:shrink">
+                  <p
+                    style={body}
+                    className="hidden px-2 pb-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60 lg:block"
+                  >
+                    {g.group}
+                  </p>
+                  <div className="flex gap-1 lg:block lg:space-y-1">
+                    {g.items.map((item) => {
+                      const active = section === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => setSection(item.id)}
+                          className={cn(
+                            "group flex w-full items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2 text-left transition-colors",
+                            active
+                              ? "bg-primary/10 text-primary ring-1 ring-primary/30"
+                              : "text-muted-foreground hover:bg-muted/30 hover:text-foreground",
+                          )}
+                        >
+                          <item.icon className="h-4 w-4 shrink-0" />
+                          <span className="min-w-0">
+                            <span style={body} className="block text-sm">{item.label}</span>
+                            <span
+                              style={body}
+                              className="hidden text-[10px] text-muted-foreground/70 lg:block"
+                            >
+                              {item.hint}
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </nav>
           </div>
-        </TabsContent>
+        </aside>
 
-        {/* MERCH */}
-        <TabsContent value="merch" className="mt-0">
-          <MerchStore variant="full" />
-        </TabsContent>
+        {/* Content */}
+        <div className="min-w-0 flex-1 space-y-6">
+          <div>
+            <h2 style={heading} className="text-4xl leading-none">{meta.title}</h2>
+            <p style={body} className="text-sm text-muted-foreground">{meta.sub}</p>
+          </div>
 
-        {/* TOUR */}
-        <TabsContent value="tour" className="mt-0">
-          <TourDatesManager />
-        </TabsContent>
-
-        {/* ADS & ANALYTICS */}
-        <TabsContent value="ads" className="mt-0">
-          <AdsAnalyticsHub />
-        </TabsContent>
-      </Tabs>
-
+          {section === "overview" && <PromoteCommandCenter onNavigate={(id) => setSection(id)} />}
+          {section === "fans" && <FanHub />}
+          {section === "campaigns" && <EmailCampaignGenerator />}
+          {section === "smart-links" && (
+            <div className="space-y-6">
+              <SmartLinkBuilder />
+              <FeatureGate feature="presaveCampaigns">
+                <PreSaveCampaignManager />
+              </FeatureGate>
+            </div>
+          )}
+          {section === "storytelling" && (
+            <div className="space-y-8">
+              <StorytellingStudio />
+              <div className="border-t border-border/20 pt-8">
+                <StorytellingAIGenerator />
+              </div>
+            </div>
+          )}
+          {section === "merch" && <MerchStore variant="full" />}
+          {section === "tour" && <TourDatesManager />}
+          {section === "ads" && <AdsAnalyticsHub />}
+        </div>
+      </div>
     </div>
   );
 };
