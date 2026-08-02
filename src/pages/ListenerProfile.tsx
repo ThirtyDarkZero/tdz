@@ -282,7 +282,7 @@ export default function ListenerProfile() {
             {/* ── LEFT COLUMN: Liked Tracks & Recently Played ── */}
             <div className="space-y-4 order-2 lg:order-1">
               {/* Liked Tracks */}
-              <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px) saturate(200%)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="rounded-2xl p-4" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px) saturate(200%)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                 <h3 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: CORAL }}>
                   <Heart className="w-4 h-4" /> Liked Tracks
                 </h3>
@@ -307,7 +307,7 @@ export default function ListenerProfile() {
               </div>
 
               {/* Recently Played */}
-              <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px) saturate(200%)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="rounded-2xl p-4" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px) saturate(200%)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                 <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
                   <Clock className="w-4 h-4" style={{ color: "rgba(0,207,255,0.8)" }} /> Recently Played
                 </h3>
@@ -475,14 +475,14 @@ export default function ListenerProfile() {
               <div className="w-full text-left">
                 {activeTab === "activity" && viewingUserId && (
                   <div className="space-y-4">
-                    <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div className="rounded-2xl p-5" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                       <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
                         <Activity className="w-4 h-4" style={{ color: CORAL }} /> Recent Activity
                       </h3>
                       <ProfileActivityFeed userId={viewingUserId} isOwnProfile={isOwnProfile} />
                     </div>
                     {isOwnProfile && (
-                      <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                      <div className="rounded-2xl p-5" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                         <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
                           <MessageCircle className="w-4 h-4" style={{ color: "#8B5CF6" }} /> Share Your Story
                         </h3>
@@ -493,20 +493,20 @@ export default function ListenerProfile() {
                 )}
 
                 {activeTab === "music" && (
-                  <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="rounded-2xl p-5" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                     {viewingUserId && <MusicTasteCard userId={viewingUserId} />}
                   </div>
                 )}
 
                 {activeTab === "social" && viewingUserId && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div className="rounded-2xl p-5" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                       <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
                         <Users className="w-4 h-4" style={{ color: CORAL }} /> Followers
                       </h3>
                       <FollowersGrid userId={viewingUserId} type="followers" isOwnProfile={isOwnProfile} />
                     </div>
-                    <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div className="rounded-2xl p-5" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                       <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
                         <Heart className="w-4 h-4" style={{ color: "#FF6B9D" }} /> Following
                       </h3>
@@ -516,7 +516,7 @@ export default function ListenerProfile() {
                 )}
 
                 {activeTab === "playlists" && (
-                  <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="rounded-2xl p-5" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                     <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
                       <ListMusic className="w-4 h-4" style={{ color: "#8B5CF6" }} /> Playlists
                     </h3>
@@ -558,7 +558,7 @@ export default function ListenerProfile() {
             {/* ── RIGHT COLUMN: Bio, Stats, Music Taste ── */}
             <div className="space-y-4 order-3">
               {/* Bio Card */}
-              <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px) saturate(200%)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="rounded-2xl p-4" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px) saturate(200%)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                 <h3 className="text-sm font-bold mb-2">About</h3>
                 <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
                   {formData.bio || "This fan hasn't written a bio yet."}
@@ -576,7 +576,7 @@ export default function ListenerProfile() {
 
               {/* Profile Stats */}
               {viewingUserId && (
-                <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px) saturate(200%)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="rounded-2xl p-4" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px) saturate(200%)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                   <ProfileStats userId={viewingUserId} />
                 </div>
               )}
