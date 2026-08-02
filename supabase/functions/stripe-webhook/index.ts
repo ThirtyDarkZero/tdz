@@ -107,38 +107,54 @@ serve(async (req) => {
 
   console.log(`[stripe-webhook] event=${event.type} id=${event.id}`);
 
-  // Idempotency: if this event id was already fully processed, ack and return.
-  // We still upsert-received below for first-time events so retries can be traced.
+  const eventAt = new Date(event.created * 1000).toISOString();
+
+  // Atomically claim the event. Two concurrent deliveries of the same event id
+  // cannot both win: the claim is an INSERT ... ON CONFLICT DO NOTHING in Postgres.
+  let claim = "claimed";
   try {
-    const { data: existing } = await supabase
-      .from("stripe_webhook_events")
-      .select("status")
-      .eq("stripe_event_id", event.id)
-      .maybeSingle();
-    if (existing?.status === "processed" || existing?.status === "ignored") {
-      console.log(`[stripe-webhook] duplicate event ${event.id} status=${existing.status}; acking`);
-      return new Response(JSON.stringify({ received: true, duplicate: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const { data, error } = await supabase.rpc("claim_stripe_webhook_event", {
+      p_event_id: event.id,
+      p_event_type: event.type,
+      p_livemode: !!event.livemode,
+      p_payload: event as unknown as Record<string, unknown>,
+      p_received_at: eventAt,
+    });
+    if (error) throw error;
+    claim = (data as string) ?? "claimed";
   } catch (e) {
-    console.error("[stripe-webhook] dedupe check failed:", e);
+    console.error("[stripe-webhook] claim failed:", e);
   }
 
-  // Insert/upsert the received event row up front (status: received)
-  try {
-    await supabase.from("stripe_webhook_events").upsert({
-      stripe_event_id: event.id,
-      event_type: event.type,
-      status: "received",
-      livemode: !!event.livemode,
-      signature_valid: true,
-      payload: event as unknown as Record<string, unknown>,
-      received_at: new Date(event.created * 1000).toISOString(),
-    }, { onConflict: "stripe_event_id" });
-  } catch (e) {
-    console.error("[stripe-webhook] failed to log event:", e);
+  if (claim === "duplicate" || claim === "in_progress") {
+    console.log(`[stripe-webhook] ${claim} event ${event.id}; acking without reprocessing`);
+    return new Response(JSON.stringify({ received: true, duplicate: true, reason: claim }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
+
+  // Per-mutation idempotency: every money-moving write claims a unique key first.
+  // If the key already exists, that exact mutation was applied before — skip it.
+  const once = async (key: string, fn: () => Promise<void>) => {
+    const { data, error } = await supabase.rpc("claim_webhook_mutation", {
+      p_key: key,
+      p_event_id: event.id,
+      p_event_type: event.type,
+    });
+    if (error) throw new Error(`idempotency claim failed for ${key}: ${error.message}`);
+    if (data !== true) {
+      console.log(`[stripe-webhook] mutation ${key} already applied; skipping`);
+      return;
+    }
+    try {
+      await fn();
+    } catch (e) {
+      // Release the key so a Stripe retry can re-attempt this mutation.
+      await supabase.from("webhook_mutations").delete().eq("idempotency_key", key);
+      throw e;
+    }
+  };
+
 
 
   try {
