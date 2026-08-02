@@ -188,6 +188,14 @@ function OnboardingFlow() {
     }
   };
 
+  // Warm the checkout function as soon as the user reaches the billing stage so
+  // the first click doesn't pay for an Edge Function cold start.
+  useEffect(() => {
+    if (step !== 3) return;
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`;
+    fetch(url, { method: "OPTIONS" }).catch(() => {});
+  }, [step]);
+
   const startPlanCheckout = async (plan: CheckoutPlan) => {
     setSelectedPlan(plan);
     await openStripeCheckout(plan, "/onboarding");

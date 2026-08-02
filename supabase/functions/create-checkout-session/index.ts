@@ -63,25 +63,22 @@ serve(async (req) => {
       return respond({ ok: false, error: "Stripe not configured", stage });
     }
     // Use account default API version (avoids version-pin incompatibilities).
-    const stripe = new Stripe(stripeKey);
+    const stripe = new Stripe(stripeKey, {
+      httpClient: Stripe.createFetchHttpClient(),
+      maxNetworkRetries: 1,
+      timeout: 15000,
+    });
 
-    stage = "price_validate";
-    try {
-      const price = await stripe.prices.retrieve(planConfig.priceId);
-      if (!price?.active) {
-        return respond({ ok: false, error: `Price ${planConfig.priceId} is not active`, stage });
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      console.error("price retrieve failed", msg);
-      return respond({ ok: false, error: `Price not found in active Stripe mode: ${msg}`, stage });
-    }
-
+    // Skip the extra price-validation round trip: session_create surfaces a bad
+    // price anyway, and every saved round trip is ~300-600ms of user wait.
     stage = "customer_lookup";
     let customerId: string | undefined;
     try {
-      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-      if (customers.data.length > 0) customerId = customers.data[0].id;
+      const customers = await Promise.race([
+        stripe.customers.list({ email: user.email, limit: 1 }),
+        new Promise<null>((r) => setTimeout(() => r(null), 2500)),
+      ]);
+      if (customers && (customers as any).data?.length > 0) customerId = (customers as any).data[0].id;
     } catch (e) {
       console.warn("customer lookup failed (non-fatal):", e);
     }
