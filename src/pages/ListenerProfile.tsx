@@ -22,6 +22,7 @@ import { FollowersGrid } from "@/components/social/FollowersGrid";
 import { MusicTasteCard } from "@/components/social/MusicTasteCard";
 import { FanBadges, FanLevel } from "@/components/social/FanBadges";
 import { SocialFeed } from "@/components/social/SocialFeed";
+import { SkipToContent } from "@/components/a11y/SkipToContent";
 
 const CORAL = "#FF6347";
 
@@ -196,6 +197,7 @@ export default function ListenerProfile() {
 
   return (
     <div className="min-h-screen text-white pb-32 relative overflow-hidden" style={{ background: "#050505" }}>
+      <SkipToContent />
       {/* Cinematic backdrop — matches Onboarding */}
       {getProfileImageUrl() && (
         <div className="fixed inset-0 z-0" style={{
