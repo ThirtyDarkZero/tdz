@@ -49,19 +49,24 @@ async function resolveUserId(
   return null;
 }
 
-// Upsert (never silently no-op) the user's subscription row.
-async function writeSubscription(
+// Ordered, concurrency-safe subscription write. The RPC takes a per-user advisory
+// lock and ignores events older than the last applied one, so two deliveries racing
+// (or an old retry landing late) can never double-apply or regress state.
+async function applySubscription(
   supabase: ReturnType<typeof createClient>,
   userId: string,
   fields: Record<string, unknown>,
+  eventAt: string,
 ) {
-  const { error } = await supabase.from("user_subscriptions").upsert({
-    user_id: userId,
-    ...fields,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: "user_id" });
-  if (error) console.error("[stripe-webhook] subscription upsert failed:", error.message);
+  const { data, error } = await supabase.rpc("apply_stripe_subscription_event", {
+    p_user_id: userId,
+    p_fields: fields,
+    p_event_at: eventAt,
+  });
+  if (error) console.error("[stripe-webhook] subscription apply failed:", error.message);
+  else if (data !== true) console.log(`[stripe-webhook] stale subscription event for user=${userId}; skipped`);
 }
+
 
 
 
