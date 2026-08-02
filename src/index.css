@@ -438,12 +438,12 @@
       min-width: 44px;
     }
 
-    /* Uniform gutters for page shells */
-    main, [data-app-page] {
+    /* Uniform gutters for opt-in page shells (full-bleed pages excluded) */
+    [data-app-page] {
       padding-left: max(1rem, env(safe-area-inset-left));
       padding-right: max(1rem, env(safe-area-inset-right));
     }
-    main > *, [data-app-page] > * {
+    [data-app-page] > * {
       max-width: 100%;
     }
 
