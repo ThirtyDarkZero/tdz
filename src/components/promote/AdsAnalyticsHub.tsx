@@ -179,28 +179,31 @@ export function AdsAnalyticsHub() {
 
 
   const disconnect = async (rowId: string) => {
-    const { error } = await supabase.from("manager_integrations").delete().eq("id", rowId);
-    if (error) {
-      toast.error("Disconnect failed", { description: error.message });
-      return;
+    try {
+      const { error } = await supabase.from("manager_integrations").delete().eq("id", rowId);
+      if (error) throw error;
+      toast.success("Disconnected");
+      load();
+    } catch (e: any) {
+      toast.error("Disconnect failed", { description: e?.message ?? "Please try again." });
     }
-    toast.success("Disconnected");
-    load();
   };
 
   const taggedUrl = useMemo(() => {
-    if (!destination.trim()) return "";
+    const raw = destination.trim();
+    if (!raw) return "";
     try {
-      const url = new URL(destination.trim());
-      if (source) url.searchParams.set("utm_source", source);
-      if (medium) url.searchParams.set("utm_medium", medium);
-      if (campaign) url.searchParams.set("utm_campaign", campaign);
+      const url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+      if (source.trim()) url.searchParams.set("utm_source", source.trim());
+      if (medium.trim()) url.searchParams.set("utm_medium", medium.trim());
+      if (campaign.trim()) url.searchParams.set("utm_campaign", campaign.trim());
       url.searchParams.set("utm_content", "tdz_promote");
       return url.toString();
     } catch {
       return "";
     }
   }, [destination, source, medium, campaign]);
+
 
   const copyTagged = async () => {
     if (!taggedUrl) return;
