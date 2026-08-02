@@ -373,6 +373,8 @@ function OnboardingFlow() {
   };
 
   const handleFinish = () => {
+    sessionStorage.removeItem("tdz_onb_step");
+    sessionStorage.removeItem("tdz_onb_role");
     if (role === "manager") navigate("/manager-hq", { replace: true });
     else if (role === "listener") navigate("/discover", { replace: true });
     else navigate("/studio", { replace: true });
