@@ -124,7 +124,8 @@ function Ticker({ text }: { text: string }) {
 function NavPill() {
   const navigate = useNavigate();
   const items = [
-    { sub: "START HERE", main: "SIGNUP", path: "/auth" },
+    { sub: "MEMBERS", main: "LOG IN", path: "/auth" },
+    { sub: "START HERE", main: "SIGNUP", path: "/auth?mode=signup" },
     { sub: "ARTISTS", main: "STUDIO", path: "/studio" },
     { sub: "FANS", main: "DISCOVERY", path: "/discover" },
     { sub: "SHOP", main: "STORE", path: "https://thirtydarkzerorecords.com/store", external: true, storeSource: "landing_nav_pill" as StoreClickSource },
