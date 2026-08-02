@@ -94,6 +94,7 @@ function OnboardingFlow() {
     if (role) sessionStorage.setItem("tdz_onb_role", role);
   }, [role]);
 
+  const dossier = useIdentityDossier();
   const [hoveredRole, setHoveredRole] = useState<Role | null>(null);
   const [saving, setSaving] = useState(false);
   const [xp, setXp] = useState(0);
