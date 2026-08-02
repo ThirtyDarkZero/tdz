@@ -1,5 +1,5 @@
 import { sendAppEmail, sendTutorialEmail } from "@/lib/emails";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,22 +96,33 @@ function OnboardingFlow() {
   const [selectedPlan, setSelectedPlan] = useState<CheckoutPlan | null>(null);
   const [rosterEmails, setRosterEmails] = useState("");
 
+  // Listener (tastemaker) fields
+  const [fanName, setFanName] = useState("");
+  const [favoriteGenres, setFavoriteGenres] = useState("");
+
+  // Hydrate the flow from an existing role ONCE — never snap the user backwards
+  // while they're mid-journey.
+  const hydrated = useRef(false);
   useEffect(() => {
+    if (hydrated.current || !existingRole) return;
+    hydrated.current = true;
     if (existingRole === "artist" || existingRole === "verified_artist") {
       setRole("artist");
-      setStep(2);
+      setStep((s) => (s === 1 ? 2 : s));
     } else if (existingRole === "manager") {
       setRole("manager");
-      setStep(2);
+      setStep((s) => (s === 1 ? 2 : s));
     } else if (existingRole === "listener") {
-      navigate("/discover", { replace: true });
+      setRole("listener");
+      setStep((s) => (s === 1 ? 2 : s));
     }
-  }, [existingRole, navigate]);
+  }, [existingRole]);
 
   // Returning from Stripe (checkout or Connect onboarding) lands back here.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("payout") || params.get("checkout")) {
+      hydrated.current = true;
       setStep(3);
       if (params.get("checkout") === "success") toast.success("Subscription active. Welcome aboard.");
       if (params.get("payout") === "success") toast.success("Payout account connected.");
@@ -168,7 +179,7 @@ function OnboardingFlow() {
     setSelectedPlan(null);
   };
 
-  const totalSteps = role === "listener" ? 1 : 4;
+  const totalSteps = 4;
   const progress = (step / totalSteps) * 100;
   const activeRole = hoveredRole || role;
   const activeMeta = activeRole ? ROLE_META[activeRole] : null;
@@ -191,9 +202,14 @@ function OnboardingFlow() {
   const persistRole = async (chosen: Role) => {
     if (!user) return false;
     const dbRole = chosen === "listener" ? "listener" : chosen;
+    // Insert-only (ignore duplicates): user_roles has no self-UPDATE policy, so a
+    // real upsert would fail with RLS when the row already exists.
     const { error } = await supabase
       .from("user_roles")
-      .upsert({ user_id: user.id, role: dbRole as any }, { onConflict: "user_id,role" });
+      .upsert({ user_id: user.id, role: dbRole as any }, {
+        onConflict: "user_id,role",
+        ignoreDuplicates: true,
+      });
     if (error) {
       toast.error("Could not save role", { description: error.message });
       return false;
@@ -237,10 +253,40 @@ function OnboardingFlow() {
           },
         });
       }
-      setTimeout(() => navigate("/discover", { replace: true }), 800);
-      return;
     }
     setTimeout(() => setStep(2), 700);
+  };
+
+  const finishListener = async () => {
+    if (!user) return;
+    const name =
+      fanName.trim() ||
+      (user.user_metadata as any)?.full_name ||
+      (user.email ? user.email.split("@")[0] : "");
+    if (!name) {
+      toast.error("Pick a name the scene will know you by.");
+      return;
+    }
+    setSaving(true);
+    const genres = favoriteGenres
+      .split(/[\n,;]+/)
+      .map((g) => g.trim())
+      .filter(Boolean);
+    const { error } = await supabase.from("listener_profiles").upsert(
+      {
+        user_id: user.id,
+        display_name: name,
+        favorite_genres: genres.length ? genres : null,
+      } as any,
+      { onConflict: "user_id" }
+    );
+    setSaving(false);
+    if (error) {
+      toast.error("Could not save your taste profile", { description: error.message });
+      return;
+    }
+    triggerXP(500);
+    setStep(3);
   };
 
   const finishArtist = async () => {
@@ -308,6 +354,7 @@ function OnboardingFlow() {
 
   const handleFinish = () => {
     if (role === "manager") navigate("/manager-hq", { replace: true });
+    else if (role === "listener") navigate("/discover", { replace: true });
     else navigate("/studio", { replace: true });
   };
 
@@ -567,6 +614,21 @@ function OnboardingFlow() {
               </div>
             )}
 
+            {/* STEP 2 — Tastemaker */}
+            {step === 2 && role === "listener" && (
+              <div className="max-w-xl mx-auto animate-fade-in">
+                <QuestPanel accent={ROLE_META.listener.accent} icon={Headphones} chapter="CHAPTER 02" title="TUNE YOUR TASTE" subtitle="Tell us what moves you — Discovery adapts to it.">
+                  <div className="space-y-4">
+                    <GameField label="Display Name" value={fanName} onChange={setFanName} placeholder="e.g. NightOwl" accent={ROLE_META.listener.accent} />
+                    <GameField label="Favorite Genres (comma separated)" value={favoriteGenres} onChange={setFavoriteGenres} placeholder="e.g. Alt R&B, Drill, Ambient" accent={ROLE_META.listener.accent} />
+                    <QuestButton onClick={finishListener} saving={saving} accent={ROLE_META.listener.accent}>
+                      Continue Quest → +500 XP
+                    </QuestButton>
+                  </div>
+                </QuestPanel>
+              </div>
+            )}
+
             {/* STEP 3 — Victory */}
             {step === 3 && role && (
               <div className="max-w-2xl mx-auto animate-fade-in space-y-4">
@@ -575,7 +637,9 @@ function OnboardingFlow() {
                   icon={CreditCard}
                   chapter="CHAPTER 03"
                   title="POWER UP"
-                  subtitle="Activate your plan and connect payouts — both run on Stripe."
+                  subtitle={role === "listener"
+                    ? "Activate your Fan plan — every play sends $1 straight to the artist."
+                    : "Activate your plan and connect payouts — both run on Stripe."}
                 >
                   <div className="space-y-6">
                     {/* Subscription */}
@@ -593,6 +657,8 @@ function OnboardingFlow() {
                       <div className="grid sm:grid-cols-2 gap-3">
                         {(role === "manager"
                           ? ([{ id: "enterprise", name: "ENTERPRISE", price: "$50/mo", perks: "Full roster, white-label, integrations" }] as const)
+                          : role === "listener"
+                          ? ([{ id: "fan", name: "FAN", price: "$12/mo", perks: "Unlimited listening, $1/stream to artists" }] as const)
                           : ([
                               { id: "starter", name: "STARTER", price: "$10/mo", perks: "Upload, payouts, core analytics" },
                               { id: "pro", name: "PRO", price: "$20/mo", perks: "Advanced tools, AI, unlimited releases" },
@@ -624,7 +690,8 @@ function OnboardingFlow() {
                       </div>
                     </div>
 
-                    {/* Payouts */}
+                    {/* Payouts — creators only */}
+                    {role !== "listener" && (
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-[10px] tracking-[0.3em] text-white/60 font-bold">
@@ -660,6 +727,7 @@ function OnboardingFlow() {
                         <ShieldCheck className="w-3 h-3" /> TDZ never sees or stores your bank credentials.
                       </p>
                     </div>
+                    )}
 
                     <div className="flex gap-3 pt-2">
                       <QuestButton onClick={() => setStep(4)} saving={false} accent={ROLE_META[role].accent}>
@@ -736,6 +804,8 @@ function OnboardingFlow() {
                       <p className="text-white/70 mt-3 max-w-md mx-auto text-sm" style={{ fontFamily: "'Raleway',sans-serif" }}>
                         {role === "manager"
                           ? "Manager HQ is online. Your empire awaits — roster tools, white-label branding, and enterprise integrations are all unlocked."
+                          : role === "listener"
+                          ? "Discovery is tuned to your taste. Every intentional play sends $1 straight to the artist."
                           : "Studio is armed. Upload your first track and start banking $1 per qualified stream."}
                       </p>
                     </div>
@@ -750,7 +820,7 @@ function OnboardingFlow() {
                     >
                       <span className="relative z-10 flex items-center gap-2">
                         <Rocket className="w-4 h-4" />
-                        {role === "manager" ? "ENTER MANAGER HQ" : "ENTER STUDIO"}
+                        {role === "manager" ? "ENTER MANAGER HQ" : role === "listener" ? "ENTER DISCOVERY" : "ENTER STUDIO"}
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </span>
                     </button>
