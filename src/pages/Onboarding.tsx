@@ -727,6 +727,7 @@ function OnboardingFlow() {
                         <ShieldCheck className="w-3 h-3" /> TDZ never sees or stores your bank credentials.
                       </p>
                     </div>
+                    )}
 
                     <div className="flex gap-3 pt-2">
                       <QuestButton onClick={() => setStep(4)} saving={false} accent={ROLE_META[role].accent}>
