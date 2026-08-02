@@ -601,11 +601,12 @@ function OnboardingFlow() {
 
             {/* STEP 2 — Artist */}
             {step === 2 && role === "artist" && (
-              <div className="max-w-xl mx-auto animate-fade-in">
-                <QuestPanel accent={ROLE_META.artist.accent} icon={Music} chapter="CHAPTER 02" title="FORGE YOUR IDENTITY" subtitle="Every legend starts with a name.">
+              <div className="max-w-2xl mx-auto animate-fade-in">
+                <QuestPanel accent={ROLE_META.artist.accent} icon={Music} chapter="CHAPTER 02" title="FORGE YOUR IDENTITY" subtitle="Every legend starts with a name — and a verified identity.">
                   <div className="space-y-4">
                     <GameField label="Artist Name" value={artistName} onChange={setArtistName} placeholder="e.g. Ghost Signal" accent={ROLE_META.artist.accent} />
                     <GameField label="Primary Genre (optional)" value={genre} onChange={setGenre} placeholder="e.g. Alt R&B" accent={ROLE_META.artist.accent} />
+                    <IdentityDossierFields dossier={dossier} accent={ROLE_META.artist.accent} />
                     <QuestButton onClick={finishArtist} saving={saving} accent={ROLE_META.artist.accent}>
                       Continue Quest → +500 XP
                     </QuestButton>
@@ -616,7 +617,7 @@ function OnboardingFlow() {
 
             {/* STEP 2 — Manager */}
             {step === 2 && role === "manager" && (
-              <div className="max-w-xl mx-auto animate-fade-in">
+              <div className="max-w-2xl mx-auto animate-fade-in">
                 <QuestPanel accent={ROLE_META.manager.accent} icon={Building2} chapter="CHAPTER 02" title="BUILD YOUR EMPIRE" subtitle="Command your roster. Own your brand.">
                   <div className="space-y-4">
                     <GameField label="Label / Company Name" value={labelName} onChange={setLabelName} placeholder="e.g. Midnight Records" accent={ROLE_META.manager.accent} />
@@ -636,6 +637,7 @@ function OnboardingFlow() {
                       />
                       <p className="text-[10px] text-white/40 tracking-wider">+250 XP per recruit summoned</p>
                     </div>
+                    <IdentityDossierFields dossier={dossier} accent={ROLE_META.manager.accent} />
                     <QuestButton onClick={finishManager} saving={saving} accent={ROLE_META.manager.accent}>
                       Build Empire → +1000 XP
                     </QuestButton>
@@ -646,11 +648,12 @@ function OnboardingFlow() {
 
             {/* STEP 2 — Tastemaker */}
             {step === 2 && role === "listener" && (
-              <div className="max-w-xl mx-auto animate-fade-in">
+              <div className="max-w-2xl mx-auto animate-fade-in">
                 <QuestPanel accent={ROLE_META.listener.accent} icon={Headphones} chapter="CHAPTER 02" title="TUNE YOUR TASTE" subtitle="Tell us what moves you — Discovery adapts to it.">
                   <div className="space-y-4">
                     <GameField label="Display Name" value={fanName} onChange={setFanName} placeholder="e.g. NightOwl" accent={ROLE_META.listener.accent} />
                     <GameField label="Favorite Genres (comma separated)" value={favoriteGenres} onChange={setFavoriteGenres} placeholder="e.g. Alt R&B, Drill, Ambient" accent={ROLE_META.listener.accent} />
+                    <IdentityDossierFields dossier={dossier} accent={ROLE_META.listener.accent} />
                     <QuestButton onClick={finishListener} saving={saving} accent={ROLE_META.listener.accent}>
                       Continue Quest → +500 XP
                     </QuestButton>
@@ -658,6 +661,7 @@ function OnboardingFlow() {
                 </QuestPanel>
               </div>
             )}
+
 
             {/* STEP 3 — Victory */}
             {step === 3 && role && (
