@@ -690,7 +690,8 @@ function OnboardingFlow() {
                       </div>
                     </div>
 
-                    {/* Payouts */}
+                    {/* Payouts — creators only */}
+                    {role !== "listener" && (
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-[10px] tracking-[0.3em] text-white/60 font-bold">
