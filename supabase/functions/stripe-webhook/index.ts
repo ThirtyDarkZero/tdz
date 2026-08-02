@@ -303,14 +303,15 @@ serve(async (req) => {
           if (userId) {
             const priceId = sub.items.data[0]?.price?.id;
             const plan = (priceId && PRICE_TO_PLAN[priceId]) || undefined;
-            await writeSubscription(supabase, userId, {
+            await applySubscription(supabase, userId, {
               ...(plan ? { plan } : {}),
               status: "active",
               current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
               current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
               expires_at: new Date(sub.current_period_end * 1000).toISOString(),
               canceled_at: null,
-            });
+            }, eventAt);
+
           }
         }
         break;
