@@ -27,6 +27,8 @@ import heroArtistHeadphones from "@/assets/hero-artist-headphones.jpg";
 import { RequireAuth } from "@/components/auth/AuthGuard";
 import { openStripeCheckout, type CheckoutPlan } from "@/lib/subscription-checkout";
 import { CreditCard, Banknote, CheckCircle2, ShieldCheck } from "lucide-react";
+import { useIdentityDossier } from "@/hooks/useIdentityDossier";
+import { IdentityDossierFields } from "@/components/onboarding/IdentityDossierFields";
 
 type Role = "artist" | "manager" | "listener";
 
