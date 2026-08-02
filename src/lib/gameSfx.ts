@@ -142,9 +142,34 @@ export const sfx = {
     }),
 };
 
-/** Small haptic pulse on supported devices. */
+const HAPTICS_KEY = "tdz-haptics-enabled";
+
+/** Haptics are opt-out; devices without a vibration motor simply ignore the call. */
+export function isHapticsEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(HAPTICS_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+
+export function setHapticsEnabled(enabled: boolean) {
+  try {
+    window.localStorage.setItem(HAPTICS_KEY, enabled ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+}
+
+export function supportsHaptics(): boolean {
+  return typeof navigator !== "undefined" && "vibrate" in navigator;
+}
+
+/** Small haptic pulse on supported devices, honouring the user preference. */
 export function haptic(pattern: number | number[] = 12) {
   try {
+    if (!isHapticsEnabled()) return;
     if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(pattern);
   } catch {
     /* ignore */

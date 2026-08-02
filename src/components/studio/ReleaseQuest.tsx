@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { MultiTrackUploader, type ReleaseQuestStage, type ReleaseSummary } from "@/components/MultiTrackUploader";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Rocket, Music, Sparkles, Star, Trophy, Upload, Zap, Check, Volume2, VolumeX } from "lucide-react";
+import { Rocket, Music, Sparkles, Star, Trophy, Upload, Zap, Check, Volume2, VolumeX, Vibrate, VibrateOff } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { sfx, haptic, isSfxMuted, setSfxMuted } from "@/lib/gameSfx";
+import { sfx, haptic, isSfxMuted, setSfxMuted, isHapticsEnabled, setHapticsEnabled, supportsHaptics } from "@/lib/gameSfx";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { burstFrom, celebrate } from "@/lib/celebrate";
 import { ReleaseCard, type ReleaseCardData } from "@/components/studio/ReleaseCard";
 
@@ -32,9 +33,18 @@ export function ReleaseQuest({
   const [flash, setFlash] = useState(false);
   const [popup, setPopup] = useState<string | null>(null);
   const [muted, setMuted] = useState(() => isSfxMuted());
+  const [haptics, setHaptics] = useState(() => isHapticsEnabled());
+  const [announcement, setAnnouncement] = useState("");
+  const reducedMotion = useReducedMotion();
+  const hapticsSupported = supportsHaptics();
   const [summary, setSummary] = useState<ReleaseSummary | null>(null);
   const awarded = useRef<Set<ReleaseQuestStage>>(new Set());
   const xpRef = useRef<HTMLDivElement | null>(null);
+  const reducedMotionRef = useRef(false);
+
+  useEffect(() => {
+    reducedMotionRef.current = reducedMotion;
+  }, [reducedMotion]);
 
   const stageIndex = STAGES.findIndex((s) => s.id === stage);
   const pct = Math.round(((stageIndex + 1) / STAGES.length) * 100);
@@ -47,10 +57,11 @@ export function ReleaseQuest({
     setXp((v) => v + meta.xp);
     setFlash(true);
     setPopup(`+${meta.xp} XP`);
+    setAnnouncement(`Stage complete: ${meta.label}. ${meta.xp} XP earned.`);
     if (!silent) {
       sfx.stageComplete();
       haptic([8, 30, 12]);
-      burstFrom(xpRef.current);
+      if (!reducedMotionRef.current) burstFrom(xpRef.current);
     }
     window.setTimeout(() => setFlash(false), 900);
     window.setTimeout(() => setPopup(null), 1400);
@@ -61,6 +72,12 @@ export function ReleaseQuest({
   }, [stage, stageIndex, award]);
 
   const handleStage = useCallback((s: ReleaseQuestStage) => setStage(s), []);
+
+  useEffect(() => {
+    const i = STAGES.findIndex((s) => s.id === stage);
+    if (i < 0 || stage === "done") return;
+    setAnnouncement(`Stage ${i + 1} of ${STAGES.length}: ${STAGES[i].label}. ${STAGES[i].brief}`);
+  }, [stage]);
 
   const handleSuccess = (s?: ReleaseSummary) => {
     award("uploading", true);
@@ -73,14 +90,24 @@ export function ReleaseQuest({
     if (stage !== "done") return;
     sfx.victory();
     haptic([12, 40, 12, 40, 24]);
-    celebrate();
-  }, [stage]);
+    setAnnouncement("Release complete. Your music is live on TDZ. Customise and share your release card below.");
+    if (!reducedMotion) celebrate();
+  }, [stage, reducedMotion]);
 
   const toggleMute = () => {
     const next = !muted;
     setMuted(next);
     setSfxMuted(next);
+    setAnnouncement(next ? "Sound effects muted" : "Sound effects on");
     if (!next) sfx.click();
+  };
+
+  const toggleHaptics = () => {
+    const next = !haptics;
+    setHaptics(next);
+    setHapticsEnabled(next);
+    setAnnouncement(next ? "Haptics on" : "Haptics off");
+    if (next) haptic([10, 30, 10]);
   };
 
   if (stage === "done") {
@@ -100,7 +127,14 @@ export function ReleaseQuest({
     };
 
     return (
-      <div className="relative overflow-hidden rounded-xl border border-primary/40 bg-background/60 p-8 text-center backdrop-blur-2xl animate-scale-in md:p-10">
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-xl border border-primary/40 bg-background/60 p-8 text-center backdrop-blur-2xl md:p-10",
+          !reducedMotion && "animate-scale-in",
+        )}
+      >
+      <p aria-live="polite" role="status" className="sr-only">{announcement}</p>
+
         <div
           className="pointer-events-none absolute inset-0 opacity-40 blur-3xl animate-fade-in"
           style={{ background: "radial-gradient(circle at 50% 0%, hsl(var(--primary)) 0%, transparent 65%)" }}
@@ -113,7 +147,12 @@ export function ReleaseQuest({
           </p>
 
           <div className="mx-auto mt-6 flex w-fit items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-5 py-2 animate-scale-in">
-            <Star className="h-4 w-4 text-primary animate-spin" fill="currentColor" style={{ animationDuration: "3s" }} />
+            <Star
+              className={cn("h-4 w-4 text-primary", !reducedMotion && "animate-spin")}
+              fill="currentColor"
+              style={{ animationDuration: "3s" }}
+              aria-hidden="true"
+            />
             <span style={heading} className="text-3xl leading-none">+{xp.toLocaleString()} XP EARNED</span>
           </div>
 
@@ -157,6 +196,7 @@ export function ReleaseQuest({
 
   return (
     <div className="space-y-5">
+      <p aria-live="polite" role="status" className="sr-only">{announcement}</p>
       {/* Quest HUD */}
       <div className="relative overflow-hidden rounded-xl border border-border/40 bg-background/50 p-5 backdrop-blur-2xl">
         <div
@@ -175,19 +215,32 @@ export function ReleaseQuest({
             <button
               type="button"
               onClick={toggleMute}
+              aria-pressed={!muted}
               aria-label={muted ? "Enable sound effects" : "Mute sound effects"}
-              className="rounded-full border border-border/50 bg-background/60 p-2 text-muted-foreground transition-colors hover:text-primary"
+              className="flex min-h-11 min-w-11 items-center justify-center rounded-full border border-border/50 bg-background/60 p-2 text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              {muted ? <VolumeX className="h-4 w-4" aria-hidden="true" /> : <Volume2 className="h-4 w-4" aria-hidden="true" />}
             </button>
+            {hapticsSupported && (
+              <button
+                type="button"
+                onClick={toggleHaptics}
+                aria-pressed={haptics}
+                aria-label={haptics ? "Turn off haptics" : "Turn on haptics"}
+                className="flex min-h-11 min-w-11 items-center justify-center rounded-full border border-border/50 bg-background/60 p-2 text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {haptics ? <Vibrate className="h-4 w-4" aria-hidden="true" /> : <VibrateOff className="h-4 w-4" aria-hidden="true" />}
+              </button>
+            )}
             <div
               ref={xpRef}
               className={cn(
                 "relative flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 transition-all duration-300",
-                flash && "scale-110 shadow-[0_0_30px_-4px_hsl(var(--primary))]",
+                flash && !reducedMotion && "scale-110",
+                flash && "shadow-[0_0_30px_-4px_hsl(var(--primary))]",
               )}
             >
-              <Star className={cn("h-4 w-4 text-primary", flash && "animate-spin")} fill="currentColor" />
+              <Star className={cn("h-4 w-4 text-primary", flash && !reducedMotion && "animate-spin")} fill="currentColor" aria-hidden="true" />
               <span style={heading} className="text-2xl leading-none">{xp.toLocaleString()} XP</span>
               {popup && (
                 <span
@@ -213,7 +266,8 @@ export function ReleaseQuest({
                 key={s.id}
                 className={cn(
                   "rounded-lg border p-3 transition-all duration-500",
-                  active && "scale-[1.02] border-primary/60 bg-primary/10 shadow-[0_0_24px_-8px_hsl(var(--primary))]",
+                  active && !reducedMotion && "scale-[1.02]",
+                  active && "border-primary/60 bg-primary/10 shadow-[0_0_24px_-8px_hsl(var(--primary))]",
                   complete && "border-primary/30 bg-primary/5",
                   !active && !complete && "border-border/40 bg-muted/10 opacity-60",
                 )}
@@ -222,7 +276,7 @@ export function ReleaseQuest({
                   {complete ? (
                     <Check className="h-3.5 w-3.5 text-primary animate-scale-in" />
                   ) : (
-                    <s.icon className={cn("h-3.5 w-3.5", active ? "text-primary animate-pulse" : "text-muted-foreground")} />
+                    <s.icon className={cn("h-3.5 w-3.5", active ? cn("text-primary", !reducedMotion && "animate-pulse") : "text-muted-foreground")} />
                   )}
                   <span style={body} className="text-[10px] uppercase tracking-widest text-muted-foreground">
                     Stage {i + 1}
