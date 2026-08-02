@@ -49,19 +49,24 @@ async function resolveUserId(
   return null;
 }
 
-// Upsert (never silently no-op) the user's subscription row.
-async function writeSubscription(
+// Ordered, concurrency-safe subscription write. The RPC takes a per-user advisory
+// lock and ignores events older than the last applied one, so two deliveries racing
+// (or an old retry landing late) can never double-apply or regress state.
+async function applySubscription(
   supabase: ReturnType<typeof createClient>,
   userId: string,
   fields: Record<string, unknown>,
+  eventAt: string,
 ) {
-  const { error } = await supabase.from("user_subscriptions").upsert({
-    user_id: userId,
-    ...fields,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: "user_id" });
-  if (error) console.error("[stripe-webhook] subscription upsert failed:", error.message);
+  const { data, error } = await supabase.rpc("apply_stripe_subscription_event", {
+    p_user_id: userId,
+    p_fields: fields,
+    p_event_at: eventAt,
+  });
+  if (error) console.error("[stripe-webhook] subscription apply failed:", error.message);
+  else if (data !== true) console.log(`[stripe-webhook] stale subscription event for user=${userId}; skipped`);
 }
+
 
 
 
@@ -107,38 +112,54 @@ serve(async (req) => {
 
   console.log(`[stripe-webhook] event=${event.type} id=${event.id}`);
 
-  // Idempotency: if this event id was already fully processed, ack and return.
-  // We still upsert-received below for first-time events so retries can be traced.
+  const eventAt = new Date(event.created * 1000).toISOString();
+
+  // Atomically claim the event. Two concurrent deliveries of the same event id
+  // cannot both win: the claim is an INSERT ... ON CONFLICT DO NOTHING in Postgres.
+  let claim = "claimed";
   try {
-    const { data: existing } = await supabase
-      .from("stripe_webhook_events")
-      .select("status")
-      .eq("stripe_event_id", event.id)
-      .maybeSingle();
-    if (existing?.status === "processed" || existing?.status === "ignored") {
-      console.log(`[stripe-webhook] duplicate event ${event.id} status=${existing.status}; acking`);
-      return new Response(JSON.stringify({ received: true, duplicate: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const { data, error } = await supabase.rpc("claim_stripe_webhook_event", {
+      p_event_id: event.id,
+      p_event_type: event.type,
+      p_livemode: !!event.livemode,
+      p_payload: event as unknown as Record<string, unknown>,
+      p_received_at: eventAt,
+    });
+    if (error) throw error;
+    claim = (data as string) ?? "claimed";
   } catch (e) {
-    console.error("[stripe-webhook] dedupe check failed:", e);
+    console.error("[stripe-webhook] claim failed:", e);
   }
 
-  // Insert/upsert the received event row up front (status: received)
-  try {
-    await supabase.from("stripe_webhook_events").upsert({
-      stripe_event_id: event.id,
-      event_type: event.type,
-      status: "received",
-      livemode: !!event.livemode,
-      signature_valid: true,
-      payload: event as unknown as Record<string, unknown>,
-      received_at: new Date(event.created * 1000).toISOString(),
-    }, { onConflict: "stripe_event_id" });
-  } catch (e) {
-    console.error("[stripe-webhook] failed to log event:", e);
+  if (claim === "duplicate" || claim === "in_progress") {
+    console.log(`[stripe-webhook] ${claim} event ${event.id}; acking without reprocessing`);
+    return new Response(JSON.stringify({ received: true, duplicate: true, reason: claim }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
+
+  // Per-mutation idempotency: every money-moving write claims a unique key first.
+  // If the key already exists, that exact mutation was applied before — skip it.
+  const once = async (key: string, fn: () => Promise<void>) => {
+    const { data, error } = await supabase.rpc("claim_webhook_mutation", {
+      p_key: key,
+      p_event_id: event.id,
+      p_event_type: event.type,
+    });
+    if (error) throw new Error(`idempotency claim failed for ${key}: ${error.message}`);
+    if (data !== true) {
+      console.log(`[stripe-webhook] mutation ${key} already applied; skipping`);
+      return;
+    }
+    try {
+      await fn();
+    } catch (e) {
+      // Release the key so a Stripe retry can re-attempt this mutation.
+      await supabase.from("webhook_mutations").delete().eq("idempotency_key", key);
+      throw e;
+    }
+  };
+
 
 
   try {
@@ -163,14 +184,14 @@ serve(async (req) => {
               console.warn("[stripe-webhook] could not backfill Stripe metadata:", e);
             }
 
-            await writeSubscription(supabase, userId, {
+            await applySubscription(supabase, userId, {
               plan,
               status: sub.status === "trialing" ? "trial" : "active",
               current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
               current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
               expires_at: new Date(sub.current_period_end * 1000).toISOString(),
               canceled_at: null,
-            });
+            }, eventAt);
             console.log(`[stripe-webhook] subscription activated user=${userId} plan=${plan}`);
           }
         } else if (type === "download") {
@@ -182,21 +203,31 @@ serve(async (req) => {
           if (buyerId && trackId && artistId) {
             const fee = +(price * 0.029 + 0.30).toFixed(2); // Stripe approx
             const artistRevenue = +(price - fee).toFixed(2);
-            await supabase.from("download_purchases").insert({
-              buyer_id: buyerId, track_id: trackId, artist_id: artistId,
-              price, transaction_fee: fee, artist_revenue: artistRevenue,
-              payment_status: "completed",
+
+            await once(`download_purchase:${session.id}`, async () => {
+              const { error } = await supabase.from("download_purchases").upsert({
+                buyer_id: buyerId, track_id: trackId, artist_id: artistId,
+                price, transaction_fee: fee, artist_revenue: artistRevenue,
+                payment_status: "completed",
+                stripe_session_id: session.id,
+              }, { onConflict: "stripe_session_id", ignoreDuplicates: true });
+              if (error) throw error;
             });
+
             // Add to artist earnings (download_revenue)
             const today = new Date();
             const periodStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split("T")[0];
             const periodEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split("T")[0];
-            await supabase.from("artist_earnings").insert({
-              artist_id: artistId,
-              period_start: periodStart, period_end: periodEnd,
-              download_revenue: artistRevenue, total_downloads: 1,
-              streaming_revenue: 0, total_streams: 0,
-              payout_status: "pending",
+            await once(`download_earnings:${session.id}`, async () => {
+              const { error } = await supabase.from("artist_earnings").upsert({
+                artist_id: artistId,
+                period_start: periodStart, period_end: periodEnd,
+                download_revenue: artistRevenue, total_downloads: 1,
+                streaming_revenue: 0, total_streams: 0,
+                payout_status: "pending",
+                idempotency_key: `download:${session.id}`,
+              }, { onConflict: "idempotency_key", ignoreDuplicates: true });
+              if (error) throw error;
             });
           }
         } else if (type === "merch") {
@@ -208,30 +239,38 @@ serve(async (req) => {
           if (buyerId && artistId) {
             const fee = +(amount * 0.029 + 0.30).toFixed(2);
             const artistRevenue = +(amount - fee).toFixed(2);
-            await supabase.from("merch_purchases").insert({
-              buyer_id: buyerId, artist_id: artistId,
-              item_name: itemName, item_id: itemId,
-              amount, artist_revenue: artistRevenue, platform_fee: fee,
-              stripe_session_id: session.id,
-              stripe_payment_intent_id: session.payment_intent as string,
-              status: "completed",
-              metadata: meta,
+            await once(`merch_purchase:${session.id}`, async () => {
+              const { error } = await supabase.from("merch_purchases").upsert({
+                buyer_id: buyerId, artist_id: artistId,
+                item_name: itemName, item_id: itemId,
+                amount, artist_revenue: artistRevenue, platform_fee: fee,
+                stripe_session_id: session.id,
+                stripe_payment_intent_id: session.payment_intent as string,
+                status: "completed",
+                metadata: meta,
+              }, { onConflict: "stripe_session_id", ignoreDuplicates: true });
+              if (error) throw error;
             });
           }
         } else if (type === "tip") {
           const tipperId = meta.tipper_id;
           const artistId = meta.artist_id;
           const amount = (session.amount_total || 0) / 100;
+          const paymentId = (session.payment_intent as string) || session.id;
           if (tipperId && artistId) {
-            await supabase.from("artist_tips").insert({
-              tipper_id: tipperId, artist_id: artistId,
-              amount, currency: session.currency || "usd",
-              square_payment_id: session.payment_intent as string,
-              status: "completed",
-              message: meta.message || null,
+            await once(`tip:${paymentId}`, async () => {
+              const { error } = await supabase.from("artist_tips").upsert({
+                tipper_id: tipperId, artist_id: artistId,
+                amount, currency: session.currency || "usd",
+                square_payment_id: paymentId,
+                status: "completed",
+                message: meta.message || null,
+              }, { onConflict: "square_payment_id", ignoreDuplicates: true });
+              if (error) throw error;
             });
           }
         }
+
         break;
       }
 
@@ -245,14 +284,15 @@ serve(async (req) => {
           const plan = (priceId && PRICE_TO_PLAN[priceId]) || sub.metadata?.plan || undefined;
           const active = event.type !== "customer.subscription.deleted" &&
             (sub.status === "active" || sub.status === "trialing");
-          await writeSubscription(supabase, userId, {
+          await applySubscription(supabase, userId, {
             ...(plan ? { plan } : {}),
             status: active ? (sub.status === "trialing" ? "trial" : "active") : "canceled",
             current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
             current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
             expires_at: new Date(sub.current_period_end * 1000).toISOString(),
-            canceled_at: active ? null : new Date().toISOString(),
-          });
+            canceled_at: active ? null : new Date(event.created * 1000).toISOString(),
+          }, eventAt);
+
           console.log(`[stripe-webhook] ${event.type} user=${userId} status=${sub.status}`);
         } else {
           console.warn(`[stripe-webhook] ${event.type}: no user match for sub=${sub.id}`);
@@ -268,14 +308,15 @@ serve(async (req) => {
           if (userId) {
             const priceId = sub.items.data[0]?.price?.id;
             const plan = (priceId && PRICE_TO_PLAN[priceId]) || undefined;
-            await writeSubscription(supabase, userId, {
+            await applySubscription(supabase, userId, {
               ...(plan ? { plan } : {}),
               status: "active",
               current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
               current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
               expires_at: new Date(sub.current_period_end * 1000).toISOString(),
               canceled_at: null,
-            });
+            }, eventAt);
+
           }
         }
         break;
@@ -288,10 +329,11 @@ serve(async (req) => {
           const sub = await stripe.subscriptions.retrieve(invoice.subscription as string);
           const userId = await resolveUserId(stripe, supabase, sub);
           if (userId) {
-            await writeSubscription(supabase, userId, {
+            await applySubscription(supabase, userId, {
               status: "expired",
-              expires_at: new Date().toISOString(),
-            });
+              expires_at: new Date(event.created * 1000).toISOString(),
+            }, eventAt);
+
             console.log(`[stripe-webhook] dunning exhausted, expired user=${userId}`);
           }
         }
@@ -319,23 +361,18 @@ serve(async (req) => {
           (account.requirements?.past_due?.length ?? 0) > 0 ||
           !!account.requirements?.disabled_reason;
 
-        // Prefer metadata user_id (upsert so the row exists even if the artist
-        // never returned to the app after onboarding); otherwise reconcile by
-        // stripe_connect_id in case metadata was ever stripped.
-        if (userId) {
-          const { error } = await supabase.from("artist_payout_details").upsert({
-            artist_id: userId,
-            stripe_connect_id: account.id,
-            payout_enabled: ready,
-            updated_at: new Date().toISOString(),
-          }, { onConflict: "artist_id" });
-          if (error) console.error("[stripe-webhook] payout details upsert failed:", error.message);
-        } else {
-          await supabase.from("artist_payout_details").update({
-            payout_enabled: ready,
-            updated_at: new Date().toISOString(),
-          }).eq("stripe_connect_id", account.id);
-        }
+        // Ordered apply: the RPC takes a per-artist lock and ignores events older
+        // than the last one applied, so retries/out-of-order deliveries can never
+        // flip payout_enabled back to a stale value.
+        const { data: applied, error: applyErr } = await supabase.rpc("apply_stripe_account_event", {
+          p_user_id: userId ?? null,
+          p_account_id: account.id,
+          p_payout_enabled: ready,
+          p_event_at: eventAt,
+        });
+        if (applyErr) console.error("[stripe-webhook] payout details apply failed:", applyErr.message);
+        else if (applied !== true) console.log(`[stripe-webhook] stale/unmatched account event for ${account.id}; skipped`);
+
 
 
         console.log(`[stripe-webhook] ${event.type} account=${account.id} user=${userId ?? "?"} ready=${ready} attention=${needsAttention}`);
@@ -360,15 +397,16 @@ serve(async (req) => {
       case "transfer.created":
       case "transfer.updated":
       case "transfer.paid": {
-        // Confirm the transfer row exists and mark completed. Idempotent — matches
-        // on square_payout_id (which holds the Stripe transfer id).
+        // Idempotent: matches on square_payout_id (the Stripe transfer id) and only
+        // advances rows that aren't already completed, so replays are no-ops.
         const transfer = event.data.object as Stripe.Transfer;
         await supabase.from("artist_payouts")
           .update({
             status: "completed",
-            completed_at: new Date().toISOString(),
+            completed_at: new Date(event.created * 1000).toISOString(),
           })
-          .eq("square_payout_id", transfer.id);
+          .eq("square_payout_id", transfer.id)
+          .neq("status", "completed");
         console.log(`[stripe-webhook] ${event.type} transfer=${transfer.id}`);
         break;
       }
@@ -389,19 +427,25 @@ serve(async (req) => {
         const { error: transitionErr } = await supabase.from("artist_payouts")
           .update({
             status: nextStatus,
-            completed_at: nextStatus === "reversed" ? new Date().toISOString() : null,
+            completed_at: nextStatus === "reversed" ? new Date(event.created * 1000).toISOString() : null,
           })
-          .eq("square_payout_id", transfer.id);
+          .eq("square_payout_id", transfer.id)
+          .neq("status", nextStatus);
 
         if (transitionErr) {
           console.warn(`[stripe-webhook] ${event.type} blocked by state machine (payout=${payout?.id} current=${payout?.status} -> ${nextStatus}): ${transitionErr.message}`);
         } else if (nextStatus === "failed" && payout?.earnings_ids?.length) {
           // Only re-open earnings on true failure. Reversed transfers are a
           // clawback — earnings stay marked paid until finance reviews.
-          await supabase.from("artist_earnings")
-            .update({ payout_status: "pending", payout_date: null })
-            .in("id", payout.earnings_ids);
+          // Keyed so a redelivery can't re-open earnings a second time.
+          await once(`transfer_failed_reopen:${transfer.id}`, async () => {
+            const { error } = await supabase.from("artist_earnings")
+              .update({ payout_status: "pending", payout_date: null })
+              .in("id", payout.earnings_ids);
+            if (error) throw error;
+          });
         }
+
         console.log(`[stripe-webhook] ${event.type} transfer=${transfer.id} payout=${payout?.id ?? "?"}`);
         break;
       }
