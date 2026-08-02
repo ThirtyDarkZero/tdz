@@ -70,7 +70,9 @@ interface TrackFile {
 
 type ReleaseType = 'single' | 'ep' | 'album';
 
-export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName }: { onSuccess?: () => void; targetUserId?: string; targetArtistName?: string }) => {
+export type ReleaseQuestStage = 'files' | 'details' | 'uploading' | 'done';
+
+export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, onStage }: { onSuccess?: () => void; targetUserId?: string; targetArtistName?: string; onStage?: (stage: ReleaseQuestStage) => void }) => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [releaseType, setReleaseType] = useState<ReleaseType>('single');
