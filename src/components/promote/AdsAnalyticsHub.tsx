@@ -207,9 +207,14 @@ export function AdsAnalyticsHub() {
 
   const copyTagged = async () => {
     if (!taggedUrl) return;
-    await navigator.clipboard.writeText(taggedUrl);
-    toast.success("Tracking link copied");
+    try {
+      await navigator.clipboard.writeText(taggedUrl);
+      toast.success("Tracking link copied");
+    } catch {
+      toast.info("Copy blocked by your browser — select the link and copy manually.");
+    }
   };
+
 
   if (loading) {
     return (
