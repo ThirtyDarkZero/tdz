@@ -614,6 +614,21 @@ function OnboardingFlow() {
               </div>
             )}
 
+            {/* STEP 2 — Tastemaker */}
+            {step === 2 && role === "listener" && (
+              <div className="max-w-xl mx-auto animate-fade-in">
+                <QuestPanel accent={ROLE_META.listener.accent} icon={Headphones} chapter="CHAPTER 02" title="TUNE YOUR TASTE" subtitle="Tell us what moves you — Discovery adapts to it.">
+                  <div className="space-y-4">
+                    <GameField label="Display Name" value={fanName} onChange={setFanName} placeholder="e.g. NightOwl" accent={ROLE_META.listener.accent} />
+                    <GameField label="Favorite Genres (comma separated)" value={favoriteGenres} onChange={setFavoriteGenres} placeholder="e.g. Alt R&B, Drill, Ambient" accent={ROLE_META.listener.accent} />
+                    <QuestButton onClick={finishListener} saving={saving} accent={ROLE_META.listener.accent}>
+                      Continue Quest → +500 XP
+                    </QuestButton>
+                  </div>
+                </QuestPanel>
+              </div>
+            )}
+
             {/* STEP 3 — Victory */}
             {step === 3 && role && (
               <div className="max-w-2xl mx-auto animate-fade-in space-y-4">
