@@ -46,7 +46,7 @@ function cardFor(name: string) {
 async function connectProvider(name: string, primaryId: string, secondary?: string) {
   const user = userEvent.setup();
   const card = cardFor(name);
-  await user.click(within(card).getByRole("button", { name: /connect|update/i }));
+  await user.click(within(card).getByRole("button", { name: /^(connect|update)$/i }));
   const dialog = await screen.findByRole("dialog");
   const inputs = within(dialog).getAllByRole("textbox");
   await user.clear(inputs[0]);
@@ -107,7 +107,7 @@ describe("AdsAnalyticsHub integration", () => {
       });
 
       // DISCONNECT
-      await user.click(within(cardFor(p.name)).getByRole("button", { name: /disconnect/i }));
+      await user.click(within(cardFor(p.name)).getByRole("button", { name: /^disconnect$/i }));
       await waitFor(() => {
         expect((db as any).__rows.filter((r: any) => r.provider === p.id)).toHaveLength(0);
       });
@@ -203,10 +203,10 @@ describe("AdsAnalyticsHub integration", () => {
     render(<AdsAnalyticsHub />);
     await screen.findByRole("heading", { name: "Google Ads" });
 
-    await user.type(screen.getByLabelText("Destination URL"), "tdz.lovable.app/track/abc");
-    const sourceInput = screen.getByLabelText("Source");
-    const mediumInput = screen.getByLabelText("Medium");
-    await user.type(screen.getByLabelText("Campaign Name"), "summer_release_2026");
+    await user.type(screen.getByPlaceholderText("https://tdz.lovable.app/track/..."), "tdz.lovable.app/track/abc");
+    const sourceInput = screen.getByPlaceholderText("google");
+    const mediumInput = screen.getByPlaceholderText("cpc");
+    await user.type(screen.getByPlaceholderText("summer_release_2026"), "summer_release_2026");
 
     for (const [source, medium] of [
       ["google", "cpc"],
