@@ -190,47 +190,89 @@ export default function ListenerProfile() {
     { id: "playlists", label: "Playlists", icon: ListMusic },
   ];
 
+  const fanXp = engagement?.xp_total || 0;
+  const fanLevel = engagement?.level || 1;
+  const xpProgress = Math.min(100, ((fanXp % 1000) / 1000) * 100);
+
   return (
-    <div className="min-h-screen text-white pb-32" style={{ background: "#03030F" }}>
-      {/* Blurred cover BG */}
+    <div className="min-h-screen text-white pb-32 relative overflow-hidden" style={{ background: "#050505" }}>
+      {/* Cinematic backdrop — matches Onboarding */}
       {getProfileImageUrl() && (
         <div className="fixed inset-0 z-0" style={{
           backgroundImage: `url(${getProfileImageUrl()})`,
           backgroundSize: "cover", backgroundPosition: "center",
-          filter: "blur(80px) saturate(1.5) brightness(0.12)", transform: "scale(1.2)",
+          filter: "blur(90px) saturate(1.4) brightness(0.18)", transform: "scale(1.2)",
         }} />
       )}
-      <div className="fixed inset-0 z-0" style={{ background: "linear-gradient(to bottom, rgba(3,3,15,0.3), rgba(3,3,15,0.85) 50%, rgba(3,3,15,0.98))" }} />
+      <div className="fixed top-0 right-0 w-[600px] h-[600px] rounded-full blur-[180px] z-0 pointer-events-none" style={{ background: "rgba(255,99,71,0.22)" }} />
+      <div className="fixed bottom-0 left-0 w-[500px] h-[500px] rounded-full blur-[150px] z-0 pointer-events-none" style={{ background: "rgba(167,139,250,0.22)" }} />
+      {/* Vignette */}
+      <div className="fixed inset-0 z-0 pointer-events-none" style={{
+        background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.85) 90%), linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.9) 100%)",
+      }} />
+      {/* Scanlines */}
+      <div className="fixed inset-0 z-0 opacity-[0.06] pointer-events-none" style={{
+        backgroundImage: "repeating-linear-gradient(0deg, rgba(255,255,255,0.4) 0px, rgba(255,255,255,0.4) 1px, transparent 1px, transparent 3px)",
+      }} />
 
-      {/* Header */}
+      {/* HUD Header */}
       <header className="sticky top-0 z-50" style={{
-        background: "rgba(3,3,15,0.75)", backdropFilter: "blur(32px) saturate(180%)",
-        borderBottom: `1px solid rgba(255,99,71,0.08)`,
+        background: "rgba(5,5,5,0.7)", backdropFilter: "blur(32px) saturate(180%)",
+        borderBottom: `1px solid rgba(255,99,71,0.12)`,
       }}>
         <div className="flex items-center justify-between gap-4 px-4 sm:px-6 py-3">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <span className="font-bold text-lg truncate">{formData.display_name || "Fan"}</span>
-          </div>
-          {isOwnProfile && !editing && (
-            <Button variant="ghost" size="sm" onClick={() => setEditing(true)} style={{ color: CORAL }}>
-              <Edit className="w-4 h-4 mr-2" /> Edit
-            </Button>
-          )}
-          {isOwnProfile && editing && (
-            <div className="flex gap-2">
-              <Button variant="ghost" size="icon" onClick={() => setEditing(false)} className="rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
-                <X className="w-4 h-4" />
-              </Button>
-              <Button size="sm" onClick={handleSave} className="rounded-full" style={{ background: CORAL, color: "#fff" }}>
-                <Save className="w-4 h-4 mr-2" /> Save
-              </Button>
+            <div>
+              <div className="text-[10px] tracking-[0.3em] text-white/50" style={{ fontFamily: "'Raleway',sans-serif" }}>
+                TASTEMAKER PROFILE
+              </div>
+              <div className="text-xs tracking-widest text-white/80 font-bold truncate max-w-[180px] sm:max-w-none">
+                {(formData.display_name || "FAN").toUpperCase()}
+              </div>
             </div>
-          )}
+          </div>
+          <div className="flex items-center gap-2">
+            {/* XP counter — game HUD */}
+            <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-xl"
+              style={{ borderColor: "rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.5)" }}>
+              <Sparkles className="w-4 h-4" style={{ color: "#FFD700" }} />
+              <span className="tabular-nums font-bold text-white text-sm tracking-wider">{fanXp.toLocaleString()} XP</span>
+            </div>
+            {isOwnProfile && !editing && (
+              <Button variant="ghost" size="sm" onClick={() => setEditing(true)} style={{ color: CORAL }}>
+                <Edit className="w-4 h-4 mr-2" /> Edit
+              </Button>
+            )}
+            {isOwnProfile && editing && (
+              <div className="flex gap-2">
+                <Button variant="ghost" size="icon" onClick={() => setEditing(false)} className="rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+                  <X className="w-4 h-4" />
+                </Button>
+                <Button size="sm" onClick={handleSave} className="rounded-full" style={{ background: CORAL, color: "#fff" }}>
+                  <Save className="w-4 h-4 mr-2" /> Save
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+        {/* Level progress bar — shimmer like Onboarding */}
+        <div className="px-4 sm:px-6 pb-3">
+          <div className="relative h-1.5 rounded-full overflow-hidden border border-white/10 max-w-2xl mx-auto" style={{ background: "rgba(255,255,255,0.05)" }}>
+            <div className="h-full transition-all duration-700 ease-out" style={{
+              width: `${xpProgress}%`,
+              background: `linear-gradient(90deg, ${CORAL}, #a78bfa, ${CORAL})`,
+              backgroundSize: "200% 100%",
+              animation: "fanShimmer 2s linear infinite",
+              boxShadow: `0 0 20px ${CORAL}`,
+            }} />
+          </div>
+          <style>{`@keyframes fanShimmer { 0%{background-position:0% 0%} 100%{background-position:200% 0%} }`}</style>
         </div>
       </header>
+
 
       <ScrollArea className="relative z-10">
         {/* ── 3-Column Artist-Style Layout ── */}
@@ -240,7 +282,7 @@ export default function ListenerProfile() {
             {/* ── LEFT COLUMN: Liked Tracks & Recently Played ── */}
             <div className="space-y-4 order-2 lg:order-1">
               {/* Liked Tracks */}
-              <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px) saturate(200%)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="rounded-2xl p-4" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px) saturate(200%)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                 <h3 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: CORAL }}>
                   <Heart className="w-4 h-4" /> Liked Tracks
                 </h3>
@@ -265,7 +307,7 @@ export default function ListenerProfile() {
               </div>
 
               {/* Recently Played */}
-              <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px) saturate(200%)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="rounded-2xl p-4" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px) saturate(200%)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                 <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
                   <Clock className="w-4 h-4" style={{ color: "rgba(0,207,255,0.8)" }} /> Recently Played
                 </h3>
@@ -289,29 +331,35 @@ export default function ListenerProfile() {
 
             {/* ── CENTER COLUMN: Profile Hero ── */}
             <div className="flex flex-col items-center text-center order-1 lg:order-2 pt-4">
-              {/* Centered Circular Photo with Glow */}
-              <div className="relative mb-6">
-                <div className="absolute inset-0 rounded-full" style={{ background: `radial-gradient(circle, ${CORAL}40 0%, transparent 70%)`, transform: "scale(1.5)", filter: "blur(30px)" }} />
+              {/* Avatar in HUD frame */}
+              <div className="relative mb-6 p-5">
+                <div className="absolute inset-0 rounded-full" style={{ background: `radial-gradient(circle, ${CORAL}40 0%, transparent 70%)`, transform: "scale(1.4)", filter: "blur(30px)" }} />
+                {/* Corner brackets — HUD style */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {["top-0 left-0 border-t-2 border-l-2", "top-0 right-0 border-t-2 border-r-2", "bottom-0 left-0 border-b-2 border-l-2", "bottom-0 right-0 border-b-2 border-r-2"].map((pos, k) => (
+                    <div key={k} className={`absolute w-6 h-6 ${pos}`} style={{ borderColor: `${CORAL}` }} />
+                  ))}
+                </div>
                 <div className="relative w-44 h-44 md:w-52 md:h-52 rounded-full overflow-hidden" style={{ border: `3px solid ${CORAL}60`, boxShadow: `0 0 40px ${CORAL}30, inset 0 0 20px rgba(0,0,0,0.3)` }}>
                   {getProfileImageUrl() ? (
-                    <img src={getProfileImageUrl()!} alt={formData.display_name} className="w-full h-full object-cover" />
+                    <img src={getProfileImageUrl()!} alt={formData.display_name} className="w-full h-full object-cover" style={{ filter: "saturate(1.15) contrast(1.1)" }} />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center" style={{ background: `${CORAL}10` }}>
-                      <span className="text-6xl font-black" style={{ color: CORAL }}>{formData.display_name?.charAt(0)?.toUpperCase() || 'U'}</span>
+                      <span className="text-7xl" style={{ color: CORAL, fontFamily: "'Six Caps', sans-serif" }}>{formData.display_name?.charAt(0)?.toUpperCase() || 'U'}</span>
                     </div>
                   )}
                 </div>
                 {isOwnProfile && (
                   <>
                     <input ref={fileInputRef} type="file" accept="image/*,.heic,.heif" className="hidden" onChange={handlePhotoUpload} />
-                    <Button size="icon" className="absolute bottom-2 right-2 h-10 w-10 rounded-full" style={{ background: CORAL, color: "#fff" }} onClick={() => fileInputRef.current?.click()} disabled={uploadingPhoto}>
+                    <Button size="icon" className="absolute bottom-4 right-4 h-10 w-10 rounded-full" style={{ background: CORAL, color: "#fff" }} onClick={() => fileInputRef.current?.click()} disabled={uploadingPhoto}>
                       <Camera className="w-5 h-5" />
                     </Button>
                   </>
                 )}
                 {engagement && (
-                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2">
-                    <FanLevel level={engagement.level || 1} xp={engagement.xp_total || 0} />
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
+                    <FanLevel level={fanLevel} xp={fanXp} />
                   </div>
                 )}
               </div>
@@ -319,37 +367,41 @@ export default function ListenerProfile() {
               {/* Badges */}
               {badges.length > 0 && <div className="mb-2"><FanBadges badges={badges} size="md" /></div>}
 
-              {/* Type Badge */}
+              {/* Class chip */}
               <div className="flex items-center gap-2 mb-2">
-                <Badge className="text-xs px-3 py-1 rounded-full" style={{ background: `${CORAL}20`, border: `1px solid ${CORAL}30`, color: CORAL }}>
-                  <Sparkles className="w-3 h-3 mr-1" /> Fan
-                </Badge>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/20 backdrop-blur-xl" style={{ background: "rgba(255,99,71,0.1)" }}>
+                  <Sparkles className="w-3.5 h-3.5" style={{ color: CORAL }} />
+                  <span className="text-[10px] tracking-[0.3em] text-white/80 font-bold">THE TASTEMAKER</span>
+                </div>
                 {formData.location && <span className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>📍 {formData.location}</span>}
               </div>
 
               {/* Name */}
               {editing ? (
-                <Input value={formData.display_name} onChange={(e) => setFormData({ ...formData, display_name: e.target.value })} className="text-3xl font-black bg-transparent border-white/20 text-center max-w-sm mb-3" />
+                <Input value={formData.display_name} onChange={(e) => setFormData({ ...formData, display_name: e.target.value })} className="text-3xl bg-transparent border-white/20 text-center max-w-sm mb-3" />
               ) : (
-                <h1 className="text-4xl md:text-5xl font-black mb-2 tracking-tight" style={{ color: "#fff" }}>
-                  {formData.display_name || "Music Explorer"}
+                <h1 className="text-5xl md:text-7xl text-white leading-none mb-2" style={{ fontFamily: "'Six Caps', sans-serif", letterSpacing: "0.02em" }}>
+                  {(formData.display_name || "Music Explorer").toUpperCase()}
                 </h1>
               )}
 
-              {/* Stats */}
-              <div className="flex items-center gap-6 text-sm mb-4">
+
+              {/* Stats — HUD readout */}
+              <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
                 {[
                   { label: "Followers", value: followersCount },
                   { label: "Following", value: followingCount },
                   { label: "Playlists", value: playlists.length },
                   { label: "Likes", value: likedTracks.length },
                 ].map(s => (
-                  <div key={s.label} className="text-center">
-                    <span className="block text-xl font-black text-white">{s.value}</span>
-                    <span className="text-[10px] uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.4)" }}>{s.label}</span>
+                  <div key={s.label} className="px-4 py-1.5 rounded-full border backdrop-blur-xl text-center"
+                    style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(0,0,0,0.45)" }}>
+                    <span className="text-lg text-white tabular-nums mr-2" style={{ fontFamily: "'Six Caps', sans-serif" }}>{s.value}</span>
+                    <span className="text-[9px] uppercase tracking-[0.25em]" style={{ color: "rgba(255,255,255,0.45)" }}>{s.label}</span>
                   </div>
                 ))}
               </div>
+
 
               {/* Actions */}
               <div className="flex items-center gap-3 mb-6">
@@ -382,47 +434,55 @@ export default function ListenerProfile() {
                 </div>
               )}
 
-              {/* Fan Portal Features */}
+              {/* Perk tiles — class card style */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-lg mb-6">
                 {[
-                  { icon: Headphones, label: "Listening", desc: `${recentlyPlayed.length} recent`, color: "#00CFFF" },
-                  { icon: Heart, label: "Liked", desc: `${likedTracks.length} tracks`, color: "#FF6B9D" },
-                  { icon: Users, label: "Friends", desc: `${followersCount + followingCount}`, color: "#8B5CF6" },
-                  { icon: Globe, label: "Public", desc: `${playlists.length} playlists`, color: "#10B981" },
+                  { icon: Headphones, label: "LISTENING", desc: `${recentlyPlayed.length} recent`, color: "#00CFFF" },
+                  { icon: Heart, label: "LIKED", desc: `${likedTracks.length} tracks`, color: "#FF6B9D" },
+                  { icon: Users, label: "FRIENDS", desc: `${followersCount + followingCount}`, color: "#8B5CF6" },
+                  { icon: Globe, label: "PUBLIC", desc: `${playlists.length} playlists`, color: "#10B981" },
                 ].map(feat => (
-                  <div key={feat.label} className="rounded-xl p-3 text-center cursor-pointer transition-all hover:scale-105" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div key={feat.label} className="group relative rounded-xl p-3 text-center cursor-pointer transition-all duration-500 hover:-translate-y-1.5"
+                    style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(24px)", border: `1px solid ${feat.color}25`, boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
+                    <div className="absolute inset-1.5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                      {["top-0 left-0 border-t border-l", "top-0 right-0 border-t border-r", "bottom-0 left-0 border-b border-l", "bottom-0 right-0 border-b border-r"].map((pos, k) => (
+                        <div key={k} className={`absolute w-3 h-3 ${pos}`} style={{ borderColor: feat.color }} />
+                      ))}
+                    </div>
                     <feat.icon className="w-5 h-5 mx-auto mb-1" style={{ color: feat.color }} />
-                    <p className="text-xs font-bold text-white">{feat.label}</p>
+                    <p className="text-[10px] font-bold tracking-[0.2em] text-white">{feat.label}</p>
                     <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>{feat.desc}</p>
                   </div>
                 ))}
               </div>
 
-              {/* Tabs */}
-              <div className="flex gap-2 mb-4">
+              {/* Tabs — HUD selector */}
+              <div className="flex flex-wrap justify-center gap-2 mb-4">
                 {tabs.map(tab => (
-                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all" style={{
-                    background: activeTab === tab.id ? `${CORAL}20` : "rgba(255,255,255,0.04)",
+                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] uppercase transition-all backdrop-blur-xl" style={{
+                    background: activeTab === tab.id ? `${CORAL}18` : "rgba(0,0,0,0.45)",
                     color: activeTab === tab.id ? CORAL : "rgba(255,255,255,0.5)",
-                    border: `1px solid ${activeTab === tab.id ? `${CORAL}40` : "rgba(255,255,255,0.06)"}`,
+                    border: `1px solid ${activeTab === tab.id ? `${CORAL}60` : "rgba(255,255,255,0.12)"}`,
+                    boxShadow: activeTab === tab.id ? `0 0 24px ${CORAL}40` : "none",
                   }}>
                     <tab.icon className="w-3.5 h-3.5" /> {tab.label}
                   </button>
                 ))}
               </div>
 
+
               {/* Tab Content */}
               <div className="w-full text-left">
                 {activeTab === "activity" && viewingUserId && (
                   <div className="space-y-4">
-                    <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div className="rounded-2xl p-5" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                       <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
                         <Activity className="w-4 h-4" style={{ color: CORAL }} /> Recent Activity
                       </h3>
                       <ProfileActivityFeed userId={viewingUserId} isOwnProfile={isOwnProfile} />
                     </div>
                     {isOwnProfile && (
-                      <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                      <div className="rounded-2xl p-5" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                         <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
                           <MessageCircle className="w-4 h-4" style={{ color: "#8B5CF6" }} /> Share Your Story
                         </h3>
@@ -433,20 +493,20 @@ export default function ListenerProfile() {
                 )}
 
                 {activeTab === "music" && (
-                  <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="rounded-2xl p-5" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                     {viewingUserId && <MusicTasteCard userId={viewingUserId} />}
                   </div>
                 )}
 
                 {activeTab === "social" && viewingUserId && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div className="rounded-2xl p-5" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                       <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
                         <Users className="w-4 h-4" style={{ color: CORAL }} /> Followers
                       </h3>
                       <FollowersGrid userId={viewingUserId} type="followers" isOwnProfile={isOwnProfile} />
                     </div>
-                    <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div className="rounded-2xl p-5" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                       <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
                         <Heart className="w-4 h-4" style={{ color: "#FF6B9D" }} /> Following
                       </h3>
@@ -456,7 +516,7 @@ export default function ListenerProfile() {
                 )}
 
                 {activeTab === "playlists" && (
-                  <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="rounded-2xl p-5" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                     <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
                       <ListMusic className="w-4 h-4" style={{ color: "#8B5CF6" }} /> Playlists
                     </h3>
@@ -498,7 +558,7 @@ export default function ListenerProfile() {
             {/* ── RIGHT COLUMN: Bio, Stats, Music Taste ── */}
             <div className="space-y-4 order-3">
               {/* Bio Card */}
-              <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px) saturate(200%)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="rounded-2xl p-4" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px) saturate(200%)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                 <h3 className="text-sm font-bold mb-2">About</h3>
                 <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
                   {formData.bio || "This fan hasn't written a bio yet."}
@@ -516,7 +576,7 @@ export default function ListenerProfile() {
 
               {/* Profile Stats */}
               {viewingUserId && (
-                <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(40px) saturate(200%)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <div className="rounded-2xl p-4" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px) saturate(200%)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                   <ProfileStats userId={viewingUserId} />
                 </div>
               )}
