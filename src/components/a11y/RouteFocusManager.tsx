@@ -35,7 +35,7 @@ export function RouteFocusManager() {
 
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 
-    const raf = window.requestAnimationFrame(() => {
+    const raf = window.setTimeout(() => {
       const target =
         (document.getElementById("main-content") as HTMLElement | null) ??
         (document.querySelector("main") as HTMLElement | null) ??
@@ -51,9 +51,9 @@ export function RouteFocusManager() {
         const label = heading?.textContent?.trim() || document.title;
         announcerRef.current.textContent = `${label} — page loaded`;
       }
-    });
+    }, 120);
 
-    return () => window.cancelAnimationFrame(raf);
+    return () => window.clearTimeout(raf);
   }, [location.pathname, location.search, location.hash]);
 
   return (
