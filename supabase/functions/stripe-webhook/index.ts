@@ -16,6 +16,55 @@ const PRICE_TO_PLAN: Record<string, string> = {
   "price_1TMbY5GLQEZqkO65XMRXlj9c": "fan",
 };
 
+// Resolve the TDZ user for a Stripe subscription even if metadata was stripped:
+// subscription metadata -> customer metadata -> customer email -> auth user lookup.
+async function resolveUserId(
+  stripe: Stripe,
+  supabase: ReturnType<typeof createClient>,
+  sub: Stripe.Subscription,
+): Promise<string | null> {
+  if (sub.metadata?.user_id) return sub.metadata.user_id;
+
+  const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
+  if (!customerId) return null;
+
+  try {
+    const customer = await stripe.customers.retrieve(customerId);
+    if (customer.deleted) return null;
+    if (customer.metadata?.user_id) return customer.metadata.user_id;
+
+    const email = customer.email?.toLowerCase();
+    if (!email) return null;
+
+    for (let page = 1; page <= 5; page++) {
+      const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 200 });
+      if (error || !data?.users?.length) break;
+      const match = data.users.find((u) => u.email?.toLowerCase() === email);
+      if (match) return match.id;
+      if (data.users.length < 200) break;
+    }
+  } catch (e) {
+    console.error("[stripe-webhook] resolveUserId failed:", e);
+  }
+  return null;
+}
+
+// Upsert (never silently no-op) the user's subscription row.
+async function writeSubscription(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  fields: Record<string, unknown>,
+) {
+  const { error } = await supabase.from("user_subscriptions").upsert({
+    user_id: userId,
+    ...fields,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "user_id" });
+  if (error) console.error("[stripe-webhook] subscription upsert failed:", error.message);
+}
+
+
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -103,20 +152,29 @@ serve(async (req) => {
           const sub = await stripe.subscriptions.retrieve(session.subscription as string);
           const priceId = sub.items.data[0].price.id;
           const plan = PRICE_TO_PLAN[priceId] || meta.plan || null;
-          const userId = meta.user_id || sub.metadata?.user_id;
+          const userId = meta.user_id || await resolveUserId(stripe, supabase, sub);
           if (userId && plan) {
-            await supabase.from("user_subscriptions").upsert({
-              user_id: userId,
+            // Stamp the ids onto Stripe so later lifecycle events resolve instantly.
+            const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
+            try {
+              await stripe.subscriptions.update(sub.id, { metadata: { ...sub.metadata, user_id: userId, plan } });
+              if (customerId) await stripe.customers.update(customerId, { metadata: { user_id: userId } });
+            } catch (e) {
+              console.warn("[stripe-webhook] could not backfill Stripe metadata:", e);
+            }
+
+            await writeSubscription(supabase, userId, {
               plan,
-              status: "active",
+              status: sub.status === "trialing" ? "trial" : "active",
               current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
               current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
               expires_at: new Date(sub.current_period_end * 1000).toISOString(),
-              updated_at: new Date().toISOString(),
-            }, { onConflict: "user_id" });
+              canceled_at: null,
+            });
             console.log(`[stripe-webhook] subscription activated user=${userId} plan=${plan}`);
           }
         } else if (type === "download") {
+
           const buyerId = meta.buyer_id;
           const trackId = meta.track_id;
           const artistId = meta.artist_id;
@@ -177,18 +235,27 @@ serve(async (req) => {
         break;
       }
 
+      case "customer.subscription.created":
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
-        const userId = sub.metadata?.user_id;
+        const userId = await resolveUserId(stripe, supabase, sub);
         if (userId) {
-          const status = sub.status === "active" || sub.status === "trialing" ? "active" : "canceled";
-          await supabase.from("user_subscriptions").update({
-            status,
+          const priceId = sub.items.data[0]?.price?.id;
+          const plan = (priceId && PRICE_TO_PLAN[priceId]) || sub.metadata?.plan || undefined;
+          const active = event.type !== "customer.subscription.deleted" &&
+            (sub.status === "active" || sub.status === "trialing");
+          await writeSubscription(supabase, userId, {
+            ...(plan ? { plan } : {}),
+            status: active ? (sub.status === "trialing" ? "trial" : "active") : "canceled",
+            current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
             current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
             expires_at: new Date(sub.current_period_end * 1000).toISOString(),
-            updated_at: new Date().toISOString(),
-          }).eq("user_id", userId);
+            canceled_at: active ? null : new Date().toISOString(),
+          });
+          console.log(`[stripe-webhook] ${event.type} user=${userId} status=${sub.status}`);
+        } else {
+          console.warn(`[stripe-webhook] ${event.type}: no user match for sub=${sub.id}`);
         }
         break;
       }
@@ -197,18 +264,40 @@ serve(async (req) => {
         const invoice = event.data.object as Stripe.Invoice;
         if (invoice.subscription) {
           const sub = await stripe.subscriptions.retrieve(invoice.subscription as string);
-          const userId = sub.metadata?.user_id;
+          const userId = await resolveUserId(stripe, supabase, sub);
           if (userId) {
-            await supabase.from("user_subscriptions").update({
+            const priceId = sub.items.data[0]?.price?.id;
+            const plan = (priceId && PRICE_TO_PLAN[priceId]) || undefined;
+            await writeSubscription(supabase, userId, {
+              ...(plan ? { plan } : {}),
               status: "active",
+              current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
               current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
               expires_at: new Date(sub.current_period_end * 1000).toISOString(),
-              updated_at: new Date().toISOString(),
-            }).eq("user_id", userId);
+              canceled_at: null,
+            });
           }
         }
         break;
       }
+
+      case "invoice.payment_failed": {
+        // Only downgrade once Stripe has stopped retrying (dunning exhausted).
+        const invoice = event.data.object as Stripe.Invoice;
+        if (invoice.subscription && !invoice.next_payment_attempt) {
+          const sub = await stripe.subscriptions.retrieve(invoice.subscription as string);
+          const userId = await resolveUserId(stripe, supabase, sub);
+          if (userId) {
+            await writeSubscription(supabase, userId, {
+              status: "expired",
+              expires_at: new Date().toISOString(),
+            });
+            console.log(`[stripe-webhook] dunning exhausted, expired user=${userId}`);
+          }
+        }
+        break;
+      }
+
 
       case "account.updated":
       case "capability.updated": {
@@ -230,14 +319,24 @@ serve(async (req) => {
           (account.requirements?.past_due?.length ?? 0) > 0 ||
           !!account.requirements?.disabled_reason;
 
-        // Prefer metadata user_id, fall back to matching by stripe_connect_id so
-        // reconciliation still works if metadata was ever stripped.
-        const query = supabase.from("artist_payout_details").update({
-          payout_enabled: ready,
-          updated_at: new Date().toISOString(),
-        });
-        if (userId) await query.eq("artist_id", userId);
-        else await query.eq("stripe_connect_id", account.id);
+        // Prefer metadata user_id (upsert so the row exists even if the artist
+        // never returned to the app after onboarding); otherwise reconcile by
+        // stripe_connect_id in case metadata was ever stripped.
+        if (userId) {
+          const { error } = await supabase.from("artist_payout_details").upsert({
+            artist_id: userId,
+            stripe_connect_id: account.id,
+            payout_enabled: ready,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "artist_id" });
+          if (error) console.error("[stripe-webhook] payout details upsert failed:", error.message);
+        } else {
+          await supabase.from("artist_payout_details").update({
+            payout_enabled: ready,
+            updated_at: new Date().toISOString(),
+          }).eq("stripe_connect_id", account.id);
+        }
+
 
         console.log(`[stripe-webhook] ${event.type} account=${account.id} user=${userId ?? "?"} ready=${ready} attention=${needsAttention}`);
         break;
