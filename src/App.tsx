@@ -14,6 +14,7 @@ import { ActingArtistProvider } from "@/contexts/ActingArtistContext";
 import { MoodProvider } from "@/contexts/MoodContext";
 import { GlobalMusicPlayer } from "@/components/GlobalMusicPlayer";
 import { Seo } from "@/components/Seo";
+import { RouteFocusManager } from "@/components/a11y/RouteFocusManager";
 
 // Eagerly loaded lightweight pages
 import Landing from "./pages/Landing";
@@ -77,6 +78,7 @@ const App = () => (
             <Sonner />
             <GlobalErrorTrap />
             <BrowserRouter>
+              <RouteFocusManager />
               <CommandPalette />
               <Suspense fallback={<PageLoader />}>
                 <Routes>
