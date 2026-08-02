@@ -505,7 +505,8 @@ export default function ListenerProfile() {
 
 
               {/* Tab Content */}
-              <div className="w-full text-left">
+              <div id="profile-tabpanel" role="tabpanel" aria-labelledby={`tab-${activeTab}`} tabIndex={0} className="w-full text-left focus:outline-none">
+
                 {activeTab === "activity" && viewingUserId && (
                   <div className="space-y-4">
                     <div className="rounded-2xl p-5" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
