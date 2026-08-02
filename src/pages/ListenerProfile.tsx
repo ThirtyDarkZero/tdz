@@ -22,6 +22,7 @@ import { FollowersGrid } from "@/components/social/FollowersGrid";
 import { MusicTasteCard } from "@/components/social/MusicTasteCard";
 import { FanBadges, FanLevel } from "@/components/social/FanBadges";
 import { SocialFeed } from "@/components/social/SocialFeed";
+import { SkipToContent } from "@/components/a11y/SkipToContent";
 
 const CORAL = "#FF6347";
 
@@ -196,6 +197,7 @@ export default function ListenerProfile() {
 
   return (
     <div className="min-h-screen text-white pb-32 relative overflow-hidden" style={{ background: "#050505" }}>
+      <SkipToContent />
       {/* Cinematic backdrop — matches Onboarding */}
       {getProfileImageUrl() && (
         <div className="fixed inset-0 z-0" style={{
@@ -222,7 +224,7 @@ export default function ListenerProfile() {
       }}>
         <div className="flex items-center justify-between gap-4 px-4 sm:px-6 py-3">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+            <Button variant="ghost" size="icon" aria-label="Go back" onClick={() => navigate(-1)} className="rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
@@ -248,7 +250,7 @@ export default function ListenerProfile() {
             )}
             {isOwnProfile && editing && (
               <div className="flex gap-2">
-                <Button variant="ghost" size="icon" onClick={() => setEditing(false)} className="rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <Button variant="ghost" size="icon" aria-label="Cancel editing" onClick={() => setEditing(false)} className="rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
                   <X className="w-4 h-4" />
                 </Button>
                 <Button size="sm" onClick={handleSave} className="rounded-full" style={{ background: CORAL, color: "#fff" }}>
@@ -276,8 +278,9 @@ export default function ListenerProfile() {
 
       <ScrollArea className="relative z-10">
         {/* ── 3-Column Artist-Style Layout ── */}
-        <div className="max-w-7xl mx-auto px-4 md:px-8 pt-8">
+        <main id="main-content" className="max-w-7xl mx-auto px-4 md:px-8 pt-8 outline-none">
           <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-6">
+
 
             {/* ── LEFT COLUMN: Liked Tracks & Recently Played ── */}
             <div className="space-y-4 order-2 lg:order-1">
@@ -352,7 +355,7 @@ export default function ListenerProfile() {
                 {isOwnProfile && (
                   <>
                     <input ref={fileInputRef} type="file" accept="image/*,.heic,.heif" className="hidden" onChange={handlePhotoUpload} />
-                    <Button size="icon" className="absolute bottom-4 right-4 h-10 w-10 rounded-full" style={{ background: CORAL, color: "#fff" }} onClick={() => fileInputRef.current?.click()} disabled={uploadingPhoto}>
+                    <Button size="icon" aria-label="Upload profile photo" className="absolute bottom-4 right-4 h-10 w-10 rounded-full" style={{ background: CORAL, color: "#fff" }} onClick={() => fileInputRef.current?.click()} disabled={uploadingPhoto}>
                       <Camera className="w-5 h-5" />
                     </Button>
                   </>
@@ -474,14 +477,28 @@ export default function ListenerProfile() {
               </div>
 
               {/* Tabs — HUD selector */}
-              <div id="profile-tabs" className="flex flex-wrap justify-center gap-2 mb-4 scroll-mt-24" role="tablist">
+              <div id="profile-tabs" className="flex flex-wrap justify-center gap-2 mb-4 scroll-mt-24" role="tablist" aria-label="Profile sections">
                 {tabs.map(tab => (
-                  <button key={tab.id} role="tab" aria-selected={activeTab === tab.id} onClick={() => setActiveTab(tab.id)} className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] uppercase transition-all backdrop-blur-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6347]/60" style={{
+                  <button key={tab.id} id={`tab-${tab.id}`} role="tab" type="button"
+                    aria-selected={activeTab === tab.id}
+                    aria-controls="profile-tabpanel"
+                    tabIndex={activeTab === tab.id ? 0 : -1}
+                    onKeyDown={(e) => {
+                      const i = tabs.findIndex(t => t.id === activeTab);
+                      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+                        e.preventDefault();
+                        const next = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+                        setActiveTab(next.id);
+                        document.getElementById(`tab-${next.id}`)?.focus();
+                      }
+                    }}
+                    onClick={() => setActiveTab(tab.id)} className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] uppercase transition-all backdrop-blur-xl hover:-translate-y-0.5" style={{
                     background: activeTab === tab.id ? `${CORAL}18` : "rgba(0,0,0,0.45)",
                     color: activeTab === tab.id ? CORAL : "rgba(255,255,255,0.5)",
                     border: `1px solid ${activeTab === tab.id ? `${CORAL}60` : "rgba(255,255,255,0.12)"}`,
                     boxShadow: activeTab === tab.id ? `0 0 24px ${CORAL}40` : "none",
                   }}>
+
                     <tab.icon className="w-3.5 h-3.5" /> {tab.label}
                   </button>
                 ))}
@@ -490,7 +507,8 @@ export default function ListenerProfile() {
 
 
               {/* Tab Content */}
-              <div className="w-full text-left">
+              <div id="profile-tabpanel" role="tabpanel" aria-labelledby={`tab-${activeTab}`} tabIndex={0} className="w-full text-left focus:outline-none">
+
                 {activeTab === "activity" && viewingUserId && (
                   <div className="space-y-4">
                     <div className="rounded-2xl p-5" style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(40px)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
@@ -613,8 +631,9 @@ export default function ListenerProfile() {
               </div>
             </div>
           </div>
-        </div>
+        </main>
       </ScrollArea>
+
 
       {/* Modals */}
       <ShareProfileModal
