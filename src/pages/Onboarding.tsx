@@ -249,11 +249,16 @@ function OnboardingFlow() {
   const handlePickRole = async (chosen: Role) => {
     setSaving(true);
     setRole(chosen);
+    hydrated.current = true;
     triggerXP(ROLE_META[chosen].xp);
     const ok = await persistRole(chosen);
     setSaving(false);
     if (!ok) return;
-    await refreshRole();
+    // Advance immediately (and persist it) BEFORE refreshing auth state, which
+    // can remount this tree and drop any queued state update.
+    sessionStorage.setItem("tdz_onb_step", "2");
+    sessionStorage.setItem("tdz_onb_role", chosen);
+    setStep(2);
     if (chosen === "listener") {
       toast.success("🎧 CLASS SELECTED — TASTEMAKER", { description: "Welcome to the frontline." });
       if (user?.email) {
@@ -269,7 +274,7 @@ function OnboardingFlow() {
         });
       }
     }
-    setTimeout(() => setStep(2), 700);
+    void refreshRole();
   };
 
   const finishListener = async () => {
