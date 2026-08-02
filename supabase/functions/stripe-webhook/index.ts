@@ -226,18 +226,27 @@ serve(async (req) => {
         break;
       }
 
+      case "customer.subscription.created":
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
-        const userId = sub.metadata?.user_id;
+        const userId = await resolveUserId(stripe, supabase, sub);
         if (userId) {
-          const status = sub.status === "active" || sub.status === "trialing" ? "active" : "canceled";
-          await supabase.from("user_subscriptions").update({
-            status,
+          const priceId = sub.items.data[0]?.price?.id;
+          const plan = (priceId && PRICE_TO_PLAN[priceId]) || sub.metadata?.plan || undefined;
+          const active = event.type !== "customer.subscription.deleted" &&
+            (sub.status === "active" || sub.status === "trialing");
+          await writeSubscription(supabase, userId, {
+            ...(plan ? { plan } : {}),
+            status: active ? (sub.status === "trialing" ? "trial" : "active") : "canceled",
+            current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
             current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
             expires_at: new Date(sub.current_period_end * 1000).toISOString(),
-            updated_at: new Date().toISOString(),
-          }).eq("user_id", userId);
+            canceled_at: active ? null : new Date().toISOString(),
+          });
+          console.log(`[stripe-webhook] ${event.type} user=${userId} status=${sub.status}`);
+        } else {
+          console.warn(`[stripe-webhook] ${event.type}: no user match for sub=${sub.id}`);
         }
         break;
       }
@@ -246,18 +255,40 @@ serve(async (req) => {
         const invoice = event.data.object as Stripe.Invoice;
         if (invoice.subscription) {
           const sub = await stripe.subscriptions.retrieve(invoice.subscription as string);
-          const userId = sub.metadata?.user_id;
+          const userId = await resolveUserId(stripe, supabase, sub);
           if (userId) {
-            await supabase.from("user_subscriptions").update({
+            const priceId = sub.items.data[0]?.price?.id;
+            const plan = (priceId && PRICE_TO_PLAN[priceId]) || undefined;
+            await writeSubscription(supabase, userId, {
+              ...(plan ? { plan } : {}),
               status: "active",
+              current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
               current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
               expires_at: new Date(sub.current_period_end * 1000).toISOString(),
-              updated_at: new Date().toISOString(),
-            }).eq("user_id", userId);
+              canceled_at: null,
+            });
           }
         }
         break;
       }
+
+      case "invoice.payment_failed": {
+        // Only downgrade once Stripe has stopped retrying (dunning exhausted).
+        const invoice = event.data.object as Stripe.Invoice;
+        if (invoice.subscription && !invoice.next_payment_attempt) {
+          const sub = await stripe.subscriptions.retrieve(invoice.subscription as string);
+          const userId = await resolveUserId(stripe, supabase, sub);
+          if (userId) {
+            await writeSubscription(supabase, userId, {
+              status: "expired",
+              expires_at: new Date().toISOString(),
+            });
+            console.log(`[stripe-webhook] dunning exhausted, expired user=${userId}`);
+          }
+        }
+        break;
+      }
+
 
       case "account.updated":
       case "capability.updated": {
