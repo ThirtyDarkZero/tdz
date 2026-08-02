@@ -392,15 +392,16 @@ serve(async (req) => {
       case "transfer.created":
       case "transfer.updated":
       case "transfer.paid": {
-        // Confirm the transfer row exists and mark completed. Idempotent — matches
-        // on square_payout_id (which holds the Stripe transfer id).
+        // Idempotent: matches on square_payout_id (the Stripe transfer id) and only
+        // advances rows that aren't already completed, so replays are no-ops.
         const transfer = event.data.object as Stripe.Transfer;
         await supabase.from("artist_payouts")
           .update({
             status: "completed",
-            completed_at: new Date().toISOString(),
+            completed_at: new Date(event.created * 1000).toISOString(),
           })
-          .eq("square_payout_id", transfer.id);
+          .eq("square_payout_id", transfer.id)
+          .neq("status", "completed");
         console.log(`[stripe-webhook] ${event.type} transfer=${transfer.id}`);
         break;
       }
@@ -421,19 +422,25 @@ serve(async (req) => {
         const { error: transitionErr } = await supabase.from("artist_payouts")
           .update({
             status: nextStatus,
-            completed_at: nextStatus === "reversed" ? new Date().toISOString() : null,
+            completed_at: nextStatus === "reversed" ? new Date(event.created * 1000).toISOString() : null,
           })
-          .eq("square_payout_id", transfer.id);
+          .eq("square_payout_id", transfer.id)
+          .neq("status", nextStatus);
 
         if (transitionErr) {
           console.warn(`[stripe-webhook] ${event.type} blocked by state machine (payout=${payout?.id} current=${payout?.status} -> ${nextStatus}): ${transitionErr.message}`);
         } else if (nextStatus === "failed" && payout?.earnings_ids?.length) {
           // Only re-open earnings on true failure. Reversed transfers are a
           // clawback — earnings stay marked paid until finance reviews.
-          await supabase.from("artist_earnings")
-            .update({ payout_status: "pending", payout_date: null })
-            .in("id", payout.earnings_ids);
+          // Keyed so a redelivery can't re-open earnings a second time.
+          await once(`transfer_failed_reopen:${transfer.id}`, async () => {
+            const { error } = await supabase.from("artist_earnings")
+              .update({ payout_status: "pending", payout_date: null })
+              .in("id", payout.earnings_ids);
+            if (error) throw error;
+          });
         }
+
         console.log(`[stripe-webhook] ${event.type} transfer=${transfer.id} payout=${payout?.id ?? "?"}`);
         break;
       }
