@@ -148,22 +148,74 @@
     font-weight: 400;
   }
   
+  /* ── Visible focus system ───────────────────────────────
+     Every keyboard-focusable element gets a high-contrast ring.
+     Mouse clicks stay clean (":focus-visible" only). */
   input:focus-visible,
   textarea:focus-visible,
   button:focus-visible,
   select:focus-visible,
   [role="combobox"]:focus-visible,
   [data-state="open"]:focus-visible {
-    outline: none !important;
-    ring: none !important;
-    box-shadow: 0 0 0 2px hsl(var(--accent) / 0.4) !important;
-  }
-  
-  *:focus-visible {
-    outline: 2px solid hsl(var(--accent) / 0.5);
+    outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
+    box-shadow: 0 0 0 4px hsl(var(--ring) / 0.28) !important;
   }
-  
+
+  a:focus-visible,
+  [role="tab"]:focus-visible,
+  [role="button"]:focus-visible,
+  [tabindex]:focus-visible,
+  *:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: inherit;
+  }
+
+  /* Landmarks receive focus programmatically (skip link) — no ring needed */
+  main:focus,
+  [tabindex="-1"]:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Skip-to-content link */
+  .skip-to-content {
+    position: fixed;
+    top: 0.5rem;
+    left: 50%;
+    transform: translate(-50%, -200%);
+    z-index: 100;
+    padding: 0.625rem 1.25rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: hsl(var(--primary-foreground));
+    background: hsl(var(--primary));
+    box-shadow: 0 8px 30px hsl(var(--primary) / 0.45);
+    transition: transform 180ms ease-out;
+  }
+  .skip-to-content:focus {
+    transform: translate(-50%, 0);
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skip-to-content {
+      transition: none;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
   [data-radix-collection-item]:focus,
   [role="option"]:focus,
   [cmdk-item]:focus,
@@ -172,6 +224,7 @@
     box-shadow: none;
   }
 }
+
 
 @layer utilities {
   .glass-card {
