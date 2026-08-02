@@ -657,6 +657,8 @@ function OnboardingFlow() {
                       <div className="grid sm:grid-cols-2 gap-3">
                         {(role === "manager"
                           ? ([{ id: "enterprise", name: "ENTERPRISE", price: "$50/mo", perks: "Full roster, white-label, integrations" }] as const)
+                          : role === "listener"
+                          ? ([{ id: "fan", name: "FAN", price: "$12/mo", perks: "Unlimited listening, $1/stream to artists" }] as const)
                           : ([
                               { id: "starter", name: "STARTER", price: "$10/mo", perks: "Upload, payouts, core analytics" },
                               { id: "pro", name: "PRO", price: "$20/mo", perks: "Advanced tools, AI, unlimited releases" },
