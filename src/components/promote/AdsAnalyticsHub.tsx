@@ -228,8 +228,9 @@ export function AdsAnalyticsHub() {
           <h3 className="font-semibold">Campaign Tracking Links</h3>
         </div>
         <p className="text-xs text-muted-foreground">
-          Tag any release, smart link, or store URL so clicks show up in your Google Ads and GA4
-          reporting.
+          Tag any release, smart link, or store URL so clicks show up in Google Ads, Meta Ads,
+          TikTok Ads, and GA4 reporting.
+
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="space-y-1 md:col-span-2">
