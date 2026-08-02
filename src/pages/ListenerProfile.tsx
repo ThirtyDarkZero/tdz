@@ -23,6 +23,7 @@ import { MusicTasteCard } from "@/components/social/MusicTasteCard";
 import { FanBadges, FanLevel } from "@/components/social/FanBadges";
 import { SocialFeed } from "@/components/social/SocialFeed";
 import { SkipToContent } from "@/components/a11y/SkipToContent";
+import { useTabPanelFocus } from "@/hooks/useFocusManagement";
 
 const CORAL = "#FF6347";
 
