@@ -72,7 +72,18 @@ type ReleaseType = 'single' | 'ep' | 'album';
 
 export type ReleaseQuestStage = 'files' | 'details' | 'uploading' | 'done';
 
-export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, onStage }: { onSuccess?: () => void; targetUserId?: string; targetArtistName?: string; onStage?: (stage: ReleaseQuestStage) => void }) => {
+export type ReleaseSummary = {
+  title: string;
+  artistName: string;
+  coverUrl: string | null;
+  trackCount: number;
+  releaseType: ReleaseType;
+  albumId: string | null;
+  trackId: string | null;
+};
+
+export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, onStage }: { onSuccess?: (summary?: ReleaseSummary) => void; targetUserId?: string; targetArtistName?: string; onStage?: (stage: ReleaseQuestStage) => void }) => {
+
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [releaseType, setReleaseType] = useState<ReleaseType>('single');
