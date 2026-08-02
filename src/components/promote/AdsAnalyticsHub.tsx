@@ -81,18 +81,29 @@ export function AdsAnalyticsHub() {
 
   const load = async () => {
     if (!user) {
+      setRows([]);
       setLoading(false);
       return;
     }
     setLoading(true);
-    const { data } = await supabase
-      .from("manager_integrations")
-      .select("id, provider, display_name, status, config")
-      .eq("manager_id", user.id)
-      .in("provider", ["google_ads", "google_analytics", "meta_ads", "tiktok_ads"]);
-    setRows((data || []) as IntegrationRow[]);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from("manager_integrations")
+        .select("id, provider, display_name, status, config")
+        .eq("manager_id", user.id)
+        .in("provider", ["google_ads", "google_analytics", "meta_ads", "tiktok_ads"]);
+      if (error) throw error;
+      setRows((data || []) as IntegrationRow[]);
+    } catch (e: any) {
+      setRows([]);
+      toast.error("Could not load integrations", {
+        description: e?.message ?? "Please retry.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   useEffect(() => {
     load();
@@ -109,48 +120,83 @@ export function AdsAnalyticsHub() {
   };
 
   const save = async () => {
-    if (!user || !open || !primary.trim()) return;
+    if (!open || !primary.trim()) return;
     setSaving(true);
-    const { error } = await supabase.from("manager_integrations").upsert(
-      {
-        manager_id: user.id,
+    try {
+      // Always re-read the live session: a stale context user would fail RLS.
+      const { data: sessionData } = await supabase.auth.getSession();
+      const uid = sessionData.session?.user?.id ?? user?.id;
+      if (!uid) {
+        toast.error("Please sign in again to save this integration");
+        return;
+      }
+
+      const payload = {
+        manager_id: uid,
         provider: open.id,
         display_name: open.name,
         credentials: {},
         config: { primary_id: primary.trim(), secondary: secondary.trim() || null },
         status: "active",
-      },
-      { onConflict: "manager_id,provider" },
-    );
-    setSaving(false);
-    if (error) {
-      toast.error("Could not save integration", { description: error.message });
-      return;
+      };
+
+      let { error } = await supabase
+        .from("manager_integrations")
+        .upsert(payload, { onConflict: "manager_id,provider" });
+
+      // Fallback: some conflict paths surface as a duplicate-key error — update in place.
+      if (error && (error.code === "23505" || error.message.includes("duplicate key"))) {
+        const res = await supabase
+          .from("manager_integrations")
+          .update({
+            display_name: payload.display_name,
+            config: payload.config,
+            status: "active",
+          })
+          .eq("manager_id", uid)
+          .eq("provider", open.id);
+        error = res.error;
+      }
+
+      if (error) {
+        toast.error("Could not save integration", { description: error.message });
+        return;
+      }
+
+      toast.success(`${open.name} connected`);
+      setOpen(null);
+      setPrimary("");
+      setSecondary("");
+      load();
+    } catch (e: any) {
+      toast.error("Network error saving integration", {
+        description: e?.message ?? "Please try again.",
+      });
+    } finally {
+      setSaving(false);
     }
-    toast.success(`${open.name} connected`);
-    setOpen(null);
-    setPrimary("");
-    setSecondary("");
-    load();
   };
 
+
   const disconnect = async (rowId: string) => {
-    const { error } = await supabase.from("manager_integrations").delete().eq("id", rowId);
-    if (error) {
-      toast.error("Disconnect failed", { description: error.message });
-      return;
+    try {
+      const { error } = await supabase.from("manager_integrations").delete().eq("id", rowId);
+      if (error) throw error;
+      toast.success("Disconnected");
+      load();
+    } catch (e: any) {
+      toast.error("Disconnect failed", { description: e?.message ?? "Please try again." });
     }
-    toast.success("Disconnected");
-    load();
   };
 
   const taggedUrl = useMemo(() => {
-    if (!destination.trim()) return "";
+    const raw = destination.trim();
+    if (!raw) return "";
     try {
-      const url = new URL(destination.trim());
-      if (source) url.searchParams.set("utm_source", source);
-      if (medium) url.searchParams.set("utm_medium", medium);
-      if (campaign) url.searchParams.set("utm_campaign", campaign);
+      const url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+      if (source.trim()) url.searchParams.set("utm_source", source.trim());
+      if (medium.trim()) url.searchParams.set("utm_medium", medium.trim());
+      if (campaign.trim()) url.searchParams.set("utm_campaign", campaign.trim());
       url.searchParams.set("utm_content", "tdz_promote");
       return url.toString();
     } catch {
@@ -158,11 +204,17 @@ export function AdsAnalyticsHub() {
     }
   }, [destination, source, medium, campaign]);
 
+
   const copyTagged = async () => {
     if (!taggedUrl) return;
-    await navigator.clipboard.writeText(taggedUrl);
-    toast.success("Tracking link copied");
+    try {
+      await navigator.clipboard.writeText(taggedUrl);
+      toast.success("Tracking link copied");
+    } catch {
+      toast.info("Copy blocked by your browser — select the link and copy manually.");
+    }
   };
+
 
   if (loading) {
     return (
