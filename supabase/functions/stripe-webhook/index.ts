@@ -152,20 +152,29 @@ serve(async (req) => {
           const sub = await stripe.subscriptions.retrieve(session.subscription as string);
           const priceId = sub.items.data[0].price.id;
           const plan = PRICE_TO_PLAN[priceId] || meta.plan || null;
-          const userId = meta.user_id || sub.metadata?.user_id;
+          const userId = meta.user_id || await resolveUserId(stripe, supabase, sub);
           if (userId && plan) {
-            await supabase.from("user_subscriptions").upsert({
-              user_id: userId,
+            // Stamp the ids onto Stripe so later lifecycle events resolve instantly.
+            const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
+            try {
+              await stripe.subscriptions.update(sub.id, { metadata: { ...sub.metadata, user_id: userId, plan } });
+              if (customerId) await stripe.customers.update(customerId, { metadata: { user_id: userId } });
+            } catch (e) {
+              console.warn("[stripe-webhook] could not backfill Stripe metadata:", e);
+            }
+
+            await writeSubscription(supabase, userId, {
               plan,
-              status: "active",
+              status: sub.status === "trialing" ? "trial" : "active",
               current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
               current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
               expires_at: new Date(sub.current_period_end * 1000).toISOString(),
-              updated_at: new Date().toISOString(),
-            }, { onConflict: "user_id" });
+              canceled_at: null,
+            });
             console.log(`[stripe-webhook] subscription activated user=${userId} plan=${plan}`);
           }
         } else if (type === "download") {
+
           const buyerId = meta.buyer_id;
           const trackId = meta.track_id;
           const artistId = meta.artist_id;
