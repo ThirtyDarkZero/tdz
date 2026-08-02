@@ -804,6 +804,8 @@ function OnboardingFlow() {
                       <p className="text-white/70 mt-3 max-w-md mx-auto text-sm" style={{ fontFamily: "'Raleway',sans-serif" }}>
                         {role === "manager"
                           ? "Manager HQ is online. Your empire awaits — roster tools, white-label branding, and enterprise integrations are all unlocked."
+                          : role === "listener"
+                          ? "Discovery is tuned to your taste. Every intentional play sends $1 straight to the artist."
                           : "Studio is armed. Upload your first track and start banking $1 per qualified stream."}
                       </p>
                     </div>
