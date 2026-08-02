@@ -475,14 +475,28 @@ export default function ListenerProfile() {
               </div>
 
               {/* Tabs — HUD selector */}
-              <div id="profile-tabs" className="flex flex-wrap justify-center gap-2 mb-4 scroll-mt-24" role="tablist">
+              <div id="profile-tabs" className="flex flex-wrap justify-center gap-2 mb-4 scroll-mt-24" role="tablist" aria-label="Profile sections">
                 {tabs.map(tab => (
-                  <button key={tab.id} role="tab" aria-selected={activeTab === tab.id} onClick={() => setActiveTab(tab.id)} className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] uppercase transition-all backdrop-blur-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6347]/60" style={{
+                  <button key={tab.id} id={`tab-${tab.id}`} role="tab" type="button"
+                    aria-selected={activeTab === tab.id}
+                    aria-controls="profile-tabpanel"
+                    tabIndex={activeTab === tab.id ? 0 : -1}
+                    onKeyDown={(e) => {
+                      const i = tabs.findIndex(t => t.id === activeTab);
+                      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+                        e.preventDefault();
+                        const next = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+                        setActiveTab(next.id);
+                        document.getElementById(`tab-${next.id}`)?.focus();
+                      }
+                    }}
+                    onClick={() => setActiveTab(tab.id)} className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] uppercase transition-all backdrop-blur-xl hover:-translate-y-0.5" style={{
                     background: activeTab === tab.id ? `${CORAL}18` : "rgba(0,0,0,0.45)",
                     color: activeTab === tab.id ? CORAL : "rgba(255,255,255,0.5)",
                     border: `1px solid ${activeTab === tab.id ? `${CORAL}60` : "rgba(255,255,255,0.12)"}`,
                     boxShadow: activeTab === tab.id ? `0 0 24px ${CORAL}40` : "none",
                   }}>
+
                     <tab.icon className="w-3.5 h-3.5" /> {tab.label}
                   </button>
                 ))}
