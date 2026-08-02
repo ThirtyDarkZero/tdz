@@ -16,6 +16,55 @@ const PRICE_TO_PLAN: Record<string, string> = {
   "price_1TMbY5GLQEZqkO65XMRXlj9c": "fan",
 };
 
+// Resolve the TDZ user for a Stripe subscription even if metadata was stripped:
+// subscription metadata -> customer metadata -> customer email -> auth user lookup.
+async function resolveUserId(
+  stripe: Stripe,
+  supabase: ReturnType<typeof createClient>,
+  sub: Stripe.Subscription,
+): Promise<string | null> {
+  if (sub.metadata?.user_id) return sub.metadata.user_id;
+
+  const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.id;
+  if (!customerId) return null;
+
+  try {
+    const customer = await stripe.customers.retrieve(customerId);
+    if (customer.deleted) return null;
+    if (customer.metadata?.user_id) return customer.metadata.user_id;
+
+    const email = customer.email?.toLowerCase();
+    if (!email) return null;
+
+    for (let page = 1; page <= 5; page++) {
+      const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 200 });
+      if (error || !data?.users?.length) break;
+      const match = data.users.find((u) => u.email?.toLowerCase() === email);
+      if (match) return match.id;
+      if (data.users.length < 200) break;
+    }
+  } catch (e) {
+    console.error("[stripe-webhook] resolveUserId failed:", e);
+  }
+  return null;
+}
+
+// Upsert (never silently no-op) the user's subscription row.
+async function writeSubscription(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  fields: Record<string, unknown>,
+) {
+  const { error } = await supabase.from("user_subscriptions").upsert({
+    user_id: userId,
+    ...fields,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "user_id" });
+  if (error) console.error("[stripe-webhook] subscription upsert failed:", error.message);
+}
+
+
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
