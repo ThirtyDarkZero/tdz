@@ -310,14 +310,24 @@ serve(async (req) => {
           (account.requirements?.past_due?.length ?? 0) > 0 ||
           !!account.requirements?.disabled_reason;
 
-        // Prefer metadata user_id, fall back to matching by stripe_connect_id so
-        // reconciliation still works if metadata was ever stripped.
-        const query = supabase.from("artist_payout_details").update({
-          payout_enabled: ready,
-          updated_at: new Date().toISOString(),
-        });
-        if (userId) await query.eq("artist_id", userId);
-        else await query.eq("stripe_connect_id", account.id);
+        // Prefer metadata user_id (upsert so the row exists even if the artist
+        // never returned to the app after onboarding); otherwise reconcile by
+        // stripe_connect_id in case metadata was ever stripped.
+        if (userId) {
+          const { error } = await supabase.from("artist_payout_details").upsert({
+            artist_id: userId,
+            stripe_connect_id: account.id,
+            payout_enabled: ready,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "artist_id" });
+          if (error) console.error("[stripe-webhook] payout details upsert failed:", error.message);
+        } else {
+          await supabase.from("artist_payout_details").update({
+            payout_enabled: ready,
+            updated_at: new Date().toISOString(),
+          }).eq("stripe_connect_id", account.id);
+        }
+
 
         console.log(`[stripe-webhook] ${event.type} account=${account.id} user=${userId ?? "?"} ready=${ready} attention=${needsAttention}`);
         break;
