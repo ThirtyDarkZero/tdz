@@ -51,6 +51,8 @@ export const ArtistPayoutSettings = () => {
     if (user) {
       loadPayoutDetails();
       loadEarnings();
+    } else {
+      setLoading(false);
     }
   }, [user]);
 
