@@ -77,7 +77,23 @@ function ManagerHQContent() {
     );
   }
 
+  if (!isEnterprise && syncing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6" style={{ background: "#0D0D0D" }}>
+        <Card className="p-10 max-w-md text-center glass-card space-y-3">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+          <h2 className="text-lg font-bold">Activating Manager HQ</h2>
+          <p className="text-sm text-muted-foreground">
+            Confirming your Enterprise subscription with our payment processor. This usually takes a few
+            seconds.
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
   if (!isEnterprise) {
+
     return (
       <div className="min-h-screen p-6 md:p-10" style={{ background: "#0D0D0D" }}>
         <div className="max-w-3xl mx-auto space-y-6">
