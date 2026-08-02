@@ -96,22 +96,33 @@ function OnboardingFlow() {
   const [selectedPlan, setSelectedPlan] = useState<CheckoutPlan | null>(null);
   const [rosterEmails, setRosterEmails] = useState("");
 
+  // Listener (tastemaker) fields
+  const [fanName, setFanName] = useState("");
+  const [favoriteGenres, setFavoriteGenres] = useState("");
+
+  // Hydrate the flow from an existing role ONCE — never snap the user backwards
+  // while they're mid-journey.
+  const hydrated = useRef(false);
   useEffect(() => {
+    if (hydrated.current || !existingRole) return;
+    hydrated.current = true;
     if (existingRole === "artist" || existingRole === "verified_artist") {
       setRole("artist");
-      setStep(2);
+      setStep((s) => (s === 1 ? 2 : s));
     } else if (existingRole === "manager") {
       setRole("manager");
-      setStep(2);
+      setStep((s) => (s === 1 ? 2 : s));
     } else if (existingRole === "listener") {
-      navigate("/discover", { replace: true });
+      setRole("listener");
+      setStep((s) => (s === 1 ? 2 : s));
     }
-  }, [existingRole, navigate]);
+  }, [existingRole]);
 
   // Returning from Stripe (checkout or Connect onboarding) lands back here.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("payout") || params.get("checkout")) {
+      hydrated.current = true;
       setStep(3);
       if (params.get("checkout") === "success") toast.success("Subscription active. Welcome aboard.");
       if (params.get("payout") === "success") toast.success("Payout account connected.");
