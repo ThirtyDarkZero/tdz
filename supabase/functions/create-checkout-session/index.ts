@@ -63,7 +63,11 @@ serve(async (req) => {
       return respond({ ok: false, error: "Stripe not configured", stage });
     }
     // Use account default API version (avoids version-pin incompatibilities).
-    const stripe = new Stripe(stripeKey);
+    const stripe = new Stripe(stripeKey, {
+      httpClient: Stripe.createFetchHttpClient(),
+      maxNetworkRetries: 1,
+      timeout: 15000,
+    });
 
     // Skip the extra price-validation round trip: session_create surfaces a bad
     // price anyway, and every saved round trip is ~300-600ms of user wait.
