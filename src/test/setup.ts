@@ -14,23 +14,20 @@ Object.defineProperty(window, "matchMedia", {
   }),
 });
 
-// Radix UI relies on these in jsdom
-if (!window.ResizeObserver) {
-  // @ts-expect-error test shim
-  window.ResizeObserver = class {
+// Radix UI relies on these APIs which jsdom does not implement.
+const w = window as any;
+if (!w.ResizeObserver) {
+  w.ResizeObserver = class {
     observe() {}
     unobserve() {}
     disconnect() {}
   };
 }
-if (!Element.prototype.scrollIntoView) {
-  Element.prototype.scrollIntoView = () => {};
-}
-if (!Element.prototype.hasPointerCapture) {
-  // @ts-expect-error test shim
-  Element.prototype.hasPointerCapture = () => false;
-  // @ts-expect-error test shim
-  Element.prototype.setPointerCapture = () => {};
-  // @ts-expect-error test shim
-  Element.prototype.releasePointerCapture = () => {};
+
+const proto = Element.prototype as any;
+if (!proto.scrollIntoView) proto.scrollIntoView = () => {};
+if (!proto.hasPointerCapture) {
+  proto.hasPointerCapture = () => false;
+  proto.setPointerCapture = () => {};
+  proto.releasePointerCapture = () => {};
 }
