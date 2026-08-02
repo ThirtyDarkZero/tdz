@@ -29,12 +29,13 @@ export function PromoteCommandCenter({ onNavigate }: Props) {
     staleTime: 60_000,
     queryFn: async () => {
       const id = user!.id;
+      const db = supabase as any;
       const [contacts, links, tours, drafts, integrations] = await Promise.all([
-        supabase.from("artist_contacts").select("id, subscribed", { count: "exact" }).eq("artist_id", id),
-        supabase.from("smart_links").select("id, click_count").eq("artist_id", id),
-        supabase.from("tour_dates").select("id, event_date").eq("artist_id", id),
-        supabase.from("marketing_drafts").select("id, status").eq("artist_id", id),
-        supabase.from("manager_integrations").select("provider").eq("manager_id", id),
+        db.from("artist_contacts").select("id, subscribed").eq("artist_id", id),
+        db.from("smart_links").select("id, click_count").eq("artist_id", id),
+        db.from("tour_dates").select("id, event_date").eq("artist_id", id),
+        db.from("marketing_drafts").select("id, status").eq("artist_id", id),
+        db.from("manager_integrations").select("provider").eq("manager_id", id),
       ]);
 
       const contactRows = (contacts.data as any[]) || [];
