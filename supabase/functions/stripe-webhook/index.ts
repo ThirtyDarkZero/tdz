@@ -279,14 +279,15 @@ serve(async (req) => {
           const plan = (priceId && PRICE_TO_PLAN[priceId]) || sub.metadata?.plan || undefined;
           const active = event.type !== "customer.subscription.deleted" &&
             (sub.status === "active" || sub.status === "trialing");
-          await writeSubscription(supabase, userId, {
+          await applySubscription(supabase, userId, {
             ...(plan ? { plan } : {}),
             status: active ? (sub.status === "trialing" ? "trial" : "active") : "canceled",
             current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
             current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
             expires_at: new Date(sub.current_period_end * 1000).toISOString(),
-            canceled_at: active ? null : new Date().toISOString(),
-          });
+            canceled_at: active ? null : new Date(event.created * 1000).toISOString(),
+          }, eventAt);
+
           console.log(`[stripe-webhook] ${event.type} user=${userId} status=${sub.status}`);
         } else {
           console.warn(`[stripe-webhook] ${event.type}: no user match for sub=${sub.id}`);
