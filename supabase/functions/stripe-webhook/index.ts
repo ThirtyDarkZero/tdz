@@ -324,10 +324,11 @@ serve(async (req) => {
           const sub = await stripe.subscriptions.retrieve(invoice.subscription as string);
           const userId = await resolveUserId(stripe, supabase, sub);
           if (userId) {
-            await writeSubscription(supabase, userId, {
+            await applySubscription(supabase, userId, {
               status: "expired",
-              expires_at: new Date().toISOString(),
-            });
+              expires_at: new Date(event.created * 1000).toISOString(),
+            }, eventAt);
+
             console.log(`[stripe-webhook] dunning exhausted, expired user=${userId}`);
           }
         }
