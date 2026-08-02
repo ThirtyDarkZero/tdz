@@ -434,34 +434,42 @@ export default function ListenerProfile() {
                 </div>
               )}
 
-              {/* Fan Portal Features */}
+              {/* Perk tiles — class card style */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-lg mb-6">
                 {[
-                  { icon: Headphones, label: "Listening", desc: `${recentlyPlayed.length} recent`, color: "#00CFFF" },
-                  { icon: Heart, label: "Liked", desc: `${likedTracks.length} tracks`, color: "#FF6B9D" },
-                  { icon: Users, label: "Friends", desc: `${followersCount + followingCount}`, color: "#8B5CF6" },
-                  { icon: Globe, label: "Public", desc: `${playlists.length} playlists`, color: "#10B981" },
+                  { icon: Headphones, label: "LISTENING", desc: `${recentlyPlayed.length} recent`, color: "#00CFFF" },
+                  { icon: Heart, label: "LIKED", desc: `${likedTracks.length} tracks`, color: "#FF6B9D" },
+                  { icon: Users, label: "FRIENDS", desc: `${followersCount + followingCount}`, color: "#8B5CF6" },
+                  { icon: Globe, label: "PUBLIC", desc: `${playlists.length} playlists`, color: "#10B981" },
                 ].map(feat => (
-                  <div key={feat.label} className="rounded-xl p-3 text-center cursor-pointer transition-all hover:scale-105" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div key={feat.label} className="group relative rounded-xl p-3 text-center cursor-pointer transition-all duration-500 hover:-translate-y-1.5"
+                    style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(24px)", border: `1px solid ${feat.color}25`, boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
+                    <div className="absolute inset-1.5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                      {["top-0 left-0 border-t border-l", "top-0 right-0 border-t border-r", "bottom-0 left-0 border-b border-l", "bottom-0 right-0 border-b border-r"].map((pos, k) => (
+                        <div key={k} className={`absolute w-3 h-3 ${pos}`} style={{ borderColor: feat.color }} />
+                      ))}
+                    </div>
                     <feat.icon className="w-5 h-5 mx-auto mb-1" style={{ color: feat.color }} />
-                    <p className="text-xs font-bold text-white">{feat.label}</p>
+                    <p className="text-[10px] font-bold tracking-[0.2em] text-white">{feat.label}</p>
                     <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>{feat.desc}</p>
                   </div>
                 ))}
               </div>
 
-              {/* Tabs */}
-              <div className="flex gap-2 mb-4">
+              {/* Tabs — HUD selector */}
+              <div className="flex flex-wrap justify-center gap-2 mb-4">
                 {tabs.map(tab => (
-                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all" style={{
-                    background: activeTab === tab.id ? `${CORAL}20` : "rgba(255,255,255,0.04)",
+                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] uppercase transition-all backdrop-blur-xl" style={{
+                    background: activeTab === tab.id ? `${CORAL}18` : "rgba(0,0,0,0.45)",
                     color: activeTab === tab.id ? CORAL : "rgba(255,255,255,0.5)",
-                    border: `1px solid ${activeTab === tab.id ? `${CORAL}40` : "rgba(255,255,255,0.06)"}`,
+                    border: `1px solid ${activeTab === tab.id ? `${CORAL}60` : "rgba(255,255,255,0.12)"}`,
+                    boxShadow: activeTab === tab.id ? `0 0 24px ${CORAL}40` : "none",
                   }}>
                     <tab.icon className="w-3.5 h-3.5" /> {tab.label}
                   </button>
                 ))}
               </div>
+
 
               {/* Tab Content */}
               <div className="w-full text-left">
