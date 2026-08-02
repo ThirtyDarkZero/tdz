@@ -89,7 +89,7 @@ export function AdsAnalyticsHub() {
       .from("manager_integrations")
       .select("id, provider, display_name, status, config")
       .eq("manager_id", user.id)
-      .in("provider", ["google_ads", "google_analytics"]);
+      .in("provider", ["google_ads", "google_analytics", "meta_ads", "tiktok_ads"]);
     setRows((data || []) as IntegrationRow[]);
     setLoading(false);
   };
