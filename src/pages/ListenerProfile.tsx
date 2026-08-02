@@ -36,6 +36,7 @@ export default function ListenerProfile() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("activity");
+  useTabPanelFocus(activeTab, "profile-tabpanel");
   const [user, setUser] = useState<any>(null);
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(true);
