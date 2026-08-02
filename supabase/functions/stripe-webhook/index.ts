@@ -179,14 +179,14 @@ serve(async (req) => {
               console.warn("[stripe-webhook] could not backfill Stripe metadata:", e);
             }
 
-            await writeSubscription(supabase, userId, {
+            await applySubscription(supabase, userId, {
               plan,
               status: sub.status === "trialing" ? "trial" : "active",
               current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
               current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
               expires_at: new Date(sub.current_period_end * 1000).toISOString(),
               canceled_at: null,
-            });
+            }, eventAt);
             console.log(`[stripe-webhook] subscription activated user=${userId} plan=${plan}`);
           }
         } else if (type === "download") {
@@ -198,21 +198,31 @@ serve(async (req) => {
           if (buyerId && trackId && artistId) {
             const fee = +(price * 0.029 + 0.30).toFixed(2); // Stripe approx
             const artistRevenue = +(price - fee).toFixed(2);
-            await supabase.from("download_purchases").insert({
-              buyer_id: buyerId, track_id: trackId, artist_id: artistId,
-              price, transaction_fee: fee, artist_revenue: artistRevenue,
-              payment_status: "completed",
+
+            await once(`download_purchase:${session.id}`, async () => {
+              const { error } = await supabase.from("download_purchases").upsert({
+                buyer_id: buyerId, track_id: trackId, artist_id: artistId,
+                price, transaction_fee: fee, artist_revenue: artistRevenue,
+                payment_status: "completed",
+                stripe_session_id: session.id,
+              }, { onConflict: "stripe_session_id", ignoreDuplicates: true });
+              if (error) throw error;
             });
+
             // Add to artist earnings (download_revenue)
             const today = new Date();
             const periodStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split("T")[0];
             const periodEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split("T")[0];
-            await supabase.from("artist_earnings").insert({
-              artist_id: artistId,
-              period_start: periodStart, period_end: periodEnd,
-              download_revenue: artistRevenue, total_downloads: 1,
-              streaming_revenue: 0, total_streams: 0,
-              payout_status: "pending",
+            await once(`download_earnings:${session.id}`, async () => {
+              const { error } = await supabase.from("artist_earnings").upsert({
+                artist_id: artistId,
+                period_start: periodStart, period_end: periodEnd,
+                download_revenue: artistRevenue, total_downloads: 1,
+                streaming_revenue: 0, total_streams: 0,
+                payout_status: "pending",
+                idempotency_key: `download:${session.id}`,
+              }, { onConflict: "idempotency_key", ignoreDuplicates: true });
+              if (error) throw error;
             });
           }
         } else if (type === "merch") {
@@ -224,30 +234,38 @@ serve(async (req) => {
           if (buyerId && artistId) {
             const fee = +(amount * 0.029 + 0.30).toFixed(2);
             const artistRevenue = +(amount - fee).toFixed(2);
-            await supabase.from("merch_purchases").insert({
-              buyer_id: buyerId, artist_id: artistId,
-              item_name: itemName, item_id: itemId,
-              amount, artist_revenue: artistRevenue, platform_fee: fee,
-              stripe_session_id: session.id,
-              stripe_payment_intent_id: session.payment_intent as string,
-              status: "completed",
-              metadata: meta,
+            await once(`merch_purchase:${session.id}`, async () => {
+              const { error } = await supabase.from("merch_purchases").upsert({
+                buyer_id: buyerId, artist_id: artistId,
+                item_name: itemName, item_id: itemId,
+                amount, artist_revenue: artistRevenue, platform_fee: fee,
+                stripe_session_id: session.id,
+                stripe_payment_intent_id: session.payment_intent as string,
+                status: "completed",
+                metadata: meta,
+              }, { onConflict: "stripe_session_id", ignoreDuplicates: true });
+              if (error) throw error;
             });
           }
         } else if (type === "tip") {
           const tipperId = meta.tipper_id;
           const artistId = meta.artist_id;
           const amount = (session.amount_total || 0) / 100;
+          const paymentId = (session.payment_intent as string) || session.id;
           if (tipperId && artistId) {
-            await supabase.from("artist_tips").insert({
-              tipper_id: tipperId, artist_id: artistId,
-              amount, currency: session.currency || "usd",
-              square_payment_id: session.payment_intent as string,
-              status: "completed",
-              message: meta.message || null,
+            await once(`tip:${paymentId}`, async () => {
+              const { error } = await supabase.from("artist_tips").upsert({
+                tipper_id: tipperId, artist_id: artistId,
+                amount, currency: session.currency || "usd",
+                square_payment_id: paymentId,
+                status: "completed",
+                message: meta.message || null,
+              }, { onConflict: "square_payment_id", ignoreDuplicates: true });
+              if (error) throw error;
             });
           }
         }
+
         break;
       }
 
