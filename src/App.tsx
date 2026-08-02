@@ -78,6 +78,7 @@ const App = () => (
             <Sonner />
             <GlobalErrorTrap />
             <BrowserRouter>
+              <RouteFocusManager />
               <CommandPalette />
               <Suspense fallback={<PageLoader />}>
                 <Routes>
