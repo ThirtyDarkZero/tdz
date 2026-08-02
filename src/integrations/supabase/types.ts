@@ -289,6 +289,7 @@ export type Database = {
           created_at: string
           download_revenue: number
           id: string
+          idempotency_key: string | null
           payout_date: string | null
           payout_status: string
           period_end: string
@@ -304,6 +305,7 @@ export type Database = {
           created_at?: string
           download_revenue?: number
           id?: string
+          idempotency_key?: string | null
           payout_date?: string | null
           payout_status?: string
           period_end: string
@@ -319,6 +321,7 @@ export type Database = {
           created_at?: string
           download_revenue?: number
           id?: string
+          idempotency_key?: string | null
           payout_date?: string | null
           payout_status?: string
           period_end?: string
@@ -518,6 +521,7 @@ export type Database = {
           created_at: string
           id: string
           last_payout_date: string | null
+          last_stripe_event_at: string | null
           payout_enabled: boolean
           square_access_token: string | null
           square_customer_id: string | null
@@ -533,6 +537,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_payout_date?: string | null
+          last_stripe_event_at?: string | null
           payout_enabled?: boolean
           square_access_token?: string | null
           square_customer_id?: string | null
@@ -548,6 +553,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_payout_date?: string | null
+          last_stripe_event_at?: string | null
           payout_enabled?: boolean
           square_access_token?: string | null
           square_customer_id?: string | null
@@ -1305,6 +1311,7 @@ export type Database = {
           id: string
           payment_status: string
           price: number
+          stripe_session_id: string | null
           track_id: string
           transaction_fee: number
         }
@@ -1316,6 +1323,7 @@ export type Database = {
           id?: string
           payment_status?: string
           price: number
+          stripe_session_id?: string | null
           track_id: string
           transaction_fee?: number
         }
@@ -1327,6 +1335,7 @@ export type Database = {
           id?: string
           payment_status?: string
           price?: number
+          stripe_session_id?: string | null
           track_id?: string
           transaction_fee?: number
         }
@@ -4699,6 +4708,7 @@ export type Database = {
           created_at: string
           expires_at: string | null
           id: string
+          last_stripe_event_at: string | null
           plan: Database["public"]["Enums"]["subscription_plan"]
           started_at: string
           status: string
@@ -4712,6 +4722,7 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
+          last_stripe_event_at?: string | null
           plan?: Database["public"]["Enums"]["subscription_plan"]
           started_at?: string
           status?: string
@@ -4725,6 +4736,7 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
+          last_stripe_event_at?: string | null
           plan?: Database["public"]["Enums"]["subscription_plan"]
           started_at?: string
           status?: string
@@ -4763,6 +4775,27 @@ export type Database = {
           thumbnail?: string | null
           title?: string
           youtube_id?: string | null
+        }
+        Relationships: []
+      }
+      webhook_mutations: {
+        Row: {
+          created_at: string
+          event_id: string
+          event_type: string | null
+          idempotency_key: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          event_type?: string | null
+          idempotency_key: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          event_type?: string | null
+          idempotency_key?: string
         }
         Relationships: []
       }
@@ -4878,7 +4911,34 @@ export type Database = {
       }
     }
     Functions: {
+      apply_stripe_account_event: {
+        Args: {
+          p_account_id: string
+          p_event_at: string
+          p_payout_enabled: boolean
+          p_user_id: string
+        }
+        Returns: boolean
+      }
+      apply_stripe_subscription_event: {
+        Args: { p_event_at: string; p_fields: Json; p_user_id: string }
+        Returns: boolean
+      }
       check_upload_rate_limit: { Args: { p_user_id: string }; Returns: boolean }
+      claim_stripe_webhook_event: {
+        Args: {
+          p_event_id: string
+          p_event_type: string
+          p_livemode: boolean
+          p_payload: Json
+          p_received_at: string
+        }
+        Returns: string
+      }
+      claim_webhook_mutation: {
+        Args: { p_event_id: string; p_event_type?: string; p_key: string }
+        Returns: boolean
+      }
       create_system_notification: {
         Args: {
           p_message: string
