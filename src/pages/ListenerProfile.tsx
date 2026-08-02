@@ -276,8 +276,9 @@ export default function ListenerProfile() {
 
       <ScrollArea className="relative z-10">
         {/* ── 3-Column Artist-Style Layout ── */}
-        <div className="max-w-7xl mx-auto px-4 md:px-8 pt-8">
+        <main id="main-content" className="max-w-7xl mx-auto px-4 md:px-8 pt-8 outline-none">
           <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-6">
+
 
             {/* ── LEFT COLUMN: Liked Tracks & Recently Played ── */}
             <div className="space-y-4 order-2 lg:order-1">
