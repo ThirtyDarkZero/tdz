@@ -603,6 +603,7 @@ export type Database = {
           banner_image_path: string | null
           bio: string | null
           created_at: string
+          genre: string | null
           id: string
           monthly_listeners: number | null
           profile_image_path: string | null
@@ -618,6 +619,7 @@ export type Database = {
           banner_image_path?: string | null
           bio?: string | null
           created_at?: string
+          genre?: string | null
           id?: string
           monthly_listeners?: number | null
           profile_image_path?: string | null
@@ -633,6 +635,7 @@ export type Database = {
           banner_image_path?: string | null
           bio?: string | null
           created_at?: string
+          genre?: string | null
           id?: string
           monthly_listeners?: number | null
           profile_image_path?: string | null
