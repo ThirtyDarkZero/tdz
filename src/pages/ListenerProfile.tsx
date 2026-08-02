@@ -443,32 +443,40 @@ export default function ListenerProfile() {
                 </div>
               )}
 
-              {/* Perk tiles — class card style */}
+              {/* Perk tiles — class card style (interactive) */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-lg mb-6">
                 {[
-                  { icon: Headphones, label: "LISTENING", desc: `${recentlyPlayed.length} recent`, color: "#00CFFF" },
-                  { icon: Heart, label: "LIKED", desc: `${likedTracks.length} tracks`, color: "#FF6B9D" },
-                  { icon: Users, label: "FRIENDS", desc: `${followersCount + followingCount}`, color: "#8B5CF6" },
-                  { icon: Globe, label: "PUBLIC", desc: `${playlists.length} playlists`, color: "#10B981" },
+                  { icon: Headphones, label: "LISTENING", desc: `${recentlyPlayed.length} recent`, color: "#00CFFF", action: () => navigate("/discover") },
+                  { icon: Heart, label: "LIKED", desc: `${likedTracks.length} tracks`, color: "#FF6B9D", action: () => setActiveTab("music") },
+                  { icon: Users, label: "FRIENDS", desc: `${followersCount + followingCount}`, color: "#8B5CF6", action: () => setActiveTab("social") },
+                  { icon: Globe, label: "PUBLIC", desc: `${playlists.length} playlists`, color: "#10B981", action: () => setActiveTab("playlists") },
                 ].map(feat => (
-                  <div key={feat.label} className="group relative rounded-xl p-3 text-center cursor-pointer transition-all duration-500 hover:-translate-y-1.5"
+                  <button
+                    key={feat.label}
+                    type="button"
+                    onClick={() => {
+                      feat.action();
+                      document.getElementById("profile-tabs")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                    aria-label={`${feat.label}: ${feat.desc}`}
+                    className="group relative rounded-xl p-3 text-center cursor-pointer transition-all duration-500 hover:-translate-y-1.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2"
                     style={{ background: "rgba(10,10,10,0.6)", backdropFilter: "blur(24px)", border: `1px solid ${feat.color}25`, boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
                     <div className="absolute inset-1.5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
                       {["top-0 left-0 border-t border-l", "top-0 right-0 border-t border-r", "bottom-0 left-0 border-b border-l", "bottom-0 right-0 border-b border-r"].map((pos, k) => (
                         <div key={k} className={`absolute w-3 h-3 ${pos}`} style={{ borderColor: feat.color }} />
                       ))}
                     </div>
-                    <feat.icon className="w-5 h-5 mx-auto mb-1" style={{ color: feat.color }} />
+                    <feat.icon className="w-5 h-5 mx-auto mb-1 transition-transform group-hover:scale-110" style={{ color: feat.color }} />
                     <p className="text-[10px] font-bold tracking-[0.2em] text-white">{feat.label}</p>
                     <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.4)" }}>{feat.desc}</p>
-                  </div>
+                  </button>
                 ))}
               </div>
 
               {/* Tabs — HUD selector */}
-              <div className="flex flex-wrap justify-center gap-2 mb-4">
+              <div id="profile-tabs" className="flex flex-wrap justify-center gap-2 mb-4 scroll-mt-24" role="tablist">
                 {tabs.map(tab => (
-                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] uppercase transition-all backdrop-blur-xl" style={{
+                  <button key={tab.id} role="tab" aria-selected={activeTab === tab.id} onClick={() => setActiveTab(tab.id)} className="flex items-center gap-1.5 px-4 py-2 rounded-full text-[10px] font-bold tracking-[0.2em] uppercase transition-all backdrop-blur-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6347]/60" style={{
                     background: activeTab === tab.id ? `${CORAL}18` : "rgba(0,0,0,0.45)",
                     color: activeTab === tab.id ? CORAL : "rgba(255,255,255,0.5)",
                     border: `1px solid ${activeTab === tab.id ? `${CORAL}60` : "rgba(255,255,255,0.12)"}`,
@@ -478,6 +486,7 @@ export default function ListenerProfile() {
                   </button>
                 ))}
               </div>
+
 
 
               {/* Tab Content */}
