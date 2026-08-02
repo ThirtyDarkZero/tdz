@@ -75,8 +75,23 @@ function OnboardingFlow() {
   const { user, refreshRole, role: existingRole } = useAuthContext();
   const navigate = useNavigate();
 
-  const [step, setStep] = useState(1);
-  const [role, setRole] = useState<Role | null>(null);
+  // Persisted across remounts: refreshing the auth role can remount this tree,
+  // which would otherwise snap the player back to Stage 1.
+  const [step, setStep] = useState<number>(() => {
+    const s = Number(sessionStorage.getItem("tdz_onb_step"));
+    return s >= 1 && s <= 4 ? s : 1;
+  });
+  const [role, setRole] = useState<Role | null>(
+    () => (sessionStorage.getItem("tdz_onb_role") as Role | null) || null
+  );
+
+  useEffect(() => {
+    sessionStorage.setItem("tdz_onb_step", String(step));
+  }, [step]);
+  useEffect(() => {
+    if (role) sessionStorage.setItem("tdz_onb_role", role);
+  }, [role]);
+
   const [hoveredRole, setHoveredRole] = useState<Role | null>(null);
   const [saving, setSaving] = useState(false);
   const [xp, setXp] = useState(0);
@@ -234,11 +249,16 @@ function OnboardingFlow() {
   const handlePickRole = async (chosen: Role) => {
     setSaving(true);
     setRole(chosen);
+    hydrated.current = true;
     triggerXP(ROLE_META[chosen].xp);
     const ok = await persistRole(chosen);
     setSaving(false);
     if (!ok) return;
-    await refreshRole();
+    // Advance immediately (and persist it) BEFORE refreshing auth state, which
+    // can remount this tree and drop any queued state update.
+    sessionStorage.setItem("tdz_onb_step", "2");
+    sessionStorage.setItem("tdz_onb_role", chosen);
+    setStep(2);
     if (chosen === "listener") {
       toast.success("🎧 CLASS SELECTED — TASTEMAKER", { description: "Welcome to the frontline." });
       if (user?.email) {
@@ -254,7 +274,7 @@ function OnboardingFlow() {
         });
       }
     }
-    setTimeout(() => setStep(2), 700);
+    void refreshRole();
   };
 
   const finishListener = async () => {
@@ -353,6 +373,8 @@ function OnboardingFlow() {
   };
 
   const handleFinish = () => {
+    sessionStorage.removeItem("tdz_onb_step");
+    sessionStorage.removeItem("tdz_onb_role");
     if (role === "manager") navigate("/manager-hq", { replace: true });
     else if (role === "listener") navigate("/discover", { replace: true });
     else navigate("/studio", { replace: true });
