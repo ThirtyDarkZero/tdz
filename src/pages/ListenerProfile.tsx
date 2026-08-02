@@ -224,7 +224,7 @@ export default function ListenerProfile() {
       }}>
         <div className="flex items-center justify-between gap-4 px-4 sm:px-6 py-3">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+            <Button variant="ghost" size="icon" aria-label="Go back" onClick={() => navigate(-1)} className="rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
@@ -250,7 +250,7 @@ export default function ListenerProfile() {
             )}
             {isOwnProfile && editing && (
               <div className="flex gap-2">
-                <Button variant="ghost" size="icon" onClick={() => setEditing(false)} className="rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <Button variant="ghost" size="icon" aria-label="Cancel editing" onClick={() => setEditing(false)} className="rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
                   <X className="w-4 h-4" />
                 </Button>
                 <Button size="sm" onClick={handleSave} className="rounded-full" style={{ background: CORAL, color: "#fff" }}>
@@ -355,7 +355,7 @@ export default function ListenerProfile() {
                 {isOwnProfile && (
                   <>
                     <input ref={fileInputRef} type="file" accept="image/*,.heic,.heif" className="hidden" onChange={handlePhotoUpload} />
-                    <Button size="icon" className="absolute bottom-4 right-4 h-10 w-10 rounded-full" style={{ background: CORAL, color: "#fff" }} onClick={() => fileInputRef.current?.click()} disabled={uploadingPhoto}>
+                    <Button size="icon" aria-label="Upload profile photo" className="absolute bottom-4 right-4 h-10 w-10 rounded-full" style={{ background: CORAL, color: "#fff" }} onClick={() => fileInputRef.current?.click()} disabled={uploadingPhoto}>
                       <Camera className="w-5 h-5" />
                     </Button>
                   </>
