@@ -80,7 +80,13 @@ export const StudioPromote = () => {
         <TabsContent value="tour" className="mt-0">
           <TourDatesManager />
         </TabsContent>
+
+        {/* ADS & ANALYTICS */}
+        <TabsContent value="ads" className="mt-0">
+          <AdsAnalyticsHub />
+        </TabsContent>
       </Tabs>
+
     </div>
   );
 };
