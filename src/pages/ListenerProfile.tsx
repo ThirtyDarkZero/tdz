@@ -190,47 +190,89 @@ export default function ListenerProfile() {
     { id: "playlists", label: "Playlists", icon: ListMusic },
   ];
 
+  const fanXp = engagement?.xp_total || 0;
+  const fanLevel = engagement?.level || 1;
+  const xpProgress = Math.min(100, ((fanXp % 1000) / 1000) * 100);
+
   return (
-    <div className="min-h-screen text-white pb-32" style={{ background: "#03030F" }}>
-      {/* Blurred cover BG */}
+    <div className="min-h-screen text-white pb-32 relative overflow-hidden" style={{ background: "#050505" }}>
+      {/* Cinematic backdrop — matches Onboarding */}
       {getProfileImageUrl() && (
         <div className="fixed inset-0 z-0" style={{
           backgroundImage: `url(${getProfileImageUrl()})`,
           backgroundSize: "cover", backgroundPosition: "center",
-          filter: "blur(80px) saturate(1.5) brightness(0.12)", transform: "scale(1.2)",
+          filter: "blur(90px) saturate(1.4) brightness(0.18)", transform: "scale(1.2)",
         }} />
       )}
-      <div className="fixed inset-0 z-0" style={{ background: "linear-gradient(to bottom, rgba(3,3,15,0.3), rgba(3,3,15,0.85) 50%, rgba(3,3,15,0.98))" }} />
+      <div className="fixed top-0 right-0 w-[600px] h-[600px] rounded-full blur-[180px] z-0 pointer-events-none" style={{ background: "rgba(255,99,71,0.22)" }} />
+      <div className="fixed bottom-0 left-0 w-[500px] h-[500px] rounded-full blur-[150px] z-0 pointer-events-none" style={{ background: "rgba(167,139,250,0.22)" }} />
+      {/* Vignette */}
+      <div className="fixed inset-0 z-0 pointer-events-none" style={{
+        background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.85) 90%), linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.9) 100%)",
+      }} />
+      {/* Scanlines */}
+      <div className="fixed inset-0 z-0 opacity-[0.06] pointer-events-none" style={{
+        backgroundImage: "repeating-linear-gradient(0deg, rgba(255,255,255,0.4) 0px, rgba(255,255,255,0.4) 1px, transparent 1px, transparent 3px)",
+      }} />
 
-      {/* Header */}
+      {/* HUD Header */}
       <header className="sticky top-0 z-50" style={{
-        background: "rgba(3,3,15,0.75)", backdropFilter: "blur(32px) saturate(180%)",
-        borderBottom: `1px solid rgba(255,99,71,0.08)`,
+        background: "rgba(5,5,5,0.7)", backdropFilter: "blur(32px) saturate(180%)",
+        borderBottom: `1px solid rgba(255,99,71,0.12)`,
       }}>
         <div className="flex items-center justify-between gap-4 px-4 sm:px-6 py-3">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <span className="font-bold text-lg truncate">{formData.display_name || "Fan"}</span>
-          </div>
-          {isOwnProfile && !editing && (
-            <Button variant="ghost" size="sm" onClick={() => setEditing(true)} style={{ color: CORAL }}>
-              <Edit className="w-4 h-4 mr-2" /> Edit
-            </Button>
-          )}
-          {isOwnProfile && editing && (
-            <div className="flex gap-2">
-              <Button variant="ghost" size="icon" onClick={() => setEditing(false)} className="rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
-                <X className="w-4 h-4" />
-              </Button>
-              <Button size="sm" onClick={handleSave} className="rounded-full" style={{ background: CORAL, color: "#fff" }}>
-                <Save className="w-4 h-4 mr-2" /> Save
-              </Button>
+            <div>
+              <div className="text-[10px] tracking-[0.3em] text-white/50" style={{ fontFamily: "'Raleway',sans-serif" }}>
+                TASTEMAKER PROFILE
+              </div>
+              <div className="text-xs tracking-widest text-white/80 font-bold truncate max-w-[180px] sm:max-w-none">
+                {(formData.display_name || "FAN").toUpperCase()}
+              </div>
             </div>
-          )}
+          </div>
+          <div className="flex items-center gap-2">
+            {/* XP counter — game HUD */}
+            <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-xl"
+              style={{ borderColor: "rgba(255,255,255,0.15)", background: "rgba(0,0,0,0.5)" }}>
+              <Sparkles className="w-4 h-4" style={{ color: "#FFD700" }} />
+              <span className="tabular-nums font-bold text-white text-sm tracking-wider">{fanXp.toLocaleString()} XP</span>
+            </div>
+            {isOwnProfile && !editing && (
+              <Button variant="ghost" size="sm" onClick={() => setEditing(true)} style={{ color: CORAL }}>
+                <Edit className="w-4 h-4 mr-2" /> Edit
+              </Button>
+            )}
+            {isOwnProfile && editing && (
+              <div className="flex gap-2">
+                <Button variant="ghost" size="icon" onClick={() => setEditing(false)} className="rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+                  <X className="w-4 h-4" />
+                </Button>
+                <Button size="sm" onClick={handleSave} className="rounded-full" style={{ background: CORAL, color: "#fff" }}>
+                  <Save className="w-4 h-4 mr-2" /> Save
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+        {/* Level progress bar — shimmer like Onboarding */}
+        <div className="px-4 sm:px-6 pb-3">
+          <div className="relative h-1.5 rounded-full overflow-hidden border border-white/10 max-w-2xl mx-auto" style={{ background: "rgba(255,255,255,0.05)" }}>
+            <div className="h-full transition-all duration-700 ease-out" style={{
+              width: `${xpProgress}%`,
+              background: `linear-gradient(90deg, ${CORAL}, #a78bfa, ${CORAL})`,
+              backgroundSize: "200% 100%",
+              animation: "fanShimmer 2s linear infinite",
+              boxShadow: `0 0 20px ${CORAL}`,
+            }} />
+          </div>
+          <style>{`@keyframes fanShimmer { 0%{background-position:0% 0%} 100%{background-position:200% 0%} }`}</style>
         </div>
       </header>
+
 
       <ScrollArea className="relative z-10">
         {/* ── 3-Column Artist-Style Layout ── */}
