@@ -820,7 +820,7 @@ function OnboardingFlow() {
                     >
                       <span className="relative z-10 flex items-center gap-2">
                         <Rocket className="w-4 h-4" />
-                        {role === "manager" ? "ENTER MANAGER HQ" : "ENTER STUDIO"}
+                        {role === "manager" ? "ENTER MANAGER HQ" : role === "listener" ? "ENTER DISCOVERY" : "ENTER STUDIO"}
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </span>
                     </button>
