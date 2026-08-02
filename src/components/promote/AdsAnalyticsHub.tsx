@@ -109,30 +109,63 @@ export function AdsAnalyticsHub() {
   };
 
   const save = async () => {
-    if (!user || !open || !primary.trim()) return;
+    if (!open || !primary.trim()) return;
     setSaving(true);
-    const { error } = await supabase.from("manager_integrations").upsert(
-      {
-        manager_id: user.id,
+    try {
+      // Always re-read the live session: a stale context user would fail RLS.
+      const { data: sessionData } = await supabase.auth.getSession();
+      const uid = sessionData.session?.user?.id ?? user?.id;
+      if (!uid) {
+        toast.error("Please sign in again to save this integration");
+        return;
+      }
+
+      const payload = {
+        manager_id: uid,
         provider: open.id,
         display_name: open.name,
         credentials: {},
         config: { primary_id: primary.trim(), secondary: secondary.trim() || null },
         status: "active",
-      },
-      { onConflict: "manager_id,provider" },
-    );
-    setSaving(false);
-    if (error) {
-      toast.error("Could not save integration", { description: error.message });
-      return;
+      };
+
+      let { error } = await supabase
+        .from("manager_integrations")
+        .upsert(payload, { onConflict: "manager_id,provider" });
+
+      // Fallback: some conflict paths surface as a duplicate-key error — update in place.
+      if (error && (error.code === "23505" || error.message.includes("duplicate key"))) {
+        const res = await supabase
+          .from("manager_integrations")
+          .update({
+            display_name: payload.display_name,
+            config: payload.config,
+            status: "active",
+          })
+          .eq("manager_id", uid)
+          .eq("provider", open.id);
+        error = res.error;
+      }
+
+      if (error) {
+        toast.error("Could not save integration", { description: error.message });
+        return;
+      }
+
+      toast.success(`${open.name} connected`);
+      setOpen(null);
+      setPrimary("");
+      setSecondary("");
+      load();
+    } catch (e: any) {
+      toast.error("Network error saving integration", {
+        description: e?.message ?? "Please try again.",
+      });
+    } finally {
+      setSaving(false);
     }
-    toast.success(`${open.name} connected`);
-    setOpen(null);
-    setPrimary("");
-    setSecondary("");
-    load();
   };
+
 
   const disconnect = async (rowId: string) => {
     const { error } = await supabase.from("manager_integrations").delete().eq("id", rowId);
