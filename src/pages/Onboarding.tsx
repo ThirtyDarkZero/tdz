@@ -75,8 +75,23 @@ function OnboardingFlow() {
   const { user, refreshRole, role: existingRole } = useAuthContext();
   const navigate = useNavigate();
 
-  const [step, setStep] = useState(1);
-  const [role, setRole] = useState<Role | null>(null);
+  // Persisted across remounts: refreshing the auth role can remount this tree,
+  // which would otherwise snap the player back to Stage 1.
+  const [step, setStep] = useState<number>(() => {
+    const s = Number(sessionStorage.getItem("tdz_onb_step"));
+    return s >= 1 && s <= 4 ? s : 1;
+  });
+  const [role, setRole] = useState<Role | null>(
+    () => (sessionStorage.getItem("tdz_onb_role") as Role | null) || null
+  );
+
+  useEffect(() => {
+    sessionStorage.setItem("tdz_onb_step", String(step));
+  }, [step]);
+  useEffect(() => {
+    if (role) sessionStorage.setItem("tdz_onb_role", role);
+  }, [role]);
+
   const [hoveredRole, setHoveredRole] = useState<Role | null>(null);
   const [saving, setSaving] = useState(false);
   const [xp, setXp] = useState(0);
