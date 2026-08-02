@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { MultiTrackUploader } from "@/components/MultiTrackUploader";
+import { ReleaseQuest } from "@/components/studio/ReleaseQuest";
 import { PendingInvitesPanel } from "@/components/PendingInvitesPanel";
 import { ManagerDashboard } from "@/components/ManagerDashboard";
 import { StudioSidebar } from "@/components/studio/StudioSidebar";
@@ -214,15 +215,13 @@ function StudioContent() {
 
 
 
-        {/* Upload Dialog */}
+        {/* Release Quest Dialog */}
         <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card border-border">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-display font-bold">
-                Upload Your Music
-              </DialogTitle>
+            <DialogHeader className="sr-only">
+              <DialogTitle>Release Your Music</DialogTitle>
             </DialogHeader>
-            <MultiTrackUploader
+            <ReleaseQuest
               onSuccess={() => setUploadDialogOpen(false)}
               targetUserId={isDelegated ? effectiveUserId ?? undefined : undefined}
               targetArtistName={isDelegated ? actingArtistName ?? undefined : undefined}
