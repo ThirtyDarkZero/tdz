@@ -380,27 +380,36 @@ export default function ListenerProfile() {
               {editing ? (
                 <Input value={formData.display_name} onChange={(e) => setFormData({ ...formData, display_name: e.target.value })} className="text-3xl bg-transparent border-white/20 text-center max-w-sm mb-3" />
               ) : (
-                <h1 className="text-5xl md:text-7xl text-white leading-none mb-2" style={{ fontFamily: "'Six Caps', sans-serif", letterSpacing: "0.02em" }}>
+                <h1 className="text-5xl md:text-7xl text-white leading-[1.05] mb-3 pb-1 break-words max-w-full" style={{ fontFamily: "'Six Caps', sans-serif", letterSpacing: "0.02em" }}>
                   {(formData.display_name || "Music Explorer").toUpperCase()}
                 </h1>
               )}
 
 
-              {/* Stats — HUD readout */}
+              {/* Stats — HUD readout (interactive) */}
               <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
                 {[
-                  { label: "Followers", value: followersCount },
-                  { label: "Following", value: followingCount },
-                  { label: "Playlists", value: playlists.length },
-                  { label: "Likes", value: likedTracks.length },
+                  { label: "Followers", value: followersCount, tab: "social" },
+                  { label: "Following", value: followingCount, tab: "social" },
+                  { label: "Playlists", value: playlists.length, tab: "playlists" },
+                  { label: "Likes", value: likedTracks.length, tab: "music" },
                 ].map(s => (
-                  <div key={s.label} className="px-4 py-1.5 rounded-full border backdrop-blur-xl text-center"
-                    style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(0,0,0,0.45)" }}>
-                    <span className="text-lg text-white tabular-nums mr-2" style={{ fontFamily: "'Six Caps', sans-serif" }}>{s.value}</span>
+                  <button
+                    key={s.label}
+                    type="button"
+                    onClick={() => {
+                      setActiveTab(s.tab);
+                      document.getElementById("profile-tabs")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                    aria-label={`${s.value} ${s.label} — view ${s.tab}`}
+                    className="px-4 py-1.5 rounded-full border backdrop-blur-xl text-center transition-all hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6347]/60"
+                    style={{ borderColor: activeTab === s.tab ? `${CORAL}55` : "rgba(255,255,255,0.12)", background: "rgba(0,0,0,0.45)" }}>
+                    <span className="text-sm font-bold text-white tabular-nums mr-2">{s.value}</span>
                     <span className="text-[9px] uppercase tracking-[0.25em]" style={{ color: "rgba(255,255,255,0.45)" }}>{s.label}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
+
 
 
               {/* Actions */}
