@@ -179,7 +179,7 @@ function OnboardingFlow() {
     setSelectedPlan(null);
   };
 
-  const totalSteps = role === "listener" ? 1 : 4;
+  const totalSteps = 4;
   const progress = (step / totalSteps) * 100;
   const activeRole = hoveredRole || role;
   const activeMeta = activeRole ? ROLE_META[activeRole] : null;
