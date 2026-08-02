@@ -127,7 +127,14 @@ export function ReleaseQuest({
     };
 
     return (
-      <div className="relative overflow-hidden rounded-xl border border-primary/40 bg-background/60 p-8 text-center backdrop-blur-2xl animate-scale-in md:p-10">
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-xl border border-primary/40 bg-background/60 p-8 text-center backdrop-blur-2xl md:p-10",
+          !reducedMotion && "animate-scale-in",
+        )}
+      >
+      <p aria-live="polite" role="status" className="sr-only">{announcement}</p>
+
         <div
           className="pointer-events-none absolute inset-0 opacity-40 blur-3xl animate-fade-in"
           style={{ background: "radial-gradient(circle at 50% 0%, hsl(var(--primary)) 0%, transparent 65%)" }}
@@ -140,7 +147,12 @@ export function ReleaseQuest({
           </p>
 
           <div className="mx-auto mt-6 flex w-fit items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-5 py-2 animate-scale-in">
-            <Star className="h-4 w-4 text-primary animate-spin" fill="currentColor" style={{ animationDuration: "3s" }} />
+            <Star
+              className={cn("h-4 w-4 text-primary", !reducedMotion && "animate-spin")}
+              fill="currentColor"
+              style={{ animationDuration: "3s" }}
+              aria-hidden="true"
+            />
             <span style={heading} className="text-3xl leading-none">+{xp.toLocaleString()} XP EARNED</span>
           </div>
 
@@ -184,6 +196,7 @@ export function ReleaseQuest({
 
   return (
     <div className="space-y-5">
+      <p aria-live="polite" role="status" className="sr-only">{announcement}</p>
       {/* Quest HUD */}
       <div className="relative overflow-hidden rounded-xl border border-border/40 bg-background/50 p-5 backdrop-blur-2xl">
         <div
@@ -223,10 +236,11 @@ export function ReleaseQuest({
               ref={xpRef}
               className={cn(
                 "relative flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 transition-all duration-300",
-                flash && "scale-110 shadow-[0_0_30px_-4px_hsl(var(--primary))]",
+                flash && !reducedMotion && "scale-110",
+                flash && "shadow-[0_0_30px_-4px_hsl(var(--primary))]",
               )}
             >
-              <Star className={cn("h-4 w-4 text-primary", flash && "animate-spin")} fill="currentColor" />
+              <Star className={cn("h-4 w-4 text-primary", flash && !reducedMotion && "animate-spin")} fill="currentColor" aria-hidden="true" />
               <span style={heading} className="text-2xl leading-none">{xp.toLocaleString()} XP</span>
               {popup && (
                 <span
@@ -252,7 +266,8 @@ export function ReleaseQuest({
                 key={s.id}
                 className={cn(
                   "rounded-lg border p-3 transition-all duration-500",
-                  active && "scale-[1.02] border-primary/60 bg-primary/10 shadow-[0_0_24px_-8px_hsl(var(--primary))]",
+                  active && !reducedMotion && "scale-[1.02]",
+                  active && "border-primary/60 bg-primary/10 shadow-[0_0_24px_-8px_hsl(var(--primary))]",
                   complete && "border-primary/30 bg-primary/5",
                   !active && !complete && "border-border/40 bg-muted/10 opacity-60",
                 )}
@@ -261,7 +276,7 @@ export function ReleaseQuest({
                   {complete ? (
                     <Check className="h-3.5 w-3.5 text-primary animate-scale-in" />
                   ) : (
-                    <s.icon className={cn("h-3.5 w-3.5", active ? "text-primary animate-pulse" : "text-muted-foreground")} />
+                    <s.icon className={cn("h-3.5 w-3.5", active ? cn("text-primary", !reducedMotion && "animate-pulse") : "text-muted-foreground")} />
                   )}
                   <span style={body} className="text-[10px] uppercase tracking-widest text-muted-foreground">
                     Stage {i + 1}
