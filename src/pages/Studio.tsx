@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { MultiTrackUploader } from "@/components/MultiTrackUploader";
+import { ReleaseQuest } from "@/components/studio/ReleaseQuest";
 import { PendingInvitesPanel } from "@/components/PendingInvitesPanel";
 import { ManagerDashboard } from "@/components/ManagerDashboard";
 import { StudioSidebar } from "@/components/studio/StudioSidebar";
