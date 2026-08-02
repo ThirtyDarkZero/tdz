@@ -126,6 +126,18 @@ function ManagerHQContent() {
             <Button onClick={() => navigate("/pricing")} className="w-full h-11 bg-gradient-to-r from-primary via-violet-500 to-fuchsia-500 font-semibold">
               Upgrade to Enterprise
             </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-3 w-full"
+              onClick={() => {
+                attemptsRef.current = 0;
+                setSyncing(true);
+              }}
+            >
+              Already subscribed? Re-check my plan
+            </Button>
+
           </Card>
         </div>
       </div>
