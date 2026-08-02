@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArtistProfileEditor } from "@/components/ArtistProfileEditor";
-import { ArtistPayoutSettings } from "@/components/ArtistPayoutSettings";
+import { PayoutSettingsBoundary } from "@/components/studio/PayoutSettingsBoundary";
 import { CollaboratorsList } from "@/components/CollaboratorsList";
 import { CollaboratorInviteDialog } from "@/components/CollaboratorInviteDialog";
 import { SupportTicketSystem } from "@/components/SupportTicketSystem";
@@ -84,7 +84,7 @@ export const StudioSettings = () => {
         </TabsContent>
 
         <TabsContent value="payouts" className="mt-0">
-          <ArtistPayoutSettings />
+          <PayoutSettingsBoundary />
         </TabsContent>
 
         <TabsContent value="team" className="mt-0">
