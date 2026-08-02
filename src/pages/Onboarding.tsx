@@ -202,9 +202,14 @@ function OnboardingFlow() {
   const persistRole = async (chosen: Role) => {
     if (!user) return false;
     const dbRole = chosen === "listener" ? "listener" : chosen;
+    // Insert-only (ignore duplicates): user_roles has no self-UPDATE policy, so a
+    // real upsert would fail with RLS when the row already exists.
     const { error } = await supabase
       .from("user_roles")
-      .upsert({ user_id: user.id, role: dbRole as any }, { onConflict: "user_id,role" });
+      .upsert({ user_id: user.id, role: dbRole as any }, {
+        onConflict: "user_id,role",
+        ignoreDuplicates: true,
+      });
     if (error) {
       toast.error("Could not save role", { description: error.message });
       return false;
