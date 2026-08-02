@@ -34,6 +34,7 @@ function ManagerHQContent() {
       setSyncing(false);
       return;
     }
+    if (!syncing) return;
 
     let timer: ReturnType<typeof setTimeout>;
     const poll = async () => {
@@ -52,7 +53,6 @@ function ManagerHQContent() {
       timer = setTimeout(poll, 2000);
     };
 
-    setSyncing(true);
     poll();
 
     return () => {
@@ -60,7 +60,8 @@ function ManagerHQContent() {
       clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEnterprise]);
+  }, [isEnterprise, syncing]);
+
 
 
   if (!isManager && !isAdmin) {
