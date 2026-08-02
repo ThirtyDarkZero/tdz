@@ -39,7 +39,11 @@ export const StudioPromote = () => {
           <TabsTrigger value="tour" className="data-[state=active]:bg-background">
             Tour
           </TabsTrigger>
+          <TabsTrigger value="ads" className="data-[state=active]:bg-background">
+            Ads &amp; Analytics
+          </TabsTrigger>
         </TabsList>
+
 
         {/* FANS — Fan Hub + CSV Import + Contacts List */}
         <TabsContent value="fans" className="mt-0">
