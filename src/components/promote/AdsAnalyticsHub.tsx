@@ -30,6 +30,26 @@ const PROVIDERS = [
     secondaryPlaceholder: "AW-XXXXXXXXX/abcDEfgh",
   },
   {
+    id: "meta_ads",
+    name: "Meta Ads (Facebook & Instagram)",
+    icon: Facebook,
+    desc: "Fire release and pre-save events to your Meta Pixel for retargeting fans.",
+    primaryLabel: "Meta Pixel ID",
+    primaryPlaceholder: "1234567890123456",
+    secondaryLabel: "Ad Account ID (optional)",
+    secondaryPlaceholder: "act_1234567890",
+  },
+  {
+    id: "tiktok_ads",
+    name: "TikTok Ads",
+    icon: Music2,
+    desc: "Track TikTok-driven listeners and optimize Spark Ads toward real plays.",
+    primaryLabel: "TikTok Pixel ID",
+    primaryPlaceholder: "C4A1B2C3D4E5F6G7H8",
+    secondaryLabel: "Advertiser ID (optional)",
+    secondaryPlaceholder: "7012345678901234567",
+  },
+  {
     id: "google_analytics",
     name: "Google Analytics 4",
     icon: BarChart3,
@@ -40,6 +60,7 @@ const PROVIDERS = [
     secondaryPlaceholder: "TDZ Artist Page",
   },
 ] as const;
+
 
 type Provider = (typeof PROVIDERS)[number];
 
