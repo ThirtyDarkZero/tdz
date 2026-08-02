@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { MultiTrackUploader, type ReleaseQuestStage, type ReleaseSummary } from "@/components/MultiTrackUploader";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Rocket, Music, Sparkles, Star, Trophy, Upload, Zap, Check, Volume2, VolumeX } from "lucide-react";
+import { Rocket, Music, Sparkles, Star, Trophy, Upload, Zap, Check, Volume2, VolumeX, Vibrate, VibrateOff } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { sfx, haptic, isSfxMuted, setSfxMuted } from "@/lib/gameSfx";
+import { sfx, haptic, isSfxMuted, setSfxMuted, isHapticsEnabled, setHapticsEnabled, supportsHaptics } from "@/lib/gameSfx";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { burstFrom, celebrate } from "@/lib/celebrate";
 import { ReleaseCard, type ReleaseCardData } from "@/components/studio/ReleaseCard";
 
@@ -32,9 +33,18 @@ export function ReleaseQuest({
   const [flash, setFlash] = useState(false);
   const [popup, setPopup] = useState<string | null>(null);
   const [muted, setMuted] = useState(() => isSfxMuted());
+  const [haptics, setHaptics] = useState(() => isHapticsEnabled());
+  const [announcement, setAnnouncement] = useState("");
+  const reducedMotion = useReducedMotion();
+  const hapticsSupported = supportsHaptics();
   const [summary, setSummary] = useState<ReleaseSummary | null>(null);
   const awarded = useRef<Set<ReleaseQuestStage>>(new Set());
   const xpRef = useRef<HTMLDivElement | null>(null);
+  const reducedMotionRef = useRef(false);
+
+  useEffect(() => {
+    reducedMotionRef.current = reducedMotion;
+  }, [reducedMotion]);
 
   const stageIndex = STAGES.findIndex((s) => s.id === stage);
   const pct = Math.round(((stageIndex + 1) / STAGES.length) * 100);
@@ -47,10 +57,11 @@ export function ReleaseQuest({
     setXp((v) => v + meta.xp);
     setFlash(true);
     setPopup(`+${meta.xp} XP`);
+    setAnnouncement(`Stage complete: ${meta.label}. ${meta.xp} XP earned.`);
     if (!silent) {
       sfx.stageComplete();
       haptic([8, 30, 12]);
-      burstFrom(xpRef.current);
+      if (!reducedMotionRef.current) burstFrom(xpRef.current);
     }
     window.setTimeout(() => setFlash(false), 900);
     window.setTimeout(() => setPopup(null), 1400);
@@ -61,6 +72,12 @@ export function ReleaseQuest({
   }, [stage, stageIndex, award]);
 
   const handleStage = useCallback((s: ReleaseQuestStage) => setStage(s), []);
+
+  useEffect(() => {
+    const i = STAGES.findIndex((s) => s.id === stage);
+    if (i < 0 || stage === "done") return;
+    setAnnouncement(`Stage ${i + 1} of ${STAGES.length}: ${STAGES[i].label}. ${STAGES[i].brief}`);
+  }, [stage]);
 
   const handleSuccess = (s?: ReleaseSummary) => {
     award("uploading", true);
@@ -73,14 +90,24 @@ export function ReleaseQuest({
     if (stage !== "done") return;
     sfx.victory();
     haptic([12, 40, 12, 40, 24]);
-    celebrate();
-  }, [stage]);
+    setAnnouncement("Release complete. Your music is live on TDZ. Customise and share your release card below.");
+    if (!reducedMotion) celebrate();
+  }, [stage, reducedMotion]);
 
   const toggleMute = () => {
     const next = !muted;
     setMuted(next);
     setSfxMuted(next);
+    setAnnouncement(next ? "Sound effects muted" : "Sound effects on");
     if (!next) sfx.click();
+  };
+
+  const toggleHaptics = () => {
+    const next = !haptics;
+    setHaptics(next);
+    setHapticsEnabled(next);
+    setAnnouncement(next ? "Haptics on" : "Haptics off");
+    if (next) haptic([10, 30, 10]);
   };
 
   if (stage === "done") {
@@ -175,11 +202,23 @@ export function ReleaseQuest({
             <button
               type="button"
               onClick={toggleMute}
+              aria-pressed={!muted}
               aria-label={muted ? "Enable sound effects" : "Mute sound effects"}
-              className="rounded-full border border-border/50 bg-background/60 p-2 text-muted-foreground transition-colors hover:text-primary"
+              className="flex min-h-11 min-w-11 items-center justify-center rounded-full border border-border/50 bg-background/60 p-2 text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              {muted ? <VolumeX className="h-4 w-4" aria-hidden="true" /> : <Volume2 className="h-4 w-4" aria-hidden="true" />}
             </button>
+            {hapticsSupported && (
+              <button
+                type="button"
+                onClick={toggleHaptics}
+                aria-pressed={haptics}
+                aria-label={haptics ? "Turn off haptics" : "Turn on haptics"}
+                className="flex min-h-11 min-w-11 items-center justify-center rounded-full border border-border/50 bg-background/60 p-2 text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {haptics ? <Vibrate className="h-4 w-4" aria-hidden="true" /> : <VibrateOff className="h-4 w-4" aria-hidden="true" />}
+              </button>
+            )}
             <div
               ref={xpRef}
               className={cn(
