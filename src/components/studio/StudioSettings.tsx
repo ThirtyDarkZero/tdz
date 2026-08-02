@@ -84,7 +84,7 @@ export const StudioSettings = () => {
         </TabsContent>
 
         <TabsContent value="payouts" className="mt-0">
-          <ArtistPayoutSettings />
+          <PayoutSettingsBoundary />
         </TabsContent>
 
         <TabsContent value="team" className="mt-0">
