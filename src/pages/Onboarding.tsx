@@ -253,10 +253,40 @@ function OnboardingFlow() {
           },
         });
       }
-      setTimeout(() => navigate("/discover", { replace: true }), 800);
-      return;
     }
     setTimeout(() => setStep(2), 700);
+  };
+
+  const finishListener = async () => {
+    if (!user) return;
+    const name =
+      fanName.trim() ||
+      (user.user_metadata as any)?.full_name ||
+      (user.email ? user.email.split("@")[0] : "");
+    if (!name) {
+      toast.error("Pick a name the scene will know you by.");
+      return;
+    }
+    setSaving(true);
+    const genres = favoriteGenres
+      .split(/[\n,;]+/)
+      .map((g) => g.trim())
+      .filter(Boolean);
+    const { error } = await supabase.from("listener_profiles").upsert(
+      {
+        user_id: user.id,
+        display_name: name,
+        favorite_genres: genres.length ? genres : null,
+      } as any,
+      { onConflict: "user_id" }
+    );
+    setSaving(false);
+    if (error) {
+      toast.error("Could not save your taste profile", { description: error.message });
+      return;
+    }
+    triggerXP(500);
+    setStep(3);
   };
 
   const finishArtist = async () => {
