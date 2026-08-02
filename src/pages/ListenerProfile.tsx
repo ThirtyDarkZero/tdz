@@ -386,20 +386,22 @@ export default function ListenerProfile() {
               )}
 
 
-              {/* Stats */}
-              <div className="flex items-center gap-6 text-sm mb-4">
+              {/* Stats — HUD readout */}
+              <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
                 {[
                   { label: "Followers", value: followersCount },
                   { label: "Following", value: followingCount },
                   { label: "Playlists", value: playlists.length },
                   { label: "Likes", value: likedTracks.length },
                 ].map(s => (
-                  <div key={s.label} className="text-center">
-                    <span className="block text-xl font-black text-white">{s.value}</span>
-                    <span className="text-[10px] uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.4)" }}>{s.label}</span>
+                  <div key={s.label} className="px-4 py-1.5 rounded-full border backdrop-blur-xl text-center"
+                    style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(0,0,0,0.45)" }}>
+                    <span className="text-lg text-white tabular-nums mr-2" style={{ fontFamily: "'Six Caps', sans-serif" }}>{s.value}</span>
+                    <span className="text-[9px] uppercase tracking-[0.25em]" style={{ color: "rgba(255,255,255,0.45)" }}>{s.label}</span>
                   </div>
                 ))}
               </div>
+
 
               {/* Actions */}
               <div className="flex items-center gap-3 mb-6">
