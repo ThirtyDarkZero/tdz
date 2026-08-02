@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, BarChart3, Megaphone, Check, Copy, Link2 } from "lucide-react";
+import { Loader2, BarChart3, Megaphone, Check, Copy, Link2, Facebook, Music2 } from "lucide-react";
 
 interface IntegrationRow {
   id: string;
@@ -30,6 +30,26 @@ const PROVIDERS = [
     secondaryPlaceholder: "AW-XXXXXXXXX/abcDEfgh",
   },
   {
+    id: "meta_ads",
+    name: "Meta Ads (Facebook & Instagram)",
+    icon: Facebook,
+    desc: "Fire release and pre-save events to your Meta Pixel for retargeting fans.",
+    primaryLabel: "Meta Pixel ID",
+    primaryPlaceholder: "1234567890123456",
+    secondaryLabel: "Ad Account ID (optional)",
+    secondaryPlaceholder: "act_1234567890",
+  },
+  {
+    id: "tiktok_ads",
+    name: "TikTok Ads",
+    icon: Music2,
+    desc: "Track TikTok-driven listeners and optimize Spark Ads toward real plays.",
+    primaryLabel: "TikTok Pixel ID",
+    primaryPlaceholder: "C4A1B2C3D4E5F6G7H8",
+    secondaryLabel: "Advertiser ID (optional)",
+    secondaryPlaceholder: "7012345678901234567",
+  },
+  {
     id: "google_analytics",
     name: "Google Analytics 4",
     icon: BarChart3,
@@ -40,6 +60,7 @@ const PROVIDERS = [
     secondaryPlaceholder: "TDZ Artist Page",
   },
 ] as const;
+
 
 type Provider = (typeof PROVIDERS)[number];
 
@@ -68,7 +89,7 @@ export function AdsAnalyticsHub() {
       .from("manager_integrations")
       .select("id, provider, display_name, status, config")
       .eq("manager_id", user.id)
-      .in("provider", ["google_ads", "google_analytics"]);
+      .in("provider", ["google_ads", "google_analytics", "meta_ads", "tiktok_ads"]);
     setRows((data || []) as IntegrationRow[]);
     setLoading(false);
   };
@@ -207,8 +228,9 @@ export function AdsAnalyticsHub() {
           <h3 className="font-semibold">Campaign Tracking Links</h3>
         </div>
         <p className="text-xs text-muted-foreground">
-          Tag any release, smart link, or store URL so clicks show up in your Google Ads and GA4
-          reporting.
+          Tag any release, smart link, or store URL so clicks show up in Google Ads, Meta Ads,
+          TikTok Ads, and GA4 reporting.
+
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="space-y-1 md:col-span-2">
