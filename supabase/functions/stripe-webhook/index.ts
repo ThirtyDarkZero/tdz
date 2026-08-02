@@ -356,23 +356,18 @@ serve(async (req) => {
           (account.requirements?.past_due?.length ?? 0) > 0 ||
           !!account.requirements?.disabled_reason;
 
-        // Prefer metadata user_id (upsert so the row exists even if the artist
-        // never returned to the app after onboarding); otherwise reconcile by
-        // stripe_connect_id in case metadata was ever stripped.
-        if (userId) {
-          const { error } = await supabase.from("artist_payout_details").upsert({
-            artist_id: userId,
-            stripe_connect_id: account.id,
-            payout_enabled: ready,
-            updated_at: new Date().toISOString(),
-          }, { onConflict: "artist_id" });
-          if (error) console.error("[stripe-webhook] payout details upsert failed:", error.message);
-        } else {
-          await supabase.from("artist_payout_details").update({
-            payout_enabled: ready,
-            updated_at: new Date().toISOString(),
-          }).eq("stripe_connect_id", account.id);
-        }
+        // Ordered apply: the RPC takes a per-artist lock and ignores events older
+        // than the last one applied, so retries/out-of-order deliveries can never
+        // flip payout_enabled back to a stale value.
+        const { data: applied, error: applyErr } = await supabase.rpc("apply_stripe_account_event", {
+          p_user_id: userId ?? null,
+          p_account_id: account.id,
+          p_payout_enabled: ready,
+          p_event_at: eventAt,
+        });
+        if (applyErr) console.error("[stripe-webhook] payout details apply failed:", applyErr.message);
+        else if (applied !== true) console.log(`[stripe-webhook] stale/unmatched account event for ${account.id}; skipped`);
+
 
 
         console.log(`[stripe-webhook] ${event.type} account=${account.id} user=${userId ?? "?"} ready=${ready} attention=${needsAttention}`);
