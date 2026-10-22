@@ -18,6 +18,7 @@ import { StudioPromote } from "@/components/studio/StudioPromote";
 import { StudioLearn } from "@/components/studio/StudioLearn";
 import { StudioSettings } from "@/components/studio/StudioSettings";
 import { StudioConnectAI } from "@/components/studio/StudioConnectAI";
+import { TodaysMove } from "@/components/studio/TodaysMove";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useActingArtist } from "@/contexts/ActingArtistContext";
 import { ActingArtistSwitcher } from "@/components/manager/ActingArtistSwitcher";
@@ -129,11 +130,14 @@ function StudioContent() {
     switch (activeSection) {
       case "home":
         return (
-          <StudioHome 
-            artistName={artistName} 
-            onNavigate={setActiveSection}
-            onUploadClick={() => setUploadDialogOpen(true)}
-          />
+          <>
+            <TodaysMove onNavigate={setActiveSection} onUploadClick={() => setUploadDialogOpen(true)} />
+            <StudioHome 
+              artistName={artistName} 
+              onNavigate={setActiveSection}
+              onUploadClick={() => setUploadDialogOpen(true)}
+            />
+          </>
         );
       case "music":
         return <StudioMusic onPlayTrack={handlePlayTrack} />;

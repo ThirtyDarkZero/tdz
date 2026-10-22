@@ -345,11 +345,15 @@ function Investors() {
               Seed Round · {t("Music streaming, rebuilt for the artists who already earn", "Independent DSP for the >$500/yr ARP cohort")}
             </p>
             <h1 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(56px, 10vw, 140px)", letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 0.88, color: "#fff" }}>
-              We Pay Artists{" "}
-              <span style={{ color: "#22C55E" }}>333×</span>{" "}
-              {t("More", "Above ARPS")}
+              TDZ Tells Every Artist{" "}
+              <span style={{ color: "#FF6347" }}>What To Do Next</span>
+              <br />
+              And Pays Them <span style={{ color: "#22C55E" }}>$1</span> When It Works
             </h1>
-            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 18, color: "#aaa", fontWeight: 400, maxWidth: 760 }} className="mx-auto mt-8">
+            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 16, color: "#ddd", fontWeight: 600, maxWidth: 760 }} className="mx-auto mt-8">
+              {t("Every morning, each artist gets one move — built from their own live data — plus a streak that keeps them coming back daily.", "Daily-active habit loop: data-driven 'Today's Move' + streak mechanics → DAU/MAU retention flywheel.")}
+            </p>
+            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 18, color: "#aaa", fontWeight: 400, maxWidth: 760 }} className="mx-auto mt-4">
               Spotify pays <span className="text-[#EF4444] font-bold">$0.003</span> per stream. We pay <span className="text-[#22C55E] font-bold">$1.00</span>. Built for the <span className="text-white font-bold">187,000 working independent artists</span> who already earn over $500/yr in royalties — and the fans who fund them.
             </p>
             <div className="mt-10 flex items-center justify-center gap-3 flex-wrap">
