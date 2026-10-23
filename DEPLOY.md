@@ -35,6 +35,10 @@ In Xcode:
 
 After any web change: `npm run ios` again, then archive a new build.
 
+## Package installs
+
+Use **npm** (`package-lock.json`). The bun lockfiles were removed because they pointed at Lovable's private package mirror, which fails outside Lovable.
+
 ## 3. Still tied to Lovable
 
 These keep working, but run on Lovable's infrastructure:
