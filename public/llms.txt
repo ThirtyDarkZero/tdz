@@ -1,4 +1,4 @@
-# TDZ
+# TDZ Distribution
 
 > Creator-first streaming platform paying artists $1 per qualified stream. Upload, distribute, stream, and monetize music with built-in AI tools.
 

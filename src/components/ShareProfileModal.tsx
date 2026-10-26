@@ -47,11 +47,11 @@ export function ShareProfileModal({ open, onOpenChange, profileData }: ShareProf
           `⏱️ ${profileData.hoursListened}h listened\n` +
           `❤️ ${profileData.likedSongs} liked songs\n` +
           `📋 ${profileData.playlists} playlists\n\n` +
-          `Check out TDZ - where artists earn $1/stream! 🚀`;
+          `Check out TDZ Distribution - where artists earn $1/stream! 🚀`;
       case 'achievements':
         return `🏆 My TDZ Achievements!\n\n` +
           profileData.achievements.map(a => `✨ ${a}`).join('\n') + '\n\n' +
-          `Join TDZ and start your music journey! 🎶`;
+          `Join TDZ Distribution and start your music journey! 🎶`;
       case 'taste':
         return `🎶 My Music Taste on TDZ\n\n` +
           `📊 Taste Score: ${profileData.tasteScore}%\n` +
@@ -59,7 +59,7 @@ export function ShareProfileModal({ open, onOpenChange, profileData }: ShareProf
           `👥 Following ${profileData.artistsFollowed} artists\n\n` +
           `Discover new music on TDZ! 🔥`;
       default:
-        return `Check out my profile on TDZ! 🎵`;
+        return `Check out my profile on TDZ Distribution! 🎵`;
     }
   };
 
@@ -149,7 +149,7 @@ export function ShareProfileModal({ open, onOpenChange, profileData }: ShareProf
     // TDZ branding
     ctx.fillStyle = '#6b7280';
     ctx.font = '24px system-ui';
-    ctx.fillText('TDZ - Where Artists Earn $1/Stream', 60, 590);
+    ctx.fillText('TDZ Distribution - Where Artists Earn $1/Stream', 60, 590);
 
     // Download
     const link = document.createElement('a');

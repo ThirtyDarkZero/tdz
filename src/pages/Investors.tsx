@@ -1405,7 +1405,7 @@ function Investors() {
         </div>
         <div className="mx-auto mt-8 max-w-[600px] h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
         <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#333", marginTop: 24 }}>
-          © 2026 TDZ. All rights reserved.
+          © 2026 TDZ Distribution. All rights reserved.
         </p>
       </footer>
     </div>

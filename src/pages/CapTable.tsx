@@ -80,7 +80,7 @@ export default function CapTable() {
             <img src={tdzLogo} alt="TDZ" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           </div>
           <div className="flex-1">
-            <div style={{ fontFamily: six, fontSize: 56, letterSpacing: "0.08em", lineHeight: 1, color: C.goldLight, textTransform: "uppercase" }}>TDZ</div>
+            <div style={{ fontFamily: six, fontSize: 56, letterSpacing: "0.08em", lineHeight: 1, color: C.goldLight, textTransform: "uppercase" }}>TDZ Distribution</div>
             <div style={{ fontSize: 11, letterSpacing: "0.32em", textTransform: "uppercase", color: C.muted, marginTop: 6 }}>$1 Per Stream · Full Label OS for Independent Artists</div>
           </div>
           <div className="text-right hidden md:block">
@@ -192,7 +192,7 @@ export default function CapTable() {
         {/* FOOTER */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 pt-8" style={{ borderTop: `1px solid ${C.border}` }}>
           <div style={{ fontSize: 9, color: C.muted, letterSpacing: "0.12em", textTransform: "uppercase", lineHeight: 1.8 }}>
-            TDZ · Investor Relations<br />
+            TDZ Distribution · Investor Relations<br />
             thirtydarkzero.net/investors · Confidential
           </div>
           <a href="mailto:invest@thirtydarkzero.com" style={{ color: C.gold, fontSize: 11, fontWeight: 500, letterSpacing: "0.08em", textDecoration: "none" }}>
