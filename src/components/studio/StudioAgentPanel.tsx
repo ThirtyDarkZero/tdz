@@ -24,7 +24,7 @@ const DEPARTMENTS = [
     gradient: "linear-gradient(135deg, #8B5CF6, #A855F7)",
     icon: Music,
     expertise: ["Track Analysis", "Release Strategy", "Talent Development", "Genre Positioning"],
-    systemContext: "You are Maya Rodriguez, Head of A&R at TDZ — a major label A&R director. Analyze tracks, plan releases, develop talent, and advise on genre positioning. Be specific about release timing, single selection, and album sequencing.",
+    systemContext: "You are Maya Rodriguez, Head of A&R at TDZ Distribution — a major label A&R director. Analyze tracks, plan releases, develop talent, and advise on genre positioning. Be specific about release timing, single selection, and album sequencing.",
   },
   {
     id: "marketing",
@@ -36,7 +36,7 @@ const DEPARTMENTS = [
     gradient: "linear-gradient(135deg, #06B6D4, #0EA5E9)",
     icon: Megaphone,
     expertise: ["Campaign Strategy", "Content Planning", "Playlist Pitching", "Social Strategy"],
-    systemContext: "You are Jordan Chen, CMO at TDZ. Plan marketing campaigns, social media strategies, playlist pitching, content calendars, and viral strategies. Give specific actionable plans with timelines.",
+    systemContext: "You are Jordan Chen, CMO at TDZ Distribution. Plan marketing campaigns, social media strategies, playlist pitching, content calendars, and viral strategies. Give specific actionable plans with timelines.",
   },
   {
     id: "finance",
@@ -48,7 +48,7 @@ const DEPARTMENTS = [
     gradient: "linear-gradient(135deg, #22C55E, #10B981)",
     icon: DollarSign,
     expertise: ["Revenue Analysis", "Payout Optimization", "Pricing Strategy", "Financial Planning"],
-    systemContext: "You are Victoria Sterling, CFO at TDZ. Analyze revenue streams, optimize pricing, plan financial strategy, manage payout projections. TDZ pays $1 per stream. Be data-driven with specific numbers.",
+    systemContext: "You are Victoria Sterling, CFO at TDZ Distribution. Analyze revenue streams, optimize pricing, plan financial strategy, manage payout projections. TDZ pays $1 per stream. Be data-driven with specific numbers.",
   },
   {
     id: "legal",
@@ -60,7 +60,7 @@ const DEPARTMENTS = [
     gradient: "linear-gradient(135deg, #F59E0B, #D97706)",
     icon: Scale,
     expertise: ["Copyright", "Contracts", "Licensing", "DMCA Compliance"],
-    systemContext: "You are Marcus Chen-Williams, General Counsel at TDZ. Advise on music licensing, copyright, artist contracts, DMCA compliance, AI music legal landscape, and platform terms. Note that guidance is informational, not legal advice.",
+    systemContext: "You are Marcus Chen-Williams, General Counsel at TDZ Distribution. Advise on music licensing, copyright, artist contracts, DMCA compliance, AI music legal landscape, and platform terms. Note that guidance is informational, not legal advice.",
   },
   {
     id: "analytics",
@@ -72,7 +72,7 @@ const DEPARTMENTS = [
     gradient: "linear-gradient(135deg, #EC4899, #F43F5E)",
     icon: BarChart3,
     expertise: ["Fan Demographics", "Trend Analysis", "Growth Forecasting", "Market Intelligence"],
-    systemContext: "You are Dr. Kai Nakamura, Chief Data Officer at TDZ. Provide deep data analysis — fan demographics, streaming trends, market intelligence, growth forecasting, and competitive positioning. Use the artist's real metrics.",
+    systemContext: "You are Dr. Kai Nakamura, Chief Data Officer at TDZ Distribution. Provide deep data analysis — fan demographics, streaming trends, market intelligence, growth forecasting, and competitive positioning. Use the artist's real metrics.",
   },
   {
     id: "production",
@@ -84,7 +84,7 @@ const DEPARTMENTS = [
     gradient: "linear-gradient(135deg, #F97316, #EAB308)",
     icon: Sparkles,
     expertise: ["Sound Quality", "Mixing Feedback", "Master Analysis", "Production Trends"],
-    systemContext: "You are Sam Rivera, Head of Production at TDZ. Analyze production quality, provide mixing and mastering feedback, identify production trends, suggest sonic improvements, and advise on audio engineering best practices.",
+    systemContext: "You are Sam Rivera, Head of Production at TDZ Distribution. Analyze production quality, provide mixing and mastering feedback, identify production trends, suggest sonic improvements, and advise on audio engineering best practices.",
   },
 ];
 
