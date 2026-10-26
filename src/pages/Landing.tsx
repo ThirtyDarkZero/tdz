@@ -321,6 +321,9 @@ function Section1Hero() {
           <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 300, fontSize: "14px", color: "#777", marginTop: "20px", maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
             Independent artists earn 333x more than Spotify. AI music welcome. 100% of download revenue goes to artists. Keep your rights. Build your legacy.
           </p>
+          <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: "12px", color: "#999", marginTop: "12px", maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
+            How a play counts: a paid subscriber listens for more than 30 seconds or more than half the track. Artists' own plays never count. <a href="/faq" style={{ color: "#FF6347", textDecoration: "underline" }}>Read how $1/stream works</a>
+          </p>
         </Reveal>
         <Reveal delay={0.35}>
           <div className="mt-8"><TDZBadge size={30} /></div>
