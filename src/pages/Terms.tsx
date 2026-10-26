@@ -64,7 +64,7 @@ export default function Terms() {
               <h2 style={h2Style}>1. AGREEMENT TO TERMS</h2>
               <p style={pStyle}>
                 By accessing or using TDZ ("TDZ", "we", "our", or "the Platform"), you agree to be bound by these Terms and Conditions. 
-                TDZ is a standalone streaming platform and music distribution service that pays artists $1.00 per stream. If you disagree with any part of these terms, you may not access the service.
+                TDZ is a standalone streaming platform that pays artists $1.00 per qualified stream. If you disagree with any part of these terms, you may not access the service.
               </p>
             </section>
 

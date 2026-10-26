@@ -134,7 +134,7 @@ function InvestorInsightsDemo() {
   return (
     <div className="p-3 pt-7 h-full" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#888", background: "linear-gradient(180deg, #0a0a1a, #050510)" }}>
       <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 20, color: "#FFF", letterSpacing: "0.04em" }}>REAL-TIME INSIGHTS</p>
-      <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>Track performance & revenue</p>
+      <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>SAMPLE DATA · Track performance & revenue</p>
       <div className="flex gap-1 mt-2">
         {["Streams", "Geographic", "Revenue"].map((t, i) => (
           <span key={i} className="px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: i === 0 ? "#FF6347" : "rgba(255,255,255,0.04)", color: i === 0 ? "#FFF" : "#666", border: `1px solid ${i === 0 ? "#FF6347" : "rgba(255,255,255,0.06)"}` }}>{t}</span>
@@ -143,7 +143,7 @@ function InvestorInsightsDemo() {
       <div className="mt-2 p-2 rounded-lg" style={{ background: "rgba(255,99,71,0.06)", border: "1px solid rgba(255,99,71,0.12)" }}>
         <span className="px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: "#FF6347", color: "#FFF" }}>$1/Stream</span>
         <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 36, color: "#FF6347", letterSpacing: "0.03em", lineHeight: 1.2, marginTop: 3 }}>$12,750</p>
-        <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>12,750 streams • Real-time</p>
+        <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>Example · 12,750 qualified streams</p>
       </div>
       <div className="mt-1.5 p-1.5 rounded-lg flex items-center gap-1.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
         <Globe className="w-3.5 h-3.5" style={{ color: "#00CFFF" }} />

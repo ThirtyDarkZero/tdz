@@ -575,7 +575,7 @@ function StudioDemoMockup() {
           <div className="p-2 rounded-lg" style={{ background: "rgba(255,99,71,0.06)", border: "1px solid rgba(255,99,71,0.12)" }}>
             <span className="px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: "#FF6347", color: "#FFF" }}>Earnings</span>
             <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 30, color: "#FF6347", lineHeight: 1.2, marginTop: 3 }}>$12,000</p>
-            <p style={{ fontSize: 8, color: "#555" }}>12,000 streams • $1/stream</p>
+            <p style={{ fontSize: 8, color: "#555" }}>Example · 12,000 qualified streams</p>
           </div>
           <div className="p-1.5 rounded-lg" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
             <span style={{ fontSize: 8, color: "#555" }}>Listeners</span>
@@ -602,7 +602,7 @@ function InsightsDemoMockup() {
   return (
     <div className="p-3 pt-7 h-full" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#888", background: "linear-gradient(180deg, #0a0a1a, #050510)" }}>
       <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 20, color: "#FFF", letterSpacing: "0.04em" }}>REAL-TIME INSIGHTS</p>
-      <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>Track performance & revenue</p>
+      <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>SAMPLE DATA · Track performance & revenue</p>
       <div className="flex gap-1 mt-2">
         {["Streams", "Geographic", "Revenue"].map((t, i) => (
           <span key={i} className="px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: i === 0 ? "#FF6347" : "rgba(255,255,255,0.04)", color: i === 0 ? "#FFF" : "#666", border: `1px solid ${i === 0 ? "#FF6347" : "rgba(255,255,255,0.06)"}` }}>{t}</span>
@@ -613,7 +613,7 @@ function InsightsDemoMockup() {
           <span className="px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: "#FF6347", color: "#FFF" }}>$1/Stream</span>
         </div>
         <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 36, color: "#FF6347", letterSpacing: "0.03em", lineHeight: 1.2, marginTop: 3 }}>$12,750</p>
-        <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>12,750 streams • Real-time</p>
+        <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>Example · 12,750 qualified streams</p>
       </div>
       <div className="mt-1.5 p-1.5 rounded-lg flex items-center gap-1.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
         <Globe className="w-3.5 h-3.5" style={{ color: "#00CFFF" }} />
@@ -735,7 +735,7 @@ function Section4Studio({ navigate }: { navigate: (p: string) => void }) {
               {[
                 { icon: "🔵", label: "Total Plays", val: "12,000" },
                 { icon: "📈", label: "This Week", val: "+340" },
-                { icon: "💰", label: "Earnings", val: "$12,000" },
+                { icon: "💰", label: "Earnings (sample)", val: "$12,000" },
                 { icon: "👥", label: "Followers", val: "9,000" },
               ].map((s, i) => (
                 <div key={i} className="flex items-center justify-between py-1" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#888" }}>
@@ -800,9 +800,9 @@ function Section4Studio({ navigate }: { navigate: (p: string) => void }) {
 
             <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 mb-4 sm:mb-6">
               {[
-                { label: "IMPACT", value: "12,000", sub: "Intentional plays" },
+                { label: "IMPACT", value: "12,000", sub: "Sample plays" },
                 { label: "RELEASES", value: "24", sub: "Total tracks" },
-                { label: "EARNINGS", value: "$12,000", sub: "Pending payout", green: true },
+                { label: "EARNINGS", value: "$12,000", sub: "Sample payout", green: true },
                 { label: "COMMUNITY", value: "9,000", sub: "Invested in your journey" },
               ].map((s, i) => (
                 <div key={i} className="p-4 rounded-xl" style={{ background: "#1C1C1C" }}>
