@@ -35,9 +35,9 @@ export default function FAQ() {
       icon: DollarSign,
       color: "#22C55E",
       questions: [
-        { q: "How do artists get paid on TDZ?", a: "TDZ pays artists $1 per stream on the TDZ platform. Every time someone streams your song, you earn a full dollar. No fractional payouts like traditional DSPs that pay $0.003-$0.005 per stream." },
-        { q: "Where does TDZ get the money to pay artists $1 per stream?", a: "From the TDZ Revenue Pool — which consists of fan subscriptions ($12/month), artist subscriptions ($9.99-$49.99/month), download purchases, ads, premium features, sponsorships, and live event revenue. This diversified revenue model allows us to pay artists fairly." },
-        { q: "How fast are payouts processed?", a: "Payout cycles run monthly. Artists can withdraw once they reach the minimum threshold of $10. Payments are processed automatically to your connected payment method via Square." },
+        { q: "How do artists get paid on TDZ?", a: "TDZ pays artists $1 per qualified stream. A stream qualifies when an active paid subscriber listens for more than 30 seconds or more than 50% of the track, with the TDZ tab in focus for most of the play. Artists' own plays never count." },
+        { q: "Where does TDZ get the money to pay artists $1 per stream?", a: "From the TDZ Revenue Pool — which consists of fan subscriptions ($12/month), artist subscriptions ($10, $20 or $50/month), download purchases, ads, premium features, sponsorships, and live event revenue. This diversified revenue model allows us to pay artists fairly." },
+        { q: "How fast are payouts processed?", a: "Payouts are sent automatically through Stripe once your balance reaches $50. Connect your bank account in Studio payout settings to receive them." },
         { q: "Can I see my earnings in real-time?", a: "Yes! Your Artist Studio Dashboard shows real-time streaming counts, download sales, and total earnings. You can track every stream and every dollar as it comes in." }
       ]
     },
