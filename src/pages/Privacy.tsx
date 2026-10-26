@@ -143,7 +143,7 @@ export default function Privacy() {
 
       <footer className="py-12 text-center border-t border-[#111]">
         <img src={tdzLogo} alt="TDZ" className="w-10 h-10 mx-auto" />
-        <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#333", marginTop: 16 }}>© 2026 TDZ Distribution. All rights reserved.</p>
+        <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#333", marginTop: 16 }}>© 2026 TDZ. All rights reserved.</p>
       </footer>
     </div>
   );

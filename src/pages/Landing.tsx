@@ -295,7 +295,7 @@ function Section1Hero() {
             animation: `floatDiamond ${c.duration}s ease-in-out ${c.delay}s infinite`, filter: "blur(0.3px)",
           }} />
         ))}
-        <img src={tdzLogo} alt="TDZ Distribution" className="w-24 sm:w-28 h-auto mb-6 drop-shadow-2xl" />
+        <img src={tdzLogo} alt="TDZ" className="w-24 sm:w-28 h-auto mb-6 drop-shadow-2xl" />
         <NavPill />
       </div>
       <div className="text-center pt-12 pb-20 px-4" style={{ background: "#000" }}>
@@ -1338,7 +1338,7 @@ function Section10FanPlan({ navigate }: { navigate: (p: string) => void }) {
 function Section11Footer({ navigate }: { navigate: (p: string) => void }) {
   return (
     <footer className="pt-16 pb-10 px-4 text-center" style={{ background: "#000" }}>
-      <img src={tdzLogo} alt="TDZ Distribution" className="mx-auto w-14 h-14 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} />
+      <img src={tdzLogo} alt="TDZ" className="mx-auto w-14 h-14 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} />
       <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 20, color: "#444", letterSpacing: "0.08em", marginTop: 12 }}>
         THE FIRST PLATFORM THAT PAYS $1 PER STREAM
       </p>
@@ -1364,7 +1364,7 @@ function Section11Footer({ navigate }: { navigate: (p: string) => void }) {
       </div>
       <div className="mx-auto mt-8 mb-8" style={{ borderTop: "1px solid rgba(255,255,255,0.05)", maxWidth: 600 }} />
       <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 300, fontSize: 12, color: "#333" }}>
-        © 2026 TDZ Distribution. All rights reserved.
+        © 2026 TDZ. All rights reserved.
       </p>
     </footer>
   );

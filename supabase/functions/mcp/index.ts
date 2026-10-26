@@ -200,9 +200,9 @@ var whoami_default = defineTool5({
 var projectRef = "rcjzvfskkoqygnlolrcs";
 var mcp_default = defineMcp({
   name: "tdz-mcp",
-  title: "TDZ Distribution",
+  title: "TDZ",
   version: "0.1.0",
-  instructions: "Tools for the TDZ Distribution music platform. Use `whoami` to verify connectivity, `list_my_tracks` and `get_my_earnings` for the signed-in artist, `list_liked_songs` for the signed-in listener, and `search_tracks` to query the public catalog. All tools act as the connected user under row-level security.",
+  instructions: "Tools for the TDZ music platform. Use `whoami` to verify connectivity, `list_my_tracks` and `get_my_earnings` for the signed-in artist, `list_liked_songs` for the signed-in listener, and `search_tracks` to query the public catalog. All tools act as the connected user under row-level security.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"

@@ -54,7 +54,7 @@ export default function Terms() {
             </span>
           </div>
           <p className="text-center mt-4 mx-auto" style={{ ...pStyle, maxWidth: 600 }}>
-            Please read these terms carefully before using TDZ Distribution.
+            Please read these terms carefully before using TDZ.
           </p>
         </Reveal>
 
@@ -63,14 +63,14 @@ export default function Terms() {
             <section style={sectionStyle}>
               <h2 style={h2Style}>1. AGREEMENT TO TERMS</h2>
               <p style={pStyle}>
-                By accessing or using TDZ Distribution ("TDZ", "we", "our", or "the Platform"), you agree to be bound by these Terms and Conditions. 
+                By accessing or using TDZ ("TDZ", "we", "our", or "the Platform"), you agree to be bound by these Terms and Conditions. 
                 TDZ is a standalone streaming platform and music distribution service that pays artists $1.00 per stream. If you disagree with any part of these terms, you may not access the service.
               </p>
             </section>
 
             <section style={sectionStyle}>
               <h2 style={h2Style}>2. PLATFORM DESCRIPTION</h2>
-              <p style={{ ...pStyle, marginBottom: 12 }}>TDZ Distribution is an independent, artist-first streaming platform. Key features include:</p>
+              <p style={{ ...pStyle, marginBottom: 12 }}>TDZ is an independent, artist-first streaming platform. Key features include:</p>
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li style={liStyle}>Direct streaming on TDZ platform (not distributed to external DSPs)</li>
                 <li style={liStyle}>Industry-leading $1.00 per stream artist payout</li>
@@ -234,7 +234,7 @@ export default function Terms() {
       <footer className="py-12 text-center border-t border-[#111]">
         <img src={tdzLogo} alt="TDZ" className="w-10 h-10 mx-auto" />
         <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#333", marginTop: 16 }}>
-          © 2026 TDZ Distribution. All rights reserved.
+          © 2026 TDZ. All rights reserved.
         </p>
       </footer>
     </div>

@@ -86,7 +86,7 @@ function RoleSelectionForm() {
           if (profileError) throw profileError;
         }
         
-        toast.success("Welcome to TDZ Distribution!", {
+        toast.success("Welcome to TDZ!", {
           description: "Upgrade to Starter ($9.99/mo) to unlock all features",
         });
         
@@ -115,7 +115,7 @@ function RoleSelectionForm() {
           if (profileError) throw profileError;
         }
         
-        toast.success("Welcome to TDZ Distribution!", {
+        toast.success("Welcome to TDZ!", {
           description: "Subscribe for $12/mo for unlimited streaming",
         });
         
@@ -149,7 +149,7 @@ function RoleSelectionForm() {
 
       <Card className="relative z-10 max-w-4xl w-full glass-card p-8 md:p-12 border-primary/30">
         <div className="flex justify-center mb-8">
-          <img src={tdzLogo} alt="TDZ Distribution" className="h-24 w-auto object-contain" />
+          <img src={tdzLogo} alt="TDZ" className="h-24 w-auto object-contain" />
         </div>
 
         <div className="text-center mb-12">

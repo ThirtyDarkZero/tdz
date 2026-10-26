@@ -48,7 +48,7 @@ export function LastStageStanding() {
                 $250K
               </div>
               <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "#aaa", fontWeight: 400 }} className="mt-3">
-                + TDZ Distribution Deal<br />+ National Tour
+                + TDZ Deal<br />+ National Tour
               </div>
             </div>
           </div>

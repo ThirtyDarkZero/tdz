@@ -1186,7 +1186,7 @@ export const FanEngagementHub = () => {
                     {/* Footer */}
                     <div className="pt-4 border-t border-border/50 text-center">
                       <p className="text-[10px] text-muted-foreground">
-                        Sent with ❤️ via TDZ Distribution
+                        Sent with ❤️ via TDZ
                       </p>
                     </div>
                   </div>

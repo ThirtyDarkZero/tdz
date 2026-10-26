@@ -237,7 +237,7 @@ function AuthForm() {
       
       <Card className="glass-card p-8 w-full max-w-md space-y-6 relative z-10 border-border/50">
         <div className="flex flex-col items-center gap-4">
-          <img src={tdzLogo} alt="TDZ Distribution" className="h-20 w-auto" style={{ mixBlendMode: 'screen' }} />
+          <img src={tdzLogo} alt="TDZ" className="h-20 w-auto" style={{ mixBlendMode: 'screen' }} />
           <div className="text-center">
             <h1 className="text-2xl font-display font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent mb-1">
               TDZ DISTRIBUTION
