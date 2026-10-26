@@ -87,7 +87,7 @@ function RoleSelectionForm() {
         }
         
         toast.success("Welcome to TDZ!", {
-          description: "Upgrade to Starter ($9.99/mo) to unlock all features",
+          description: "Upgrade to Starter ($10/mo) to unlock all features",
         });
         
         await refreshRole();

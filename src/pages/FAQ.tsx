@@ -57,7 +57,7 @@ export default function FAQ() {
       color: "#8B5CF6",
       questions: [
         { q: "Is a credit card required to sign up?", a: "Yes. TDZ requires an active subscription and a valid payment method for artists to distribute and monetize their music." },
-        { q: "What are the artist subscription tiers?", a: "Starter ($9.99/month): 3 track uploads, 1 album, basic analytics, $1/stream earnings. Pro ($19.99/month): 25 tracks, 5 albums, advanced analytics, AI tools, priority support. Enterprise ($49.99/month): Unlimited uploads, full AI suite, dedicated account manager, priority payouts." },
+        { q: "What are the artist subscription tiers?", a: "Starter ($10/month): 3 track uploads, 1 album, basic analytics, $1/stream earnings. Pro ($20/month): 25 tracks, 5 albums, advanced analytics, AI tools, priority support. Enterprise ($50/month): Unlimited uploads, full AI suite, dedicated account manager, priority payouts." },
         { q: "What does the fan subscription include?", a: "Fans pay $12/month for unlimited streaming, HD audio quality, playlist creation, social features, and the ability to directly support artists. Every stream from a subscriber contributes to the $1/stream payout pool." },
         { q: "Are there any hidden fees?", a: "No hidden fees. Your subscription covers all platform features. The only deduction from your earnings is standard payment processing fees (~2.9%) when you withdraw your earnings or when fans purchase downloads." }
       ]

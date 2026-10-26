@@ -82,7 +82,7 @@ export default function Privacy() {
             <section>
               <h2 style={h2Style}>3. INFORMATION SHARING</h2>
               <ul className="list-disc list-inside space-y-2 ml-4">
-                <li style={liStyle}><strong style={{ color: "#ccc" }}>Payment Processors:</strong> Information required to process artist payouts and fan purchases via Square</li>
+                <li style={liStyle}><strong style={{ color: "#ccc" }}>Payment Processors:</strong> Information required to process artist payouts and fan purchases via Stripe</li>
                 <li style={liStyle}><strong style={{ color: "#ccc" }}>Service Providers:</strong> Third parties who assist in operating our platform</li>
                 <li style={liStyle}><strong style={{ color: "#ccc" }}>Legal Requirements:</strong> When required by law or to protect our rights</li>
                 <li style={liStyle}><strong style={{ color: "#ccc" }}>Business Transfers:</strong> In connection with mergers or acquisitions</li>

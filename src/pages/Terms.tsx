@@ -95,7 +95,7 @@ export default function Terms() {
                 <li style={liStyle}>You must notify us immediately of any unauthorized access</li>
               </ul>
               <p style={{ ...pStyle, marginTop: 16 }}>
-                <strong style={{ color: "#ccc" }}>Artist Subscription Tiers:</strong> Starter ($9.99/month) — 3 track uploads, 1 album, basic analytics. Pro ($19.99/month) — 25 tracks, 5 albums, advanced analytics, AI tools. Enterprise ($49.99/month) — Unlimited uploads, full AI suite, dedicated support, priority payouts.
+                <strong style={{ color: "#ccc" }}>Artist Subscription Tiers:</strong> Starter ($10/month) — 3 track uploads, 1 album, basic analytics. Pro ($20/month) — 25 tracks, 5 albums, advanced analytics, AI tools. Enterprise ($50/month) — Unlimited uploads, full AI suite, dedicated support, priority payouts.
               </p>
               <p style={{ ...pStyle, marginTop: 8 }}>
                 <strong style={{ color: "#ccc" }}>Fan Subscription:</strong> $12.00/month for unlimited streaming, HD audio, playlist creation, social features, and direct artist support.
@@ -124,7 +124,7 @@ export default function Terms() {
                 <li style={liStyle}><strong style={{ color: "#22C55E" }}>Download Revenue:</strong> Artists retain 100% of download sales (minus ~2.9% transaction fees)</li>
                 <li style={liStyle}>Artists set their own download prices during upload (minimum $0.99)</li>
                 <li style={liStyle}>Minimum payout threshold is $10</li>
-                <li style={liStyle}>Payout cycles run monthly; payments processed via Square</li>
+                <li style={liStyle}>Payout cycles run monthly; paid automatically via Stripe once your balance reaches $50</li>
                 <li style={liStyle}>AI artists earn the same $1/stream as human artists</li>
                 <li style={liStyle}>You are responsible for applicable taxes on your earnings</li>
               </ul>
@@ -133,7 +133,7 @@ export default function Terms() {
             <section style={sectionStyle}>
               <h2 style={h2Style}>6. REVENUE POOL</h2>
               <p style={pStyle}>
-                Artist payouts are funded by the TDZ Revenue Pool, which consists of: fan subscription revenue ($12/month per subscriber), artist subscription revenue ($9.99-$49.99/month), advertising revenue, 
+                Artist payouts are funded by the TDZ Revenue Pool, which consists of: fan subscription revenue ($12/month per subscriber), artist subscription revenue ($10–$50/month), advertising revenue, 
                 sponsorships, premium AI tool fees, fan purchases, download transaction fees, and live event revenue. TDZ's Golden Rule requires Average Revenue Per Stream (ARPS) to exceed $1.00, targeting $1.35–$1.80 ARPS at scale. TDZ reserves the right 
                 to adjust payout rates with 30 days notice if necessary to maintain platform sustainability.
               </p>

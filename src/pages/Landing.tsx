@@ -1041,13 +1041,13 @@ function SectionAIAgents() {
 // ═══════════════════════════════════════
 function Section7ArtistPlans({ navigate }: { navigate: (p: string) => void }) {
   const plans = [
-    { name: "STARTER", price: "$9.99", plan: "starter" as const, features: [
+    { name: "STARTER", price: "$10", plan: "starter" as const, features: [
       "Upload up to 50 tracks & 5 albums", "Fan engagement tools", "Download sales", "HD audio quality", "Playlist management", "Social features", "$1 per paid subscriber stream"
     ]},
-    { name: "PRO", price: "$19.99", plan: "pro" as const, popular: true, features: [
+    { name: "PRO", price: "$20", plan: "pro" as const, popular: true, features: [
       "Unlimited tracks & albums", "Full analytics suite", "Collaboration tools", "Pre-save campaigns", "Territory rights management", "Priority support", "$1 per paid subscriber stream"
     ]},
-    { name: "ENTERPRISE", price: "$49.99", plan: "enterprise" as const, features: [
+    { name: "ENTERPRISE", price: "$50", plan: "enterprise" as const, features: [
       "Everything in Pro", "Multi-artist roster management", "White-label dashboard branding", "Dedicated account manager", "Create & manage artist accounts", "Custom integrations", "$1 per paid subscriber stream"
     ]},
   ];
