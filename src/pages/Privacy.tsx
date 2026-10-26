@@ -82,7 +82,7 @@ export default function Privacy() {
             <section>
               <h2 style={h2Style}>3. INFORMATION SHARING</h2>
               <ul className="list-disc list-inside space-y-2 ml-4">
-                <li style={liStyle}><strong style={{ color: "#ccc" }}>Payment Processors:</strong> Information required to process artist payouts and fan purchases via Square</li>
+                <li style={liStyle}><strong style={{ color: "#ccc" }}>Payment Processors:</strong> Information required to process artist payouts and fan purchases via Stripe</li>
                 <li style={liStyle}><strong style={{ color: "#ccc" }}>Service Providers:</strong> Third parties who assist in operating our platform</li>
                 <li style={liStyle}><strong style={{ color: "#ccc" }}>Legal Requirements:</strong> When required by law or to protect our rights</li>
                 <li style={liStyle}><strong style={{ color: "#ccc" }}>Business Transfers:</strong> In connection with mergers or acquisitions</li>
@@ -143,7 +143,7 @@ export default function Privacy() {
 
       <footer className="py-12 text-center border-t border-[#111]">
         <img src={tdzLogo} alt="TDZ" className="w-10 h-10 mx-auto" />
-        <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#333", marginTop: 16 }}>© 2026 TDZ Distribution. All rights reserved.</p>
+        <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#333", marginTop: 16 }}>© 2026 TDZ. All rights reserved.</p>
       </footer>
     </div>
   );

@@ -295,7 +295,7 @@ function Section1Hero() {
             animation: `floatDiamond ${c.duration}s ease-in-out ${c.delay}s infinite`, filter: "blur(0.3px)",
           }} />
         ))}
-        <img src={tdzLogo} alt="TDZ Distribution" className="w-24 sm:w-28 h-auto mb-6 drop-shadow-2xl" />
+        <img src={tdzLogo} alt="TDZ" className="w-24 sm:w-28 h-auto mb-6 drop-shadow-2xl" />
         <NavPill />
       </div>
       <div className="text-center pt-12 pb-20 px-4" style={{ background: "#000" }}>
@@ -320,6 +320,9 @@ function Section1Hero() {
         <Reveal delay={0.3}>
           <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 300, fontSize: "14px", color: "#777", marginTop: "20px", maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
             Independent artists earn 333x more than Spotify. AI music welcome. 100% of download revenue goes to artists. Keep your rights. Build your legacy.
+          </p>
+          <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: "12px", color: "#999", marginTop: "12px", maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
+            How a play counts: a paid subscriber listens for more than 30 seconds or more than half the track. Artists' own plays never count. <a href="/faq" style={{ color: "#FF6347", textDecoration: "underline" }}>Read how $1/stream works</a>
           </p>
         </Reveal>
         <Reveal delay={0.35}>
@@ -575,7 +578,7 @@ function StudioDemoMockup() {
           <div className="p-2 rounded-lg" style={{ background: "rgba(255,99,71,0.06)", border: "1px solid rgba(255,99,71,0.12)" }}>
             <span className="px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: "#FF6347", color: "#FFF" }}>Earnings</span>
             <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 30, color: "#FF6347", lineHeight: 1.2, marginTop: 3 }}>$12,000</p>
-            <p style={{ fontSize: 8, color: "#555" }}>12,000 streams • $1/stream</p>
+            <p style={{ fontSize: 8, color: "#555" }}>Example · 12,000 qualified streams</p>
           </div>
           <div className="p-1.5 rounded-lg" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
             <span style={{ fontSize: 8, color: "#555" }}>Listeners</span>
@@ -602,7 +605,7 @@ function InsightsDemoMockup() {
   return (
     <div className="p-3 pt-7 h-full" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#888", background: "linear-gradient(180deg, #0a0a1a, #050510)" }}>
       <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 20, color: "#FFF", letterSpacing: "0.04em" }}>REAL-TIME INSIGHTS</p>
-      <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>Track performance & revenue</p>
+      <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>SAMPLE DATA · Track performance & revenue</p>
       <div className="flex gap-1 mt-2">
         {["Streams", "Geographic", "Revenue"].map((t, i) => (
           <span key={i} className="px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: i === 0 ? "#FF6347" : "rgba(255,255,255,0.04)", color: i === 0 ? "#FFF" : "#666", border: `1px solid ${i === 0 ? "#FF6347" : "rgba(255,255,255,0.06)"}` }}>{t}</span>
@@ -613,7 +616,7 @@ function InsightsDemoMockup() {
           <span className="px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: "#FF6347", color: "#FFF" }}>$1/Stream</span>
         </div>
         <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 36, color: "#FF6347", letterSpacing: "0.03em", lineHeight: 1.2, marginTop: 3 }}>$12,750</p>
-        <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>12,750 streams • Real-time</p>
+        <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>Example · 12,750 qualified streams</p>
       </div>
       <div className="mt-1.5 p-1.5 rounded-lg flex items-center gap-1.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
         <Globe className="w-3.5 h-3.5" style={{ color: "#00CFFF" }} />
@@ -735,7 +738,7 @@ function Section4Studio({ navigate }: { navigate: (p: string) => void }) {
               {[
                 { icon: "🔵", label: "Total Plays", val: "12,000" },
                 { icon: "📈", label: "This Week", val: "+340" },
-                { icon: "💰", label: "Earnings", val: "$12,000" },
+                { icon: "💰", label: "Earnings (sample)", val: "$12,000" },
                 { icon: "👥", label: "Followers", val: "9,000" },
               ].map((s, i) => (
                 <div key={i} className="flex items-center justify-between py-1" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#888" }}>
@@ -800,9 +803,9 @@ function Section4Studio({ navigate }: { navigate: (p: string) => void }) {
 
             <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 mb-4 sm:mb-6">
               {[
-                { label: "IMPACT", value: "12,000", sub: "Intentional plays" },
+                { label: "IMPACT", value: "12,000", sub: "Sample plays" },
                 { label: "RELEASES", value: "24", sub: "Total tracks" },
-                { label: "EARNINGS", value: "$12,000", sub: "Pending payout", green: true },
+                { label: "EARNINGS", value: "$12,000", sub: "Sample payout", green: true },
                 { label: "COMMUNITY", value: "9,000", sub: "Invested in your journey" },
               ].map((s, i) => (
                 <div key={i} className="p-4 rounded-xl" style={{ background: "#1C1C1C" }}>
@@ -1038,13 +1041,13 @@ function SectionAIAgents() {
 // ═══════════════════════════════════════
 function Section7ArtistPlans({ navigate }: { navigate: (p: string) => void }) {
   const plans = [
-    { name: "STARTER", price: "$9.99", plan: "starter" as const, features: [
+    { name: "STARTER", price: "$10", plan: "starter" as const, features: [
       "Upload up to 50 tracks & 5 albums", "Fan engagement tools", "Download sales", "HD audio quality", "Playlist management", "Social features", "$1 per paid subscriber stream"
     ]},
-    { name: "PRO", price: "$19.99", plan: "pro" as const, popular: true, features: [
+    { name: "PRO", price: "$20", plan: "pro" as const, popular: true, features: [
       "Unlimited tracks & albums", "Full analytics suite", "Collaboration tools", "Pre-save campaigns", "Territory rights management", "Priority support", "$1 per paid subscriber stream"
     ]},
-    { name: "ENTERPRISE", price: "$49.99", plan: "enterprise" as const, features: [
+    { name: "ENTERPRISE", price: "$50", plan: "enterprise" as const, features: [
       "Everything in Pro", "Multi-artist roster management", "White-label dashboard branding", "Dedicated account manager", "Create & manage artist accounts", "Custom integrations", "$1 per paid subscriber stream"
     ]},
   ];
@@ -1338,7 +1341,7 @@ function Section10FanPlan({ navigate }: { navigate: (p: string) => void }) {
 function Section11Footer({ navigate }: { navigate: (p: string) => void }) {
   return (
     <footer className="pt-16 pb-10 px-4 text-center" style={{ background: "#000" }}>
-      <img src={tdzLogo} alt="TDZ Distribution" className="mx-auto w-14 h-14 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} />
+      <img src={tdzLogo} alt="TDZ" className="mx-auto w-14 h-14 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} />
       <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 20, color: "#444", letterSpacing: "0.08em", marginTop: 12 }}>
         THE FIRST PLATFORM THAT PAYS $1 PER STREAM
       </p>
@@ -1364,7 +1367,7 @@ function Section11Footer({ navigate }: { navigate: (p: string) => void }) {
       </div>
       <div className="mx-auto mt-8 mb-8" style={{ borderTop: "1px solid rgba(255,255,255,0.05)", maxWidth: 600 }} />
       <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 300, fontSize: 12, color: "#333" }}>
-        © 2026 TDZ Distribution. All rights reserved.
+        © 2026 TDZ. All rights reserved.
       </p>
     </footer>
   );

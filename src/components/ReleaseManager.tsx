@@ -632,7 +632,7 @@ export const ReleaseManager = () => {
               <div className="flex gap-3">
                 <AlertCircle className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <p className="text-sm font-medium">TDZ Distribution</p>
+                  <p className="text-sm font-medium">TDZ</p>
                   <ul className="text-xs text-muted-foreground space-y-1">
                     <li>• You keep 100% of your royalties</li>
                     <li>• Instant publishing to TDZ platform</li>

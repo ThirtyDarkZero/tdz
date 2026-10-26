@@ -39,10 +39,10 @@ export const TopBar = ({ onUploadClick }: { onUploadClick?: () => void }) => {
   return (
     <header className="h-16 glass-card flex items-center justify-between px-3 md:px-6 border-b border-border/50 fixed top-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md">
       <div className="flex items-center gap-2 md:gap-3">
-        <img src={tdzLogo} alt="TDZ Distribution" className="h-8 md:h-10 w-auto" style={{ mixBlendMode: 'screen' }} />
+        <img src={tdzLogo} alt="TDZ" className="h-8 md:h-10 w-auto" style={{ mixBlendMode: 'screen' }} />
         <div className="hidden sm:block">
           <h1 className="text-base md:text-lg font-bold glow-text">
-            TDZ Distribution
+            TDZ
           </h1>
           <p className="text-xs text-muted-foreground hidden md:block">Your Complete Record Label</p>
         </div>

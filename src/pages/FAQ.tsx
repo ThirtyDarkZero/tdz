@@ -35,9 +35,9 @@ export default function FAQ() {
       icon: DollarSign,
       color: "#22C55E",
       questions: [
-        { q: "How do artists get paid on TDZ?", a: "TDZ pays artists $1 per stream on the TDZ platform. Every time someone streams your song, you earn a full dollar. No fractional payouts like traditional DSPs that pay $0.003-$0.005 per stream." },
-        { q: "Where does TDZ get the money to pay artists $1 per stream?", a: "From the TDZ Revenue Pool — which consists of fan subscriptions ($12/month), artist subscriptions ($9.99-$49.99/month), download purchases, ads, premium features, sponsorships, and live event revenue. This diversified revenue model allows us to pay artists fairly." },
-        { q: "How fast are payouts processed?", a: "Payout cycles run monthly. Artists can withdraw once they reach the minimum threshold of $10. Payments are processed automatically to your connected payment method via Square." },
+        { q: "How do artists get paid on TDZ?", a: "TDZ pays artists $1 per qualified stream. A stream qualifies when an active paid subscriber listens for more than 30 seconds or more than 50% of the track, with the TDZ tab in focus for most of the play. Artists' own plays never count." },
+        { q: "Where does TDZ get the money to pay artists $1 per stream?", a: "From the TDZ Revenue Pool — which consists of fan subscriptions ($12/month), artist subscriptions ($10, $20 or $50/month), download purchases, ads, premium features, sponsorships, and live event revenue. This diversified revenue model allows us to pay artists fairly." },
+        { q: "How fast are payouts processed?", a: "Payouts are sent automatically through Stripe once your balance reaches $50. Connect your bank account in Studio payout settings to receive them." },
         { q: "Can I see my earnings in real-time?", a: "Yes! Your Artist Studio Dashboard shows real-time streaming counts, download sales, and total earnings. You can track every stream and every dollar as it comes in." }
       ]
     },
@@ -57,7 +57,7 @@ export default function FAQ() {
       color: "#8B5CF6",
       questions: [
         { q: "Is a credit card required to sign up?", a: "Yes. TDZ requires an active subscription and a valid payment method for artists to distribute and monetize their music." },
-        { q: "What are the artist subscription tiers?", a: "Starter ($9.99/month): 3 track uploads, 1 album, basic analytics, $1/stream earnings. Pro ($19.99/month): 25 tracks, 5 albums, advanced analytics, AI tools, priority support. Enterprise ($49.99/month): Unlimited uploads, full AI suite, dedicated account manager, priority payouts." },
+        { q: "What are the artist subscription tiers?", a: "Starter ($10/month): 3 track uploads, 1 album, basic analytics, $1/stream earnings. Pro ($20/month): 25 tracks, 5 albums, advanced analytics, AI tools, priority support. Enterprise ($50/month): Unlimited uploads, full AI suite, dedicated account manager, priority payouts." },
         { q: "What does the fan subscription include?", a: "Fans pay $12/month for unlimited streaming, HD audio quality, playlist creation, social features, and the ability to directly support artists. Every stream from a subscriber contributes to the $1/stream payout pool." },
         { q: "Are there any hidden fees?", a: "No hidden fees. Your subscription covers all platform features. The only deduction from your earnings is standard payment processing fees (~2.9%) when you withdraw your earnings or when fans purchase downloads." }
       ]
@@ -211,7 +211,7 @@ export default function FAQ() {
       <footer className="py-12 text-center border-t border-[#111]">
         <img src={tdzLogo} alt="TDZ" className="w-10 h-10 mx-auto" />
         <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#333", marginTop: 16 }}>
-          © 2026 TDZ Distribution. All rights reserved.
+          © 2026 TDZ. All rights reserved.
         </p>
       </footer>
     </div>
