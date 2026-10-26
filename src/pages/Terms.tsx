@@ -95,7 +95,7 @@ export default function Terms() {
                 <li style={liStyle}>You must notify us immediately of any unauthorized access</li>
               </ul>
               <p style={{ ...pStyle, marginTop: 16 }}>
-                <strong style={{ color: "#ccc" }}>Artist Subscription Tiers:</strong> Starter ($10/month) — 3 track uploads, 1 album, basic analytics. Pro ($20/month) — 25 tracks, 5 albums, advanced analytics, AI tools. Enterprise ($50/month) — Unlimited uploads, full AI suite, dedicated support, priority payouts.
+                <strong style={{ color: "#ccc" }}>Artist Subscription Tiers:</strong> Starter ($9.99/month) — 3 track uploads, 1 album, basic analytics. Pro ($19.99/month) — 25 tracks, 5 albums, advanced analytics, AI tools. Enterprise ($49.99/month) — Unlimited uploads, full AI suite, dedicated support, priority payouts.
               </p>
               <p style={{ ...pStyle, marginTop: 8 }}>
                 <strong style={{ color: "#ccc" }}>Fan Subscription:</strong> $12.00/month for unlimited streaming, HD audio, playlist creation, social features, and direct artist support.
@@ -133,7 +133,7 @@ export default function Terms() {
             <section style={sectionStyle}>
               <h2 style={h2Style}>6. REVENUE POOL</h2>
               <p style={pStyle}>
-                Artist payouts are funded by the TDZ Revenue Pool, which consists of: fan subscription revenue ($12/month per subscriber), artist subscription revenue ($10–$50/month), advertising revenue, 
+                Artist payouts are funded by the TDZ Revenue Pool, which consists of: fan subscription revenue ($12/month per subscriber), artist subscription revenue ($9.99–$49.99/month), advertising revenue, 
                 sponsorships, premium AI tool fees, fan purchases, download transaction fees, and live event revenue. TDZ's Golden Rule requires Average Revenue Per Stream (ARPS) to exceed $1.00, targeting $1.35–$1.80 ARPS at scale. TDZ reserves the right 
                 to adjust payout rates with 30 days notice if necessary to maintain platform sustainability.
               </p>

@@ -164,7 +164,7 @@ export default function FanSettings() {
           <GlassCard title="Connected Apps" description="Third-party services linked to your account">
             <div className="space-y-3">
               {[
-                { name: "Square Payments", status: "Not connected", color: "rgba(255,255,255,0.3)" },
+                { name: "Stripe Payouts", status: "Not connected", color: "rgba(255,255,255,0.3)" },
                 { name: "Shopify Store", status: "Not connected", color: "rgba(255,255,255,0.3)" },
               ].map((app) => (
                 <div key={app.name} className="flex items-center justify-between p-4 rounded-xl"
