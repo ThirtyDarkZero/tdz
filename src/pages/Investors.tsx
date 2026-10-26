@@ -134,7 +134,7 @@ function InvestorInsightsDemo() {
   return (
     <div className="p-3 pt-7 h-full" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#888", background: "linear-gradient(180deg, #0a0a1a, #050510)" }}>
       <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 20, color: "#FFF", letterSpacing: "0.04em" }}>REAL-TIME INSIGHTS</p>
-      <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>SAMPLE DATA · Track performance & revenue</p>
+      <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>SAMPLE DATA · SAMPLE DATA · Track performance & revenue</p>
       <div className="flex gap-1 mt-2">
         {["Streams", "Geographic", "Revenue"].map((t, i) => (
           <span key={i} className="px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: i === 0 ? "#FF6347" : "rgba(255,255,255,0.04)", color: i === 0 ? "#FFF" : "#666", border: `1px solid ${i === 0 ? "#FF6347" : "rgba(255,255,255,0.06)"}` }}>{t}</span>
@@ -153,7 +153,7 @@ function InvestorInsightsDemo() {
       <div className="mt-1.5 p-1.5 rounded-lg flex items-center gap-1.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
         <Users className="w-3.5 h-3.5" style={{ color: "#8B5CF6" }} />
         <span style={{ color: "#AAA", fontSize: 9 }}>Unique Listeners</span>
-        <span className="ml-auto" style={{ color: "#00CFFF", fontSize: 9, fontWeight: 600 }}>89,200</span>
+        <span className="ml-auto" style={{ color: "#00CFFF", fontSize: 9, fontWeight: 600 }}>3,400</span>
       </div>
       <div className="mt-1.5 p-1.5 rounded-lg flex items-center gap-1.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
         <TrendingUp className="w-3.5 h-3.5" style={{ color: "#22C55E" }} />

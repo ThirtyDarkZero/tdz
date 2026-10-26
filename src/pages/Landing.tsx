@@ -324,6 +324,9 @@ function Section1Hero() {
           <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: "12px", color: "#999", marginTop: "12px", maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
             How a play counts: a paid subscriber listens for more than 30 seconds or more than half the track. Artists' own plays never count. <a href="/faq" style={{ color: "#FF6347", textDecoration: "underline" }}>Read how $1/stream works</a>
           </p>
+          <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: "12px", color: "#999", marginTop: "12px", maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
+            How a play counts: a paid subscriber listens for more than 30 seconds or more than half the track. Artists' own plays never count. <a href="/faq" style={{ color: "#FF6347", textDecoration: "underline" }}>Read how $1/stream works</a>
+          </p>
         </Reveal>
         <Reveal delay={0.35}>
           <div className="mt-8"><TDZBadge size={30} /></div>
@@ -582,7 +585,7 @@ function StudioDemoMockup() {
           </div>
           <div className="p-1.5 rounded-lg" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
             <span style={{ fontSize: 8, color: "#555" }}>Listeners</span>
-            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 20, color: "#FFF" }}>89,200</p>
+            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 20, color: "#FFF" }}>3,400</p>
           </div>
         </div>
       )}
@@ -605,7 +608,7 @@ function InsightsDemoMockup() {
   return (
     <div className="p-3 pt-7 h-full" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#888", background: "linear-gradient(180deg, #0a0a1a, #050510)" }}>
       <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 20, color: "#FFF", letterSpacing: "0.04em" }}>REAL-TIME INSIGHTS</p>
-      <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>SAMPLE DATA · Track performance & revenue</p>
+      <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>SAMPLE DATA · SAMPLE DATA · Track performance & revenue</p>
       <div className="flex gap-1 mt-2">
         {["Streams", "Geographic", "Revenue"].map((t, i) => (
           <span key={i} className="px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: i === 0 ? "#FF6347" : "rgba(255,255,255,0.04)", color: i === 0 ? "#FFF" : "#666", border: `1px solid ${i === 0 ? "#FF6347" : "rgba(255,255,255,0.06)"}` }}>{t}</span>
@@ -626,7 +629,7 @@ function InsightsDemoMockup() {
       <div className="mt-1.5 p-1.5 rounded-lg flex items-center gap-1.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
         <Users className="w-3.5 h-3.5" style={{ color: "#8B5CF6" }} />
         <span style={{ color: "#AAA", fontSize: 9 }}>Unique Listeners</span>
-        <span className="ml-auto" style={{ color: "#00CFFF", fontSize: 9, fontWeight: 600 }}>89,200</span>
+        <span className="ml-auto" style={{ color: "#00CFFF", fontSize: 9, fontWeight: 600 }}>3,400</span>
       </div>
       <div className="mt-1.5 p-1.5 rounded-lg flex items-center gap-1.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
         <TrendingUp className="w-3.5 h-3.5" style={{ color: "#22C55E" }} />
@@ -898,7 +901,7 @@ function Section6Cards() {
 // ═══════════════════════════════════════
 function SectionWhyTDZ({ navigate }: { navigate: (p: string) => void }) {
   const features = [
-    { title: "$1 PER STREAM", desc: "Artists earn 333x more than Spotify's $0.003. Every stream = $1 directly to the creator.", color: "#22C55E", icon: "💰" },
+    { title: "$1 PER STREAM", desc: "Artists earn 333x more than Spotify's $0.003. Every qualified stream = $1 directly to the creator.", color: "#22C55E", icon: "💰" },
     { title: "100% DOWNLOAD REVENUE", desc: "Set your own download prices. Keep every cent. No middlemen, no hidden fees.", color: "#00CFFF", icon: "📥" },
     { title: "AI MUSIC WELCOME", desc: "First major platform to embrace AI-generated music. AI artists earn the same $1/stream.", color: "#8B5CF6", icon: "🤖" },
     { title: "ARTIST STUDIO", desc: "Upload tracks, manage albums, sync lyrics, set territory rights, collaborate with other artists—all in one dashboard.", color: "#D4A017", icon: "🎵" },
