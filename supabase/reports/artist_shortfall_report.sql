@@ -6,6 +6,8 @@
 --                         those dollars were marked paid but never transferred
 --   reversed_not_repaid   transfers Stripe reversed; earnings stayed "paid"
 --   failed_not_reopened   transfers that failed while their earnings stayed "paid"
+--   unpaid_tips           tips collected but never added to earnings (net of the 2.9% + $0.30
+--                         processing fee used for downloads and merch)
 -- Estimate (approximate):
 --   est_lost_streams_usd  paid-subscriber streams in listening history that never reached
 --                         earnings (concurrent streams overwriting each other). Uses each
@@ -86,6 +88,15 @@ credited_streams AS (
   WHERE idempotency_key IS NULL
   GROUP BY artist_id
 ),
+tips AS (
+  SELECT t.artist_id,
+         sum(GREATEST(t.amount - round(t.amount * 0.029 + 0.30, 2), 0)) AS unpaid_tips
+  FROM public.artist_tips t
+  WHERE t.status = 'completed'
+    AND NOT EXISTS (SELECT 1 FROM public.artist_earnings e
+                    WHERE e.idempotency_key = 'tip:' || t.square_payment_id)
+  GROUP BY t.artist_id
+),
 pending AS (
   SELECT artist_id, sum(total_earnings) AS pending_now
   FROM public.artist_earnings
@@ -96,7 +107,7 @@ artists AS (
   SELECT artist_id FROM a_after_payout UNION SELECT artist_id FROM adhoc
   UNION SELECT artist_id FROM reversed UNION SELECT artist_id FROM failed
   UNION SELECT artist_id FROM paid_no_record UNION SELECT artist_id FROM expected_streams
-  UNION SELECT artist_id FROM pending
+  UNION SELECT artist_id FROM pending UNION SELECT artist_id FROM tips
 )
 SELECT
   ap.artist_name,
@@ -104,8 +115,9 @@ SELECT
   round(coalesce(x.unpaid_after_payout, 0), 2)  AS unpaid_after_payout,
   round(coalesce(rv.reversed_not_repaid, 0), 2) AS reversed_not_repaid,
   round(coalesce(f.failed_not_reopened, 0), 2)  AS failed_not_reopened,
+  round(coalesce(tp.unpaid_tips, 0), 2)         AS unpaid_tips,
   round(coalesce(x.unpaid_after_payout, 0) + coalesce(rv.reversed_not_repaid, 0)
-        + coalesce(f.failed_not_reopened, 0), 2) AS confirmed_shortfall_usd,
+        + coalesce(f.failed_not_reopened, 0) + coalesce(tp.unpaid_tips, 0), 2) AS confirmed_shortfall_usd,
   coalesce(es.expected_paid_streams, 0)         AS expected_paid_streams,
   coalesce(cs.credited_paid_streams, 0)         AS credited_paid_streams,
   GREATEST(coalesce(es.expected_paid_streams, 0) - coalesce(cs.credited_paid_streams, 0), 0) * 1.00
@@ -126,4 +138,5 @@ LEFT JOIN adhoc ah           ON ah.artist_id = a.artist_id
 LEFT JOIN expected_streams es ON es.artist_id = a.artist_id
 LEFT JOIN credited_streams cs ON cs.artist_id = a.artist_id
 LEFT JOIN pending pd         ON pd.artist_id = a.artist_id
+LEFT JOIN tips tp            ON tp.artist_id = a.artist_id
 ORDER BY confirmed_shortfall_usd DESC, est_lost_streams_usd DESC, pending_now DESC;

@@ -10,7 +10,9 @@ export type Ctq =
   | "stream_credit"       // paid stream credited to the artist
   | "payout"              // eligible artist paid (auto sweep or manual)
   | "checkout_start"      // Stripe checkout session created
-  | "upload";             // track upload session / chunk stored
+  | "upload"              // track upload session / chunk stored
+  | "stripe_match"        // Stripe charge/transfer matches an internal record
+  | "ledger_match";       // artist ledger balance equals unpaid earnings
 
 export interface Outcome {
   ctq: Ctq;
