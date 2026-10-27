@@ -73,3 +73,33 @@ END $$;
 -- Schedules -----------------------------------------------------------------------------
 SELECT pg_temp.check(EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'scheduled-artist-payouts'), 'payout run is scheduled');
 SELECT pg_temp.check(EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'financial-reconciliation'), 'reconciliation is scheduled');
+
+-- Database security (step 5) ----------------------------------------------------------
+SELECT pg_temp.check(NOT has_function_privilege('authenticated', 'public.create_system_notification(uuid,text,text)', 'execute'), 'clients cannot send notifications to other users');
+UPDATE auth._session SET uid = '00000000-0000-4000-8000-0000000000c1', role = 'authenticated';
+SET ROLE authenticated;
+INSERT INTO public.user_subscriptions (user_id, plan) VALUES ('00000000-0000-4000-8000-0000000000c1', 'free');
+DO $$ BEGIN
+  INSERT INTO public.user_subscriptions (user_id, plan, status) VALUES ('00000000-0000-4000-8000-0000000000c2', 'pro', 'active');
+  RAISE EXCEPTION 'FAILED: a user created a paid plan for someone else';
+EXCEPTION WHEN insufficient_privilege THEN RAISE NOTICE 'ok: users cannot create subscriptions for others';
+END $$;
+DO $$ BEGIN
+  DELETE FROM public.user_subscriptions WHERE false;  -- keep role context
+  INSERT INTO public.user_subscriptions (user_id, plan, status) VALUES ('00000000-0000-4000-8000-0000000000c1', 'pro', 'active')
+    ON CONFLICT DO NOTHING;
+  IF EXISTS (SELECT 1 FROM public.user_subscriptions WHERE plan = 'pro') THEN
+    RAISE EXCEPTION 'FAILED: a user gave themselves a paid plan';
+  END IF;
+  RAISE NOTICE 'ok: users cannot give themselves a paid plan (existing row)';
+EXCEPTION WHEN insufficient_privilege THEN RAISE NOTICE 'ok: users cannot give themselves a paid plan';
+END $$;
+DO $$ BEGIN
+  INSERT INTO public.artist_tips (artist_id, tipper_id, amount, status, square_payment_id)
+    VALUES (gen_random_uuid(), '00000000-0000-4000-8000-0000000000c1', 500, 'completed', 'pi_fake');
+  RAISE EXCEPTION 'FAILED: a user created a tip without paying';
+EXCEPTION WHEN insufficient_privilege THEN RAISE NOTICE 'ok: users cannot create tips directly';
+END $$;
+RESET ROLE;
+UPDATE auth._session SET uid = NULL, role = 'service_role';
+SELECT pg_temp.check((SELECT count(*) = 1 AND bool_and(plan = 'free') FROM public.user_subscriptions), 'users can still create their own free subscription');
