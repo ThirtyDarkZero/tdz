@@ -21,6 +21,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: oven-sh/setup-bun@v2   # the build's sitemap step runs `bunx tsx`
       - run: npm ci --no-audit --no-fund
       - name: Type-check
         run: npx tsc -p tsconfig.app.json --noEmit
@@ -39,7 +40,15 @@ jobs:
         with:
           deno-version: v2.x
       - name: Shared payout, rate-limit and CORS tests
-        run: deno test --allow-env --no-lock supabase/functions/_shared/
+        run: |
+          set +e
+          deno test --allow-env --no-lock supabase/functions/_shared/ 2>&1 | tee deno-test.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" != 0 ]; then
+            # Surface the failure as annotations so it's readable from the PR checks.
+            sed 's/\x1b\[[0-9;]*m//g' deno-test.log | grep -E "error|ERROR|FAILED|=>" | head -20 | while read -r line; do echo "::error::$line"; done
+          fi
+          exit $status
 
   database:
     name: Money and fraud rules (database)
