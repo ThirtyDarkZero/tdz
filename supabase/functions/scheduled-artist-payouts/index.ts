@@ -10,6 +10,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from "../_shared/cors.ts";
 import { withStripeRetry } from "../_shared/stripeRetry.ts";
 import {
+import { recordOutcome } from "../_shared/outcomes.ts";
   MIN_PAID_STREAMS, PAYOUT_THRESHOLD_USD, claimPendingEarnings, lifetimePaidStreams,
   markPaid, payoutIdempotencyKey, releaseClaim, syncConnectStatus,
 } from "../_shared/payoutRules.ts";
@@ -114,6 +115,7 @@ serve(async (req) => {
         if (amountCents > availableCents) {
           await releaseClaim(supabase, claimedIds);
           results.push({ artistId, status: "skipped", reason: "platform_balance_low", amount: claim.total, availableUsd: availableCents / 100 });
+          await recordOutcome({ ctq: "payout", ok: false, reason: "platform_balance_low", artistId, detail: { amount: claim.total } });
           continue;
         }
 
@@ -154,11 +156,13 @@ serve(async (req) => {
         });
 
         results.push({ artistId, status: "processed", amount: claim.total, transferId: transfer.id });
+        await recordOutcome({ ctq: "payout", ok: true, subjectId: transfer.id, artistId, detail: { amount: claim.total, mode: "auto" } });
         console.log(`[auto-payout] paid ${artistId}: $${claim.total} (${transfer.id})`);
       } catch (err: any) {
         await releaseClaim(supabase, claimedIds).catch(() => {});
         console.error(`[auto-payout] failed for ${artistId}:`, err?.message || err);
         results.push({ artistId, status: "error", error: err?.message || String(err) });
+        await recordOutcome({ ctq: "payout", ok: false, reason: "transfer_error", artistId, detail: { error: String(err?.message || err).slice(0, 200) } });
       }
     }
 

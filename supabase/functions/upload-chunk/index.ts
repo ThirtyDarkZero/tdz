@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { recordOutcome } from "../_shared/outcomes.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -333,10 +334,12 @@ async function assembleFile(sessionId: string, session: any, userId: string) {
 
     const processingTime = Date.now() - startTime;
     console.log(`File assembly complete for session ${sessionId} in ${processingTime}ms`);
+    await recordOutcome({ ctq: "upload", ok: true, subjectId: sessionId, artistId: userId, detail: { ms: processingTime } });
 
   } catch (error) {
     const processingTime = Date.now() - startTime;
     console.error(`Assembly error after ${processingTime}ms:`, error);
+    await recordOutcome({ ctq: "upload", ok: false, reason: "assembly_error", subjectId: sessionId, artistId: userId });
     
     await supabase
       .from('upload_sessions')

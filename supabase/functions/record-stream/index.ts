@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { recordOutcome } from "../_shared/outcomes.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -195,6 +196,7 @@ serve(async (req) => {
         p_device_fingerprint: deviceFingerprint,
       });
 
+      recordOutcome({ ctq: 'stream_validation', ok: !fraudError, reason: fraudError ? 'fraud_check_error' : undefined, subjectId: trackId });
       if (fraudError) {
         console.error('Fraud check error — stream will not earn:', fraudError);
       } else if (fraudCheck && !fraudCheck.allowed) {
@@ -322,6 +324,10 @@ serve(async (req) => {
         console.error(`Failed to credit stream for artist ${track.user_id}:`, creditErr.message);
         artistEarned = 0;
       }
+      recordOutcome({
+        ctq: 'stream_credit', ok: !creditErr, reason: creditErr ? 'credit_rpc_error' : undefined,
+        subjectId: trackId, artistId: track.user_id,
+      });
 
       console.log(`Paid stream: Artist ${track.user_id} earned $${STREAM_PAYOUT_RATE} from subscriber ${userId}`);
     } else {

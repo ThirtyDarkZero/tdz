@@ -24,6 +24,7 @@ import { AdminSidebar, CEORevenueControl } from "@/components/admin";
 import { StripeFinancialAgents } from "@/components/admin/StripeFinancialAgents";
 import { SupportTicketsAdmin } from "@/components/admin/SupportTicketsAdmin";
 import { StripeWebhookMonitor } from "@/components/admin/StripeWebhookMonitor";
+import { QualityScorecard } from "@/components/admin/QualityScorecard";
 import { MarketingBrainPanel } from "@/components/admin/MarketingBrainPanel";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -637,6 +638,13 @@ function CEODashboardInner() {
           {activeTab === "finance" && (
             <div className="animate-fade-in">
               <StripeFinancialAgents />
+            </div>
+          )}
+
+          {/* Six Sigma Quality Scorecard Tab */}
+          {activeTab === "quality" && (
+            <div className="animate-fade-in">
+              <QualityScorecard />
             </div>
           )}
 
