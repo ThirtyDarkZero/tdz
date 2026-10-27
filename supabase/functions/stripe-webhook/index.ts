@@ -3,6 +3,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { isConnectReady } from "../_shared/payoutRules.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -355,7 +356,8 @@ serve(async (req) => {
           account = await stripe.accounts.retrieve(acctId);
         }
         const userId = account.metadata?.user_id;
-        const ready = !!(account.charges_enabled && account.payouts_enabled && account.details_submitted);
+        // Artists only receive transfers, so charges_enabled is not required.
+        const ready = isConnectReady(account);
         const needsAttention =
           (account.requirements?.currently_due?.length ?? 0) > 0 ||
           (account.requirements?.past_due?.length ?? 0) > 0 ||

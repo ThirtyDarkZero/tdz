@@ -5,6 +5,7 @@ import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from "../_shared/cors.ts";
 import { makeIdempotencyKey, withStripeRetry } from "../_shared/stripeRetry.ts";
+import { syncConnectStatus } from "../_shared/payoutRules.ts";
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get("origin"));
@@ -57,6 +58,15 @@ serve(async (req) => {
       .maybeSingle();
 
     let accountId: string | null = existing?.stripe_connect_id || null;
+
+    // Called when the artist returns from Stripe onboarding: read the account
+    // status straight from Stripe so payouts don't depend on webhook delivery.
+    if (reqBody?.action === "sync") {
+      stage = "sync";
+      if (!accountId) return respond({ success: true, payoutEnabled: false });
+      const payoutEnabled = await syncConnectStatus(supabase, stripe, user.id, accountId);
+      return respond({ success: true, payoutEnabled });
+    }
 
     // A stored account can be stale (created in the other Stripe mode, or deleted).
     // Verify before reuse; otherwise we'd fail forever on accountLinks.create.

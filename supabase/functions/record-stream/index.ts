@@ -307,39 +307,16 @@ serve(async (req) => {
       const STREAM_PAYOUT_RATE = 1.00;
       artistEarned = STREAM_PAYOUT_RATE;
       
-      const today = new Date();
-      const periodStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-      const periodEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
-
-      const { data: existingEarnings } = await supabase
-        .from('artist_earnings')
-        .select('id, streaming_revenue, total_streams')
-        .eq('artist_id', track.user_id)
-        .eq('period_start', periodStart)
-        .maybeSingle();
-
-      if (existingEarnings) {
-        await supabase
-          .from('artist_earnings')
-          .update({
-            streaming_revenue: (existingEarnings.streaming_revenue || 0) + STREAM_PAYOUT_RATE,
-            total_streams: (existingEarnings.total_streams || 0) + 1,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', existingEarnings.id);
-      } else {
-        await supabase
-          .from('artist_earnings')
-          .insert({
-            artist_id: track.user_id,
-            period_start: periodStart,
-            period_end: periodEnd,
-            streaming_revenue: STREAM_PAYOUT_RATE,
-            total_streams: 1,
-            download_revenue: 0,
-            total_downloads: 0,
-            payout_status: 'pending',
-          });
+      // Atomic credit into this month's PENDING earnings row. Streams never land
+      // on a row that's already paid/processing, and concurrent streams can't
+      // overwrite each other's increments.
+      const { error: creditErr } = await supabase.rpc('credit_artist_stream', {
+        p_artist_id: track.user_id,
+        p_amount: STREAM_PAYOUT_RATE,
+      });
+      if (creditErr) {
+        console.error(`Failed to credit stream for artist ${track.user_id}:`, creditErr.message);
+        artistEarned = 0;
       }
 
       console.log(`Paid stream: Artist ${track.user_id} earned $${STREAM_PAYOUT_RATE} from subscriber ${userId}`);
