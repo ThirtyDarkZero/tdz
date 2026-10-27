@@ -29,7 +29,8 @@ CREATE FUNCTION public.deduct_render_credits(p_user_id uuid, p_amount integer, p
 -- Tables and policies as they stood before the step-5 security migration.
 CREATE TYPE public.subscription_plan AS ENUM ('free', 'starter', 'pro', 'enterprise', 'fan');
 CREATE TABLE public.user_subscriptions (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL UNIQUE,
-  plan public.subscription_plan NOT NULL DEFAULT 'free', status text NOT NULL DEFAULT 'active', expires_at timestamptz);
+  plan public.subscription_plan NOT NULL DEFAULT 'free', status text NOT NULL DEFAULT 'active', expires_at timestamptz,
+  started_at timestamptz NOT NULL DEFAULT now(), canceled_at timestamptz);
 ALTER TABLE public.user_subscriptions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can create their own subscription" ON public.user_subscriptions
   FOR INSERT WITH CHECK (auth.uid() = user_id);
