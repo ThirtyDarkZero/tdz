@@ -24,7 +24,9 @@ FN_DIR = "supabase/functions"
 
 
 def sh(cmd, cwd=ROOT, check=False):
-    r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
+    # Edge functions don't use the app's package.json; keep Deno from requiring its node_modules.
+    env = {**os.environ, "DENO_NO_PACKAGE_JSON": "1"}
+    r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, env=env)
     if check and r.returncode != 0:
         sys.exit(f"command failed: {' '.join(cmd)}\n{r.stderr}")
     return r
