@@ -316,7 +316,7 @@ serve(async (req) => {
   if (limited) return limited;
 
   try {
-    const { action, genre, chart } = await req.json();
+    const { action, genre, chart } = await req.json().catch(() => ({}));
     
     let result: any = {};
     

@@ -1,6 +1,7 @@
 import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,7 +33,7 @@ serve(async (req) => {
       });
     }
 
-    const { action, track_id, album_id } = await req.json();
+    const { action, track_id, album_id } = await req.json().catch(() => ({}));
 
     // Get artist context
     const [profileRes, tracksRes, earningsRes, narrativeRes] = await Promise.all([
@@ -203,7 +204,7 @@ Mission: ${narrative?.artist_mission || ""}`;
 
   } catch (error) {
     console.error("Release optimizer error:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ error: publicError(error, "Unknown error") }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

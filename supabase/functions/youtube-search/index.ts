@@ -386,7 +386,7 @@ serve(async (req) => {
   if (limited) return limited;
 
   try {
-    const { query, type = 'search', videoId, channelId, channelUrl, maxResults = 20, pageToken, officialOnly = false } = await req.json();
+    const { query, type = 'search', videoId, channelId, channelUrl, maxResults = 20, pageToken, officialOnly = false } = await req.json().catch(() => ({}));
 
     const hasYouTubeKey = Boolean(YOUTUBE_API_KEY);
     console.log(`[youtube-search] type=${type}, query="${query}", hasKey=${hasYouTubeKey}`);

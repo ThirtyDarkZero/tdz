@@ -1,6 +1,7 @@
 import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,7 +21,7 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader! } } }
     );
 
-    const { projectId, audioPath, lyrics } = await req.json();
+    const { projectId, audioPath, lyrics } = await req.json().catch(() => ({}));
 
     console.log('[Align] Aligning lyrics to audio for project:', projectId);
 
@@ -123,7 +124,7 @@ CRITICAL: Timing accuracy must be ±250ms or better for captions.`
   } catch (error) {
     console.error('[Align] Error:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: publicError(error, 'Unknown error') }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

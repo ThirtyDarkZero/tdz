@@ -188,7 +188,7 @@ serve(async (req) => {
   }
 
   try {
-    const { genre } = await req.json();
+    const { genre } = await req.json().catch(() => ({}));
 
     if (!genre || typeof genre !== "string") {
       return new Response(JSON.stringify({ error: "genre is required", tracks: [] }), {

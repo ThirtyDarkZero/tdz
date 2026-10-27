@@ -1,6 +1,7 @@
 import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,7 +21,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const { type, data } = await req.json();
+    const { type, data } = await req.json().catch(() => ({}));
 
     let systemPrompt = "";
     let userPrompt = "";
@@ -249,7 +250,7 @@ Brand Voice: ${data.brand_voice || "authentic and engaging"}`;
 
   } catch (error) {
     console.error("AI features error:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ error: publicError(error, "Unknown error") }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

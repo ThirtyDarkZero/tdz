@@ -33,7 +33,7 @@ serve(async (req) => {
       });
     }
 
-    const { artistId, amount, message } = await req.json();
+    const { artistId, amount, message } = await req.json().catch(() => ({}));
 
     if (!artistId || !amount || typeof amount !== "number" || amount < 1 || amount > 500) {
       return new Response(JSON.stringify({ error: "Invalid tip amount (must be $1-$500)" }), {

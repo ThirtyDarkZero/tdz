@@ -1,5 +1,5 @@
 // Shared JWT auth helper for edge functions
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 export interface AuthResult {
   user: { id: string; email?: string } | null;

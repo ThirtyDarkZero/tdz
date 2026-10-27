@@ -48,7 +48,7 @@ serve(async (req) => {
 
     let body: Record<string, unknown> = {};
     try {
-      body = await req.json();
+      body = await req.json().catch(() => ({}));
     } catch {
       /* cron sends no body */
     }

@@ -1,6 +1,7 @@
 import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { audioPath } = await req.json();
+    const { audioPath } = await req.json().catch(() => ({}));
 
     if (!audioPath) {
       throw new Error('Audio path is required');
@@ -97,7 +98,7 @@ serve(async (req) => {
     console.error('Error in extract-lyrics:', error);
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: publicError(error, 'Unknown error'),
         fallback: true 
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

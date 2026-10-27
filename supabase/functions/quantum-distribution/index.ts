@@ -1,6 +1,7 @@
 import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -48,7 +49,7 @@ serve(async (req) => {
     );
     if (authError || !user) throw new Error('Unauthorized');
 
-    const body: DistributionRequest = await req.json();
+    const body: DistributionRequest = await req.json().catch(() => ({}));
     const { action, trackId, trackIds, metadata } = body;
 
     console.log(`Quantum Distribution: ${action} for user ${user.id}`);
@@ -89,7 +90,7 @@ serve(async (req) => {
                    error instanceof Error && error.message.includes('Rate limit') ? 429 : 500;
 
     return new Response(JSON.stringify({
-      error: error instanceof Error ? error.message : 'Distribution analysis failed'
+      error: publicError(error, 'Distribution analysis failed')
     }), {
       status,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

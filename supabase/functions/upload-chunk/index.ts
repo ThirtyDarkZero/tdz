@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { recordOutcome } from "../_shared/outcomes.ts";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -193,7 +194,7 @@ serve(async (req) => {
     console.error('Upload chunk error after', processingTime, 'ms:', error);
     
     return new Response(JSON.stringify({
-      error: error instanceof Error ? error.message : 'Upload failed',
+      error: publicError(error, 'Upload failed'),
       processingTimeMs: processingTime
     }), {
       status: error instanceof Error && error.message.includes('Unauthorized') ? 401 : 500,

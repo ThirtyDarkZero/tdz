@@ -96,7 +96,7 @@ serve(async (req) => {
   if (limited) return limited;
 
   try {
-    const { query, type = 'all', limit = 20, aiEnrich = false, includeCharts = false, includeAcoustic = false, includeAllMusic = true, includeSpotify = true, trendingOnly = false } = await req.json();
+    const { query, type = 'all', limit = 20, aiEnrich = false, includeCharts = false, includeAcoustic = false, includeAllMusic = true, includeSpotify = true, trendingOnly = false } = await req.json().catch(() => ({}));
 
     if (!query && !trendingOnly) {
       throw new Error('Query is required');

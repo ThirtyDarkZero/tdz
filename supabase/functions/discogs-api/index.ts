@@ -26,7 +26,7 @@ serve(async (req) => {
       throw new Error("DISCOGS_TOKEN not configured");
     }
 
-    const { action, query, type, genre, style, year, page, per_page, artist_id, release_id, master_id } = await req.json();
+    const { action, query, type, genre, style, year, page, per_page, artist_id, release_id, master_id } = await req.json().catch(() => ({}));
     
     // Use personal access token format (not OAuth)
     const headers = {

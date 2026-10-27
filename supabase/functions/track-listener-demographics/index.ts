@@ -1,6 +1,6 @@
 import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getCorsHeaders } from "../_shared/cors.ts";
 
 // UUID validation regex
@@ -78,7 +78,7 @@ serve(async (req) => {
     // Parse and validate input
     let rawBody: unknown;
     try {
-      rawBody = await req.json();
+      rawBody = await req.json().catch(() => ({}));
     } catch {
       return new Response(
         JSON.stringify({ error: 'Invalid JSON in request body' }),
