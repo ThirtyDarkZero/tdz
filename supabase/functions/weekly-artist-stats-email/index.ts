@@ -1,10 +1,21 @@
+import "../_shared/fetchTimeout.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+import { requireAdminOrCron } from '../_shared/auth.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204 })
+
+  // Emails every active artist — only the scheduler or an admin may trigger it.
+  const gate = await requireAdminOrCron(req)
+  if (!gate.ok) {
+    return new Response(JSON.stringify({ error: gate.error ?? 'Unauthorized' }), {
+      status: gate.status,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
 
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
     auth: { persistSession: false },

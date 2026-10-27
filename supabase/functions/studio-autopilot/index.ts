@@ -179,7 +179,9 @@ serve(async (req) => {
             }, { onConflict: 'user_id' });
 
           // Update monthly listeners
-          await supabaseAdmin.rpc('update_artist_monthly_listeners').catch(() => {});
+          // Query builders have no .catch(); calling it threw and aborted this task.
+          const { error: listenersErr } = await supabaseAdmin.rpc('update_artist_monthly_listeners');
+          if (listenersErr) console.error('update_artist_monthly_listeners failed:', listenersErr.message);
 
           await logTask(supabaseAdmin, userId, 'fan_engagement', `Fan metrics refreshed: ${followCount || 0} followers`, { followers: followCount });
           taskResults.push(`Fan engagement refreshed`);

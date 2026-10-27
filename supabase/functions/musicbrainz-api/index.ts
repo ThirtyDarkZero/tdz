@@ -1,4 +1,6 @@
+import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { rateLimit } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,6 +34,10 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Public endpoint: cap requests per IP so scripts can't drain API quota.
+  const limited = rateLimit(req, 'musicbrainz-api', corsHeaders, 30);
+  if (limited) return limited;
 
   try {
     const { action, query, id, type, limit = 25, offset = 0 } = await req.json();

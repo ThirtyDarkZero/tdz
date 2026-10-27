@@ -184,7 +184,9 @@ serve(async (req) => {
       }
     }
 
-    // FRAUD DETECTION
+    // FRAUD DETECTION — fails closed for money: if the check can't run, the
+    // play still counts but earns nothing.
+    let fraudCheckPassed = !userId;
     if (userId) {
       const { data: fraudCheck, error: fraudError } = await supabase.rpc('validate_stream', {
         p_user_id: userId,
@@ -194,7 +196,7 @@ serve(async (req) => {
       });
 
       if (fraudError) {
-        console.error('Fraud check error:', fraudError);
+        console.error('Fraud check error — stream will not earn:', fraudError);
       } else if (fraudCheck && !fraudCheck.allowed) {
         console.warn(`Stream blocked for user ${userId}: ${fraudCheck.reason}`);
         return new Response(
@@ -205,6 +207,8 @@ serve(async (req) => {
           }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+      } else {
+        fraudCheckPassed = true;
       }
     }
 
@@ -276,7 +280,7 @@ serve(async (req) => {
     // PAID SUBSCRIBER CHECK: Only paid subscribers generate $1 earnings
     // Free/anonymous plays still count as plays but do NOT generate revenue
     // ═══════════════════════════════════════════════════════════════
-    const listenerIsPaid = userId ? await isPaidSubscriber(supabase, userId) : false;
+    const listenerIsPaid = userId && fraudCheckPassed ? await isPaidSubscriber(supabase, userId) : false;
 
     // Increment track play count (all valid streams count for visibility)
     const newPlayCount = (track.play_count || 0) + 1;

@@ -23,6 +23,14 @@ serve(async (req) => {
     const user = u.user;
     if (!user?.email) throw new Error("User not authenticated");
 
+    // DISABLED (audit): the price came from the browser, so a buyer could set
+    // any price. Re-enable once merch items and prices are stored server-side
+    // and looked up here by itemId. Not currently used by the app.
+    return new Response(JSON.stringify({ error: "Merch checkout is not available yet." }), {
+      status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
+    // deno-lint-ignore no-unreachable
     const body = await req.json();
     const { artistId, itemName, itemId, priceCents, quantity = 1, imageUrl } = body;
     if (!artistId || !itemName || !priceCents || priceCents < 50) {
@@ -54,7 +62,7 @@ serve(async (req) => {
         quantity,
       }],
       mode: "payment",
-      shipping_address_collection: { allowed_countries: ["US", "CA", "GB", "AU", "EU"] as any },
+      shipping_address_collection: { allowed_countries: ["US", "CA", "GB", "AU"] as any },
       success_url: `${origin}/merch-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/`,
       metadata: {

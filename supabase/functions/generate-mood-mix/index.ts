@@ -1,3 +1,4 @@
+import "../_shared/fetchTimeout.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
 

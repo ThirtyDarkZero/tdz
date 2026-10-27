@@ -92,6 +92,10 @@ export function requireCronSecret(req: Request): boolean {
 // Allow either a valid CRON secret OR an authenticated admin/ceo user
 export async function requireAdminOrCron(req: Request): Promise<{ ok: boolean; status: number; error?: string }> {
   if (requireCronSecret(req)) return { ok: true, status: 200 };
+  // pg_cron jobs authenticate with the service-role key stored in vault.
+  const bearer = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
+  const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  if (bearer && serviceRole && bearer === serviceRole) return { ok: true, status: 200 };
   const auth = await requireUser(req);
   if (!auth.user) return { ok: false, status: 401, error: "Unauthorized" };
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
