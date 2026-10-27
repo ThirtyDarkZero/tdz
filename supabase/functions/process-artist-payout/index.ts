@@ -8,10 +8,10 @@ import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { withStripeRetry } from "../_shared/stripeRetry.ts";
 import {
-import { recordOutcome } from "../_shared/outcomes.ts";
   MIN_PAID_STREAMS, PAYOUT_THRESHOLD_USD, claimPendingEarnings, lifetimePaidStreams,
   markPaid, payoutIdempotencyKey, releaseClaim, syncConnectStatus,
 } from "../_shared/payoutRules.ts";
+import { recordOutcome } from "../_shared/outcomes.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

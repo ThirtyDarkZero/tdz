@@ -10,10 +10,10 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from "../_shared/cors.ts";
 import { withStripeRetry } from "../_shared/stripeRetry.ts";
 import {
-import { recordOutcome } from "../_shared/outcomes.ts";
   MIN_PAID_STREAMS, PAYOUT_THRESHOLD_USD, claimPendingEarnings, lifetimePaidStreams,
   markPaid, payoutIdempotencyKey, releaseClaim, syncConnectStatus,
 } from "../_shared/payoutRules.ts";
+import { recordOutcome } from "../_shared/outcomes.ts";
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req.headers.get("origin"));
