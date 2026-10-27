@@ -52,3 +52,7 @@ CREATE TABLE public.system_health_log (id uuid PRIMARY KEY DEFAULT gen_random_uu
   details jsonb, duration_ms integer, error_message text, created_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE public.unmatched_transactions (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), stripe_object_id text NOT NULL UNIQUE,
   stripe_object_type text NOT NULL, amount numeric(10,2) NOT NULL, status text NOT NULL DEFAULT 'pending');
+
+-- For the step-7 fraud migration.
+CREATE TABLE public.listening_history (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, track_id uuid NOT NULL,
+  played_at timestamptz NOT NULL DEFAULT now(), play_duration integer, completion_percentage integer);
