@@ -169,6 +169,8 @@ def main():
         print(f"  improved   {line}")
     for line in regressions:
         print(f"  REGRESSION {line}")
+        if os.environ.get("GITHUB_ACTIONS"):
+            print(f"::error::{line}")
     if regressions:
         print(f"\nFAILED: {len(regressions)} new defect(s). Fix them or explain in the PR why the count must rise.")
         sys.exit(1)
