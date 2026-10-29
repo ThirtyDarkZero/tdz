@@ -409,6 +409,12 @@
     overscroll-behavior-y: none;
   }
 
+  /* "clip" stops sideways drift like "hidden" but doesn't turn body/#root
+     into scroll containers, so position: sticky keeps working. */
+  body, #root {
+    overflow-x: clip;
+  }
+
   body {
     /* iOS keyboard / notch safety */
     padding-left: env(safe-area-inset-left);
@@ -422,8 +428,10 @@
     }
 
     /* Keep long words / URLs from blowing out the viewport */
+    /* break-word only splits a word that can't fit on a line by itself;
+       "anywhere" let flex layouts squeeze labels into "STUD IO". */
     h1, h2, h3, h4, h5, h6, p, span, a, li {
-      overflow-wrap: anywhere;
+      overflow-wrap: break-word;
     }
 
     /* Comfortable tap targets */
