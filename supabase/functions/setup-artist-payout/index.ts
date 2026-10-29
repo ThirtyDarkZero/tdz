@@ -89,33 +89,38 @@ serve(async (req) => {
         capabilities: { transfers: { requested: true } },
       };
 
+      // Platform requires Stripe-managed risk (losses collected by Stripe).
+      // Try Express dashboard first, then full Stripe dashboard. Never use legacy `type`.
+      const attempts = [
+        { key: "connect_acct_v2_express", controller: {
+          losses: { payments: "stripe" },
+          fees: { payer: "application" },
+          stripe_dashboard: { type: "express" },
+          requirement_collection: "stripe",
+        } },
+        { key: "connect_acct_v2_full", controller: {
+          losses: { payments: "stripe" },
+          fees: { payer: "account" },
+          stripe_dashboard: { type: "full" },
+          requirement_collection: "stripe",
+        } },
+      ];
       let account;
-      try {
-        account = await withStripeRetry(
-          () => stripe.accounts.create({
-            ...baseParams,
-            controller: {
-              losses: { payments: "application" },
-              fees: { payer: "application" },
-              stripe_dashboard: { type: "express" },
-              requirement_collection: "stripe",
-            },
-          } as any, { idempotencyKey: makeIdempotencyKey("connect_account", user.id) }),
-          { label: "accounts.create(controller)" }
-        );
-      } catch (e) {
-        // Some platform configurations reject the controller shape; fall back to
-        // the classic Express account type so onboarding never dead-ends.
-        const msg = e instanceof Error ? e.message : String(e);
-        console.warn("controller account create failed, falling back to type=express:", msg);
-        account = await withStripeRetry(
-          () => stripe.accounts.create({
-            ...baseParams,
-            type: "express",
-          } as any, { idempotencyKey: makeIdempotencyKey("connect_account_express", user.id) }),
-          { label: "accounts.create(express)" }
-        );
+      let lastErr: unknown;
+      for (const a of attempts) {
+        try {
+          account = await withStripeRetry(
+            () => stripe.accounts.create({ ...baseParams, controller: a.controller } as any,
+              { idempotencyKey: makeIdempotencyKey(a.key, user.id) }),
+            { label: `accounts.create(${a.key})` }
+          );
+          break;
+        } catch (e) {
+          lastErr = e;
+          console.warn(`${a.key} failed:`, e instanceof Error ? e.message : String(e));
+        }
       }
+      if (!account) throw lastErr;
 
       accountId = account.id;
       // Persist immediately so a later failure doesn't orphan the Stripe account.
