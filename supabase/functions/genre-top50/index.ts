@@ -1,4 +1,6 @@
+import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { rateLimit } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -198,8 +200,12 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Public endpoint: cap requests per IP so scripts can't drain API quota.
+  const limited = rateLimit(req, 'genre-top50', corsHeaders, 20);
+  if (limited) return limited;
+
   try {
-    const { genre = 'hip-hop', limit = 50, withYouTube = false } = await req.json();
+    const { genre = 'hip-hop', limit = 50, withYouTube = false } = await req.json().catch(() => ({}));
     
     console.log(`Genre Top 50 request: genre=${genre} limit=${limit} withYouTube=${withYouTube}`);
 

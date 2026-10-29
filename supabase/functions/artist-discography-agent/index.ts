@@ -1,5 +1,7 @@
+import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -303,7 +305,7 @@ serve(async (req) => {
   }
 
   try {
-    const { artistName, mode = 'full' } = await req.json();
+    const { artistName, mode = 'full' } = await req.json().catch(() => ({}));
 
     if (!artistName || typeof artistName !== 'string' || artistName.trim().length === 0) {
       return new Response(JSON.stringify({ error: 'artistName is required' }), {
@@ -366,7 +368,7 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error('[Discography Agent] Error:', error);
-    return new Response(JSON.stringify({ error: error.message || 'Internal error' }), {
+    return new Response(JSON.stringify({ error: publicError(error, 'Internal error') }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

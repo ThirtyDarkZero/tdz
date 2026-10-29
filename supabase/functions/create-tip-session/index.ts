@@ -33,7 +33,7 @@ serve(async (req) => {
       });
     }
 
-    const { artistId, amount, message } = await req.json();
+    const { artistId, amount, message } = await req.json().catch(() => ({}));
 
     if (!artistId || !amount || typeof amount !== "number" || amount < 1 || amount > 500) {
       return new Response(JSON.stringify({ error: "Invalid tip amount (must be $1-$500)" }), {
@@ -80,13 +80,10 @@ serve(async (req) => {
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
-      await supabase.from("artist_tips").update({ status: "completed" }).eq("id", tip.id);
-      return new Response(JSON.stringify({
-        success: true,
-        tipId: tip.id,
-        message: "Tip recorded (payment processing not configured)",
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      // Never mark a tip completed without a payment.
+      await supabase.from("artist_tips").update({ status: "failed" }).eq("id", tip.id);
+      return new Response(JSON.stringify({ error: "Tipping is temporarily unavailable." }), {
+        status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 

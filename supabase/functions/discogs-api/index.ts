@@ -1,5 +1,7 @@
+import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,7 +27,7 @@ serve(async (req) => {
       throw new Error("DISCOGS_TOKEN not configured");
     }
 
-    const { action, query, type, genre, style, year, page, per_page, artist_id, release_id, master_id } = await req.json();
+    const { action, query, type, genre, style, year, page, per_page, artist_id, release_id, master_id } = await req.json().catch(() => ({}));
     
     // Use personal access token format (not OAuth)
     const headers = {
@@ -132,7 +134,7 @@ serve(async (req) => {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("Discogs API error:", message);
     return new Response(
-      JSON.stringify({ error: message }),
+      JSON.stringify({ error: publicError(error) }),
       { 
         status: 500, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 

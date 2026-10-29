@@ -1,21 +1,32 @@
 // Shared CORS configuration for Edge Functions
 // Origin allow-list + strict fallback (no ACAO when origin isn't trusted)
 
+const LOVABLE_PROJECT_ID = '751ec7fc-ab3c-47c5-ae43-f222950f0df1';
+
 const ALLOWED_ORIGINS = [
   'https://tdz.lovable.app',
   'https://www.thirtydarkzero.net',
   'https://thirtydarkzero.net',
-  'https://id-preview--751ec7fc-ab3c-47c5-ae43-f222950f0df1.lovable.app',
-  'https://lovable.app',
-  'https://lovable.dev',
+  'https://www.thirtydarkzero.com',
+  'https://thirtydarkzero.com',
+  // iOS app (Capacitor serves the bundled site from these origins)
+  'capacitor://localhost',
+  'ionic://localhost',
 ];
 
+// Own domains only. Lovable hosts are matched by project id below, so other
+// apps hosted on lovable.app (including copycats) are not trusted.
 const ALLOWED_ORIGIN_SUFFIXES = [
-  '.lovable.app',
-  '.lovable.dev',
-  '.lovableproject.com',
   '.thirtydarkzero.net',
+  '.thirtydarkzero.com',
 ];
+
+// Extra origins (e.g. your Vercel URL) without a code change:
+// set ALLOWED_ORIGINS="https://tdz.vercel.app,https://app.example.com"
+function extraOrigins(): string[] {
+  return (Deno.env.get('ALLOWED_ORIGINS') ?? '')
+    .split(',').map((o) => o.trim()).filter(Boolean);
+}
 
 const ALLOWED_HEADERS = [
   'authorization',
@@ -42,10 +53,14 @@ const DEV_ORIGINS = [
 function isOriginAllowed(origin: string | null): boolean {
   if (!origin) return false;
   const isDev = Deno.env.get('ENVIRONMENT') === 'development';
-  const list = isDev ? [...ALLOWED_ORIGINS, ...DEV_ORIGINS] : ALLOWED_ORIGINS;
+  const list = [...ALLOWED_ORIGINS, ...extraOrigins(), ...(isDev ? DEV_ORIGINS : [])];
   if (list.includes(origin)) return true;
   try {
     const host = new URL(origin).hostname;
+    // Lovable editor previews for THIS project only.
+    if (/\.(lovable\.app|lovable\.dev|lovableproject\.com)$/.test(host) && host.includes(LOVABLE_PROJECT_ID)) {
+      return true;
+    }
     return ALLOWED_ORIGIN_SUFFIXES.some((s) => host.endsWith(s));
   } catch {
     return false;

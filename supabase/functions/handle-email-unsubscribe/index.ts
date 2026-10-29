@@ -1,4 +1,4 @@
-import { createClient } from 'npm:@supabase/supabase-js@2'
+import { createClient } from 'npm:@supabase/supabase-js@2.57.2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 
 function jsonResponse(data: Record<string, unknown>, status = 200): Response {
@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
     } else {
       // JSON body (from the app's unsubscribe page)
       try {
-        const body = await req.json()
+        const body = await req.json().catch(() => ({}))
         if (body.token) {
           token = body.token
         }

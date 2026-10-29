@@ -1,9 +1,17 @@
-// Manual artist payout — triggered from CEO dashboard or artist self-withdrawal.
-// Allows withdrawal when pending >= $50, OR when artist has 50+ lifetime paid streams + any pending.
+// Manual artist payout — artist self-withdrawal or CEO dashboard.
+// Artists: need $50+ pending AND 50+ lifetime paid streams (same rule as the auto sweep).
+// CEO: may pay any artist's full pending balance early, bypassing the threshold.
+// Always pays exactly the pending earnings rows and marks them paid, so the
+// auto sweep can never pay the same money twice.
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
-import { makeIdempotencyKey, withStripeRetry } from "../_shared/stripeRetry.ts";
+import { withStripeRetry } from "../_shared/stripeRetry.ts";
+import {
+  MIN_PAID_STREAMS, PAYOUT_THRESHOLD_USD, claimPendingEarnings, lifetimePaidStreams,
+  markPaid, payoutIdempotencyKey, releaseClaim, syncConnectStatus,
+} from "../_shared/payoutRules.ts";
+import { recordOutcome } from "../_shared/outcomes.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,142 +20,112 @@ const corsHeaders = {
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+class UserError extends Error {
+  constructor(message: string, public status = 400) { super(message); }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+  let claimedIds: string[] = [];
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    { auth: { persistSession: false } }
+  );
 
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      { auth: { persistSession: false } }
-    );
-
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("Unauthorized");
+    if (!authHeader) throw new UserError("Unauthorized", 401);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (authError || !user) throw new UserError("Unauthorized", 401);
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace("Bearer ", "")
-    );
-    if (authError || !user) throw new Error("Unauthorized");
+    const body = await req.json().catch(() => ({}));
+    const artistId: string = body?.artistId || user.id;
+    if (!UUID_REGEX.test(artistId)) throw new UserError("Invalid artistId");
 
-    const body = await req.json();
-    let artistId: string = body?.artistId;
-    const amount = body?.amount;
-    const earningsIds = body?.earningsIds;
-
-    if (!artistId) artistId = user.id; // self-withdraw default
-    if (!UUID_REGEX.test(artistId)) throw new Error("Invalid artistId");
-
-    // Authorization: artist can only payout themselves; CEO can payout anyone.
-    if (artistId !== user.id) {
-      const { data: roleData } = await supabase
-        .from("user_roles").select("role")
-        .eq("user_id", user.id).eq("role", "ceo").maybeSingle();
-      if (!roleData) throw new Error("Forbidden — CEO access required for payouts to other artists");
+    const { data: roleData } = await supabase
+      .from("user_roles").select("role")
+      .eq("user_id", user.id).eq("role", "ceo").maybeSingle();
+    const isCeo = !!roleData;
+    if (artistId !== user.id && !isCeo) {
+      throw new UserError("Forbidden — CEO access required for payouts to other artists", 403);
     }
 
     const { data: payoutDetails } = await supabase
       .from("artist_payout_details")
-      .select("stripe_connect_id, payout_enabled")
+      .select("stripe_connect_id")
       .eq("artist_id", artistId)
       .maybeSingle();
-
     if (!payoutDetails?.stripe_connect_id) {
-      throw new Error("Stripe Connect not set up. Connect your account first.");
-    }
-    if (!payoutDetails.payout_enabled) {
-      throw new Error("Stripe Connect onboarding incomplete. Complete it before withdrawing.");
+      throw new UserError("Stripe Connect not set up. Connect your account first.");
     }
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("Stripe not configured");
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    let payoutAmount = amount;
-    let selectedIds = earningsIds || [];
+    const ready = await withStripeRetry(
+      () => syncConnectStatus(supabase, stripe, artistId, payoutDetails.stripe_connect_id as string),
+      { label: "accounts.retrieve" }
+    );
+    if (!ready) throw new UserError("Stripe Connect onboarding incomplete. Complete it before withdrawing.");
 
-    if (!payoutAmount) {
-      const { data: pending } = await supabase
-        .from("artist_earnings")
-        .select("id, total_earnings")
-        .eq("artist_id", artistId)
-        .eq("payout_status", "pending");
-
-      if (!pending?.length) {
-        return new Response(JSON.stringify({ error: "No pending earnings" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      payoutAmount = pending.reduce((s, e) => s + (e.total_earnings || 0), 0);
-      selectedIds = pending.map(e => e.id);
-
-      // Threshold check: $50 OR 50+ lifetime paid streams
-      if (payoutAmount < 50) {
-        const { count } = await supabase
-          .from("listening_history")
-          .select("id", { count: "exact", head: true })
-          .eq("track_id", artistId); // Note: this is a heuristic; ideally count via tracks join
-        // Fallback simpler threshold rule
-        if (payoutAmount < 1) {
-          return new Response(JSON.stringify({
-            error: `Need at least $1.00 pending. Current: $${payoutAmount.toFixed(2)}`
-          }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        }
+    if (!isCeo) {
+      const streams = await lifetimePaidStreams(supabase, artistId);
+      if (streams < MIN_PAID_STREAMS) {
+        throw new UserError(`You need ${MIN_PAID_STREAMS} paid streams before your first payout. Current: ${streams}.`);
       }
     }
 
-    // Idempotency key derived from artist + amount + earnings ids so client retries
-    // (or edge function reinvocations) never double-transfer funds.
-    const idemKey = makeIdempotencyKey(
-      "transfer",
-      artistId,
-      Math.round(payoutAmount * 100),
-      selectedIds.slice().sort().join(",") || "adhoc"
-    );
+    const claim = await claimPendingEarnings(supabase, artistId);
+    claimedIds = claim.ids;
+    if (!claimedIds.length || claim.total <= 0) throw new UserError("No pending earnings");
+
+    if (!isCeo && claim.total < PAYOUT_THRESHOLD_USD) {
+      throw new UserError(`Minimum payout is $${PAYOUT_THRESHOLD_USD}. Current: $${claim.total.toFixed(2)}.`);
+    }
+    // CEO dashboard sends the amount it displayed; refuse if the balance moved.
+    if (typeof body?.amount === "number" && Math.abs(body.amount - claim.total) >= 0.01) {
+      throw new UserError(`Pending balance is $${claim.total.toFixed(2)}. Payouts send the full pending balance — refresh and try again.`);
+    }
+
+    const amountCents = Math.round(claim.total * 100);
     const transfer = await withStripeRetry(
-      () => stripe.transfers.create({
-        amount: Math.round(payoutAmount * 100),
+      async () => stripe.transfers.create({
+        amount: amountCents,
         currency: "usd",
-        destination: payoutDetails.stripe_connect_id,
-        description: `TDZ artist payout`,
-        metadata: { artist_id: artistId, type: "manual_payout" },
-      }, { idempotencyKey: idemKey }),
+        destination: payoutDetails.stripe_connect_id as string,
+        description: "TDZ artist payout",
+        metadata: { artist_id: artistId, type: isCeo && artistId !== user.id ? "ceo_payout" : "manual_payout" },
+      }, { idempotencyKey: await payoutIdempotencyKey("transfer", artistId, amountCents, claimedIds) }),
       { label: "transfers.create" }
     );
 
     await supabase.from("artist_payouts").insert({
-      artist_id: artistId, amount: payoutAmount, status: "completed",
-      square_payout_id: transfer.id, earnings_ids: selectedIds,
+      artist_id: artistId, amount: claim.total, status: "completed",
+      square_payout_id: transfer.id, earnings_ids: claimedIds,
       processed_by: user.id, completed_at: new Date().toISOString(),
     });
-
-    if (selectedIds.length) {
-      await supabase.from("artist_earnings")
-        .update({ payout_status: "paid", payout_date: new Date().toISOString().split("T")[0] })
-        .in("id", selectedIds);
-    }
+    await markPaid(supabase, claimedIds);
     await supabase.from("artist_payout_details")
       .update({ last_payout_date: new Date().toISOString() })
       .eq("artist_id", artistId);
 
-    return new Response(JSON.stringify({
-      success: true, transferId: transfer.id, amount: payoutAmount,
-    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    await recordOutcome({ ctq: "payout", ok: true, subjectId: transfer.id, artistId, detail: { amount: claim.total, mode: "manual" } });
+    return json({ success: true, transferId: transfer.id, amount: claim.total });
   } catch (error) {
+    await releaseClaim(supabase, claimedIds).catch(() => {});
     const msg = error instanceof Error ? error.message : String(error);
     console.error("process-artist-payout error:", msg);
-    // Allow specific business-logic messages through; mask Stripe/internal errors.
-    const safe = [
-      "Unauthorized", "Invalid artistId", "Forbidden — CEO access required for payouts to other artists",
-      "Stripe Connect not set up. Connect your account first.",
-      "Stripe Connect onboarding incomplete. Complete it before withdrawing.",
-      "No pending earnings",
-    ];
-    const isSafe = safe.some((s) => msg.startsWith(s));
-    const status = msg === "Unauthorized" ? 401 : msg.startsWith("Forbidden") ? 403 : 500;
-    return new Response(
-      JSON.stringify({ error: isSafe ? msg : "Payout failed. Please try again or contact support." }),
-      { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    if (error instanceof UserError) return json({ error: msg }, error.status);
+    // Rule refusals above aren't defects; system failures below are.
+    await recordOutcome({ ctq: "payout", ok: false, reason: /insufficient/i.test(msg) ? "platform_balance_low" : "transfer_error", detail: { mode: "manual" } });
+    if (/insufficient/i.test(msg)) {
+      return json({ error: "Payout is temporarily delayed while platform funds settle. It will be retried automatically." }, 503);
+    }
+    return json({ error: "Payout failed. Please try again or contact support." }, 500);
   }
 });
