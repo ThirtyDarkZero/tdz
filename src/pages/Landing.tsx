@@ -17,6 +17,8 @@ import "swiper/css/effect-coverflow";
 import "swiper/css/navigation";
 import { openStripeCheckout, isCheckoutPlan } from "@/lib/subscription-checkout";
 import { openStore, type StoreClickSource } from "@/lib/analytics";
+import { LiquidGlassLayer } from "@/components/landing/LiquidGlassLayer";
+import { FanPitch } from "@/components/landing/FanPitch";
 
 // ─── Types ───
 interface Track {
@@ -131,13 +133,13 @@ function NavPill() {
     { sub: "SHOP", main: "STORE", path: "https://thirtydarkzerorecords.com/store", external: true, storeSource: "landing_nav_pill" as StoreClickSource },
   ];
   return (
-    <div className="flex gap-0 mx-auto w-fit rounded-full px-1.5 sm:px-2 py-2 sm:py-2.5" style={{ background: "rgba(55,55,55,0.5)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(20px)" }}>
+    <div className="liquid-glass flex gap-0 mx-auto w-fit rounded-full px-1.5 sm:px-2 py-2 sm:py-2.5">
       {items.map((item: any, i) => (
         <button
           key={i}
           onClick={() => item.external ? (item.storeSource ? openStore(item.storeSource) : window.open(item.path, "_blank", "noopener,noreferrer")) : navigate(item.path)}
-          className="flex flex-col items-center gap-0.5 px-3 sm:px-5 md:px-7 py-1.5 sm:py-2 rounded-full transition-colors"
-          style={i === 0 ? { background: "rgba(80,80,80,0.5)" } : {}}
+          className="flex flex-col items-center gap-0.5 px-3 sm:px-5 md:px-7 py-1.5 sm:py-2 rounded-full hover:bg-white/10"
+          style={i === 0 ? { background: "rgba(255,255,255,0.12)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.3)" } : {}}
         >
           <span style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: "8px", color: "#888", letterSpacing: "0.18em", textTransform: "uppercase" as const }}>{item.sub}</span>
           <span style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(16px, 4vw, 22px)", color: "#FFF", letterSpacing: "0.06em" }}>{item.main}</span>
@@ -173,9 +175,9 @@ function TDZBadge({ size = 38 }: { size?: number }) {
 
 function SubscribeButton({ onClick, label = "SUBSCRIBE ›" }: { onClick: () => void; label?: string }) {
   return (
-    <button onClick={onClick} className="mt-4 flex items-center gap-2 mx-auto transition-all hover:border-white/30"
-      style={{ background: "rgba(45,45,45,0.85)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: "999px", padding: "12px 36px",
-        color: "#AAA", fontFamily: "'Raleway', sans-serif", fontWeight: 600, fontSize: "13px", letterSpacing: "0.12em", textTransform: "uppercase" as const, cursor: "pointer" }}>
+    <button onClick={onClick} className="liquid-glass liquid-glass-btn mt-4 flex items-center gap-2 mx-auto"
+      style={{ borderRadius: "999px", padding: "12px 36px",
+        color: "#FFF", fontFamily: "'Raleway', sans-serif", fontWeight: 600, fontSize: "13px", letterSpacing: "0.12em", textTransform: "uppercase" as const, cursor: "pointer" }}>
       {label}
     </button>
   );
@@ -242,7 +244,8 @@ export default function Landing() {
   }, []);
 
   return (
-    <div className="min-h-screen" style={{ background: "#000", overflowX: "hidden" }}>
+    <div className="min-h-screen landing-liquid" style={{ background: "#000", overflowX: "hidden" }}>
+      <LiquidGlassLayer />
       <Section1Hero />
       <Section2Mockups />
       <SectionMarketingReel />
@@ -255,6 +258,7 @@ export default function Landing() {
       <SectionAIAgents />
       <Section7ArtistPlans navigate={navigate} />
       <Section8Releases tracks={latestReleases} audioPreview={audioPreview} navigate={navigate} />
+      <FanPitch onStart={() => { if (isCheckoutPlan("fan")) openStripeCheckout("fan"); else navigate("/auth?mode=signup"); }} onExplore={() => navigate("/discover")} />
       <Section9Discovery navigate={navigate} />
       <Section10FanPlan navigate={navigate} />
       <Section11Footer navigate={navigate} />
@@ -265,6 +269,21 @@ export default function Landing() {
         @keyframes auroraShift { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
         @keyframes floatDiamond { 0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.6; } 50% { transform: translateY(-12px) rotate(45deg); opacity: 1; } }
       `}</style>
+    </div>
+  );
+}
+
+function HeroCtas() {
+  const navigate = useNavigate();
+  const font = { fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: "0.14em", color: "#FFF" } as const;
+  return (
+    <div className="mt-8 flex flex-wrap justify-center gap-3">
+      <button onClick={() => navigate("/discover")} className="liquid-glass liquid-glass-btn liquid-glass-cta rounded-full px-7 py-3.5" style={font}>
+        ▶ START LISTENING
+      </button>
+      <button onClick={() => navigate("/auth?mode=signup")} className="liquid-glass liquid-glass-btn rounded-full px-7 py-3.5" style={font}>
+        I'M AN ARTIST
+      </button>
     </div>
   );
 }
@@ -324,9 +343,9 @@ function Section1Hero() {
           <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: "12px", color: "#999", marginTop: "12px", maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
             How a play counts: a paid subscriber listens for more than 30 seconds or more than half the track. Artists' own plays never count. <a href="/faq" style={{ color: "#FF6347", textDecoration: "underline" }}>Read how $1/stream works</a>
           </p>
-          <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: "12px", color: "#999", marginTop: "12px", maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
-            How a play counts: a paid subscriber listens for more than 30 seconds or more than half the track. Artists' own plays never count. <a href="/faq" style={{ color: "#FF6347", textDecoration: "underline" }}>Read how $1/stream works</a>
-          </p>
+        </Reveal>
+        <Reveal delay={0.33}>
+          <HeroCtas />
         </Reveal>
         <Reveal delay={0.35}>
           <div className="mt-8"><TDZBadge size={30} /></div>
@@ -697,7 +716,7 @@ function Section4Studio({ navigate }: { navigate: (p: string) => void }) {
           Everything you need to release, promote, and monetize your music
         </p>
         <div className="flex justify-center gap-3 mb-8">
-          <button onClick={() => setShowVideo(!showVideo)} className="px-4 py-2 rounded-full text-xs transition-all"
+          <button onClick={() => setShowVideo(!showVideo)} className="liquid-glass liquid-glass-btn px-5 py-2.5 rounded-full text-xs"
             style={{ background: showVideo ? "#22C55E" : "transparent", color: showVideo ? "#000" : "#22C55E", border: "1px solid #22C55E", fontFamily: "'Raleway', sans-serif", fontWeight: 600 }}>
             {showVideo ? "Hide Demo" : "▶ Watch Demo"}
           </button>
@@ -1206,13 +1225,14 @@ function Section9Discovery({ navigate }: { navigate: (p: string) => void }) {
         <Reveal>
           <ChromeTitle className="text-center">TDZ DISCOVERY</ChromeTitle>
           <p className="text-center mt-2" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "#888", letterSpacing: "0.15em" }}>IMMERSIVE MUSIC EXPLORATION</p>
+          <p className="text-center mt-3 mx-auto max-w-xl" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 15, color: "#BBB" }}>Not a feed. A universe. Drift through moods, dive into genres and step inside artist worlds, with every play backing the artist behind it.</p>
           <div className="flex justify-center gap-3 mt-4 mb-8">
-            <button onClick={() => setShowVideo(!showVideo)} className="px-4 py-2 rounded-full text-xs transition-all"
+            <button onClick={() => setShowVideo(!showVideo)} className="liquid-glass liquid-glass-btn px-5 py-2.5 rounded-full text-xs"
               style={{ background: showVideo ? "#00CFFF" : "transparent", color: showVideo ? "#000" : "#00CFFF", border: "1px solid #00CFFF", fontFamily: "'Raleway', sans-serif", fontWeight: 600 }}>
               {showVideo ? "Hide Demo" : "▶ Watch Demo"}
             </button>
-            <button onClick={() => navigate("/discover")} className="px-4 py-2 rounded-full text-xs"
-              style={{ border: "1px solid #333", color: "#888", fontFamily: "'Raleway', sans-serif", fontWeight: 600 }}>
+            <button onClick={() => navigate("/discover")} className="liquid-glass liquid-glass-btn px-5 py-2.5 rounded-full text-xs"
+              style={{ color: "#FFF", fontFamily: "'Raleway', sans-serif", fontWeight: 600 }}>
               Open Discovery →
             </button>
           </div>
@@ -1227,7 +1247,7 @@ function Section9Discovery({ navigate }: { navigate: (p: string) => void }) {
         )}
 
         <Reveal delay={0.1}>
-          <div className="mx-auto mt-4 overflow-hidden" style={{ maxWidth: 1100, borderRadius: 18, border: "1px solid rgba(139,92,246,0.2)", background: "rgba(5,5,15,0.85)", backdropFilter: "blur(20px)", minHeight: 480 }}>
+          <div className="liquid-glass mx-auto mt-4 overflow-hidden" style={{ maxWidth: 1100, borderRadius: 28, minHeight: 480 }}>
             <div className="flex">
               {/* Cosmic sidebar */}
               <div className="hidden sm:flex flex-col items-center gap-6 py-5 flex-shrink-0" style={{ width: 50, background: "rgba(5,5,15,0.9)", borderRight: "1px solid rgba(139,92,246,0.15)" }}>
