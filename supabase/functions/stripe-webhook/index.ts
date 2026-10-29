@@ -3,6 +3,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { isConnectReady } from "../_shared/payoutRules.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -268,6 +269,25 @@ serve(async (req) => {
               }, { onConflict: "square_payment_id", ignoreDuplicates: true });
               if (error) throw error;
             });
+
+            // Credit the tip to the artist's payable earnings (previously tips were
+            // recorded but never paid out). Same processing-fee rule as downloads/merch.
+            const tipFee = +(amount * 0.029 + 0.30).toFixed(2);
+            const tipNet = Math.max(0, +(amount - tipFee).toFixed(2));
+            const today = new Date();
+            const periodStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split("T")[0];
+            const periodEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split("T")[0];
+            await once(`tip_earnings:${paymentId}`, async () => {
+              const { error } = await supabase.from("artist_earnings").upsert({
+                artist_id: artistId,
+                period_start: periodStart, period_end: periodEnd,
+                tip_revenue: tipNet, streaming_revenue: 0, download_revenue: 0,
+                total_streams: 0, total_downloads: 0,
+                payout_status: "pending",
+                idempotency_key: `tip:${paymentId}`,
+              }, { onConflict: "idempotency_key", ignoreDuplicates: true });
+              if (error) throw error;
+            });
           }
         }
 
@@ -355,7 +375,8 @@ serve(async (req) => {
           account = await stripe.accounts.retrieve(acctId);
         }
         const userId = account.metadata?.user_id;
-        const ready = !!(account.charges_enabled && account.payouts_enabled && account.details_submitted);
+        // Artists only receive transfers, so charges_enabled is not required.
+        const ready = isConnectReady(account);
         const needsAttention =
           (account.requirements?.currently_due?.length ?? 0) > 0 ||
           (account.requirements?.past_due?.length ?? 0) > 0 ||

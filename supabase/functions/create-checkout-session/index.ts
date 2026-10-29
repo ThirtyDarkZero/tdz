@@ -3,6 +3,8 @@ import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from '../_shared/cors.ts';
+import { recordOutcome } from "../_shared/outcomes.ts";
+import { publicError } from "../_shared/errors.ts";
 
 // Live Stripe Price IDs (subscriptions)
 const PLAN_PRICES: Record<string, { priceId: string; name: string }> = {
@@ -103,13 +105,16 @@ serve(async (req) => {
     });
 
     if (!session.url) {
+      await recordOutcome({ ctq: "checkout_start", ok: false, reason: "no_checkout_url" });
       return respond({ ok: false, error: "Stripe did not return a checkout URL", stage });
     }
 
+    await recordOutcome({ ctq: "checkout_start", ok: true, subjectId: session.id, detail: { plan } });
     return respond({ ok: true, url: session.url });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error(`checkout failed at stage=${stage}:`, msg);
-    return respond({ ok: false, error: msg, stage });
+    await recordOutcome({ ctq: "checkout_start", ok: false, reason: `error_at_${stage}` });
+    return respond({ ok: false, error: publicError(error, "Checkout could not be started. Please try again."), stage });
   }
 });

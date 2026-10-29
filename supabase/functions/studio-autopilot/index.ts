@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { requireAdminOrCron } from "../_shared/auth.ts";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -179,7 +180,9 @@ serve(async (req) => {
             }, { onConflict: 'user_id' });
 
           // Update monthly listeners
-          await supabaseAdmin.rpc('update_artist_monthly_listeners').catch(() => {});
+          // Query builders have no .catch(); calling it threw and aborted this task.
+          const { error: listenersErr } = await supabaseAdmin.rpc('update_artist_monthly_listeners');
+          if (listenersErr) console.error('update_artist_monthly_listeners failed:', listenersErr.message);
 
           await logTask(supabaseAdmin, userId, 'fan_engagement', `Fan metrics refreshed: ${followCount || 0} followers`, { followers: followCount });
           taskResults.push(`Fan engagement refreshed`);
@@ -264,7 +267,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Autopilot error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: publicError(error) }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

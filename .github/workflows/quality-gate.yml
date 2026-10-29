@@ -1,0 +1,112 @@
+name: Quality gate
+
+# Six Sigma "Control": every change must pass tests and may not add defects.
+on:
+  pull_request:
+  push:
+    branches: [main]   # Lovable commits straight to main; check those too
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: App builds, type-checks and passes tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: oven-sh/setup-bun@v2   # the build's sitemap step runs `bunx tsx`
+      - run: npm ci --no-audit --no-fund
+      - name: Type-check
+        run: npx tsc -p tsconfig.app.json --noEmit
+      - name: Unit tests
+        run: npx vitest run
+      - name: Production build
+        run: npm run build
+
+  functions:
+    name: Edge function tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Every edge function loads (syntax and imports)
+        run: |
+          failed=0
+          for f in supabase/functions/*/index.ts; do
+            dir=$(dirname "$f"); cfg=""
+            [ -f "$dir/deno.json" ] && cfg="--config $dir/deno.json"
+            if ! DENO_NO_PACKAGE_JSON=1 deno cache --no-lock $cfg "$f" > /tmp/out.txt 2>&1; then
+              echo "::error file=$f::$(sed 's/\x1b\[[0-9;]*m//g' /tmp/out.txt | grep -m1 -iE 'error' )"
+              failed=1
+            fi
+          done
+          exit $failed
+      - name: Shared payout, rate-limit and CORS tests
+        run: |
+          set +e
+          # Edge functions don't use the app's package.json; stop Deno looking for its node_modules.
+          DENO_NO_PACKAGE_JSON=1 deno test --allow-env --no-lock supabase/functions/_shared/ 2>&1 | tee deno-test.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" != 0 ]; then
+            # Surface the failure as annotations so it's readable from the PR checks.
+            sed 's/\x1b\[[0-9;]*m//g' deno-test.log | grep -E "error|ERROR|FAILED|=>" | head -20 | while read -r line; do echo "::error::$line"; done
+          fi
+          exit $status
+
+  database:
+    name: Money and fraud rules (database)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Payouts, stream fraud, permissions, sigma, ledger
+        run: ./supabase/tests/db/run.sh
+
+  no-new-defects:
+    name: No new defects vs. base
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: npm ci --no-audit --no-fund
+      - name: Compare defect counts with the code being replaced
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="origin/${{ github.base_ref }}"
+          else
+            BASE="${{ github.event.before }}"
+            git cat-file -e "$BASE" 2>/dev/null || BASE="HEAD~1"
+          fi
+          python3 scripts/quality/gate.py "$BASE"

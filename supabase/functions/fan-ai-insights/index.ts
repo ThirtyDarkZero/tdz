@@ -1,5 +1,8 @@
+import "../_shared/aiFallback.ts";
+import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,7 +19,7 @@ serve(async (req) => {
   }
 
   try {
-    const { summary } = await req.json();
+    const { summary } = await req.json().catch(() => ({}));
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
@@ -75,7 +78,7 @@ Keep each insight to 1-2 sentences. Be specific and data-driven. Use emoji bulle
     });
   } catch (e) {
     console.error("fan-ai-insights error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ error: publicError(e, "Unknown error") }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

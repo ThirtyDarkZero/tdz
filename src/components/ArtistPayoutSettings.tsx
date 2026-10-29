@@ -31,6 +31,7 @@ interface EarningsSummary {
   totalPending: number;
   totalPaid: number;
   totalStreams: number;
+  paidStreams: number;
   nextPayoutDate: string | null;
 }
 
@@ -41,6 +42,7 @@ export const ArtistPayoutSettings = () => {
     totalPending: 0,
     totalPaid: 0,
     totalStreams: 0,
+    paidStreams: 0,
     nextPayoutDate: null,
   });
   const [loading, setLoading] = useState(true);
@@ -62,8 +64,11 @@ export const ArtistPayoutSettings = () => {
     const payoutStatus = params.get('payout');
     if (payoutStatus === 'success') {
       toast.success("Stripe Connect setup complete! Verifying account...");
-      // Webhook account.updated will flip payout_enabled; refresh shortly.
-      setTimeout(() => loadPayoutDetails(), 2000);
+      // Pull account status straight from Stripe, then refresh.
+      supabase.functions
+        .invoke('setup-artist-payout', { body: { action: 'sync' } })
+        .catch((e) => console.error('Payout status sync failed:', e))
+        .finally(() => loadPayoutDetails());
       // Clean URL
       window.history.replaceState({}, '', window.location.pathname);
     } else if (payoutStatus === 'refresh') {
@@ -128,6 +133,7 @@ export const ArtistPayoutSettings = () => {
       }
 
       const totalStreams = tracksData?.reduce((sum, t) => sum + (t.play_count || 0), 0) || 0;
+      const paidStreams = earningsData?.reduce((sum, e) => sum + (Number(e.total_streams) || 0), 0) || 0;
       
       const paid = earningsData
         ?.filter(e => e.payout_status === 'paid')
@@ -144,6 +150,7 @@ export const ArtistPayoutSettings = () => {
         totalPending: pending,
         totalPaid: paid,
         totalStreams: totalStreams,
+        paidStreams: paidStreams,
         nextPayoutDate: nextMonth.toISOString(),
       });
     } catch (error) {
@@ -196,7 +203,10 @@ export const ArtistPayoutSettings = () => {
       });
 
       if (response.error) {
-        throw new Error(response.error.message);
+        // Surface the function's own message (e.g. "need 50 paid streams").
+        const ctx = (response.error as { context?: Response }).context;
+        const body = ctx ? await ctx.json().catch(() => null) : null;
+        throw new Error(body?.error || response.error.message);
       }
 
       const data = response.data;
@@ -242,8 +252,11 @@ export const ArtistPayoutSettings = () => {
   }
 
   const MINIMUM_PAYOUT = 50;
+  const MIN_PAID_STREAMS = 50;
   const isConnected = !!payoutDetails?.stripe_connect_id;
-  const canRequestPayout = isConnected && payoutDetails?.payout_enabled && earnings.totalPending >= MINIMUM_PAYOUT;
+  const streamsNeeded = Math.max(0, MIN_PAID_STREAMS - earnings.paidStreams);
+  const canRequestPayout = isConnected && payoutDetails?.payout_enabled
+    && earnings.totalPending >= MINIMUM_PAYOUT && streamsNeeded === 0;
 
   return (
     <div className="space-y-6">
@@ -346,9 +359,13 @@ export const ArtistPayoutSettings = () => {
                 <div>
                   <p className="font-medium">Request Payout</p>
                   <p className="text-sm text-muted-foreground">
-                    {canRequestPayout 
-                      ? `$${earnings.totalPending.toFixed(2)} available for withdrawal`
-                      : `Need $${(MINIMUM_PAYOUT - earnings.totalPending).toFixed(2)} more to reach minimum`
+                    {canRequestPayout
+                      ? `$${earnings.totalPending.toFixed(2)} available — paid automatically within the hour, or withdraw now`
+                      : streamsNeeded > 0
+                        ? `Need ${streamsNeeded} more paid stream${streamsNeeded === 1 ? '' : 's'} before your first payout`
+                        : earnings.totalPending < MINIMUM_PAYOUT
+                          ? `Need $${(MINIMUM_PAYOUT - earnings.totalPending).toFixed(2)} more to reach minimum`
+                          : 'Finish Stripe setup to receive payouts'
                     }
                   </p>
                 </div>

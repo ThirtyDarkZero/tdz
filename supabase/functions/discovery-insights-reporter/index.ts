@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,7 +21,7 @@ serve(async (req) => {
     const auth = await requireUser(req);
     if (!auth.user) return unauthorized(corsHeaders);
 
-    const { artistId } = await req.json();
+    const { artistId } = await req.json().catch(() => ({}));
     if (!artistId) {
       return new Response(JSON.stringify({ error: 'artistId required' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -134,7 +135,7 @@ serve(async (req) => {
     });
   } catch (error: any) {
     console.error('discovery-insights-reporter error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: publicError(error) }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
