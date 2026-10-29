@@ -1,1397 +1,301 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { Users, MessageCircle, Play, Palette, Heart, Star, SkipBack, SkipForward, Shuffle, Compass, BarChart3, Globe, User, Bookmark, Settings, Moon, Crown, Music, Upload, TrendingUp, LayoutDashboard, BookOpen, Zap, Check, Pause, Volume2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import tdzLogo from "@/assets/tdz-logo.png";
-import heroArtistStudio from "@/assets/hero-artist-studio.jpg";
-import heroArtistStreet from "@/assets/hero-artist-street.jpg";
-import heroArtistHeadphones from "@/assets/hero-artist-headphones.jpg";
-import { supabase } from "@/integrations/supabase/client";
-import { MotionCover } from "@/components/MotionCover";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { EffectCoverflow, Autoplay, Navigation } from "swiper/modules";
-// @ts-ignore
-import "swiper/css";
-// @ts-ignore
-import "swiper/css/effect-coverflow";
-// @ts-ignore
-import "swiper/css/navigation";
-import { openStripeCheckout, isCheckoutPlan } from "@/lib/subscription-checkout";
-import { openStore, type StoreClickSource } from "@/lib/analytics";
-import { LiquidGlassLayer } from "@/components/landing/LiquidGlassLayer";
-import { FanPitch } from "@/components/landing/FanPitch";
+import heroStreet from "@/assets/hero-artist-street.jpg";
+import heroStudio from "@/assets/hero-artist-studio.jpg";
+import heroHeadphones from "@/assets/hero-artist-headphones.jpg";
+import crowd from "@/assets/hero-background.jpg";
+import { openStripeCheckout, isCheckoutPlan, type CheckoutPlan } from "@/lib/subscription-checkout";
+import { openStore } from "@/lib/analytics";
+import { PlayMeter } from "@/components/showroom/PlayMeter";
+import { Chapter, Segmented } from "@/components/showroom/Showroom";
+import { prefersReducedMotion, useShowroomScroll } from "@/components/showroom/useShowroomScroll";
 
-// ─── Types ───
-interface Track {
-  id: string;
-  title: string;
-  artist_name: string;
-  album_cover_path: string | null;
-  album_cover_bucket: string | null;
-  motion_cover_path: string | null;
-  motion_cover_bucket: string | null;
-  file_path: string | null;
-  created_at: string;
-  play_count: number | null;
-  is_published: boolean | null;
+function checkout(plan: CheckoutPlan, navigate: (p: string) => void) {
+  if (isCheckoutPlan(plan)) openStripeCheckout(plan);
+  else navigate("/auth?mode=signup");
 }
 
-// ─── Scroll reveal hook ───
-function useReveal() {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold: 0.15 });
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-  return { ref, visible };
-}
-
-function Reveal({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
-  const { ref, visible } = useReveal();
+// ─── Header ───────────────────────────────────────────
+function Header({ solid }: { solid: boolean }) {
   return (
-    <div
-      ref={ref}
-      className={className}
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0) scale(1) rotateX(0deg)" : "translateY(70px) scale(0.88) rotateX(8deg)",
-        filter: visible ? "blur(0px)" : "blur(6px)",
-        perspective: "1200px",
-        transition: `opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, filter 0.9s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
-      }}
-    >
-      {children}
-    </div>
+    <header className="sr-header" data-solid={solid || undefined}>
+      <Link to="/" className="sr-header__logo" aria-label="TDZ Distribution home">
+        <img src={tdzLogo} alt="" />
+      </Link>
+      <nav className="sr-header__nav" aria-label="Main">
+        <Link to="/discover" className="sr-header__link sr-hide-sm">Listen</Link>
+        <Link to="/studio" className="sr-header__link sr-hide-sm">Studio</Link>
+        <Link to="/auth" className="sr-header__link">Log in</Link>
+        <Link to="/auth?mode=signup" className="sr-button sr-button--small">Start earning</Link>
+      </nav>
+    </header>
   );
 }
 
-// Dramatic screen-pop reveal: section scales from 0.65 to 1.0 with 3D rotation + blur
-function ScreenPopReveal({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const onScroll = () => {
-      const rect = el.getBoundingClientRect();
-      const vh = window.innerHeight;
-      const raw = 1 - Math.max(0, Math.min(1, (rect.top - vh * 0.15) / (vh * 0.65)));
-      setProgress(raw);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
+// ─── Hero: press play ─────────────────────────────────
+function Hero() {
   return (
-    <div
-      ref={ref}
-      className={className}
-      style={{
-        transform: `scale(${0.65 + progress * 0.35}) perspective(1200px) rotateX(${(1 - progress) * 10}deg)`,
-        opacity: Math.min(1, progress * 1.6),
-        borderRadius: `${40 - progress * 28}px`,
-        filter: `blur(${(1 - progress) * 8}px)`,
-        transition: "transform 0.06s linear, opacity 0.06s linear, border-radius 0.06s linear, filter 0.06s linear",
-        willChange: "transform, opacity, filter",
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-// ─── Ticker ───
-function Ticker({ text }: { text: string }) {
-  const repeated = `${text}  •  `.repeat(6);
-  return (
-    <div className="py-7 overflow-hidden whitespace-nowrap" style={{ background: "#000" }}>
-      <div className="inline-flex animate-marquee">
-        <span style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(22px, 2.8vw, 34px)", color: "#5A5A5A", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-          {repeated}
-        </span>
-        <span style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(22px, 2.8vw, 34px)", color: "#5A5A5A", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-          {repeated}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-// ─── Nav Pill ───
-function NavPill() {
-  const navigate = useNavigate();
-  const items = [
-    { sub: "MEMBERS", main: "LOG IN", path: "/auth" },
-    { sub: "START HERE", main: "SIGNUP", path: "/auth?mode=signup" },
-    { sub: "ARTISTS", main: "STUDIO", path: "/studio" },
-    { sub: "FANS", main: "DISCOVERY", path: "/discover" },
-    { sub: "SHOP", main: "STORE", path: "https://thirtydarkzerorecords.com/store", external: true, storeSource: "landing_nav_pill" as StoreClickSource },
-  ];
-  return (
-    <div className="liquid-glass flex gap-0 mx-auto w-fit rounded-full px-1.5 sm:px-2 py-2 sm:py-2.5">
-      {items.map((item: any, i) => (
-        <button
-          key={i}
-          onClick={() => item.external ? (item.storeSource ? openStore(item.storeSource) : window.open(item.path, "_blank", "noopener,noreferrer")) : navigate(item.path)}
-          className="flex flex-col items-center gap-0.5 px-3 sm:px-5 md:px-7 py-1.5 sm:py-2 rounded-full hover:bg-white/10"
-          style={i === 0 ? { background: "rgba(255,255,255,0.12)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.3)" } : {}}
-        >
-          <span style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: "8px", color: "#888", letterSpacing: "0.18em", textTransform: "uppercase" as const }}>{item.sub}</span>
-          <span style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(16px, 4vw, 22px)", color: "#FFF", letterSpacing: "0.06em" }}>{item.main}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-// ─── Title helpers ───
-function ChromeTitle({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <h2 className={className} style={{
-      fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(40px, 6vw, 88px)", letterSpacing: "0.04em", textTransform: "uppercase",
-      background: "linear-gradient(180deg, #D0D0D0 0%, #FFFFFF 25%, #9A9A9A 55%, #404040 100%)",
-      WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1.1,
-    }}>{children}</h2>
-  );
-}
-
-function WhiteTitle({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <h2 className={className} style={{
-      fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(40px, 6vw, 88px)", color: "#FFFFFF",
-      letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: 1.1,
-    }}>{children}</h2>
-  );
-}
-
-function TDZBadge({ size = 38 }: { size?: number }) {
-  return <img src={tdzLogo} alt="TDZ" className="mx-auto" style={{ width: size, height: size, objectFit: "contain" }} />;
-}
-
-function SubscribeButton({ onClick, label = "SUBSCRIBE ›" }: { onClick: () => void; label?: string }) {
-  return (
-    <button onClick={onClick} className="liquid-glass liquid-glass-btn mt-4 flex items-center gap-2 mx-auto"
-      style={{ borderRadius: "999px", padding: "12px 36px",
-        color: "#FFF", fontFamily: "'Raleway', sans-serif", fontWeight: 600, fontSize: "13px", letterSpacing: "0.12em", textTransform: "uppercase" as const, cursor: "pointer" }}>
-      {label}
-    </button>
-  );
-}
-
-// ─── Audio Preview Player ───
-function useAudioPreview() {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [playingId, setPlayingId] = useState<string | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const play = useCallback((trackId: string, filePath: string | null) => {
-    // Stop current
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    if (timerRef.current) clearTimeout(timerRef.current);
-
-    if (!filePath) { setPlayingId(null); return; }
-    if (playingId === trackId) { setPlayingId(null); return; }
-
-    const url = supabase.storage.from("tracks").getPublicUrl(filePath).data.publicUrl;
-    const audio = new Audio(url);
-    audioRef.current = audio;
-    setPlayingId(trackId);
-    audio.play().catch(() => setPlayingId(null));
-
-    // Stop after 10 seconds
-    timerRef.current = setTimeout(() => {
-      audio.pause();
-      setPlayingId(null);
-    }, 10000);
-
-    audio.onended = () => setPlayingId(null);
-  }, [playingId]);
-
-  const stop = useCallback(() => {
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setPlayingId(null);
-  }, []);
-
-  useEffect(() => () => { stop(); }, [stop]);
-
-  return { playingId, play, stop };
-}
-
-// ═══════════════════════════════════════
-// MAIN LANDING COMPONENT
-// ═══════════════════════════════════════
-export default function Landing() {
-  const [latestReleases, setLatestReleases] = useState<Track[]>([]);
-  const navigate = useNavigate();
-  const audioPreview = useAudioPreview();
-
-  useEffect(() => {
-    // Only load true singles (tracks not part of an album) for the carousel
-    supabase
-      .from("tracks")
-      .select("id, title, artist_name, album_cover_path, album_cover_bucket, motion_cover_path, motion_cover_bucket, file_path, created_at, play_count, is_published, album_id")
-      .eq("is_published", true)
-      .is("album_id", null)
-      .order("created_at", { ascending: false })
-      .limit(12)
-      .then(({ data }) => { if (data) setLatestReleases(data as Track[]); });
-  }, []);
-
-  return (
-    <div className="min-h-screen landing-liquid" style={{ background: "#000", overflowX: "hidden" }}>
-      <LiquidGlassLayer />
-      <Section1Hero />
-      <Section2Mockups />
-      <SectionMarketingReel />
-      <Ticker text="AI FRIENDLY. ARTIST FIRST. YOUR MUSIC, YOUR PROFITS 100% OF DOWNLOAD REVENUE, $1 FOR EVERY STREAM, AND REAL TIME EARNINGS." />
-      <Section4Studio navigate={navigate} />
-      <Ticker text="EARN REAL MONEY FOR YOUR MUSIC $1 PER STREAM.  SET YOUR OWN DOWNLOAD PRICES. KEEP 100% OF DOWNLOAD REVENUE." />
-      <Section6Cards />
-      <SectionWhyTDZ navigate={navigate} />
-      <SectionHowPaymentsWork />
-      <SectionAIAgents />
-      <Section7ArtistPlans navigate={navigate} />
-      <Section8Releases tracks={latestReleases} audioPreview={audioPreview} navigate={navigate} />
-      <FanPitch onStart={() => { if (isCheckoutPlan("fan")) openStripeCheckout("fan"); else navigate("/auth?mode=signup"); }} onExplore={() => navigate("/discover")} />
-      <Section9Discovery navigate={navigate} />
-      <Section10FanPlan navigate={navigate} />
-      <Section11Footer navigate={navigate} />
-
-      <style>{`
-        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        .animate-marquee { animation: marquee 45s linear infinite; }
-        @keyframes auroraShift { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
-        @keyframes floatDiamond { 0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.6; } 50% { transform: translateY(-12px) rotate(45deg); opacity: 1; } }
-      `}</style>
-    </div>
-  );
-}
-
-function HeroCtas() {
-  const navigate = useNavigate();
-  const font = { fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: "0.14em", color: "#FFF" } as const;
-  return (
-    <div className="mt-8 flex flex-wrap justify-center gap-3">
-      <button onClick={() => navigate("/discover")} className="liquid-glass liquid-glass-btn liquid-glass-cta rounded-full px-7 py-3.5" style={font}>
-        ▶ START LISTENING
-      </button>
-      <button onClick={() => navigate("/auth?mode=signup")} className="liquid-glass liquid-glass-btn rounded-full px-7 py-3.5" style={font}>
-        I'M AN ARTIST
-      </button>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════
-// SECTION 1 — HERO
-// ═══════════════════════════════════════
-function Section1Hero() {
-  const crystals = useMemo(() => Array.from({ length: 10 }, (_, i) => ({
-    id: i, left: `${10 + Math.random() * 80}%`, top: `${10 + Math.random() * 60}%`,
-    size: 6 + Math.random() * 10, duration: 5 + Math.random() * 4, delay: Math.random() * 4,
-  })), []);
-
-  return (
-    <section>
-      <div className="relative flex flex-col items-center justify-start pt-12 pb-0"
-        style={{
-          minHeight: "48vh",
-          backgroundImage: `repeating-linear-gradient(90deg,transparent 0px,rgba(139,92,246,0.25) 2px,transparent 5px,rgba(59,130,246,0.2) 10px,transparent 14px,rgba(20,184,166,0.25) 18px,transparent 22px),linear-gradient(160deg,#5B21B6 0%,#1D4ED8 20%,#0891B2 38%,#059669 55%,#7C3AED 72%,#DB2777 90%)`,
-          backgroundSize: "200% 200%", animation: "auroraShift 8s ease-in-out infinite alternate",
-          maskImage: "linear-gradient(to bottom, black 70%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, black 70%, transparent 100%)",
-        }}>
-        {crystals.map(c => (
-          <div key={c.id} className="absolute pointer-events-none" style={{
-            left: c.left, top: c.top, width: c.size, height: c.size,
-            background: "linear-gradient(135deg, rgba(125,211,252,0.7), rgba(192,132,252,0.5))",
-            clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
-            animation: `floatDiamond ${c.duration}s ease-in-out ${c.delay}s infinite`, filter: "blur(0.3px)",
-          }} />
-        ))}
-        <img src={tdzLogo} alt="TDZ Distribution" className="w-24 sm:w-28 h-auto mb-6 drop-shadow-2xl" />
-        <NavPill />
-      </div>
-      <div className="text-center pt-12 pb-20 px-4" style={{ background: "#000" }}>
-        <Reveal>
-          <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 600, fontSize: "14px", color: "#666", letterSpacing: "0.4em", textTransform: "uppercase" as const, marginBottom: "8px" }}>INTRODUCING</p>
-        </Reveal>
-        <Reveal delay={0.1}>
-          <h1 style={{
-            fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(72px, 11vw, 170px)", letterSpacing: "0.06em", textTransform: "uppercase",
-            background: "linear-gradient(180deg, #D0D0D0 0%, #FFFFFF 25%, #9A9A9A 55%, #404040 100%)",
-            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", lineHeight: 1,
-          }}>TDZ DISTRIBUTION</h1>
-        </Reveal>
-        <Reveal delay={0.2}>
-          <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: "17px", color: "#CCC", marginTop: "16px" }}>THE FIRST PLATFORM</p>
-        </Reveal>
-        <Reveal delay={0.25}>
-          <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: "19px", color: "#CCC", marginTop: "4px" }}>
-            THAT PAYS <span style={{ color: "#FFF" }}>$1</span> PER STREAM
-          </p>
-        </Reveal>
-        <Reveal delay={0.3}>
-          <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 300, fontSize: "14px", color: "#777", marginTop: "20px", maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
-            Independent artists earn 333x more than Spotify. AI music welcome. 100% of download revenue goes to artists. Keep your rights. Build your legacy.
-          </p>
-          <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: "12px", color: "#999", marginTop: "12px", maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
-            How a play counts: a paid subscriber listens for more than 30 seconds or more than half the track. Artists' own plays never count. <a href="/faq" style={{ color: "#FF6347", textDecoration: "underline" }}>Read how $1/stream works</a>
-          </p>
-        </Reveal>
-        <Reveal delay={0.33}>
-          <HeroCtas />
-        </Reveal>
-        <Reveal delay={0.35}>
-          <div className="mt-8"><TDZBadge size={30} /></div>
-        </Reveal>
+    <section className="sr-hero" aria-labelledby="hero-title">
+      <img className="sr-hero__image" src={heroStreet} alt="" fetchPriority="high" />
+      <div className="sr-hero__shade" />
+      <div className="sr-hero__content">
+        <h1 id="hero-title" className="sr-hero__title">
+          Get paid $1 every time a fan plays your song.
+        </h1>
+        <p className="sr-hero__lede">
+          Spotify pays about $0.003 a stream. TDZ pays artists $1.00 for every play by a paying fan,
+          and you keep 100% of your download sales.
+        </p>
+        <PlayMeter />
       </div>
     </section>
   );
 }
 
-// ═══════════════════════════════════════
-// MARKETING REEL — cinematic AI artist gallery
-// ═══════════════════════════════════════
-const MARKETING_REEL = [
+// ─── Spec strip ───────────────────────────────────────
+const SPECS = [
+  { value: "$1.00", label: "per play by a paying fan" },
+  { value: "333×", label: "what Spotify pays per stream" },
+  { value: "100%", label: "of your download sales" },
+  { value: "200+", label: "territories for your rights" },
+];
+
+function Specs() {
+  return (
+    <section className="sr-specs" aria-label="TDZ at a glance">
+      <dl className="sr-specs__grid">
+        {SPECS.map((s) => (
+          <div key={s.value} className="sr-specs__item">
+            <dt className="sr-specs__label">{s.label}</dt>
+            <dd className="sr-specs__value">{s.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+// ─── See it work ──────────────────────────────────────
+const DEMOS = [
+  { id: "studio", label: "Studio", src: "/videos/studio-demo.mp4",
+    caption: "Upload, price your downloads and watch earnings land in real time." },
+  { id: "discovery", label: "Discovery", src: "/videos/discovery-demo.mp4",
+    caption: "Fans search the world's catalog and play anything, with TDZ artists up front." },
+];
+
+function SeeItWork() {
+  const [active, setActive] = useState(0);
+  const demo = DEMOS[active];
+  return (
+    <section className="sr-section sr-demo" aria-labelledby="demo-title">
+      <div className="sr-section__head">
+        <h2 id="demo-title" className="sr-h2">See it work</h2>
+        <Segmented
+          label="Product demos"
+          idPrefix="demo"
+          options={DEMOS.map((d) => ({ id: d.id, label: d.label }))}
+          value={demo.id}
+          onChange={(id) => setActive(DEMOS.findIndex((d) => d.id === id))}
+        />
+      </div>
+      <div id="demo-panel" role="tabpanel" aria-labelledby={`demo-tab-${demo.id}`} className="sr-demo__panel">
+        <video
+          key={demo.src}
+          className="sr-demo__video"
+          src={demo.src}
+          autoPlay={!prefersReducedMotion()}
+          muted
+          loop
+          playsInline
+          controls={prefersReducedMotion()}
+        />
+        <p className="sr-demo__caption">{demo.caption}</p>
+      </div>
+    </section>
+  );
+}
+
+// ─── Pick your path ───────────────────────────────────
+type Plan = { name: string; price: string; plan: CheckoutPlan; points: string[] };
+const PATHS: { id: string; label: string; intro: string; plans: Plan[] }[] = [
   {
-    src: heroArtistStudio,
-    kicker: "SMART DISTRIBUTION, ZERO LIMITS",
-    headline: "THE FIRST PLATFORM",
-    line2: "THAT PAYS $1 PER STREAM",
-    sub: "Independent artists earn 333× more than legacy streaming. 100% of download revenue goes to artists. Keep your rights. Build your legacy.",
-    cta: "SUBSCRIBE NOW",
-    tint: "linear-gradient(135deg, rgba(88,28,135,0.55), rgba(30,64,175,0.55))",
+    id: "artist", label: "I make music",
+    intro: "Release your music, set your prices and get paid $1 for every play by a paying fan. Human or AI, your music is welcome.",
+    plans: [
+      { name: "Starter", price: "$9.99", plan: "starter",
+        points: ["Up to 50 tracks and 5 albums", "Download sales at your price", "HD audio", "Fan engagement tools"] },
+      { name: "Pro", price: "$19.99", plan: "pro",
+        points: ["Unlimited tracks and albums", "Full analytics", "Pre-save campaigns", "Rights in 200+ territories"] },
+    ],
   },
   {
-    src: heroArtistStreet,
-    kicker: "FAN TIPPING",
-    headline: "TIP THE ARTIST",
-    line2: "$1 PER STREAM · DIRECT TO CREATOR",
-    sub: "Fans tip artists directly from Discovery. Every dollar goes straight to the creator — no middlemen, no games.",
-    cta: "TIP NOW",
-    tint: "linear-gradient(135deg, rgba(219,39,119,0.55), rgba(88,28,135,0.55))",
+    id: "fan", label: "I listen",
+    intro: "Stream everything. Your $12 follows the artists you actually play, not a global pool.",
+    plans: [
+      { name: "Fan", price: "$12", plan: "fan",
+        points: ["Unlimited streaming", "HD and Dolby Atmos audio", "Offline downloads", "No ads"] },
+    ],
   },
   {
-    src: heroArtistHeadphones,
-    kicker: "ADVANCED ANALYTICS FOR ARTISTS",
-    headline: "REAL-TIME DATA.",
-    line2: "REAL FAN DEMOGRAPHICS.",
-    sub: "Live streaming data. Geographic heat maps. Revenue tracking. AI strategic insights. Everything Spotify hides — we surface.",
-    cta: "UNLOCK YOUR DATA",
-    tint: "linear-gradient(135deg, rgba(30,64,175,0.55), rgba(6,182,212,0.55))",
+    id: "manager", label: "I run a roster",
+    intro: "Manage every artist you represent from one dashboard, under your own brand.",
+    plans: [
+      { name: "Enterprise", price: "$49.99", plan: "enterprise",
+        points: ["Everything in Pro", "Create and manage artist accounts", "White-label dashboard", "A dedicated account manager"] },
+    ],
   },
 ];
 
-function SectionMarketingReel() {
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setI((n) => (n + 1) % MARKETING_REEL.length), 7000);
-    return () => clearInterval(t);
-  }, []);
-  const slide = MARKETING_REEL[i];
-
+function PickYourPath() {
+  const navigate = useNavigate();
+  const [active, setActive] = useState(0);
+  const path = PATHS[active];
   return (
-    <section className="relative py-16 sm:py-24 px-4" style={{ background: "#000" }}>
-      <div className="max-w-6xl mx-auto">
-        <Reveal>
-          <p
-            className="text-center mb-6"
-            style={{
-              fontFamily: "'Raleway', sans-serif",
-              fontWeight: 500,
-              fontSize: 12,
-              color: "#666",
-              letterSpacing: "0.35em",
-              textTransform: "uppercase" as const,
-            }}
-          >
-            THE MOVEMENT · THE ARTISTS · THE PLATFORM
-          </p>
-        </Reveal>
-
-        <div
-          className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10"
-          style={{ aspectRatio: "16 / 10", maxHeight: 720, boxShadow: "0 40px 120px rgba(139,92,246,0.35)" }}
-        >
-          {MARKETING_REEL.map((s, idx) => (
-            <div
-              key={idx}
-              className="absolute inset-0 transition-opacity duration-[1400ms] ease-out"
-              style={{ opacity: i === idx ? 1 : 0 }}
-              aria-hidden={i !== idx}
-            >
-              <img
-                src={s.src}
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover"
-                style={{ transform: "scale(1.05)" }}
-              />
-              <div className="absolute inset-0" style={{ background: s.tint, mixBlendMode: "multiply" }} />
-              <div
-                className="absolute inset-0"
-                style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.85) 100%)" }}
-              />
-            </div>
-          ))}
-
-          {/* Content */}
-          <div key={i} className="absolute inset-0 p-6 sm:p-10 md:p-16 flex flex-col justify-end">
-            <div className="animate-in fade-in slide-in-from-bottom-6 duration-700">
-              <p
-                className="mb-3 sm:mb-4"
-                style={{
-                  fontFamily: "'Raleway', sans-serif",
-                  fontWeight: 600,
-                  fontSize: 12,
-                  color: "#FFF",
-                  letterSpacing: "0.35em",
-                  textShadow: "0 2px 12px rgba(0,0,0,0.6)",
-                }}
-              >
-                {slide.kicker}
-              </p>
-              <h2
-                style={{
-                  fontFamily: "'Six Caps', sans-serif",
-                  fontSize: "clamp(44px, 8vw, 120px)",
-                  color: "#FFF",
-                  lineHeight: 0.92,
-                  letterSpacing: "0.02em",
-                  textShadow: "0 4px 40px rgba(0,0,0,0.5)",
-                }}
-              >
-                {slide.headline}
-              </h2>
-              <h3
-                style={{
-                  fontFamily: "'Six Caps', sans-serif",
-                  fontSize: "clamp(28px, 5vw, 72px)",
-                  color: "#FFF",
-                  lineHeight: 0.95,
-                  letterSpacing: "0.02em",
-                  marginTop: 6,
-                  textShadow: "0 4px 40px rgba(0,0,0,0.5)",
-                }}
-              >
-                {slide.line2}
-              </h3>
-              <p
-                className="mt-4 sm:mt-6 max-w-2xl"
-                style={{
-                  fontFamily: "'Raleway', sans-serif",
-                  fontWeight: 300,
-                  fontSize: 15,
-                  color: "rgba(255,255,255,0.85)",
-                  lineHeight: 1.6,
-                }}
-              >
-                {slide.sub}
-              </p>
-            </div>
-
-            {/* Reel dots */}
-            <div className="mt-6 flex items-center gap-2">
-              {MARKETING_REEL.map((_, idx) => (
-                <button
-                  key={idx}
-                  aria-label={`Slide ${idx + 1}`}
-                  onClick={() => setI(idx)}
-                  className="h-1.5 rounded-full transition-all"
-                  style={{
-                    width: i === idx ? 40 : 12,
-                    background: i === idx ? "#FFF" : "rgba(255,255,255,0.35)",
-                  }}
-                />
-              ))}
-              <span
-                className="ml-auto text-white/60"
-                style={{
-                  fontFamily: "'Raleway', sans-serif",
-                  fontWeight: 600,
-                  fontSize: 11,
-                  letterSpacing: "0.3em",
-                }}
-              >
-                www.thirtydarkzero.net
-              </span>
-            </div>
-          </div>
-        </div>
+    <section className="sr-section sr-paths" aria-labelledby="paths-title">
+      <div className="sr-section__head">
+        <h2 id="paths-title" className="sr-h2">Which one are you?</h2>
+        <Segmented
+          label="Plans"
+          idPrefix="path"
+          options={PATHS.map((p) => ({ id: p.id, label: p.label }))}
+          value={path.id}
+          onChange={(id) => setActive(PATHS.findIndex((p) => p.id === id))}
+        />
       </div>
-    </section>
-  );
-}
-
-// ═══════════════════════════════════════
-// SECTION 2 — APP MOCKUPS (Interactive Demos)
-// ═══════════════════════════════════════
-function PhoneFrame({ children, style, className = "" }: { children: React.ReactNode; style?: React.CSSProperties; className?: string }) {
-  return (
-    <div className={`relative flex-shrink-0 ${className}`}
-      style={{ width: 220, height: 450, background: "#1A1A1A", borderRadius: 40, border: "2px solid #2A2A2A", boxShadow: "0 40px 80px rgba(0,0,0,0.8)", overflow: "hidden", ...style }}>
-      <div className="absolute top-2 left-1/2 -translate-x-1/2 w-14 h-4 bg-black rounded-full z-10" />
-      <div className="absolute inset-1 rounded-[36px] overflow-hidden overflow-y-auto scrollbar-hide" style={{ background: "#111" }}>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function Section2Mockups() {
-  return (
-    <section className="py-10 sm:py-16 pb-14 sm:pb-20 px-4" style={{ background: "#000" }}>
-      <ScreenPopReveal>
-        <p className="text-center mb-6 sm:mb-8" style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 12, color: "#666", letterSpacing: "0.2em", textTransform: "uppercase" as const }}>
-          INTERACTIVE DEMOS — TAP TO EXPLORE
-        </p>
-        <div className="flex items-center justify-center gap-0" style={{ perspective: 1200 }}>
-          <PhoneFrame className="hidden md:block" style={{ transform: "rotateY(18deg) rotateZ(-2deg) translateX(-30px)", zIndex: 1, opacity: 0.85 }}>
-            <StudioDemoMockup />
-          </PhoneFrame>
-          <PhoneFrame style={{ transform: "rotateY(0deg) scale(1.08)", zIndex: 3 }}>
-            <InsightsDemoMockup />
-          </PhoneFrame>
-          <PhoneFrame className="hidden md:block" style={{ transform: "rotateY(-18deg) rotateZ(2deg) translateX(30px)", zIndex: 1, opacity: 0.85 }}>
-            <DiscoveryDemoMockup />
-          </PhoneFrame>
-        </div>
-      </ScreenPopReveal>
-    </section>
-  );
-}
-
-function StudioDemoMockup() {
-  const [activeTab, setActiveTab] = useState("music");
-  const tabs = ["music", "analytics", "promote"];
-  return (
-    <div className="p-3 pt-7 h-full" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#888", background: "linear-gradient(180deg, #0a0a1a, #050510)" }}>
-      <div className="flex items-center gap-1.5 mb-2">
-        <div className="w-4 h-4 rounded-full" style={{ border: "1.5px solid #FF6347", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <span style={{ fontSize: 6, color: "#FF6347", fontWeight: 900 }}>R</span>
-        </div>
-        <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 18, color: "#FFF", letterSpacing: "0.04em" }}>ARTIST STUDIO</p>
-      </div>
-      <div className="flex gap-1 mt-1 mb-2">
-        {tabs.map(t => (
-          <button key={t} onClick={() => setActiveTab(t)} className="px-2 py-0.5 rounded-full text-[7px] transition-all"
-            style={{ background: activeTab === t ? "#FF6347" : "rgba(255,255,255,0.04)", color: activeTab === t ? "#000" : "#666", border: `1px solid ${activeTab === t ? "#FF6347" : "rgba(255,255,255,0.06)"}` }}>{t.toUpperCase()}</button>
-        ))}
-      </div>
-      {activeTab === "music" && (
-        <div className="space-y-1.5">
-          {["Upload Tracks", "Manage Albums", "Lyrics Sync", "Territory Rights"].map((t, i) => (
-            <div key={i} className="flex items-center gap-1.5 p-1.5 rounded-lg" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.05)" }}>
-              <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ background: i === 0 ? "rgba(255,99,71,0.2)" : "rgba(255,255,255,0.04)" }}>
-                <Music className="w-2.5 h-2.5" style={{ color: i === 0 ? "#FF6347" : "#555" }} />
+      <div id="path-panel" role="tabpanel" aria-labelledby={`path-tab-${path.id}`}>
+        <p className="sr-paths__intro">{path.intro}</p>
+        <div className="sr-plans" data-count={path.plans.length}>
+          {path.plans.map((p) => (
+            <article key={p.name} className="sr-plan">
+              <div className="sr-plan__top">
+                <h3 className="sr-plan__name">{p.name}</h3>
+                <p className="sr-plan__price">{p.price}<span>/month</span></p>
               </div>
-              <span style={{ color: "#AAA", fontSize: 9 }}>{t}</span>
-            </div>
+              <ul className="sr-plan__points">
+                {p.points.map((pt) => <li key={pt}>{pt}</li>)}
+              </ul>
+              <button type="button" className="sr-button" onClick={() => checkout(p.plan, navigate)}>
+                Choose {p.name}
+              </button>
+            </article>
           ))}
         </div>
-      )}
-      {activeTab === "analytics" && (
-        <div className="space-y-1.5">
-          <div className="p-2 rounded-lg" style={{ background: "rgba(255,99,71,0.06)", border: "1px solid rgba(255,99,71,0.12)" }}>
-            <span className="px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: "#FF6347", color: "#FFF" }}>Earnings</span>
-            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 30, color: "#FF6347", lineHeight: 1.2, marginTop: 3 }}>$12,000</p>
-            <p style={{ fontSize: 8, color: "#555" }}>Example · 12,000 qualified streams</p>
-          </div>
-          <div className="p-1.5 rounded-lg" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-            <span style={{ fontSize: 8, color: "#555" }}>Listeners</span>
-            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 20, color: "#FFF" }}>3,400</p>
-          </div>
-        </div>
-      )}
-      {activeTab === "promote" && (
-        <div className="space-y-1.5">
-          {["AI Smart Promo", "Social Campaign", "Playlist Pitch", "Pre-Save Setup"].map((t, i) => (
-            <div key={i} className="flex items-center gap-1.5 p-1.5 rounded-lg" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-              <Zap className="w-2.5 h-2.5" style={{ color: i === 0 ? "#8B5CF6" : "#555" }} />
-              <span style={{ color: "#AAA", fontSize: 9 }}>{t}</span>
-              {i === 0 && <span className="ml-auto px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: "#8B5CF6", color: "#FFF" }}>AI</span>}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function InsightsDemoMockup() {
-  return (
-    <div className="p-3 pt-7 h-full" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#888", background: "linear-gradient(180deg, #0a0a1a, #050510)" }}>
-      <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 20, color: "#FFF", letterSpacing: "0.04em" }}>REAL-TIME INSIGHTS</p>
-      <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>SAMPLE DATA · SAMPLE DATA · Track performance & revenue</p>
-      <div className="flex gap-1 mt-2">
-        {["Streams", "Geographic", "Revenue"].map((t, i) => (
-          <span key={i} className="px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: i === 0 ? "#FF6347" : "rgba(255,255,255,0.04)", color: i === 0 ? "#FFF" : "#666", border: `1px solid ${i === 0 ? "#FF6347" : "rgba(255,255,255,0.06)"}` }}>{t}</span>
-        ))}
-      </div>
-      <div className="mt-2 p-2 rounded-lg" style={{ background: "rgba(255,99,71,0.06)", border: "1px solid rgba(255,99,71,0.12)" }}>
-        <div className="flex items-center gap-1.5">
-          <span className="px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: "#FF6347", color: "#FFF" }}>$1/Stream</span>
-        </div>
-        <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 36, color: "#FF6347", letterSpacing: "0.03em", lineHeight: 1.2, marginTop: 3 }}>$12,750</p>
-        <p style={{ fontSize: 8, color: "#555", marginTop: 1 }}>Example · 12,750 qualified streams</p>
-      </div>
-      <div className="mt-1.5 p-1.5 rounded-lg flex items-center gap-1.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-        <Globe className="w-3.5 h-3.5" style={{ color: "#00CFFF" }} />
-        <span style={{ color: "#AAA", fontSize: 9 }}>Top: United States</span>
-        <span className="ml-auto" style={{ color: "#FF6347", fontSize: 9, fontWeight: 600 }}>45%</span>
-      </div>
-      <div className="mt-1.5 p-1.5 rounded-lg flex items-center gap-1.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-        <Users className="w-3.5 h-3.5" style={{ color: "#8B5CF6" }} />
-        <span style={{ color: "#AAA", fontSize: 9 }}>Unique Listeners</span>
-        <span className="ml-auto" style={{ color: "#00CFFF", fontSize: 9, fontWeight: 600 }}>3,400</span>
-      </div>
-      <div className="mt-1.5 p-1.5 rounded-lg flex items-center gap-1.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-        <TrendingUp className="w-3.5 h-3.5" style={{ color: "#22C55E" }} />
-        <span style={{ color: "#AAA", fontSize: 9 }}>AI Analysis</span>
-        <span className="ml-auto px-1.5 py-0.5 rounded-full text-[7px]" style={{ background: "#8B5CF6", color: "#FFF" }}>AI</span>
-      </div>
-    </div>
-  );
-}
-
-function DiscoveryDemoMockup() {
-  const [activeGenre, setActiveGenre] = useState("All");
-  return (
-    <div className="p-3 pt-7 h-full" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#888", background: "linear-gradient(180deg, #050515, #030310)" }}>
-      <div className="flex items-center gap-1.5 mb-1">
-        <img src={tdzLogo} alt="TDZ" className="w-4 h-4 object-contain" />
-        <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 18, color: "#FFF", letterSpacing: "0.04em" }}>DISCOVERY</p>
-      </div>
-      <p style={{ fontSize: 8, color: "#555", marginBottom: 6 }}>GOOD AFTERNOON</p>
-      <div className="flex gap-1 mb-3 overflow-x-auto scrollbar-hide">
-        {["All", "Pop", "Hip-Hop", "R&B"].map(g => (
-          <button key={g} onClick={() => setActiveGenre(g)} className="px-2 py-0.5 rounded-full text-[7px] whitespace-nowrap transition-all"
-            style={{ background: activeGenre === g ? "rgba(255,99,71,0.2)" : "transparent", color: activeGenre === g ? "#FF6347" : "#666", border: `1px solid ${activeGenre === g ? "rgba(255,99,71,0.3)" : "rgba(255,255,255,0.06)"}` }}>{g}</button>
-        ))}
-      </div>
-      {/* Mini featured carousel */}
-      <div className="flex gap-1 mb-3">
-        {[1,2,3].map(i => (
-          <div key={i} className="flex-1 aspect-square rounded-lg" style={{ background: `linear-gradient(135deg, ${["#c0392b", "#3498db", "#9b59b6"][i-1]}40, #111)`, border: "1px solid rgba(255,255,255,0.05)" }} />
-        ))}
-      </div>
-      <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 14, color: "#FFF", letterSpacing: "0.03em", textAlign: "center" }}>POPULAR TRACKS</p>
-      <div className="space-y-1 mt-1">
-        {["Stream unlimited music", "Every play = $1 to artists", "AI-powered playlists"].map((t, i) => (
-          <div key={i} className="p-1.5 rounded-lg flex items-center gap-1.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-            <div className="w-4 h-4 rounded flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${["#c0392b", "#3498db", "#2ecc71"][i]}60, #222)` }}>
-              <Play className="w-2 h-2" style={{ color: "#FFF" }} />
-            </div>
-            <span style={{ color: "#AAA", fontSize: 8 }}>{t}</span>
-          </div>
-        ))}
-      </div>
-      {/* Orb player mini */}
-      <div className="mt-3 p-1.5 rounded-full flex items-center gap-1.5" style={{ background: "rgba(255,99,71,0.08)", border: "1px solid rgba(255,99,71,0.15)" }}>
-        <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "#FF6347" }}>
-          <Play className="w-2.5 h-2.5" style={{ color: "#FFF" }} />
-        </div>
-        <span style={{ fontSize: 7, color: "#FF6347", fontWeight: 600 }}>NOW PLAYING</span>
-      </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════
-// SECTION 4 — ARTISTS STUDIO (Interactive Demo with Video)
-// ═══════════════════════════════════════
-function Section4Studio({ navigate }: { navigate: (p: string) => void }) {
-  const [showVideo, setShowVideo] = useState(false);
-  return (
-    <section className="py-16 px-4" style={{ background: "#000" }}>
-      <Reveal>
-        <TDZBadge />
-        <ChromeTitle className="text-center mt-4 mb-4">ARTISTS STUDIO</ChromeTitle>
-        <p className="text-center mb-2" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "#666" }}>
-          Everything you need to release, promote, and monetize your music
-        </p>
-        <div className="flex justify-center gap-3 mb-8">
-          <button onClick={() => setShowVideo(!showVideo)} className="liquid-glass liquid-glass-btn px-5 py-2.5 rounded-full text-xs"
-            style={{ background: showVideo ? "#22C55E" : "transparent", color: showVideo ? "#000" : "#22C55E", border: "1px solid #22C55E", fontFamily: "'Raleway', sans-serif", fontWeight: 600 }}>
-            {showVideo ? "Hide Demo" : "▶ Watch Demo"}
-          </button>
-          <button onClick={() => navigate("/studio")} className="px-4 py-2 rounded-full text-xs"
-            style={{ border: "1px solid #333", color: "#888", fontFamily: "'Raleway', sans-serif", fontWeight: 600 }}>
-            Open Studio →
-          </button>
-        </div>
-      </Reveal>
-
-      {showVideo && (
-        <Reveal>
-          <div className="mx-auto mb-8 rounded-2xl overflow-hidden" style={{ maxWidth: 900, border: "1px solid #222" }}>
-            <video src="/videos/studio-demo.mp4" controls autoPlay muted className="w-full" style={{ background: "#000" }} />
-          </div>
-        </Reveal>
-      )}
-
-      <ScreenPopReveal>
-        <div className="mx-auto overflow-hidden flex flex-col lg:flex-row"
-          style={{ maxWidth: 1100, border: "1px solid #222", borderRadius: 20, background: "#141414", minHeight: "auto" }}>
-          {/* Sidebar */}
-          <div className="w-full lg:w-64 flex-shrink-0 p-3 sm:p-4 flex flex-col" style={{ background: "#1A1A1A", borderRight: "1px solid #222" }}>
-            <div className="flex items-center justify-between mb-4">
-              <TDZBadge size={24} />
-              <span style={{ color: "#555", fontSize: 14 }}>×</span>
-            </div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ border: "2px solid #FF6347", color: "#FF6347" }}>R</div>
-              <div>
-                <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 13, color: "#FFF" }}>RobHayes</p>
-                <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#888" }}>Artist Studio</p>
-              </div>
-            </div>
-            <button onClick={() => navigate("/studio")} className="w-full py-2 rounded-full text-center mb-4"
-              style={{ background: "#22C55E", color: "#000", fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 13 }}>
-              + New Release
-            </button>
-            <div className="mb-4">
-              <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 600, fontSize: 9, color: "#555", letterSpacing: "0.2em", marginBottom: 6 }}>QUICK STATS</p>
-              {[
-                { icon: "🔵", label: "Total Plays", val: "12,000" },
-                { icon: "📈", label: "This Week", val: "+340" },
-                { icon: "💰", label: "Earnings (sample)", val: "$12,000" },
-                { icon: "👥", label: "Followers", val: "9,000" },
-              ].map((s, i) => (
-                <div key={i} className="flex items-center justify-between py-1" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#888" }}>
-                  <span>{s.icon} {s.label}</span>
-                  <span style={{ color: s.label === "Earnings" ? "#22C55E" : "#FFF" }}>{s.val}</span>
-                </div>
-              ))}
-            </div>
-            <div className="mb-4">
-              <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 600, fontSize: 9, color: "#555", letterSpacing: "0.2em", marginBottom: 6 }}>QUICK ACTIONS</p>
-              {[
-                { label: "Schedule Release", path: "/studio" },
-                { label: "View Analytics", path: "/studio" },
-                { label: "Promote Track", path: "/studio" },
-                { label: "Payout Settings", path: "/studio" },
-              ].map((a, i) => (
-                <p key={i} onClick={() => navigate(a.path)} style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 12, color: "#888", cursor: "pointer", padding: "3px 0" }}
-                  className="hover:text-white transition-colors">{a.label}</p>
-              ))}
-            </div>
-            <div className="mt-auto space-y-1">
-              {[
-                { icon: LayoutDashboard, label: "Dashboard", active: true },
-                { icon: Music, label: "Content", active: false },
-                { icon: BarChart3, label: "Analytics", active: false },
-                { icon: TrendingUp, label: "Promote", active: false },
-                { icon: BookOpen, label: "Academy", active: false },
-                { icon: Settings, label: "Settings", active: false },
-              ].map((n, i) => (
-                <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-white/5 transition-colors"
-                  style={{ background: n.active ? "rgba(255,255,255,0.06)" : "transparent" }}
-                  onClick={() => navigate("/studio")}>
-                  <n.icon className="w-4 h-4" style={{ color: n.active ? "#FFF" : "#444" }} />
-                  <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: n.active ? "#FFF" : "#444" }}>{n.label}</span>
-                </div>
-              ))}
-              <div className="flex items-center gap-2 px-3 py-1.5 cursor-pointer" onClick={() => navigate("/ceo")}>
-                <Crown className="w-4 h-4" style={{ color: "#D4A017" }} />
-                <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#D4A017" }}>Admin</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="flex-1 p-4 sm:p-5 md:p-7 overflow-y-auto">
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-              <div>
-                <span style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 400, fontSize: 11, color: "#666", letterSpacing: "0.2em", textTransform: "uppercase" as const }}>GOOD AFTERNOON </span>
-                <span style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 38, color: "#FFF" }}>ROBHAYES</span>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <button onClick={() => navigate("/studio")} className="px-4 py-1.5 rounded-full text-xs"
-                  style={{ border: "1px solid #22C55E", color: "#22C55E", fontFamily: "'Raleway', sans-serif", fontWeight: 600, background: "transparent" }}>
-                  🎵 Release Music
-                </button>
-                <button onClick={() => navigate("/studio")} className="px-4 py-1.5 rounded-full text-xs"
-                  style={{ border: "1px solid #333", color: "#888", fontFamily: "'Raleway', sans-serif", fontWeight: 600, background: "transparent" }}>
-                  View All Releases
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 mb-4 sm:mb-6">
-              {[
-                { label: "IMPACT", value: "12,000", sub: "Sample plays" },
-                { label: "RELEASES", value: "24", sub: "Total tracks" },
-                { label: "EARNINGS", value: "$12,000", sub: "Sample payout", green: true },
-                { label: "COMMUNITY", value: "9,000", sub: "Invested in your journey" },
-              ].map((s, i) => (
-                <div key={i} className="p-4 rounded-xl" style={{ background: "#1C1C1C" }}>
-                  <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 400, fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>{s.label}</p>
-                  <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 36, color: s.green ? "#22C55E" : "#FFF", lineHeight: 1.2, letterSpacing: "0.03em" }}>{s.value}</p>
-                  <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 300, fontSize: 11, color: "#555" }}>{s.sub}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 13, color: "#FFF" }}>YOUR STORY SO FAR</p>
-                <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 300, fontSize: 11, color: "#555" }}>Recent releases and performance</p>
-              </div>
-              <span onClick={() => navigate("/studio")} className="cursor-pointer hover:text-white transition-colors"
-                style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 12, color: "#22C55E" }}>View All →</span>
-            </div>
-            <div className="space-y-2">
-              {[
-                { title: "To Arthur for U2", date: "Jan 23, 2026", streams: 9 },
-                { title: "HEM! ft Richfriend, Dazesowavy", date: "Jan 7, 2026", streams: 0 },
-                { title: "Bad Mon ft Notorious Note, Toos", date: "Jan 7, 2026", streams: 0 },
-              ].map((t, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-white/5 transition-colors"
-                  style={{ background: "#1C1C1C" }} onClick={() => navigate("/studio")}>
-                  <div className="w-10 h-10 rounded-md flex-shrink-0" style={{ background: "linear-gradient(135deg, #333, #555)" }} />
-                  <div className="flex-1 min-w-0">
-                    <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 12, color: "#FFF" }} className="truncate">{t.title}</p>
-                    <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#555" }}>{t.date}</p>
-                  </div>
-                  <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#888" }}>{t.streams} STREAMS</span>
-                  <span className="px-2 py-0.5 rounded-full text-[8px] font-bold" style={{ background: "rgba(34,197,94,0.2)", color: "#22C55E" }}>LIVE</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Notifications panel */}
-          <div className="hidden xl:block w-64 flex-shrink-0 p-5" style={{ background: "#111", borderLeft: "1px solid #1A1A1A" }}>
-            <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 12, color: "#FFF", letterSpacing: "0.15em" }}>NOTIFICATIONS</p>
-            <div className="flex flex-col items-center justify-center h-48">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center mb-3" style={{ background: "rgba(34,197,94,0.2)" }}>
-                <span style={{ color: "#22C55E", fontSize: 16 }}>✓</span>
-              </div>
-              <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "#666", textAlign: "center" }}>You're all caught up!</p>
-            </div>
-          </div>
-        </div>
-      </ScreenPopReveal>
-    </section>
-  );
-}
-
-// ═══════════════════════════════════════
-// SECTION 6 — MUSIC IS MORE THAN DATA
-// ═══════════════════════════════════════
-function Section6Cards() {
-  const cards = [
-    { title: "BUILD CULTURE", body: "ARTISTS BUILD CULTURE, CONTEXT, AND COMMUNITY NOT JUST MONTHLY LISTENERS.", Icon: Users, color: "#00CFFF" },
-    { title: "SHARE & DISCUSS", body: "MUSIC ISN'T JUST STREAMED IT'S SHARED, DISCUSSED, AND EXPLORED TOGETHER.", Icon: MessageCircle, color: "#00CFFF" },
-    { title: "ACTIVE LISTENING", body: "LISTENING IS ACTIVE, INTENTIONAL, IMMERSIVE NOT PASSIVE CONSUMPTION.", Icon: Play, color: "#00CFFF" },
-    { title: "ARTIST IDENTITY", body: "TECHNOLOGY AMPLIFIES DEPTH OVER DISTRACTION, ARTIST IDENTITY OVER UTILITY.", Icon: Palette, color: "#D4A017" },
-    { title: "HUMAN EXPRESSION", body: "HUMAN EXPRESSION SHOULD BE THE POINT NOT JUST ANOTHER DATA POINT.", Icon: Heart, color: "#D4A017" },
-    { title: "BE IN THE STORY", body: "FANS AREN'T \"USERS\" THEY'RE PARTICIPANTS IN THE STORY.", Icon: Star, color: "#D4A017" },
-  ];
-  return (
-    <section className="py-20 px-6" style={{ background: "#000" }}>
-      <Reveal><TDZBadge /><WhiteTitle className="text-center mt-4">MUSIC IS MORE THAN DATA</WhiteTitle></Reveal>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-[1160px] mx-auto mt-12">
-        {cards.map((c, i) => (
-          <Reveal key={i} delay={i * 0.1}>
-            <div className="flex flex-col justify-between p-7 transition-all hover:-translate-y-1.5 hover:shadow-[0_16px_40px_rgba(0,0,0,0.6)]"
-              style={{ background: "#1C1C1C", borderRadius: 22, minHeight: 210 }}>
-              <div>
-                <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: "clamp(24px, 2.8vw, 40px)", color: "#FFF", letterSpacing: "0.03em" }}>{c.title}</h3>
-                <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 400, fontSize: 12, color: "#777", textTransform: "uppercase" as const, letterSpacing: "0.1em", lineHeight: 1.8, marginTop: 8 }}>{c.body}</p>
-              </div>
-              <div className="flex justify-center mt-4"><c.Icon className="w-7 h-7" style={{ color: c.color }} /></div>
-            </div>
-          </Reveal>
-        ))}
       </div>
     </section>
   );
 }
 
-// ═══════════════════════════════════════
-// WHY TDZ — Benefits Breakdown
-// ═══════════════════════════════════════
-function SectionWhyTDZ({ navigate }: { navigate: (p: string) => void }) {
-  const features = [
-    { title: "$1 PER STREAM", desc: "Artists earn 333x more than Spotify's $0.003. Every qualified stream = $1 directly to the creator.", color: "#22C55E", icon: "💰" },
-    { title: "100% DOWNLOAD REVENUE", desc: "Set your own download prices. Keep every cent. No middlemen, no hidden fees.", color: "#00CFFF", icon: "📥" },
-    { title: "AI MUSIC WELCOME", desc: "First major platform to embrace AI-generated music. AI artists earn the same $1/stream.", color: "#8B5CF6", icon: "🤖" },
-    { title: "ARTIST STUDIO", desc: "Upload tracks, manage albums, sync lyrics, set territory rights, collaborate with other artists—all in one dashboard.", color: "#D4A017", icon: "🎵" },
-    { title: "FAN ENGAGEMENT", desc: "Built-in fan engagement hub, direct messaging, email campaigns, and community management tools.", color: "#00CFFF", icon: "👥" },
-    { title: "ADVANCED ANALYTICS", desc: "Real-time streaming data, fan demographics, geographic heat maps, and revenue tracking.", color: "#22C55E", icon: "📊" },
-    { title: "FAN TIPPING", desc: "Fans can tip artists directly from Discovery. Every dollar goes straight to the creator.", color: "#D4A017", icon: "❤️" },
-    { title: "TERRITORY RIGHTS", desc: "Manage your music rights across 200+ territories. Full control over where and how your music is distributed.", color: "#8B5CF6", icon: "🌍" },
-  ];
-
-  const comparison = [
-    { feature: "Per-stream payout", tdz: "$1.00", spotify: "$0.003", apple: "$0.008" },
-    { feature: "Download revenue", tdz: "100%", spotify: "N/A", apple: "~70%" },
-    { feature: "AI music support", tdz: "✓ Full", spotify: "✗ Banned", apple: "✗ Limited" },
-    { feature: "Fan engagement hub", tdz: "✓ Built-in", spotify: "✗", apple: "✗" },
-    { feature: "Fan tipping", tdz: "✓ Inline", spotify: "✗", apple: "✗" },
-    { feature: "Artist owns rights", tdz: "✓ 100%", spotify: "Partial", apple: "Partial" },
-    { feature: "Real-time earnings", tdz: "✓", spotify: "✗ Delayed", apple: "✗ Delayed" },
-  ];
-
+// ─── Close ────────────────────────────────────────────
+function Closing() {
   return (
-    <section className="py-20 px-6" style={{ background: "#000" }}>
-      <Reveal><TDZBadge /><ChromeTitle className="text-center mt-4">WHY TDZ?</ChromeTitle></Reveal>
-      <Reveal delay={0.1}>
-        <p className="text-center mx-auto mt-4 mb-12" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 15, color: "#777", maxWidth: 700 }}>
-          TDZ isn't just another streaming platform. It's a revolution in how artists get paid, how fans engage, and how music is valued.
-        </p>
-      </Reveal>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-[1160px] mx-auto">
-        {features.map((f, i) => (
-          <Reveal key={i} delay={i * 0.06}>
-            <div className="p-6 rounded-2xl transition-all hover:-translate-y-1" style={{ background: "#1C1C1C", minHeight: 180 }}>
-              <span className="text-2xl">{f.icon}</span>
-              <h3 className="mt-3" style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 28, color: f.color, letterSpacing: "0.03em" }}>{f.title}</h3>
-              <p className="mt-2" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#777", lineHeight: 1.7 }}>{f.desc}</p>
-            </div>
-          </Reveal>
-        ))}
-      </div>
-
-      {/* Comparison Table */}
-      <ScreenPopReveal>
-        <div className="max-w-[900px] mx-auto mt-16">
-          <WhiteTitle className="text-center mb-8">TDZ VS THE COMPETITION</WhiteTitle>
-          <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid #222" }}>
-            <div className="grid grid-cols-4 gap-0 text-center py-3" style={{ background: "#1A1A1A" }}>
-              <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#666", letterSpacing: "0.15em" }}>FEATURE</div>
-              <div style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 22, color: "#22C55E" }}>TDZ</div>
-              <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#666" }}>SPOTIFY</div>
-              <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#666" }}>APPLE</div>
-            </div>
-            {comparison.map((row, i) => (
-              <div key={i} className="grid grid-cols-4 gap-0 text-center py-3" style={{ background: i % 2 === 0 ? "#111" : "#141414", borderTop: "1px solid #1A1A1A" }}>
-                <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#888" }}>{row.feature}</div>
-                <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#22C55E", fontWeight: 700 }}>{row.tdz}</div>
-                <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#555" }}>{row.spotify}</div>
-                <div style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#555" }}>{row.apple}</div>
-              </div>
-            ))}
-          </div>
+    <section className="sr-close" aria-labelledby="close-title">
+      <img className="sr-close__image" src={crowd} alt="" loading="lazy" />
+      <div className="sr-close__shade" />
+      <div className="sr-close__content">
+        <h2 id="close-title" className="sr-close__title">Every play, paid.</h2>
+        <div className="sr-close__actions">
+          <Link to="/auth?mode=signup" className="sr-button">Start earning</Link>
+          <Link to="/discover" className="sr-button sr-button--ghost">Start listening</Link>
         </div>
-      </ScreenPopReveal>
-    </section>
-  );
-}
-
-// ═══════════════════════════════════════
-// HOW PAYMENTS WORK
-// ═══════════════════════════════════════
-function SectionHowPaymentsWork() {
-  const steps = [
-    { step: "1", title: "UPLOAD YOUR MUSIC", desc: "Upload tracks to your Artist Studio. Set download prices, add metadata, and choose territories.", color: "#00CFFF" },
-    { step: "2", title: "PAID FANS STREAM", desc: "Every stream by a paid subscriber earns you $1. Every download purchase goes 100% to you. Fans can also tip directly.", color: "#22C55E" },
-    { step: "3", title: "REAL-TIME EARNINGS", desc: "Watch your earnings grow in real-time on your dashboard. No 90-day delays like traditional DSPs.", color: "#D4A017" },
-    { step: "4", title: "GET PAID", desc: "Cash out via Stripe once you reach the $50 minimum payout threshold. Direct deposit to your bank.", color: "#8B5CF6" },
-  ];
-
-  return (
-    <section className="py-20 px-6" style={{ background: "#000" }}>
-      <Reveal><TDZBadge /><ChromeTitle className="text-center mt-4">HOW PAYMENTS WORK</ChromeTitle></Reveal>
-      <div className="flex flex-col md:flex-row items-start justify-center gap-6 max-w-[1000px] mx-auto mt-12">
-        {steps.map((s, i) => (
-          <Reveal key={i} delay={i * 0.1}>
-            <div className="flex-1 text-center">
-              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ border: `2px solid ${s.color}`, background: `${s.color}10` }}>
-                <span style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 32, color: s.color }}>{s.step}</span>
-              </div>
-              <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 24, color: "#FFF", letterSpacing: "0.03em" }}>{s.title}</h3>
-              <p className="mt-2" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#777", lineHeight: 1.7 }}>{s.desc}</p>
-              {i < steps.length - 1 && <div className="hidden md:block mx-auto mt-4 w-px h-0" />}
-            </div>
-          </Reveal>
-        ))}
       </div>
     </section>
   );
 }
 
-// ═══════════════════════════════════════
-// AI MUSIC AGENTS
-// ═══════════════════════════════════════
-function SectionAIAgents() {
-  const agents = [
-    { name: "QUANTUM ADVISOR", desc: "AI-powered career advisor that analyzes your data in real-time. Get actionable insights for revenue optimization, release timing, and audience growth.", icon: "🧠", color: "#8B5CF6" },
-    { name: "MOOD MIX GENERATOR", desc: "Tell the AI how you're feeling and it generates a personalized playlist from TDZ's catalog. Unique to our platform.", icon: "🎵", color: "#00CFFF" },
-    { name: "SMART PROMO", desc: "AI identifies optimal promotion windows, suggests collaboration opportunities, and automates social media scheduling.", icon: "📣", color: "#22C55E" },
-    { name: "STORYTELLING STUDIO", desc: "Create compelling visual stories and narratives for your music. Build your brand identity with AI-powered content tools.", icon: "🎬", color: "#D4A017" },
-    { name: "LABEL STAFF AI", desc: "Virtual A&R, marketing manager, and distribution coordinator. Get label-quality support without the label contract.", icon: "👔", color: "#00CFFF" },
-    { name: "TERRITORY OPTIMIZER", desc: "AI analyzes global streaming patterns to recommend optimal release territories and timing for maximum impact.", icon: "🌐", color: "#8B5CF6" },
-  ];
+const FOOTER_LINKS = [
+  { label: "Listen", to: "/discover" },
+  { label: "Studio", to: "/studio" },
+  { label: "Investors", to: "/investors" },
+  { label: "Questions", to: "/faq" },
+  { label: "Learn", to: "/learn" },
+  { label: "Connect AI", to: "/connect" },
+  { label: "Contact", to: "/support" },
+];
 
+function Footer() {
   return (
-    <section className="py-20 px-6" style={{ background: "#000" }}>
-      <Reveal><TDZBadge /><WhiteTitle className="text-center mt-4">AI MUSIC AGENTS</WhiteTitle></Reveal>
-      <Reveal delay={0.1}>
-        <p className="text-center mx-auto mt-4 mb-12" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 15, color: "#777", maxWidth: 700 }}>
-          Six AI-powered agents work for you 24/7. No other platform offers this level of intelligent artist support.
-        </p>
-      </Reveal>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-[1100px] mx-auto">
-        {agents.map((a, i) => (
-          <Reveal key={i} delay={i * 0.08}>
-            <div className="p-6 rounded-2xl transition-all hover:-translate-y-1" style={{ background: "#1C1C1C", minHeight: 200 }}>
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-2xl">{a.icon}</span>
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: `${a.color}20`, color: a.color }}>AI AGENT</span>
-              </div>
-              <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 28, color: a.color, letterSpacing: "0.03em" }}>{a.name}</h3>
-              <p className="mt-2" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#777", lineHeight: 1.7 }}>{a.desc}</p>
-            </div>
-          </Reveal>
-        ))}
+    <footer className="sr-footer">
+      <div className="sr-footer__row">
+        <img src={tdzLogo} alt="TDZ Distribution" className="sr-footer__logo" />
+        <nav aria-label="Footer" className="sr-footer__links">
+          {FOOTER_LINKS.map((l) => <Link key={l.to} to={l.to}>{l.label}</Link>)}
+          <button type="button" onClick={() => openStore("landing_footer")}>Store</button>
+        </nav>
       </div>
-    </section>
-  );
-}
-
-
-// SECTION 7 — ARTIST SUBSCRIPTION PLANS (with features)
-// ═══════════════════════════════════════
-function Section7ArtistPlans({ navigate }: { navigate: (p: string) => void }) {
-  const plans = [
-    { name: "STARTER", price: "$9.99", plan: "starter" as const, features: [
-      "Upload up to 50 tracks & 5 albums", "Fan engagement tools", "Download sales", "HD audio quality", "Playlist management", "Social features", "$1 per paid subscriber stream"
-    ]},
-    { name: "PRO", price: "$19.99", plan: "pro" as const, popular: true, features: [
-      "Unlimited tracks & albums", "Full analytics suite", "Collaboration tools", "Pre-save campaigns", "Territory rights management", "Priority support", "$1 per paid subscriber stream"
-    ]},
-    { name: "ENTERPRISE", price: "$49.99", plan: "enterprise" as const, features: [
-      "Everything in Pro", "Multi-artist roster management", "White-label dashboard branding", "Dedicated account manager", "Create & manage artist accounts", "Custom integrations", "$1 per paid subscriber stream"
-    ]},
-  ];
-
-  const handleSubscribe = async (plan: "starter" | "pro" | "enterprise") => {
-    if (isCheckoutPlan(plan)) { openStripeCheckout(plan); }
-    else { navigate("/auth"); }
-  };
-
-  return (
-    <section className="py-20 px-6" style={{ background: "#000" }}>
-      <Reveal><WhiteTitle className="text-center">ARTIST SUBSCRIPTION PLANS</WhiteTitle></Reveal>
-      <div className="flex flex-col md:flex-row items-start justify-center gap-7 mt-12 max-w-[1080px] mx-auto">
-        {plans.map((p, i) => (
-          <Reveal key={i} delay={i * 0.1}>
-            <div className="flex flex-col items-center">
-              {p.popular && <span className="mb-2 px-3 py-1 rounded-full text-[10px] font-bold" style={{ background: "#22C55E", color: "#000" }}>MOST POPULAR</span>}
-              <div className="flex flex-col justify-start items-center pt-8 w-full relative"
-                style={{ background: "linear-gradient(180deg, #2a2a2a 0%, #5a5a5a 40%, #b0b0b0 75%, #d8d8d8 100%)", borderRadius: 28, width: 310, minHeight: 460, padding: "30px 26px" }}>
-                <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 16, color: "#000000", letterSpacing: "0.2em", textTransform: "uppercase" as const }}>{p.name}</p>
-                <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 68, color: "#000000", letterSpacing: "0.04em", marginTop: 8 }}>{p.price}</p>
-                <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#333", marginTop: 4 }}>/month</p>
-                <div className="mt-6 space-y-2 w-full">
-                  {p.features.map((f, fi) => (
-                    <div key={fi} className="flex items-start gap-2">
-                      <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: "#000" }} />
-                      <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#111111", lineHeight: 1.4 }}>{f}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <SubscribeButton onClick={() => handleSubscribe(p.plan)} />
-            </div>
-          </Reveal>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ═══════════════════════════════════════
-// SECTION 8 — LATEST RELEASES (Real data + Audio Preview)
-// ═══════════════════════════════════════
-function Section8Releases({ tracks, audioPreview, navigate }: { tracks: Track[]; audioPreview: ReturnType<typeof useAudioPreview>; navigate: (p: string) => void }) {
-  const placeholders = [
-    "linear-gradient(135deg, #c0392b, #2c3e50)", "linear-gradient(135deg, #3498db, #2ecc71)",
-    "linear-gradient(135deg, #1abc9c, #2c3e50)", "linear-gradient(135deg, #f39c12, #e74c3c)",
-    "linear-gradient(135deg, #9b59b6, #3498db)", "linear-gradient(135deg, #2ecc71, #27ae60)",
-  ];
-  const slides = tracks.length > 0 ? tracks : Array.from({ length: 6 }, (_, i) => ({ id: String(i), placeholder: true, gradient: placeholders[i] } as any));
-  const [activeSlide, setActiveSlide] = useState(0);
-
-  return (
-    <section className="py-20 px-4 relative overflow-hidden" style={{ background: "#000" }}>
-      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 60% 40% at 15% 50%, rgba(59,15,107,0.18) 0%, transparent 70%), radial-gradient(ellipse 50% 60% at 85% 30%, rgba(14,42,92,0.2) 0%, transparent 70%)" }} />
-      <Reveal><TDZBadge /><WhiteTitle className="text-center mt-4">LATEST RELEASES FROM TDZ ARTISTS</WhiteTitle></Reveal>
-      <Reveal delay={0.1}>
-        <div className="mt-12 max-w-[900px] mx-auto">
-          <Swiper
-            modules={[EffectCoverflow, Autoplay, Navigation]}
-            effect="coverflow"
-            grabCursor
-            centeredSlides
-            slidesPerView="auto"
-            loop={slides.length > 3}
-            autoplay={{ delay: 4000, disableOnInteraction: true }}
-            coverflowEffect={{ rotate: 30, stretch: 0, depth: 200, modifier: 1.2, slideShadows: true }}
-            navigation
-            onSlideChange={(s) => setActiveSlide(s.realIndex)}
-          >
-            {slides.map((s: any, i: number) => (
-              <SwiperSlide key={s.id} style={{ width: 220, height: 220 }}>
-                {s.placeholder ? (
-                  <div className="w-full h-full rounded-lg" style={{ background: s.gradient }} />
-                ) : (
-                  <div className="relative w-full h-full group cursor-pointer" onClick={() => navigate(`/track/${s.id}`)}>
-                    <MotionCover
-                      staticCoverPath={s.album_cover_path} staticCoverBucket={s.album_cover_bucket}
-                      motionCoverPath={s.motion_cover_path} motionCoverBucket={s.motion_cover_bucket}
-                      alt={s.title} className="w-full h-full object-cover rounded-lg"
-                    />
-                    {/* Play/preview overlay */}
-                    <button
-                      className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"
-                      onClick={(e) => { e.stopPropagation(); audioPreview.play(s.id, s.file_path); }}
-                    >
-                      {audioPreview.playingId === s.id ?
-                        <Pause className="w-10 h-10" style={{ color: "#FFF" }} /> :
-                        <Play className="w-10 h-10" style={{ color: "#FFF" }} />
-                      }
-                    </button>
-                  </div>
-                )}
-              </SwiperSlide>
-            ))}
-          </Swiper>
+      <div className="sr-footer__row sr-footer__legal">
+        <p>© 2026 TDZ Distribution</p>
+        <div>
+          <Link to="/terms">Terms</Link>
+          <Link to="/privacy">Privacy</Link>
         </div>
-      </Reveal>
-
-      {/* Track info for active slide */}
-      {tracks.length > 0 && tracks[activeSlide] && (
-        <Reveal delay={0.15}>
-          <div className="text-center mt-4">
-            <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 600, fontSize: 14, color: "#FFF" }}>{tracks[activeSlide]?.title}</p>
-            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#666" }}>{tracks[activeSlide]?.artist_name}</p>
-            {audioPreview.playingId === tracks[activeSlide]?.id && (
-              <div className="flex items-center justify-center gap-2 mt-2">
-                <Volume2 className="w-3 h-3 animate-pulse" style={{ color: "#22C55E" }} />
-                <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 10, color: "#22C55E" }}>Playing 10s preview...</span>
-              </div>
-            )}
-          </div>
-        </Reveal>
-      )}
-
-      {/* Playback controls */}
-      <Reveal delay={0.2}>
-        <div className="flex items-center justify-center gap-5 mt-6">
-          {[
-            { Icon: SkipBack, color: "#00CFFF", action: () => {} },
-            { Icon: audioPreview.playingId ? Pause : Play, color: "#D4A017", action: () => {
-              if (tracks.length > 0) { const t = tracks[activeSlide]; audioPreview.play(t.id, t.file_path); }
-            }},
-            { Icon: SkipForward, color: "#00CFFF", action: () => {} },
-            { Icon: Shuffle, color: "#D4A017", action: () => {} },
-          ].map((b, i) => (
-            <button key={i} onClick={b.action}
-              className="rounded-full flex items-center justify-center transition-transform hover:scale-110"
-              style={{ width: 52, height: 52, border: `1px solid ${b.color}66`, background: "rgba(0,0,0,0.6)" }}>
-              <b.Icon className="w-5 h-5" style={{ color: b.color }} />
-            </button>
-          ))}
-        </div>
-      </Reveal>
-    </section>
-  );
-}
-
-// ═══════════════════════════════════════
-// SECTION 9 — TDZ DISCOVERY (Interactive with Video)
-// ═══════════════════════════════════════
-function Section9Discovery({ navigate }: { navigate: (p: string) => void }) {
-  const [showVideo, setShowVideo] = useState(false);
-  return (
-    <section className="py-20 px-4 relative overflow-hidden" style={{ background: "#030308" }}>
-      {/* Cosmic nebula background */}
-      <div className="absolute inset-0 pointer-events-none" style={{ opacity: 0.6 }}>
-        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 120% 80% at 20% 10%, rgba(10,0,40,0.9) 0%, transparent 60%), radial-gradient(ellipse 100% 60% at 80% 20%, rgba(0,20,50,0.7) 0%, transparent 55%)" }} />
-        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 50% 40% at 30% 30%, rgba(139,92,246,0.12) 0%, transparent 70%), radial-gradient(ellipse 40% 50% at 70% 60%, rgba(0,207,255,0.1) 0%, transparent 65%)" }} />
       </div>
-
-      <div className="relative z-10">
-        <Reveal>
-          <ChromeTitle className="text-center">TDZ DISCOVERY</ChromeTitle>
-          <p className="text-center mt-2" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 13, color: "#888", letterSpacing: "0.15em" }}>IMMERSIVE MUSIC EXPLORATION</p>
-          <p className="text-center mt-3 mx-auto max-w-xl" style={{ fontFamily: "'Raleway', sans-serif", fontSize: 15, color: "#BBB" }}>Not a feed. A universe. Drift through moods, dive into genres and step inside artist worlds, with every play backing the artist behind it.</p>
-          <div className="flex justify-center gap-3 mt-4 mb-8">
-            <button onClick={() => setShowVideo(!showVideo)} className="liquid-glass liquid-glass-btn px-5 py-2.5 rounded-full text-xs"
-              style={{ background: showVideo ? "#00CFFF" : "transparent", color: showVideo ? "#000" : "#00CFFF", border: "1px solid #00CFFF", fontFamily: "'Raleway', sans-serif", fontWeight: 600 }}>
-              {showVideo ? "Hide Demo" : "▶ Watch Demo"}
-            </button>
-            <button onClick={() => navigate("/discover")} className="liquid-glass liquid-glass-btn px-5 py-2.5 rounded-full text-xs"
-              style={{ color: "#FFF", fontFamily: "'Raleway', sans-serif", fontWeight: 600 }}>
-              Open Discovery →
-            </button>
-          </div>
-        </Reveal>
-
-        {showVideo && (
-          <Reveal>
-            <div className="mx-auto mb-8 rounded-2xl overflow-hidden" style={{ maxWidth: 900, border: "1px solid #222" }}>
-              <video src="/videos/discovery-demo.mp4" controls autoPlay muted className="w-full" style={{ background: "#000" }} />
-            </div>
-          </Reveal>
-        )}
-
-        <Reveal delay={0.1}>
-          <div className="liquid-glass mx-auto mt-4 overflow-hidden" style={{ maxWidth: 1100, borderRadius: 28, minHeight: 480 }}>
-            <div className="flex">
-              {/* Cosmic sidebar */}
-              <div className="hidden sm:flex flex-col items-center gap-6 py-5 flex-shrink-0" style={{ width: 50, background: "rgba(5,5,15,0.9)", borderRight: "1px solid rgba(139,92,246,0.15)" }}>
-                {[
-                  { Icon: Compass, active: true },
-                  { Icon: BarChart3, active: false },
-                  { Icon: Globe, active: false },
-                  { Icon: User, active: false },
-                  { Icon: Heart, active: false },
-                ].map((n, i) => (
-                  <button key={i} onClick={() => navigate("/discover")} className="transition-colors hover:opacity-80">
-                    <n.Icon className="w-4 h-4" style={{ color: n.active ? "#00CFFF" : "#333" }} />
-                  </button>
-                ))}
-                <div className="mt-auto"><Settings className="w-4 h-4" style={{ color: "#333" }} /></div>
-              </div>
-
-              {/* Main cosmic content */}
-              <div className="flex-1 p-6 sm:p-8 lg:p-10">
-                {/* Top nav tabs */}
-                <div className="flex items-center gap-6 mb-6 pb-3" style={{ borderBottom: "1px solid rgba(139,92,246,0.1)" }}>
-                  {["HOME", "EXPLORE", "LIBRARY", "RADIO"].map((tab, i) => (
-                    <span key={tab} className="text-xs font-semibold tracking-widest cursor-pointer"
-                      style={{ fontFamily: "'Raleway', sans-serif", color: i === 0 ? "#fff" : "#555", borderBottom: i === 0 ? "2px solid #00CFFF" : "none", paddingBottom: 4, letterSpacing: "0.15em" }}>
-                      {tab}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="flex flex-wrap items-center gap-5 mb-4">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#22C55E" }} />
-                    <span style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 12, color: "#22C55E", letterSpacing: "0.15em" }}>LIVE</span>
-                  </div>
-                  <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 12, color: "#666" }}>🎧 $1/Stream</span>
-                </div>
-
-                <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 56, color: "#FFF", letterSpacing: "0.04em", lineHeight: 1, textShadow: "0 0 30px rgba(139,92,246,0.3)" }}>DISCOVER</h3>
-                <h3 style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 56, letterSpacing: "0.04em", lineHeight: 1, background: "linear-gradient(135deg, #00CFFF, #8B5CF6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>NEW TDZ RELEASES</h3>
-                <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 300, fontSize: 15, color: "#777", marginTop: 12 }}>Stream unlimited music. Every play directly supports creators.</p>
-
-                <div className="flex flex-wrap gap-3 mt-6">
-                  <button onClick={() => navigate("/discover")} className="px-6 py-2.5 rounded-full flex items-center gap-2 hover:scale-105 transition-transform"
-                    style={{ background: "linear-gradient(135deg, #fff, #e0e0e0)", color: "#000", fontFamily: "'Raleway', sans-serif", fontWeight: 600, fontSize: 13, boxShadow: "0 0 20px rgba(255,255,255,0.1)" }}>
-                    <Play className="w-4 h-4" /> Play All
-                  </button>
-                  <button onClick={() => navigate("/discover")} className="px-6 py-2.5 rounded-full hover:border-white/30 transition-colors"
-                    style={{ border: "1px solid rgba(139,92,246,0.3)", color: "#888", fontFamily: "'Raleway', sans-serif", fontWeight: 600, fontSize: 13, background: "rgba(139,92,246,0.05)" }}>
-                    ⇄ Shuffle
-                  </button>
-                </div>
-
-                {/* Orbital category bubbles */}
-                <div className="flex items-center gap-8 mt-8">
-                  {["Moodscapes", "Genre Odysseys", "Artist Portals"].map((cat, i) => (
-                    <div key={cat} className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => navigate("/discover")}>
-                      <div className="w-12 h-12 rounded-full flex items-center justify-center transition-all group-hover:scale-110"
-                        style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(0,207,255,0.2)", backdropFilter: "blur(8px)" }}>
-                        <span className="text-lg">{["🌌", "🎸", "👤"][i]}</span>
-                      </div>
-                      <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 9, color: "#666", letterSpacing: "0.12em", textTransform: "uppercase" as const }}>{cat}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
-// ═══════════════════════════════════════
-// SECTION 10 — FAN SUBSCRIPTION PLAN (with features)
-// ═══════════════════════════════════════
-function Section10FanPlan({ navigate }: { navigate: (p: string) => void }) {
-  const fanFeatures = [
-    "Unlimited streaming", "HD & Dolby Atmos audio", "Offline downloads", "Ad-free experience",
-    "Exclusive content access", "Support your favorite artists", "AI-powered playlists",
-  ];
-  return (
-    <section className="py-20 px-6" style={{ background: "#000" }}>
-      <Reveal><TDZBadge /><WhiteTitle className="text-center mt-4">FAN SUBSCRIPTION PLAN</WhiteTitle></Reveal>
-      <Reveal delay={0.1}>
-        <div className="flex flex-col items-center mt-10">
-          <div className="flex flex-col items-center pt-10"
-            style={{ background: "linear-gradient(180deg, #2a2a2a 0%, #5a5a5a 40%, #b0b0b0 75%, #d8d8d8 100%)",
-              borderRadius: 28, width: 380, maxWidth: "100%", minHeight: 520, padding: "36px 32px" }}>
-            <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 700, fontSize: 16, color: "#000000", letterSpacing: "0.2em", textTransform: "uppercase" as const, textAlign: "center" }}>
-              UNLIMITED STREAMING
-            </p>
-            <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 78, color: "#000000", letterSpacing: "0.04em", marginTop: 12 }}>$12.00</p>
-            <p style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#333", marginTop: 4 }}>/month</p>
-            <div className="mt-8 space-y-2 w-full">
-              {fanFeatures.map((f, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: "#000" }} />
-                  <span style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#111111", lineHeight: 1.4 }}>{f}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <SubscribeButton onClick={() => { if (isCheckoutPlan("fan")) openStripeCheckout("fan"); else navigate("/auth"); }} />
-        </div>
-      </Reveal>
-    </section>
-  );
-}
-
-// ═══════════════════════════════════════
-// SECTION 11 — FOOTER
-// ═══════════════════════════════════════
-function Section11Footer({ navigate }: { navigate: (p: string) => void }) {
-  return (
-    <footer className="pt-16 pb-10 px-4 text-center" style={{ background: "#000" }}>
-      <img src={tdzLogo} alt="TDZ Distribution" className="mx-auto w-14 h-14 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} />
-      <p style={{ fontFamily: "'Six Caps', sans-serif", fontSize: 20, color: "#444", letterSpacing: "0.08em", marginTop: 12 }}>
-        THE FIRST PLATFORM THAT PAYS $1 PER STREAM
-      </p>
-      <div className="flex flex-wrap justify-center gap-8 mt-6">
-        {[
-          { label: "SIGNUP", path: "/auth" }, { label: "STUDIO", path: "/studio" },
-          { label: "DISCOVERY", path: "/discover" }, { label: "STORE", path: "https://thirtydarkzerorecords.com/store", external: true, storeSource: "landing_footer" as StoreClickSource },
-          { label: "INVESTORS", path: "/investors" }, { label: "ABOUT", path: "/faq" },
-          { label: "CONTACT", path: "/support" }, { label: "LEARN", path: "/learn" }, { label: "CONNECT AI", path: "/connect" },
-        ].map((l: any) => (
-          <span key={l.label} onClick={() => l.external ? (l.storeSource ? openStore(l.storeSource) : window.open(l.path, "_blank", "noopener,noreferrer")) : navigate(l.path)}
-            className="cursor-pointer transition-colors hover:text-[#888]"
-            style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 500, fontSize: 13, color: "#444", letterSpacing: "0.1em", textTransform: "uppercase" as const }}>
-            {l.label}
-          </span>
-        ))}
-      </div>
-      <div className="flex justify-center gap-4 mt-6">
-        <span onClick={() => navigate("/terms")} className="cursor-pointer hover:text-[#666] transition-colors"
-          style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#333" }}>Terms</span>
-        <span onClick={() => navigate("/privacy")} className="cursor-pointer hover:text-[#666] transition-colors"
-          style={{ fontFamily: "'Raleway', sans-serif", fontSize: 11, color: "#333" }}>Privacy</span>
-      </div>
-      <div className="mx-auto mt-8 mb-8" style={{ borderTop: "1px solid rgba(255,255,255,0.05)", maxWidth: 600 }} />
-      <p style={{ fontFamily: "'Raleway', sans-serif", fontWeight: 300, fontSize: 12, color: "#333" }}>
-        © 2026 TDZ Distribution. All rights reserved.
-      </p>
     </footer>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────
+export default function Landing() {
+  const root = useRef<HTMLDivElement>(null);
+  const solid = useShowroomScroll(root);
+
+  return (
+    <div ref={root} className="showroom">
+      <a href="#main" className="sr-skip">Skip to content</a>
+      <Header solid={solid} />
+      <main id="main">
+        <Hero />
+        <Specs />
+
+        <Chapter
+          word="EARN"
+          image={heroStreet}
+          imageAlt="An artist in a pink jacket on set with a film crew"
+          title="A dollar a play, paid automatically."
+          link={{ to: "/faq", label: "How payouts work" }}
+        >
+          A play counts when a paying fan listens for 30 seconds or half the track. Once you pass
+          $50 and 50 paid plays, TDZ sends the money to your Stripe account.
+        </Chapter>
+
+        <Chapter
+          word="OWN"
+          image={heroStudio}
+          imageAlt="A rapper recording at a studio microphone"
+          title="Your music, your price, your rights."
+          link={{ to: "/auth?mode=signup", label: "Release your music" }}
+        >
+          Set your own download prices and keep every dollar of them. Your rights are managed in
+          more than 200 territories.
+        </Chapter>
+
+        <Chapter
+          word="GROW"
+          image={heroHeadphones}
+          imageAlt="An artist listening on headphones"
+          title="Know what to do next."
+          link={{ to: "/studio", label: "Open the Studio" }}
+        >
+          TDZ Studio shows who is listening, where and what is earning, so every release is
+          aimed at the fans who pay.
+        </Chapter>
+
+        <Chapter
+          word="DISCOVER"
+          image={crowd}
+          imageAlt="A concert crowd with hands raised"
+          title="The whole world's music, in one place."
+          link={{ to: "/discover", label: "Start listening" }}
+        >
+          Fans stream a global catalog alongside TDZ artists, and every subscription is shared
+          by the artists each fan actually plays.
+        </Chapter>
+
+        <SeeItWork />
+        <PickYourPath />
+        <Closing />
+      </main>
+      <Footer />
+    </div>
   );
 }
