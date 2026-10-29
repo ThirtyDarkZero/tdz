@@ -1,3 +1,4 @@
+import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
 
@@ -41,7 +42,7 @@ serve(async (req) => {
   }
 
   try {
-    const { artistName, includeDiscography = true } = await req.json();
+    const { artistName, includeDiscography = true } = await req.json().catch(() => ({}));
 
     if (!artistName) {
       throw new Error('Artist name is required');

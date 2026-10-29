@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { rateLimit } from "../_shared/rateLimit.ts";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -380,8 +382,12 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Public endpoint: cap requests per IP so scripts can't drain API quota.
+  const limited = rateLimit(req, 'youtube-search', corsHeaders, 30);
+  if (limited) return limited;
+
   try {
-    const { query, type = 'search', videoId, channelId, channelUrl, maxResults = 20, pageToken, officialOnly = false } = await req.json();
+    const { query, type = 'search', videoId, channelId, channelUrl, maxResults = 20, pageToken, officialOnly = false } = await req.json().catch(() => ({}));
 
     const hasYouTubeKey = Boolean(YOUTUBE_API_KEY);
     console.log(`[youtube-search] type=${type}, query="${query}", hasKey=${hasYouTubeKey}`);
@@ -667,7 +673,7 @@ serve(async (req) => {
           return new Response(JSON.stringify({
             results: fallbackResult.results,
             source: fallbackResult.source,
-            warning: `Primary API error: ${errorMessage}`,
+            warning: `Primary API error: ${publicError(error)}`,
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
@@ -677,7 +683,7 @@ serve(async (req) => {
       console.error('[youtube-search] Fallback also failed:', e);
     }
     
-    return new Response(JSON.stringify({ error: errorMessage, results: [] }), {
+    return new Response(JSON.stringify({ error: publicError(error), results: [] }), {
       status: 200, // Return 200 with empty results instead of 500
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -1,4 +1,8 @@
+import "../_shared/aiFallback.ts";
+import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { rateLimit } from "../_shared/rateLimit.ts";
+import { requireUser } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -88,8 +92,12 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Public endpoint: cap requests per IP so scripts can't drain API quota.
+  const limited = rateLimit(req, 'unified-music-search', corsHeaders, 30);
+  if (limited) return limited;
+
   try {
-    const { query, type = 'all', limit = 20, aiEnrich = false, includeCharts = false, includeAcoustic = false, includeAllMusic = true, includeSpotify = true, trendingOnly = false } = await req.json();
+    const { query, type = 'all', limit = 20, aiEnrich = false, includeCharts = false, includeAcoustic = false, includeAllMusic = true, includeSpotify = true, trendingOnly = false } = await req.json().catch(() => ({}));
 
     if (!query && !trendingOnly) {
       throw new Error('Query is required');
@@ -230,7 +238,9 @@ serve(async (req) => {
     // AI enrichment if requested
     let finalResults: (UnifiedResult | AIEnrichedResult)[] = mergedResults.slice(0, limit);
     
-    if (aiEnrich && LOVABLE_API_KEY && finalResults.length > 0) {
+    // AI enrichment costs AI credits — signed-in users only.
+    const aiAllowed = aiEnrich && !!(await requireUser(req)).user;
+    if (aiAllowed && LOVABLE_API_KEY && finalResults.length > 0) {
       try {
         finalResults = await enrichWithAI(finalResults, query);
       } catch (aiError) {

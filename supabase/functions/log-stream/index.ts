@@ -1,5 +1,6 @@
+import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from '../_shared/cors.ts';
 
@@ -33,7 +34,7 @@ serve(async (req) => {
       });
     }
 
-    const { trackId, artistId, listenerId, sessionId, durationSeconds, deviceType } = await req.json();
+    const { trackId, artistId, listenerId, sessionId, durationSeconds, deviceType } = await req.json().catch(() => ({}));
 
     // SECURITY: Strict UUID validation before any DB writes.
     if (!trackId || !artistId || !UUID_REGEX.test(trackId) || !UUID_REGEX.test(artistId)) {
@@ -53,6 +54,15 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    // Attribute the stream to the track's real owner, not a client-supplied id.
+    const { data: trackRow } = await supabaseAdmin
+      .from('tracks').select('user_id').eq('id', trackId).maybeSingle();
+    if (!trackRow?.user_id || trackRow.user_id !== artistId) {
+      return new Response(JSON.stringify({ error: "Track not found for this artist" }), {
+        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // Get IP from request headers for geolocation
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
@@ -98,13 +108,8 @@ serve(async (req) => {
     }
 
     // Also increment track play_count
-    await supabaseAdmin.rpc('increment_play_count_safe', { p_track_id: trackId }).catch(() => {
-      supabaseAdmin.from('tracks').select('play_count').eq('id', trackId).single().then(({ data }) => {
-        if (data) {
-          supabaseAdmin.from('tracks').update({ play_count: (data.play_count || 0) + 1 }).eq('id', trackId);
-        }
-      });
-    });
+    const { error: incErr } = await supabaseAdmin.rpc('increment_play_count_safe', { p_track_id: trackId });
+    if (incErr) console.error('increment_play_count_safe failed:', incErr.message);
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

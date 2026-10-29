@@ -1,4 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import "../_shared/fetchTimeout.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
 
 const corsHeaders = {
@@ -18,7 +19,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { prompt, limit = 20 } = await req.json();
+    const { prompt, limit = 20 } = await req.json().catch(() => ({}));
 
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 3) {
       return new Response(JSON.stringify({ error: 'Prompt must be at least 3 characters' }), {

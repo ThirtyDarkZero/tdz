@@ -32,7 +32,7 @@ serve(async (req) => {
       });
     }
 
-    const { trackId } = await req.json();
+    const { trackId } = await req.json().catch(() => ({}));
     if (!trackId) {
       return new Response(JSON.stringify({ error: "Missing trackId" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },

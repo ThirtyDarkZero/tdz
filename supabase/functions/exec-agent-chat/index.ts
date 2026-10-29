@@ -1,5 +1,6 @@
+import "../_shared/aiFallback.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getCorsHeaders } from "../_shared/cors.ts";
 
 // SECURITY: Validate and sanitize messages
@@ -155,7 +156,7 @@ serve(async (req) => {
       );
     }
 
-    const { messages, agentType } = await req.json();
+    const { messages, agentType } = await req.json().catch(() => ({}));
 
     // Validate agent type
     if (!agentType || !execAgents[agentType as keyof typeof execAgents]) {

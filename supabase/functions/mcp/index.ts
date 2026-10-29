@@ -164,8 +164,8 @@ var search_tracks_default = defineTool4({
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
     const supabase = supabaseForUser4(ctx);
-    const q = query.replace(/[%_]/g, "\\$&");
-    const { data, error } = await supabase.from("tracks").select("id, title, genre, play_count").eq("is_published", true).or(`title.ilike.%${q}%,genre.ilike.%${q}%`).order("play_count", { ascending: false }).limit(limit ?? 20);
+    const safeQ = String(query ?? "").replace(/[,():*\\]/g, " ").slice(0, 100).replace(/[%_]/g, "\\$&");
+    const { data, error } = await supabase.from("tracks").select("id, title, genre, play_count").eq("is_published", true).or(`title.ilike.%${safeQ}%,genre.ilike.%${safeQ}%`).order("play_count", { ascending: false }).limit(limit ?? 20);
     if (error) {
       return { content: [{ type: "text", text: error.message }], isError: true };
     }
