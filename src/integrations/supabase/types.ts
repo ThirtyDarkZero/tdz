@@ -849,6 +849,191 @@ export type Database = {
         }
         Relationships: []
       }
+      catalog_api_usage: {
+        Row: {
+          day: string
+          units: number
+        }
+        Insert: {
+          day?: string
+          units?: number
+        }
+        Update: {
+          day?: string
+          units?: number
+        }
+        Relationships: []
+      }
+      catalog_artists: {
+        Row: {
+          artist_type: string | null
+          country: string | null
+          created_at: string
+          disambiguation: string | null
+          genres: string[]
+          id: string
+          image_url: string | null
+          mbid: string | null
+          name: string
+          norm_name: string
+          status: string
+          sync_error: string | null
+          sync_started_at: string | null
+          synced_at: string | null
+          tdz_user_id: string | null
+          updated_at: string
+          youtube_channel_id: string | null
+        }
+        Insert: {
+          artist_type?: string | null
+          country?: string | null
+          created_at?: string
+          disambiguation?: string | null
+          genres?: string[]
+          id?: string
+          image_url?: string | null
+          mbid?: string | null
+          name: string
+          norm_name: string
+          status?: string
+          sync_error?: string | null
+          sync_started_at?: string | null
+          synced_at?: string | null
+          tdz_user_id?: string | null
+          updated_at?: string
+          youtube_channel_id?: string | null
+        }
+        Update: {
+          artist_type?: string | null
+          country?: string | null
+          created_at?: string
+          disambiguation?: string | null
+          genres?: string[]
+          id?: string
+          image_url?: string | null
+          mbid?: string | null
+          name?: string
+          norm_name?: string
+          status?: string
+          sync_error?: string | null
+          sync_started_at?: string | null
+          synced_at?: string | null
+          tdz_user_id?: string | null
+          updated_at?: string
+          youtube_channel_id?: string | null
+        }
+        Relationships: []
+      }
+      catalog_releases: {
+        Row: {
+          artist_id: string
+          cover_url: string | null
+          created_at: string
+          id: string
+          mbid: string | null
+          norm_title: string
+          release_date: string | null
+          release_type: string
+          title: string
+          tracklist_synced: boolean
+          year: number | null
+        }
+        Insert: {
+          artist_id: string
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          mbid?: string | null
+          norm_title: string
+          release_date?: string | null
+          release_type?: string
+          title: string
+          tracklist_synced?: boolean
+          year?: number | null
+        }
+        Update: {
+          artist_id?: string
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          mbid?: string | null
+          norm_title?: string
+          release_date?: string | null
+          release_type?: string
+          title?: string
+          tracklist_synced?: boolean
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_releases_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_artists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalog_tracks: {
+        Row: {
+          artist_id: string
+          created_at: string
+          duration_sec: number | null
+          id: string
+          lookup_failed: boolean
+          mb_recording: string | null
+          norm_title: string
+          position: number | null
+          release_id: string | null
+          title: string
+          view_count: number | null
+          youtube_id: string | null
+        }
+        Insert: {
+          artist_id: string
+          created_at?: string
+          duration_sec?: number | null
+          id?: string
+          lookup_failed?: boolean
+          mb_recording?: string | null
+          norm_title: string
+          position?: number | null
+          release_id?: string | null
+          title: string
+          view_count?: number | null
+          youtube_id?: string | null
+        }
+        Update: {
+          artist_id?: string
+          created_at?: string
+          duration_sec?: number | null
+          id?: string
+          lookup_failed?: boolean
+          mb_recording?: string | null
+          norm_title?: string
+          position?: number | null
+          release_id?: string | null
+          title?: string
+          view_count?: number | null
+          youtube_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_tracks_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_artists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalog_tracks_release_id_fkey"
+            columns: ["release_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_releases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       characters: {
         Row: {
           created_at: string
@@ -5170,6 +5355,16 @@ export type Database = {
         Args: { p_event_at: string; p_fields: Json; p_user_id: string }
         Returns: boolean
       }
+      catalog_apply_tracklist: {
+        Args: { p_release: string; p_rows: Json }
+        Returns: number
+      }
+      catalog_claim_sync: { Args: { p_artist: string }; Returns: boolean }
+      catalog_spend_youtube_units: {
+        Args: { p_budget: number; p_units: number }
+        Returns: boolean
+      }
+      catalog_upsert_tracks: { Args: { p_rows: Json }; Returns: number }
       check_upload_rate_limit: { Args: { p_user_id: string }; Returns: boolean }
       claim_stripe_webhook_event: {
         Args: {
