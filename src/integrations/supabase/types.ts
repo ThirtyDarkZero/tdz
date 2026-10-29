@@ -2633,6 +2633,36 @@ export type Database = {
         }
         Relationships: []
       }
+      payroll_runs: {
+        Row: {
+          auto_fixes: Json
+          created_at: string
+          findings: Json
+          id: string
+          status: string
+          summary: string | null
+          totals: Json
+        }
+        Insert: {
+          auto_fixes?: Json
+          created_at?: string
+          findings?: Json
+          id?: string
+          status?: string
+          summary?: string | null
+          totals?: Json
+        }
+        Update: {
+          auto_fixes?: Json
+          created_at?: string
+          findings?: Json
+          id?: string
+          status?: string
+          summary?: string | null
+          totals?: Json
+        }
+        Relationships: []
+      }
       platform_revenue: {
         Row: {
           amount: number
