@@ -295,6 +295,7 @@ export type Database = {
           period_end: string
           period_start: string
           streaming_revenue: number
+          tip_revenue: number
           total_downloads: number
           total_earnings: number | null
           total_streams: number
@@ -311,6 +312,7 @@ export type Database = {
           period_end: string
           period_start: string
           streaming_revenue?: number
+          tip_revenue?: number
           total_downloads?: number
           total_earnings?: number | null
           total_streams?: number
@@ -327,6 +329,7 @@ export type Database = {
           period_end?: string
           period_start?: string
           streaming_revenue?: number
+          tip_revenue?: number
           total_downloads?: number
           total_earnings?: number | null
           total_streams?: number
@@ -2489,6 +2492,39 @@ export type Database = {
         }
         Relationships: []
       }
+      money_ledger: {
+        Row: {
+          amount: number
+          artist_id: string
+          created_at: string
+          detail: Json | null
+          entry_type: string
+          id: number
+          source_id: string | null
+          source_type: string
+        }
+        Insert: {
+          amount: number
+          artist_id: string
+          created_at?: string
+          detail?: Json | null
+          entry_type: string
+          id?: number
+          source_id?: string | null
+          source_type: string
+        }
+        Update: {
+          amount?: number
+          artist_id?: string
+          created_at?: string
+          detail?: Json | null
+          entry_type?: string
+          id?: number
+          source_id?: string | null
+          source_type?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           actor_id: string | null
@@ -2561,6 +2597,39 @@ export type Database = {
           title?: string
           type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      outcome_events: {
+        Row: {
+          artist_id: string | null
+          ctq: string
+          detail: Json | null
+          id: number
+          occurred_at: string
+          ok: boolean
+          reason: string | null
+          subject_id: string | null
+        }
+        Insert: {
+          artist_id?: string | null
+          ctq: string
+          detail?: Json | null
+          id?: number
+          occurred_at?: string
+          ok: boolean
+          reason?: string | null
+          subject_id?: string | null
+        }
+        Update: {
+          artist_id?: string | null
+          ctq?: string
+          detail?: Json | null
+          id?: number
+          occurred_at?: string
+          ok?: boolean
+          reason?: string | null
+          subject_id?: string | null
         }
         Relationships: []
       }
@@ -3102,6 +3171,63 @@ export type Database = {
         }
         Relationships: []
       }
+      quality_alerts: {
+        Row: {
+          alert_key: string
+          first_seen: string
+          last_seen: string
+          last_sent: string | null
+          message: string
+          resolved_at: string | null
+          severity: string
+        }
+        Insert: {
+          alert_key: string
+          first_seen?: string
+          last_seen?: string
+          last_sent?: string | null
+          message: string
+          resolved_at?: string | null
+          severity: string
+        }
+        Update: {
+          alert_key?: string
+          first_seen?: string
+          last_seen?: string
+          last_sent?: string | null
+          message?: string
+          resolved_at?: string | null
+          severity?: string
+        }
+        Relationships: []
+      }
+      quality_targets: {
+        Row: {
+          alert_on_any_defect: boolean
+          ctq: string
+          min_runs: number
+          min_sigma: number
+          updated_at: string
+          window_hours: number
+        }
+        Insert: {
+          alert_on_any_defect?: boolean
+          ctq: string
+          min_runs?: number
+          min_sigma?: number
+          updated_at?: string
+          window_hours?: number
+        }
+        Update: {
+          alert_on_any_defect?: boolean
+          ctq?: string
+          min_runs?: number
+          min_sigma?: number
+          updated_at?: string
+          window_hours?: number
+        }
+        Relationships: []
+      }
       reactions: {
         Row: {
           comment_id: string | null
@@ -3539,6 +3665,42 @@ export type Database = {
           ip_address?: unknown
           severity?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      stream_policy: {
+        Row: {
+          flag_artist_share: number
+          flag_listener_share: number
+          flag_min_streams: number
+          id: boolean
+          max_paid_repeats_per_track_day: number | null
+          max_streams_per_hour: number
+          max_streams_per_listener_day: number
+          min_seconds_between_streams: number
+          updated_at: string
+        }
+        Insert: {
+          flag_artist_share?: number
+          flag_listener_share?: number
+          flag_min_streams?: number
+          id?: boolean
+          max_paid_repeats_per_track_day?: number | null
+          max_streams_per_hour?: number
+          max_streams_per_listener_day?: number
+          min_seconds_between_streams?: number
+          updated_at?: string
+        }
+        Update: {
+          flag_artist_share?: number
+          flag_listener_share?: number
+          flag_min_streams?: number
+          id?: boolean
+          max_paid_repeats_per_track_day?: number | null
+          max_streams_per_hour?: number
+          max_streams_per_listener_day?: number
+          min_seconds_between_streams?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -5003,6 +5165,14 @@ export type Database = {
         }
         Returns: string
       }
+      current_quality_alerts: {
+        Args: never
+        Returns: {
+          alert_key: string
+          message: string
+          severity: string
+        }[]
+      }
       deduct_render_credits:
         | {
             Args: {
@@ -5030,6 +5200,14 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      fraud_anomalies: {
+        Args: { p_hours?: number }
+        Returns: {
+          kind: string
+          subject_id: string
+          summary: string
+        }[]
+      }
       generate_isrc: { Args: never; Returns: string }
       generate_ticket_number: { Args: never; Returns: string }
       generate_upc: { Args: never; Returns: string }
@@ -5040,6 +5218,17 @@ export type Database = {
           merchant_id: string
           refresh_token: string
           token_expires_at: string
+        }[]
+      }
+      get_quality_scorecard: {
+        Args: { p_days?: number }
+        Returns: {
+          ctq: string
+          defects: number
+          dpmo: number
+          opportunities: number
+          sigma: number
+          top_failure: string
         }[]
       }
       get_user_plan: {
@@ -5094,6 +5283,16 @@ export type Database = {
           read_ct: number
         }[]
       }
+      reconcile_ledger: {
+        Args: never
+        Returns: {
+          artist_id: string
+          difference: number
+          ledger_balance: number
+          unpaid_earnings: number
+        }[]
+      }
+      sigma_level: { Args: { p_dpmo: number }; Returns: number }
       update_artist_monthly_listeners: { Args: never; Returns: undefined }
       validate_stream: {
         Args: {
