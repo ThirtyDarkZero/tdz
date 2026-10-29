@@ -25,3 +25,34 @@ CREATE TABLE public.stripe_webhook_events (id uuid PRIMARY KEY DEFAULT gen_rando
 CREATE TABLE public.render_credits (user_id uuid PRIMARY KEY, balance integer NOT NULL DEFAULT 0);
 CREATE FUNCTION public.deduct_render_credits(p_user_id uuid, p_amount integer, p_description text DEFAULT NULL)
   RETURNS integer LANGUAGE sql SECURITY DEFINER AS $$ SELECT 0 $$;
+
+-- Tables and policies as they stood before the step-5 security migration.
+CREATE TYPE public.subscription_plan AS ENUM ('free', 'starter', 'pro', 'enterprise', 'fan');
+CREATE TABLE public.user_subscriptions (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL UNIQUE,
+  plan public.subscription_plan NOT NULL DEFAULT 'free', status text NOT NULL DEFAULT 'active', expires_at timestamptz,
+  started_at timestamptz NOT NULL DEFAULT now(), canceled_at timestamptz);
+ALTER TABLE public.user_subscriptions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can create their own subscription" ON public.user_subscriptions
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE TABLE public.artist_tips (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), artist_id uuid NOT NULL, tipper_id uuid NOT NULL,
+  amount numeric(10,2) NOT NULL, square_payment_id text, status text NOT NULL DEFAULT 'pending', created_at timestamptz DEFAULT now());
+ALTER TABLE public.artist_tips ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role can insert tips" ON public.artist_tips FOR INSERT WITH CHECK (auth.uid() = tipper_id);
+GRANT USAGE ON SCHEMA auth TO authenticated, anon;
+GRANT SELECT ON auth._session TO authenticated, anon;
+GRANT INSERT, SELECT ON public.user_subscriptions, public.artist_tips TO authenticated;
+CREATE FUNCTION public.create_system_notification(p_user_id uuid, p_title text, p_message text)
+  RETURNS void LANGUAGE sql SECURITY DEFINER AS $$ SELECT $$;
+
+-- For the step-6 alert migration.
+CREATE TABLE public.notifications (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, actor_id uuid,
+  notification_type text NOT NULL CHECK (notification_type IN ('like', 'comment', 'follow', 'artist_release')),
+  target_type text, target_id uuid, message text, is_read boolean DEFAULT false, created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE public.system_health_log (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), check_type text NOT NULL, status text NOT NULL,
+  details jsonb, duration_ms integer, error_message text, created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE public.unmatched_transactions (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), stripe_object_id text NOT NULL UNIQUE,
+  stripe_object_type text NOT NULL, amount numeric(10,2) NOT NULL, status text NOT NULL DEFAULT 'pending');
+
+-- For the step-7 fraud migration.
+CREATE TABLE public.listening_history (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, track_id uuid NOT NULL,
+  played_at timestamptz NOT NULL DEFAULT now(), play_duration integer, completion_percentage integer);

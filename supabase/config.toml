@@ -89,6 +89,8 @@ project_id = "rcjzvfskkoqygnlolrcs"
     verify_jwt = true
   [functions.process-export]
     verify_jwt = true
+  [functions.quality-alerts]
+    verify_jwt = false
   [functions.quantum-advisor]
     verify_jwt = true
   [functions.quantum-distribution]

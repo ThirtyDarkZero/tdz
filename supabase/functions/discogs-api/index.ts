@@ -1,6 +1,7 @@
 import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -133,7 +134,7 @@ serve(async (req) => {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("Discogs API error:", message);
     return new Response(
-      JSON.stringify({ error: message }),
+      JSON.stringify({ error: publicError(error) }),
       { 
         status: 500, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 

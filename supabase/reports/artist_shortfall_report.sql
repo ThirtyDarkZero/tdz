@@ -6,8 +6,11 @@
 --                         those dollars were marked paid but never transferred
 --   reversed_not_repaid   transfers Stripe reversed; earnings stayed "paid"
 --   failed_not_reopened   transfers that failed while their earnings stayed "paid"
---   unpaid_tips           tips collected but never added to earnings (net of the 2.9% + $0.30
---                         processing fee used for downloads and merch)
+--   unpaid_tips           tips Stripe charged (verified webhook) but never added to earnings,
+--                         net of the 2.9% + $0.30 processing fee used for downloads and merch
+-- Review:
+--   unverified_tips_review "completed" tips with no verified Stripe payment (possibly forged
+--                         before the 2026-10-27 security fix); not counted as owed
 -- Estimate (approximate):
 --   est_lost_streams_usd  paid-subscriber streams in listening history that never reached
 --                         earnings (concurrent streams overwriting each other). Uses each
@@ -90,7 +93,13 @@ credited_streams AS (
 ),
 tips AS (
   SELECT t.artist_id,
-         sum(GREATEST(t.amount - round(t.amount * 0.029 + 0.30, 2), 0)) AS unpaid_tips
+         sum(GREATEST(t.amount - round(t.amount * 0.029 + 0.30, 2), 0))
+           FILTER (WHERE EXISTS (SELECT 1 FROM public.stripe_webhook_events w
+                  WHERE w.status = 'processed' AND w.signature_valid
+                    AND w.payload -> 'data' -> 'object' ->> 'payment_intent' = t.square_payment_id)) AS unpaid_tips,
+         sum(t.amount) FILTER (WHERE NOT EXISTS (SELECT 1 FROM public.stripe_webhook_events w
+                  WHERE w.status = 'processed' AND w.signature_valid
+                    AND w.payload -> 'data' -> 'object' ->> 'payment_intent' = t.square_payment_id)) AS unverified_tips
   FROM public.artist_tips t
   WHERE t.status = 'completed'
     AND NOT EXISTS (SELECT 1 FROM public.artist_earnings e
@@ -116,6 +125,7 @@ SELECT
   round(coalesce(rv.reversed_not_repaid, 0), 2) AS reversed_not_repaid,
   round(coalesce(f.failed_not_reopened, 0), 2)  AS failed_not_reopened,
   round(coalesce(tp.unpaid_tips, 0), 2)         AS unpaid_tips,
+  round(coalesce(tp.unverified_tips, 0), 2)     AS unverified_tips_review,
   round(coalesce(x.unpaid_after_payout, 0) + coalesce(rv.reversed_not_repaid, 0)
         + coalesce(f.failed_not_reopened, 0) + coalesce(tp.unpaid_tips, 0), 2) AS confirmed_shortfall_usd,
   coalesce(es.expected_paid_streams, 0)         AS expected_paid_streams,

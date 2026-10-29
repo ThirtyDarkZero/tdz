@@ -1,7 +1,8 @@
 -- OPT-IN: make historical tips payable.  RUN ONLY AFTER REVIEWING THE SHORTFALL REPORT.
 -- Requires migration 20261027150000_money_ledger.sql.
 -- Adds one pending earnings row per completed tip that was never credited
--- (net of the 2.9% + $0.30 processing fee). The hourly payout run then pays
+-- (net of the 2.9% + $0.30 processing fee), and only tips with a verified
+-- Stripe payment on record; tip rows without one are left for manual review. The hourly payout run then pays
 -- artists who meet the $50 + 50-stream rule. Safe to re-run: each tip is keyed.
 
 INSERT INTO public.artist_earnings
@@ -16,5 +17,9 @@ SELECT t.artist_id,
 FROM public.artist_tips t
 WHERE t.status = 'completed'
   AND t.square_payment_id IS NOT NULL
+  -- Only tips Stripe actually charged (signature-verified webhook on record).
+  AND EXISTS (SELECT 1 FROM public.stripe_webhook_events w
+                WHERE w.status = 'processed' AND w.signature_valid
+                  AND w.payload -> 'data' -> 'object' ->> 'payment_intent' = t.square_payment_id)
   AND GREATEST(t.amount - round(t.amount * 0.029 + 0.30, 2), 0) > 0
 ON CONFLICT (idempotency_key) WHERE idempotency_key IS NOT NULL DO NOTHING;
