@@ -65,6 +65,10 @@ export default function UnifiedArtistProfile() {
 
   useEffect(() => {
     if (!artistId) return;
+    // Artist names (not ids) belong to the global catalog profile.
+    const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(artistId)
+      || artistId.startsWith('UC') || artistId.startsWith('yt-');
+    if (!isId) { navigate(`/artist/global/${encodeURIComponent(artistId)}`, { replace: true }); return; }
     const isYouTube = source === 'youtube' || artistId.startsWith('UC') || artistId.startsWith('yt-');
     setArtistSource(isYouTube ? 'youtube' : 'tdz');
   }, [artistId, source]);
@@ -75,6 +79,9 @@ export default function UnifiedArtistProfile() {
       navigate("/discover");
       return;
     }
+    const isId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(artistId)
+      || artistId.startsWith('UC') || artistId.startsWith('yt-');
+    if (!isId) return;   // redirected to the catalog profile above
     loadUser();
     if (artistSource === 'youtube') loadYouTubeArtist();
     else loadTDZArtist();

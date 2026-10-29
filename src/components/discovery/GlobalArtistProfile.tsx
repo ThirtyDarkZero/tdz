@@ -1,617 +1,246 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { BadgeCheck, ChevronLeft, Disc, Loader2, Play, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { 
-  Play, Bell, MoreHorizontal, ChevronLeft, ChevronRight, 
-  Disc, Clock, ListPlus, Youtube, Loader2, Music, Heart, Bot
-} from "lucide-react";
-import { usePlayer } from "@/contexts/PlayerContext";
-import { useMusicBrainz } from "@/hooks/useMusicBrainz";
-import { useDiscogsLibrary } from "@/hooks/useDiscogsLibrary";
-import { GlobalAlbumDetail } from "./GlobalAlbumDetail";
-import { ArtistYouTubeCatalog } from "./ArtistYouTubeCatalog";
-import { useGlobalLibrary } from "@/hooks/useGlobalLibrary";
-import { useDiscographyAgent } from "@/hooks/useDiscographyAgent";
+import { CatalogTrackRow } from "./CatalogTrackRow";
+import { CatalogReleaseView } from "./CatalogReleaseView";
+import { useCatalogPlayback } from "@/hooks/useCatalogPlayback";
+import {
+  artistRef, fetchArtist, RELEASE_LABEL, type ArtistPayload, type CatalogRelease, type ReleaseType,
+} from "@/lib/catalog";
 
 interface GlobalArtistProfileProps {
+  /** Artist name, or "mbid:<MusicBrainz id>" / "id:<catalog id>". */
   artistName: string;
+  /** MusicBrainz id when the caller has one. */
   artistId?: string;
-  source: 'discogs' | 'musicbrainz' | 'allmusic';
+  source: "discogs" | "musicbrainz" | "allmusic";
   onClose: () => void;
-  onAddToPlaylist?: (track: any) => void;
+  onAddToPlaylist?: Parameters<typeof useCatalogPlayback>[1];
 }
 
-interface GlobalTrack {
-  id: string;
-  title: string;
-  album: string;
-  duration?: string;
-  position?: string;
-  youtubeId?: string;
-  thumbnail?: string;
+const TABS: Array<{ key: string; label: string; types: ReleaseType[] }> = [
+  { key: "albums", label: "Albums", types: ["album"] },
+  { key: "singles", label: "Singles & EPs", types: ["single", "ep"] },
+  { key: "more", label: "Compilations & Live", types: ["compilation", "live", "other"] },
+];
+
+function ReleaseCard({ release, onOpen }: { release: CatalogRelease; onOpen: () => void }) {
+  const [src, setSrc] = useState<string | null>(release.cover_url ?? release.fallback_cover);
+  return (
+    <button type="button" onClick={onOpen} className="group w-full text-left">
+      <div className="relative aspect-square w-full overflow-hidden rounded-lg" style={{ background: "rgba(255,255,255,0.05)" }}>
+        {src ? (
+          <img src={src} alt={release.title} loading="lazy" className="h-full w-full object-cover transition-transform group-hover:scale-105"
+            onError={() => setSrc(src !== release.fallback_cover ? release.fallback_cover : null)} />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center"><Disc className="h-10 w-10" style={{ color: "var(--text-4)" }} /></div>
+        )}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+          <Play className="h-10 w-10 fill-white text-white" />
+        </div>
+      </div>
+      <p className="mt-2 truncate text-sm font-medium" style={{ color: "var(--text-1)" }}>{release.title}</p>
+      <p className="truncate text-xs" style={{ color: "var(--text-4)" }}>
+        {[release.year, RELEASE_LABEL[release.release_type]].filter(Boolean).join(" · ")}
+      </p>
+    </button>
+  );
 }
 
-interface GlobalAlbum {
-  id: string;
-  title: string;
-  year?: string;
-  coverArt?: string;
-  type?: string;
-  genres?: string[];
-}
+// Artist profile for anyone in the global catalog: photo, popular songs and a
+// full discography (albums, singles, EPs), all playable. Built once from
+// MusicBrainz + YouTube Music and then served from the TDZ database.
+export function GlobalArtistProfile({ artistName, artistId, source, onClose, onAddToPlaylist }: GlobalArtistProfileProps) {
+  const navigate = useNavigate();
+  const [data, setData] = useState<ArtistPayload | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState("albums");
+  const [openRelease, setOpenRelease] = useState<string | null>(null);
+  const [imgFailed, setImgFailed] = useState(false);
+  const [reload, setReload] = useState(0);
 
-// Multiple image source fallback for reliable artist images
-const IMAGE_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiMxYTFhMWEiLz48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjgwIiBmaWxsPSIjMmEyYTJhIi8+PHBhdGggZD0iTTEwMCA2MEMxMjcuNjE0IDYwIDE1MCA4Mi4zODU4IDE1MCAxMTBDMTUwIDEzNy42MTQgMTI3LjYxNCAxNjAgMTAwIDE2MEM3Mi4zODU4IDE2MCA1MCAxMzcuNjE0IDUwIDExMEM1MCA4Mi4zODU4IDcyLjM4NTggNjAgMTAwIDYwWiIgZmlsbD0iIzNhM2EzYSIvPjwvc3ZnPg==';
-
-export function GlobalArtistProfile({ 
-  artistName, 
-  artistId, 
-  source, 
-  onClose,
-  onAddToPlaylist 
-}: GlobalArtistProfileProps) {
-  const { playTrack, addToQueue } = usePlayer();
-  const { toggleGlobalLike, isGlobalTrackLiked, loadLikedGlobalTracks } = useGlobalLibrary();
-  const { getArtist: getMBArtist, search: searchMB, findYouTubeMatch } = useMusicBrainz();
-  const { getArtist: getDiscogsArtist, getArtistReleases } = useDiscogsLibrary();
-  const { result: discographyResult, loading: discographyLoading, fetchDiscography } = useDiscographyAgent();
-  
-  const [artist, setArtist] = useState<any>(null);
-  const [tracks, setTracks] = useState<GlobalTrack[]>([]);
-  const [albums, setAlbums] = useState<GlobalAlbum[]>([]);
-  const [relatedArtists, setRelatedArtists] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingTrack, setLoadingTrack] = useState<string | null>(null);
-  const [albumScrollPosition, setAlbumScrollPosition] = useState(0);
-  const [featuredScrollPosition, setFeaturedScrollPosition] = useState(0);
-  const [relatedScrollPosition, setRelatedScrollPosition] = useState(0);
-  const [selectedAlbum, setSelectedAlbum] = useState<GlobalAlbum | null>(null);
-  const [artistImage, setArtistImage] = useState<string | null>(null);
-  const [imageLoadFailed, setImageLoadFailed] = useState(false);
-  const [youtubeChannelId, setYoutubeChannelId] = useState<string | null>(null);
-  const [showFullCatalog, setShowFullCatalog] = useState(false);
-
-  // Load liked tracks
-  useEffect(() => {
-    loadLikedGlobalTracks();
-  }, [loadLikedGlobalTracks]);
-
-  // Fetch artist image from multiple sources with fallbacks
-  const fetchReliableArtistImage = useCallback(async (name: string): Promise<string | null> => {
-    console.log('Fetching reliable artist image for:', name);
-    
-    // 1. Try AllMusic via edge function (highest quality)
-    try {
-      const { data: allMusicData } = await supabase.functions.invoke('allmusic-artist', {
-        body: { artistName: name, includeDiscography: false }
-      });
-      if (allMusicData?.artist?.imageUrl) {
-        console.log('Got AllMusic image:', allMusicData.artist.imageUrl);
-        return allMusicData.artist.imageUrl;
-      }
-    } catch (e) {
-      console.log('AllMusic fetch failed:', e);
-    }
-
-    // 2. Try YouTube Topic channel
-    try {
-      const { data: ytData } = await supabase.functions.invoke('youtube-search', {
-        body: { query: `${name} - Topic`, maxResults: 1, type: 'channel' }
-      });
-      if (ytData?.results?.[0]?.thumbnail) {
-        console.log('Got YouTube Topic image');
-        return ytData.results[0].thumbnail;
-      }
-    } catch (e) {
-      console.log('YouTube Topic fetch failed:', e);
-    }
-
-    // 3. Try YouTube artist search
-    try {
-      const { data: ytData } = await supabase.functions.invoke('youtube-search', {
-        body: { query: `${name} official artist`, maxResults: 1 }
-      });
-      if (ytData?.results?.[0]?.thumbnail) {
-        console.log('Got YouTube artist image');
-        return ytData.results[0].thumbnail;
-      }
-    } catch (e) {
-      console.log('YouTube artist fetch failed:', e);
-    }
-
-    // 4. Try unified music search for AllMusic/Discogs results
-    try {
-      const { data: unifiedData } = await supabase.functions.invoke('unified-music-search', {
-        body: { query: name, type: 'artist', limit: 5, includeAllMusic: true }
-      });
-      const artistResult = unifiedData?.results?.find((r: any) => 
-        r.type === 'artist' && (r.allMusicImage || r.thumbnail)
-      );
-      if (artistResult?.allMusicImage || artistResult?.thumbnail) {
-        console.log('Got unified search image');
-        return artistResult.allMusicImage || artistResult.thumbnail;
-      }
-    } catch (e) {
-      console.log('Unified search fetch failed:', e);
-    }
-
-    return null;
-  }, []);
+  const ref = useMemo(
+    () => artistRef(artistName, source === "musicbrainz" ? artistId : undefined),
+    [artistName, artistId, source],
+  );
+  const name = data?.artist.name ?? (artistName.includes(":") ? "" : artistName);
+  const pb = useCatalogPlayback(name, onAddToPlaylist);
 
   useEffect(() => {
-    loadArtistData();
-  }, [artistName, artistId, source]);
-
-  const loadArtistData = async () => {
-    setLoading(true);
-    setImageLoadFailed(false);
-    
-    try {
-      // Fetch artist image from reliable multi-source function
-      const reliableImage = await fetchReliableArtistImage(artistName);
-      if (reliableImage) {
-        setArtistImage(reliableImage);
-      }
-
-      // Also try AllMusic for full artist data including discography
-      if (source === 'allmusic' || !artistId) {
-        try {
-          const { data: allMusicData } = await supabase.functions.invoke('allmusic-artist', {
-            body: { artistName, includeDiscography: true }
-          });
-          
-          if (allMusicData?.artist) {
-            setArtist({
-              name: allMusicData.artist.name || artistName,
-              image: allMusicData.artist.imageUrl,
-              bio: allMusicData.artist.biography,
-              genres: allMusicData.artist.genres || [],
-              styles: allMusicData.artist.styles || [],
-            });
-            
-            // Use AllMusic image if we don't have one yet
-            if (!reliableImage && allMusicData.artist.imageUrl) {
-              setArtistImage(allMusicData.artist.imageUrl);
-            }
-            
-            // Use AllMusic discography if available
-            if (allMusicData.artist.discography?.length > 0) {
-              setAlbums(allMusicData.artist.discography.map((album: any) => ({
-                id: album.id,
-                title: album.title,
-                year: album.year,
-                coverArt: album.coverArt,
-                type: album.type,
-                genres: allMusicData.artist.genres,
-              })));
-            }
-          }
-        } catch (e) {
-          console.log('AllMusic full data fetch failed:', e);
-        }
-      }
-
-      if (source === 'musicbrainz' && artistId) {
-        const data = await getMBArtist(artistId);
-        if (data) {
-          setArtist({
-            name: data.name,
-            image: null,
-            genres: data.genres?.map((g: any) => g.name) || [],
-            type: data.type,
-            country: data.country,
-            beginDate: data.beginDate,
-          });
-          
-          if (data.releaseGroups && albums.length === 0) {
-            setAlbums(data.releaseGroups.map((rg: any) => ({
-              id: rg.id,
-              title: rg.title,
-              year: rg.firstReleaseDate?.split('-')[0],
-              coverArt: rg.coverArt,
-              type: rg.primaryType,
-              genres: data.genres?.map((g: any) => g.name) || [],
-            })));
-          }
-        }
-      } else if (source === 'discogs' && artistId) {
-        const data = await getDiscogsArtist(artistId);
-        if (data) {
-          setArtist({
-            name: data.name,
-            image: data.cover_art_url,
-            profile: data.profile,
-            genres: [],
-          });
-          
-          // Use Discogs image as fallback
-          if (!artistImage && data.cover_art_url) {
-            setArtistImage(data.cover_art_url);
-          }
-        }
-        
-        // Get releases
-        const releases = await getArtistReleases(artistId);
-        if (releases?.releases && albums.length === 0) {
-          setAlbums(releases.releases.slice(0, 20).map((r: any) => ({
-            id: r.id,
-            title: r.title,
-            year: r.year,
-            coverArt: r.cover_art_url,
-            type: r.type,
-            genres: r.genres || [],
-          })));
-        }
-      } else if (!artist) {
-        // Search by name
-        const mbResults = await searchMB(artistName, 'artist');
-        if (mbResults?.artists?.[0]) {
-          const firstArtist = mbResults.artists[0];
-          setArtist({
-            name: firstArtist.name,
-            genres: firstArtist.tags || [],
-            type: firstArtist.type,
-            country: firstArtist.country,
-          });
-        }
-      }
-
-      // Use the deep discography agent for comprehensive YouTube Music results
-      const discography = await fetchDiscography(artistName, 'full');
-      
-      if (discography) {
-        // Use agent's top tracks
-        if (discography.topTracks?.length > 0) {
-          setTracks(discography.topTracks.map((video, idx) => ({
-            id: `yt-${video.youtubeId}`,
-            title: video.title.replace(new RegExp(artistName, 'gi'), '').replace(/[-|]/g, '').replace(/\(official.*?\)/gi, '').trim() || video.title,
-            album: 'YouTube Music',
-            duration: video.duration,
-            position: String(idx + 1),
-            youtubeId: video.youtubeId,
-            thumbnail: video.thumbnail,
-          })));
-        }
-        
-        // Use agent's artist thumbnail as fallback image
-        if (!artistImage && discography.artist?.thumbnail) {
-          setArtistImage(discography.artist.thumbnail);
-        }
-      } else {
-        // Fallback to direct search if agent fails
-        const { data: ytData } = await supabase.functions.invoke('youtube-search', {
-          body: { 
-            query: `${artistName} official audio`, 
-            maxResults: 15,
-            officialOnly: true 
-          }
-        });
-
-        if (ytData?.results) {
-          setTracks(ytData.results.map((video: any, idx: number) => ({
-            id: `yt-${video.id}`,
-            title: video.title.replace(new RegExp(artistName, 'gi'), '').replace(/[-|]/g, '').replace(/\(official.*?\)/gi, '').trim(),
-            album: 'YouTube Music',
-            duration: video.duration,
-            position: String(idx + 1),
-            youtubeId: video.id,
-            thumbnail: video.thumbnail,
-          })));
-        }
-      }
-
-    } catch (error) {
-      console.error('Error loading artist:', error);
-      toast.error('Failed to load artist data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePlayTrack = async (track: GlobalTrack, index?: number) => {
-    if (track.youtubeId) {
-      const youtubeTrack = {
-        id: track.id,
-        title: track.title,
-        artist_name: artist?.name || artistName,
-        duration: 0,
-        file_path: '',
-        play_count: 0,
-        source: 'youtube' as const,
-        youtubeId: track.youtubeId,
-        thumbnail: track.thumbnail,
-      };
-      playTrack(youtubeTrack);
-      
-      // Add remaining tracks to queue for continuous playback
-      if (typeof index === 'number') {
-        tracks.slice(index + 1).forEach(t => {
-          if (t.youtubeId) {
-            addToQueue({
-              id: t.id,
-              title: t.title,
-              artist_name: artist?.name || artistName,
-              duration: 0,
-              file_path: '',
-              play_count: 0,
-              source: 'youtube' as const,
-              youtubeId: t.youtubeId,
-              thumbnail: t.thumbnail,
-            });
-          }
-        });
-      }
-    } else {
-      // Find YouTube match
-      setLoadingTrack(track.id);
+    let cancelled = false;
+    let timer: number | undefined;
+    const load = async (attempt = 0) => {
       try {
-        const videoId = await findYouTubeMatch({ title: track.title } as any, artist?.name || artistName);
-        if (videoId) {
-          const youtubeTrack = {
-            id: track.id,
-            title: track.title,
-            artist_name: artist?.name || artistName,
-            duration: 0,
-            file_path: '',
-            play_count: 0,
-            source: 'youtube' as const,
-            youtubeId: videoId,
-            thumbnail: track.thumbnail,
-          };
-          playTrack(youtubeTrack);
-        }
-      } finally {
-        setLoadingTrack(null);
+        const d = await fetchArtist(ref);
+        if (cancelled) return;
+        setData(d);
+        setError(null);
+        // Another visitor is building this profile right now: check back shortly.
+        if (d.syncing && attempt < 10) timer = window.setTimeout(() => load(attempt + 1), 3000);
+      } catch (e) {
+        if (!cancelled) setError((e as Error).message);
       }
-    }
-  };
+    };
+    setData(null); setError(null); setImgFailed(false); setOpenRelease(null);
+    load();
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [ref, reload]);
 
-  const handlePlayAll = () => {
-    if (tracks.length > 0) {
-      handlePlayTrack(tracks[0]);
-    }
-  };
+  const groups = useMemo(() => {
+    const releases = data?.releases ?? [];
+    return TABS.map((t) => ({ ...t, items: releases.filter((r) => t.types.includes(r.release_type)) }))
+      .filter((g) => g.items.length > 0);
+  }, [data]);
+  const activeTab = groups.find((g) => g.key === tab) ?? groups[0];
+  const topTracks = data?.topTracks ?? [];
 
-  const handleAddToPlaylist = (track: GlobalTrack) => {
-    if (onAddToPlaylist) {
-      onAddToPlaylist({
-        id: track.id,
-        title: track.title,
-        artist_name: artist?.name || artistName,
-        youtubeId: track.youtubeId,
-        thumbnail: track.thumbnail,
-      });
-    } else {
-      toast.info('Add to playlist coming soon');
-    }
-  };
-
-  // Handle album click - open album detail
-  const handleAlbumClick = (album: GlobalAlbum) => {
-    setSelectedAlbum(album);
-  };
-
-  // If showing album detail
-  if (selectedAlbum) {
+  if (openRelease) {
     return (
-      <GlobalAlbumDetail
-        album={{
-          id: selectedAlbum.id,
-          title: selectedAlbum.title,
-          artist: artist?.name || artistName,
-          year: selectedAlbum.year,
-          coverArt: selectedAlbum.coverArt,
-          type: selectedAlbum.type,
-          genres: selectedAlbum.genres || artist?.genres,
-          source: source,
-        }}
-        onClose={() => setSelectedAlbum(null)}
+      <CatalogReleaseView
+        releaseId={openRelease}
+        onBack={() => setOpenRelease(null)}
+        onOpenArtist={() => setOpenRelease(null)}
         onAddToPlaylist={onAddToPlaylist}
-        onOpenArtist={() => setSelectedAlbum(null)}
       />
     );
   }
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-50 bg-[#0a0a0a] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-10 h-10 animate-spin text-cyan-500" />
-          <p className="text-white/60">Loading {artistName}...</p>
-        </div>
-      </div>
-    );
-  }
+  const image = !imgFailed ? data?.artist.image_url : null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto" style={{ background: "#03030F" }}>
-      {/* Blurred art background */}
-      {(artistImage || artist?.image) && (
+      {image && (
         <div className="fixed inset-0 z-0" style={{
-          backgroundImage: `url(${artistImage || artist?.image})`,
-          backgroundSize: "cover", backgroundPosition: "center",
+          backgroundImage: `url(${image})`, backgroundSize: "cover", backgroundPosition: "center",
           filter: "blur(80px) saturate(1.5) brightness(0.15)", transform: "scale(1.2)",
         }} />
       )}
       <div className="fixed inset-0 z-0" style={{ background: "linear-gradient(to bottom, rgba(3,3,15,0.4), rgba(3,3,15,0.9) 60%, rgba(3,3,15,0.98))" }} />
 
-      {/* Header */}
       <div className="sticky top-0 z-20" style={{ background: "rgba(3,3,15,0.75)", backdropFilter: "blur(32px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <div className="flex items-center gap-4 px-4 md:px-6 py-3">
-          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
-            <ChevronLeft className="w-5 h-5" />
+        <div className="flex items-center gap-4 px-4 py-3 md:px-6">
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full" style={{ background: "rgba(255,255,255,0.06)" }} aria-label="Back">
+            <ChevronLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-bold truncate" style={{ color: "var(--text-1)" }}>{artist?.name || artistName}</h1>
+          <h1 className="truncate text-lg font-bold" style={{ color: "var(--text-1)" }}>{name}</h1>
         </div>
       </div>
 
-      <div className="relative z-10">
-        {/* Centered Hero */}
-        <div className="flex flex-col items-center pt-10 pb-8 px-4">
-          {/* Circular photo with coral glow */}
-          <div className="relative mb-6">
-            <div className="absolute -inset-4 rounded-full" style={{ background: "rgba(255,99,71,0.2)", filter: "blur(30px)" }} />
-            <div className="relative w-44 h-44 md:w-56 md:h-56 rounded-full overflow-hidden" style={{
-              border: "3px solid rgba(255,99,71,0.3)",
-              boxShadow: "0 0 40px rgba(255,99,71,0.15), inset 0 0 30px rgba(0,0,0,0.3)",
-            }}>
-              {(artistImage || artist?.image) ? (
-                <img src={artistImage || artist?.image} alt={artist?.name || artistName} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(255,99,71,0.2), rgba(139,92,246,0.2))" }}>
-                  <span className="text-5xl font-black" style={{ color: "rgba(255,255,255,0.3)" }}>{(artist?.name || artistName).charAt(0).toUpperCase()}</span>
+      <div className="relative z-10 mx-auto max-w-5xl px-4 pb-32 md:px-6">
+        {error && (
+          <div className="flex flex-col items-center gap-4 py-24 text-center">
+            <p style={{ color: "var(--text-3)" }}>{error}</p>
+            <Button variant="outline" onClick={() => setReload((n) => n + 1)}><RefreshCw className="mr-2 h-4 w-4" /> Try again</Button>
+          </div>
+        )}
+
+        {!data && !error && (
+          <div className="flex flex-col items-center gap-4 py-24 text-center">
+            <Loader2 className="h-10 w-10 animate-spin text-[#FF6347]" />
+            <p style={{ color: "var(--text-2)" }}>Loading {name || "artist"}…</p>
+            <p className="max-w-sm text-xs" style={{ color: "var(--text-4)" }}>
+              The first visit to a new artist builds their profile and discography. It takes a few seconds, then it's instant for everyone.
+            </p>
+          </div>
+        )}
+
+        {data && (
+          <>
+            <div className="flex flex-col items-center pb-8 pt-10 text-center">
+              <div className="relative mb-6">
+                <div className="absolute -inset-4 rounded-full" style={{ background: "rgba(255,99,71,0.2)", filter: "blur(30px)" }} />
+                <div className="relative h-44 w-44 overflow-hidden rounded-full md:h-56 md:w-56" style={{
+                  border: "3px solid rgba(255,99,71,0.3)", boxShadow: "0 0 40px rgba(255,99,71,0.15)",
+                }}>
+                  {image ? (
+                    <img src={image} alt={name} className="h-full w-full object-cover" onError={() => setImgFailed(true)} />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(255,99,71,0.2), rgba(139,92,246,0.2))" }}>
+                      <span className="text-5xl font-black" style={{ color: "rgba(255,255,255,0.3)" }}>{name.charAt(0).toUpperCase()}</span>
+                    </div>
+                  )}
                 </div>
+              </div>
+              <h2 className="text-4xl font-black md:text-6xl" style={{ color: "var(--text-1)" }}>{name}</h2>
+              {data.artist.disambiguation && (
+                <p className="mt-1 text-sm" style={{ color: "var(--text-4)" }}>{data.artist.disambiguation}</p>
               )}
-            </div>
-          </div>
-
-          {/* Name + genres */}
-          <h1 className="text-3xl md:text-5xl font-black text-center tracking-tight mb-2" style={{ color: "var(--text-1)" }}>
-            {artist?.name || artistName}
-          </h1>
-          <div className="flex items-center gap-2 flex-wrap justify-center mb-4">
-            <span className="text-xs uppercase tracking-wider" style={{ color: "var(--text-3)" }}>Artist</span>
-            {artist?.genres?.slice(0, 4).map((genre: string) => (
-              <Badge key={genre} variant="outline" className="text-[10px]" style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.1)", color: "var(--text-2)" }}>
-                {genre}
-              </Badge>
-            ))}
-          </div>
-
-          {/* Stats */}
-          <div className="flex items-center gap-4 text-xs mb-5" style={{ color: "var(--text-3)" }}>
-            <span>Albums: <strong style={{ color: "var(--text-1)" }}>{albums.length}</strong></span>
-            <span>•</span>
-            <span>Tracks: <strong style={{ color: "var(--text-1)" }}>{tracks.length}</strong></span>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-3">
-            <Button size="lg" onClick={handlePlayAll} className="font-semibold px-8" style={{ background: "#FF6347", color: "#000" }}>
-              <Play className="w-5 h-5 mr-2" fill="currentColor" /> PLAY
-            </Button>
-            <Button variant="outline" size="lg" style={{ borderColor: "rgba(255,99,71,0.3)", color: "#FF6347" }}>
-              <Bell className="w-5 h-5 mr-2" /> Subscribe
-            </Button>
-            <Button variant="ghost" size="icon" style={{ color: "var(--text-3)" }}><MoreHorizontal className="w-5 h-5" /></Button>
-          </div>
-        </div>
-
-      <div className="px-4 md:px-8 pb-32 space-y-10">
-        {/* YouTube Music Catalog - Full Official Releases */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl md:text-3xl font-black flex items-center gap-3" style={{ color: "var(--text-1)" }}>
-              <Youtube className="w-7 h-7 text-red-500" />
-              Official Catalog
-            </h2>
-            <Button variant="outline" size="sm" onClick={() => setShowFullCatalog(!showFullCatalog)} style={{ borderColor: "rgba(255,255,255,0.15)", color: "var(--text-3)" }}>
-              {showFullCatalog ? 'Show Less' : 'View All'}
-            </Button>
-          </div>
-          <ArtistYouTubeCatalog
-            artistName={artist?.name || artistName}
-            youtubeChannelId={youtubeChannelId || undefined}
-            onAlbumClick={(album) => {
-              setSelectedAlbum({ id: album.id, title: album.title, coverArt: album.thumbnail, genres: artist?.genres });
-            }}
-          />
-        </section>
-
-        {/* Tracks Section */}
-        {tracks.length > 0 && (
-          <section>
-            <h2 className="text-2xl md:text-3xl font-black mb-6" style={{ color: "var(--text-1)" }}>Popular Tracks</h2>
-            <div className="space-y-1">
-              {tracks.slice(0, showFullCatalog ? tracks.length : 10).map((track, index) => {
-                const isLiked = isGlobalTrackLiked({ id: track.id, title: track.title, artist_name: artist?.name || artistName, youtubeId: track.youtubeId, source: 'youtube' });
-                return (
-                  <div key={track.id} className="flex items-center gap-4 p-3 rounded-lg transition-colors group cursor-pointer" style={{ background: "transparent" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                    onClick={() => handlePlayTrack(track, index)}>
-                    <div className="relative w-12 h-12 rounded-md overflow-hidden flex-shrink-0" style={{ background: "rgba(255,255,255,0.05)" }}>
-                      {track.thumbnail ? <img src={track.thumbnail} alt={track.title} className="w-full h-full object-cover" /> : (
-                        <div className="w-full h-full flex items-center justify-center"><Disc className="w-5 h-5" style={{ color: "var(--text-4)" }} /></div>
-                      )}
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        {loadingTrack === track.id ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Play className="w-5 h-5 text-white" fill="white" />}
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate" style={{ color: "var(--text-1)" }}>{track.title}</p>
-                      <p className="text-sm truncate" style={{ color: "var(--text-3)" }}>{track.album}</p>
-                    </div>
-                    <Button variant="ghost" size="icon" className={`transition-colors ${isLiked ? 'text-pink-500' : ''}`} style={{ color: isLiked ? undefined : "var(--text-4)" }}
-                      onClick={(e) => { e.stopPropagation(); toggleGlobalLike({ id: track.id, title: track.title, artist_name: artist?.name || artistName, youtubeId: track.youtubeId, thumbnail: track.thumbnail, source: 'youtube' }); }}>
-                      <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-                    </Button>
-                    {track.duration && <span className="text-sm" style={{ color: "var(--text-4)" }}>{track.duration}</span>}
-                    <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: "var(--text-3)" }}
-                      onClick={(e) => { e.stopPropagation(); handleAddToPlaylist(track); }}>
-                      <ListPlus className="w-5 h-5" />
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* Albums */}
-        {albums.length > 0 && (
-          <section>
-            <h2 className="text-2xl md:text-3xl font-black mb-4" style={{ color: "var(--text-1)" }}>Studio Albums</h2>
-            <ScrollArea className="w-full">
-              <div className="flex gap-4 pb-4">
-                {albums.map((album) => (
-                  <div key={album.id} className="flex-shrink-0 w-40 md:w-48 group cursor-pointer" onClick={() => handleAlbumClick(album)}>
-                    <div className="aspect-square rounded-lg overflow-hidden mb-3 relative" style={{ background: "rgba(255,255,255,0.05)" }}>
-                      {album.coverArt ? <img src={album.coverArt} alt={album.title} className="w-full h-full object-cover" /> : (
-                        <div className="w-full h-full flex items-center justify-center"><Disc className="w-12 h-12" style={{ color: "var(--text-4)" }} /></div>
-                      )}
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Button size="icon" className="rounded-full" style={{ background: "#FF6347" }}
-                          onClick={(e) => { e.stopPropagation(); handleAlbumClick(album); }}>
-                          <Play className="w-5 h-5" fill="white" />
-                        </Button>
-                      </div>
-                    </div>
-                    <p className="font-medium text-sm truncate" style={{ color: "var(--text-1)" }}>{album.title}</p>
-                    <p className="text-xs" style={{ color: "var(--text-3)" }}>{album.year}</p>
-                  </div>
+              <div className="mt-3 flex flex-wrap justify-center gap-2">
+                {data.artist.tdz_user_id && (
+                  <Badge className="cursor-pointer" style={{ background: "#FF6347", color: "#000" }}
+                    onClick={() => navigate(`/artist/${data.artist.tdz_user_id}`)}>
+                    <BadgeCheck className="mr-1 h-3.5 w-3.5" /> On TDZ Distribution
+                  </Badge>
+                )}
+                {data.artist.genres.slice(0, 4).map((g) => (
+                  <Badge key={g} variant="outline" className="capitalize" style={{ borderColor: "rgba(255,255,255,0.15)", color: "var(--text-3)" }}>{g}</Badge>
                 ))}
+                {data.artist.country && (
+                  <Badge variant="outline" style={{ borderColor: "rgba(255,255,255,0.15)", color: "var(--text-3)" }}>{data.artist.country}</Badge>
+                )}
               </div>
-            </ScrollArea>
-          </section>
-        )}
+              <Button className="mt-6 rounded-full px-10" style={{ background: "#FF6347", color: "#000" }}
+                disabled={topTracks.length === 0} onClick={() => topTracks[0] && pb.play(topTracks[0], topTracks)}>
+                <Play className="mr-2 h-5 w-5 fill-current" /> Play
+              </Button>
+            </div>
 
-        {/* Related Artists */}
-        {relatedArtists.length > 0 && (
-          <section>
-            <h2 className="text-2xl md:text-3xl font-black mb-4" style={{ color: "var(--text-1)" }}>Related Artists</h2>
-            <ScrollArea className="w-full">
-              <div className="flex gap-4 pb-4">
-                {relatedArtists.map((related, idx) => (
-                  <div key={idx} className="flex-shrink-0 w-36 md:w-44 text-center cursor-pointer">
-                    <div className="aspect-square rounded-full overflow-hidden mb-3 mx-auto w-32 h-32 md:w-40 md:h-40" style={{ background: "rgba(255,255,255,0.05)" }}>
-                      {related.thumbnail ? <img src={related.thumbnail} alt={related.name} className="w-full h-full object-cover" /> : (
-                        <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(255,99,71,0.15), rgba(139,92,246,0.15))" }}>
-                          <span className="text-3xl font-bold" style={{ color: "var(--text-4)" }}>{related.name.charAt(0)}</span>
-                        </div>
-                      )}
-                    </div>
-                    <p className="font-medium text-sm truncate" style={{ color: "var(--text-1)" }}>{related.name}</p>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </section>
+            {data.syncing && (
+              <p className="mb-6 flex items-center justify-center gap-2 text-sm" style={{ color: "var(--text-3)" }}>
+                <Loader2 className="h-4 w-4 animate-spin" /> Adding more of {name}'s music…
+              </p>
+            )}
+
+            {topTracks.length > 0 ? (
+              <section className="mb-10">
+                <h3 className="mb-3 text-2xl font-black" style={{ color: "var(--text-1)" }}>Popular</h3>
+                <div className="space-y-1">
+                  {topTracks.map((t, i) => (
+                    <CatalogTrackRow key={t.id} track={pb.withVideo(t)} index={i} showThumb
+                      isCurrent={pb.isCurrent(t)} loading={pb.loadingId === t.id} liked={pb.liked(t)}
+                      onPlay={() => pb.play(t, topTracks)} onLike={() => pb.like(t)} onAddToPlaylist={() => pb.addToPlaylist(t)} />
+                  ))}
+                </div>
+              </section>
+            ) : !data.syncing && (
+              <p className="mb-10 rounded-lg p-4 text-center text-sm" style={{ background: "rgba(255,255,255,0.04)", color: "var(--text-3)" }}>
+                {data.artist.sync_error === "youtube_quota"
+                  ? "Streaming for this artist is being set up and will be ready shortly. You can open any release to play it now."
+                  : "Open a release below to play this artist's music."}
+              </p>
+            )}
+
+            {groups.length > 0 && activeTab && (
+              <section>
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                  <h3 className="mr-4 text-2xl font-black" style={{ color: "var(--text-1)" }}>Discography</h3>
+                  {groups.map((g) => (
+                    <button key={g.key} type="button" onClick={() => setTab(g.key)}
+                      className="rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
+                      style={g.key === activeTab.key
+                        ? { background: "var(--text-1)", color: "#03030F" }
+                        : { background: "rgba(255,255,255,0.06)", color: "var(--text-2)" }}>
+                      {g.label} <span className="opacity-60">{g.items.length}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                  {activeTab.items.map((r) => (
+                    <ReleaseCard key={r.id} release={r} onOpen={() => setOpenRelease(r.id)} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {groups.length === 0 && topTracks.length === 0 && !data.syncing && (
+              <p className="py-12 text-center text-sm" style={{ color: "var(--text-3)" }}>
+                We couldn't find music for {name} yet.
+              </p>
+            )}
+          </>
         )}
-      </div>
       </div>
     </div>
   );

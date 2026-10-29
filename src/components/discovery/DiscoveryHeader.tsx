@@ -193,7 +193,7 @@ export function DiscoveryHeader({
 
   const handleArtistClick = (artistName: string, isYouTube: boolean) => {
     if (isYouTube) {
-      navigate(`/artist/youtube/${encodeURIComponent(artistName)}`);
+      navigate(`/artist/global/${encodeURIComponent(artistName)}`);
     }
   };
 
