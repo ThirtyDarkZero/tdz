@@ -245,6 +245,31 @@ export const StudioSidebar = ({
 
         {/* Navigation Groups */}
         <nav className="flex-1 py-6 flex flex-col items-center overflow-y-auto overscroll-contain min-h-0 [scrollbar-width:thin]">
+          {/* CEO Dashboard - Only visible to CEO */}
+          {isCEO && (
+            <div className="w-full mb-4 pb-4 border-b border-amber-500/20">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => navigate("/ceo")}
+                    aria-label="CEO Dashboard"
+                    className="w-full flex flex-col items-center gap-2 py-4 text-amber-500 hover:text-amber-400 transition-all group"
+                  >
+                    <div className="w-8 h-8 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Crown className="w-6 h-6" />
+                    </div>
+                    <span className={cn(
+                      "text-[10px] font-semibold uppercase tracking-wider transition-opacity",
+                      shouldExpand ? "opacity-100" : "opacity-0"
+                    )}>
+                      CEO Dashboard
+                    </span>
+                  </button>
+                </TooltipTrigger>
+                {!shouldExpand && <TooltipContent side="right">CEO Dashboard</TooltipContent>}
+              </Tooltip>
+            </div>
+          )}
           {navGroups.map((group, groupIndex) => (
             <div key={group.id} className={cn(
               "w-full",
@@ -282,30 +307,6 @@ export const StudioSidebar = ({
             </div>
           ))}
 
-          {/* CEO Dashboard - Only visible to CEO */}
-          {isCEO && (
-            <div className="w-full mt-6 pt-6 border-t border-amber-500/20">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => navigate("/ceo")}
-                    className="w-full flex flex-col items-center gap-2 py-4 text-amber-500 hover:text-amber-400 transition-all group"
-                  >
-                    <div className="w-8 h-8 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Crown className="w-6 h-6" />
-                    </div>
-                    <span className={cn(
-                      "text-[10px] font-semibold uppercase tracking-wider transition-opacity",
-                      shouldExpand ? "opacity-100" : "opacity-0"
-                    )}>
-                      Admin
-                    </span>
-                  </button>
-                </TooltipTrigger>
-                {!shouldExpand && <TooltipContent side="right">CEO Dashboard</TooltipContent>}
-              </Tooltip>
-            </div>
-          )}
         </nav>
 
         {/* Bottom Actions */}
