@@ -121,6 +121,8 @@ project_id = "rcjzvfskkoqygnlolrcs"
     verify_jwt = true
   [functions.validate-track-upload]
     verify_jwt = true
+  [functions.catalog]
+    verify_jwt = false
   [functions.youtube-search]
     verify_jwt = false
   [functions.send-transactional-email]
