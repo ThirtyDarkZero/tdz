@@ -1,6 +1,7 @@
 import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -41,7 +42,7 @@ serve(async (req) => {
 
     if (!token) throw new Error("EVENTBRITE_NOT_CONNECTED");
 
-    const { action, ...params } = await req.json();
+    const { action, ...params } = await req.json().catch(() => ({}));
 
     const ebFetch = async (path: string, options: RequestInit = {}) => {
       const res = await fetch(`${EVENTBRITE_BASE}${path}`, {
@@ -589,7 +590,7 @@ serve(async (req) => {
     });
   } catch (error: any) {
     console.error("Eventbrite error:", error);
-    return new Response(JSON.stringify({ success: false, error: error.message }), {
+    return new Response(JSON.stringify({ success: false, error: publicError(error) }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

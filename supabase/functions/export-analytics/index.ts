@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { createClient } from 'npm:@supabase/supabase-js@2.57.2';
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { publicError } from "../_shared/errors.ts";
 
 interface ExportRequest {
   type: 'track' | 'album';
@@ -41,7 +42,7 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { type, id, title, artistName, analytics }: ExportRequest = await req.json();
+    const { type, id, title, artistName, analytics }: ExportRequest = await req.json().catch(() => ({}));
 
     console.log(`Generating ${type} analytics PDF for ${title} by ${artistName}`);
 
@@ -66,7 +67,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: publicError(error, 'Unknown error')
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -1,7 +1,9 @@
+import "../_shared/aiFallback.ts";
 import "../_shared/fetchTimeout.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,7 +36,7 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { message } = await req.json();
+    const { message } = await req.json().catch(() => ({}));
 
     // Fetch aggregated artist data for context (minimized for privacy)
     const [tracksData, momentumData, fanData, artistProfile] = await Promise.all([
@@ -124,7 +126,7 @@ Keep responses concise (2-3 paragraphs max) but impactful. Always include specif
   } catch (error) {
     console.error('Error in quantum-advisor:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: publicError(error, 'Unknown error') }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

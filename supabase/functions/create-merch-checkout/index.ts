@@ -31,7 +31,7 @@ serve(async (req) => {
     });
 
     // deno-lint-ignore no-unreachable
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const { artistId, itemName, itemId, priceCents, quantity = 1, imageUrl } = body;
     if (!artistId || !itemName || !priceCents || priceCents < 50) {
       return new Response(JSON.stringify({ error: "Invalid merch payload" }), {

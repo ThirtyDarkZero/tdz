@@ -1,6 +1,8 @@
+import "../_shared/aiFallback.ts";
 import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -309,7 +311,7 @@ serve(async (req) => {
       });
     }
 
-    const { messages, context } = await req.json();
+    const { messages, context } = await req.json().catch(() => ({}));
 
     if (!Array.isArray(messages) || messages.length === 0 || messages.length > 50) {
       return new Response(JSON.stringify({ error: "Invalid messages" }), {
@@ -431,7 +433,7 @@ ${context ? `DEPARTMENT CONTEXT: ${context}` : ""}`;
 
   } catch (error) {
     console.error("Agent orchestrator error:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ error: publicError(error, "Unknown error") }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

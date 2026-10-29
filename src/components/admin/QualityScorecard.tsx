@@ -25,6 +25,13 @@ const CTQ_LABELS: Record<string, string> = {
 
 const PERIODS = [7, 30, 90];
 
+interface ActiveAlert {
+  alert_key: string;
+  severity: string;
+  message: string;
+  first_seen: string;
+}
+
 function sigmaTone(sigma: number) {
   if (sigma >= 6) return "bg-green-500/15 text-green-500 border-green-500/30";
   if (sigma >= 4) return "bg-blue-500/15 text-blue-500 border-blue-500/30";
@@ -38,6 +45,7 @@ export function QualityScorecard() {
   const [rows, setRows] = useState<CtqRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [alerts, setAlerts] = useState<ActiveAlert[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,6 +56,12 @@ export function QualityScorecard() {
     );
     if (rpcError) setError(rpcError.message);
     else setRows((data as unknown as CtqRow[]) ?? []);
+    const { data: open } = await supabase
+      .from("quality_alerts" as never)
+      .select("alert_key, severity, message, first_seen")
+      .is("resolved_at", null)
+      .order("severity", { ascending: true });
+    setAlerts((open as unknown as ActiveAlert[]) ?? []);
     setLoading(false);
   }, [days]);
 
@@ -81,7 +95,26 @@ export function QualityScorecard() {
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        {alerts.length > 0 && (
+          <div className="space-y-2">
+            {alerts.map((a) => (
+              <div
+                key={a.alert_key}
+                className={`rounded-md border px-3 py-2 text-sm ${
+                  a.severity === "critical"
+                    ? "border-red-500/40 bg-red-500/10 text-red-500"
+                    : "border-yellow-500/40 bg-yellow-500/10 text-yellow-600"
+                }`}
+              >
+                {a.message}
+                <span className="ml-2 text-xs opacity-70">
+                  since {new Date(a.first_seen).toLocaleString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
         {error && <p className="text-sm text-destructive">Could not load scorecard: {error}</p>}
         {!error && !loading && rows.length === 0 && (
           <p className="text-sm text-muted-foreground">

@@ -1,6 +1,8 @@
+import "../_shared/aiFallback.ts";
 import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,7 +22,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const { messages, advisorRole, systemPrompt } = await req.json();
+    const { messages, advisorRole, systemPrompt } = await req.json().catch(() => ({}));
 
     const systemPrompts: Record<string, string> = {
       cfo: `You are the AI Chief Financial Officer for TDZ Distribution, a music streaming and distribution platform that pays artists $1 per stream. You have access to platform financial data and provide strategic financial guidance, revenue analysis, payout recommendations, cash flow projections, and cost optimization strategies. Be direct, data-driven, and executive-level.`,
@@ -56,7 +58,7 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("AI advisor error:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ error: publicError(error, "Unknown error") }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
