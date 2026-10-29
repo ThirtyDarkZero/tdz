@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,7 +18,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { exportId } = await req.json();
+    const { exportId } = await req.json().catch(() => ({}));
     if (!exportId) throw new Error('Export ID required');
 
     // Get export record
@@ -61,7 +62,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Process export error:', error);
     return new Response(JSON.stringify({
-      error: error instanceof Error ? error.message : 'Processing failed'
+      error: publicError(error, 'Processing failed')
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

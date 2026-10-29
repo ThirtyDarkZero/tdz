@@ -1,6 +1,7 @@
+import "../_shared/aiFallback.ts";
 import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -42,7 +43,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { projectId } = await req.json();
+    const { projectId } = await req.json().catch(() => ({}));
 
     if (!projectId) {
       throw new Error('Project ID is required');

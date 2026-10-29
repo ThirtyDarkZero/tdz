@@ -1,6 +1,7 @@
+import "../_shared/aiFallback.ts";
 import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,7 +33,7 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { filePath, fileName } = await req.json();
+    const { filePath, fileName } = await req.json().catch(() => ({}));
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("AI service temporarily unavailable");

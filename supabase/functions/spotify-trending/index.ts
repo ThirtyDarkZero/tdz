@@ -298,7 +298,7 @@ serve(async (req) => {
   if (limited) return limited;
 
   try {
-    const { action, query, type, cityId, artist, albumName } = await req.json();
+    const { action, query, type, cityId, artist, albumName } = await req.json().catch(() => ({}));
     
     const token = await getSpotifyToken();
     

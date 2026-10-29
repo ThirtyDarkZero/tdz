@@ -42,7 +42,7 @@ serve(async (req) => {
   }
 
   try {
-    const { artistName, includeDiscography = true } = await req.json();
+    const { artistName, includeDiscography = true } = await req.json().catch(() => ({}));
 
     if (!artistName) {
       throw new Error('Artist name is required');

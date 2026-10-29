@@ -1,5 +1,6 @@
 import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -188,7 +189,7 @@ serve(async (req) => {
   }
 
   try {
-    const { genre } = await req.json();
+    const { genre } = await req.json().catch(() => ({}));
 
     if (!genre || typeof genre !== "string") {
       return new Response(JSON.stringify({ error: "genre is required", tracks: [] }), {
@@ -246,7 +247,7 @@ serve(async (req) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("Genre playlist error:", message);
-    return new Response(JSON.stringify({ error: message, tracks: [] }), {
+    return new Response(JSON.stringify({ error: publicError(error), tracks: [] }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

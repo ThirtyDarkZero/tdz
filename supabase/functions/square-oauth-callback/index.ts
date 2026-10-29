@@ -1,6 +1,6 @@
 import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from '../_shared/cors.ts';
 
@@ -47,7 +47,7 @@ serve(async (req) => {
     const authenticatedUserId = claimsData.claims.sub as string;
 
     // ── Parse request body ──
-    const { code, state } = await req.json();
+    const { code, state } = await req.json().catch(() => ({}));
 
     if (!code || !state) {
       return new Response(

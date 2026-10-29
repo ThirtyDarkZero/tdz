@@ -39,6 +39,18 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+      - name: Every edge function loads (syntax and imports)
+        run: |
+          failed=0
+          for f in supabase/functions/*/index.ts; do
+            dir=$(dirname "$f"); cfg=""
+            [ -f "$dir/deno.json" ] && cfg="--config $dir/deno.json"
+            if ! DENO_NO_PACKAGE_JSON=1 deno cache --no-lock $cfg "$f" > /tmp/out.txt 2>&1; then
+              echo "::error file=$f::$(sed 's/\x1b\[[0-9;]*m//g' /tmp/out.txt | grep -m1 -iE 'error' )"
+              failed=1
+            fi
+          done
+          exit $failed
       - name: Shared payout, rate-limit and CORS tests
         run: |
           set +e

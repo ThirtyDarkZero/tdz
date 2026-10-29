@@ -1,8 +1,10 @@
+import "../_shared/aiFallback.ts";
 import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
+import { publicError } from "../_shared/errors.ts";
 
 serve(async (req) => {
   const origin = req.headers.get('origin');
@@ -19,7 +21,7 @@ serve(async (req) => {
   }
 
   try {
-    const { audioUrl } = await req.json();
+    const { audioUrl } = await req.json().catch(() => ({}));
 
     if (!audioUrl) {
       throw new Error('Audio URL is required');
@@ -111,7 +113,7 @@ Return your analysis as JSON with these exact fields:
   } catch (error) {
     console.error('Error in analyze-audio:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: publicError(error, 'Unknown error') }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

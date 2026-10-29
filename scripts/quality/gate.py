@@ -24,7 +24,9 @@ FN_DIR = "supabase/functions"
 
 
 def sh(cmd, cwd=ROOT, check=False):
-    r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
+    # Edge functions don't use the app's package.json; keep Deno from requiring its node_modules.
+    env = {**os.environ, "DENO_NO_PACKAGE_JSON": "1"}
+    r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, env=env)
     if check and r.returncode != 0:
         sys.exit(f"command failed: {' '.join(cmd)}\n{r.stderr}")
     return r
@@ -169,6 +171,8 @@ def main():
         print(f"  improved   {line}")
     for line in regressions:
         print(f"  REGRESSION {line}")
+        if os.environ.get("GITHUB_ACTIONS"):
+            print(f"::error::{line}")
     if regressions:
         print(f"\nFAILED: {len(regressions)} new defect(s). Fix them or explain in the PR why the count must rise.")
         sys.exit(1)
