@@ -188,6 +188,7 @@ serve(async (req) => {
     // FRAUD DETECTION — fails closed for money: if the check can't run, the
     // play still counts but earns nothing.
     let fraudCheckPassed = !userId;
+    let earnsAllowed = true;   // false when the listener hit the daily replay cap for this track
     if (userId) {
       const { data: fraudCheck, error: fraudError } = await supabase.rpc('validate_stream', {
         p_user_id: userId,
@@ -211,6 +212,7 @@ serve(async (req) => {
         );
       } else {
         fraudCheckPassed = true;
+        if (fraudCheck && fraudCheck.earns === false) earnsAllowed = false;
       }
     }
 
@@ -282,7 +284,7 @@ serve(async (req) => {
     // PAID SUBSCRIBER CHECK: Only paid subscribers generate $1 earnings
     // Free/anonymous plays still count as plays but do NOT generate revenue
     // ═══════════════════════════════════════════════════════════════
-    const listenerIsPaid = userId && fraudCheckPassed ? await isPaidSubscriber(supabase, userId) : false;
+    const listenerIsPaid = userId && fraudCheckPassed && earnsAllowed ? await isPaidSubscriber(supabase, userId) : false;
 
     // Increment track play count (all valid streams count for visibility)
     const newPlayCount = (track.play_count || 0) + 1;
@@ -327,6 +329,7 @@ serve(async (req) => {
       recordOutcome({
         ctq: 'stream_credit', ok: !creditErr, reason: creditErr ? 'credit_rpc_error' : undefined,
         subjectId: trackId, artistId: track.user_id,
+        detail: { listener: userId },   // feeds fraud_anomalies() concentration checks
       });
 
       console.log(`Paid stream: Artist ${track.user_id} earned $${STREAM_PAYOUT_RATE} from subscriber ${userId}`);

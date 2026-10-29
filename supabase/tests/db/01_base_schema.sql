@@ -43,3 +43,16 @@ GRANT SELECT ON auth._session TO authenticated, anon;
 GRANT INSERT, SELECT ON public.user_subscriptions, public.artist_tips TO authenticated;
 CREATE FUNCTION public.create_system_notification(p_user_id uuid, p_title text, p_message text)
   RETURNS void LANGUAGE sql SECURITY DEFINER AS $$ SELECT $$;
+
+-- For the step-6 alert migration.
+CREATE TABLE public.notifications (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, actor_id uuid,
+  notification_type text NOT NULL CHECK (notification_type IN ('like', 'comment', 'follow', 'artist_release')),
+  target_type text, target_id uuid, message text, is_read boolean DEFAULT false, created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE public.system_health_log (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), check_type text NOT NULL, status text NOT NULL,
+  details jsonb, duration_ms integer, error_message text, created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE public.unmatched_transactions (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), stripe_object_id text NOT NULL UNIQUE,
+  stripe_object_type text NOT NULL, amount numeric(10,2) NOT NULL, status text NOT NULL DEFAULT 'pending');
+
+-- For the step-7 fraud migration.
+CREATE TABLE public.listening_history (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, track_id uuid NOT NULL,
+  played_at timestamptz NOT NULL DEFAULT now(), play_duration integer, completion_percentage integer);
