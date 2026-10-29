@@ -11,6 +11,7 @@ import {
   MIN_PAID_STREAMS, PAYOUT_THRESHOLD_USD, claimPendingEarnings, lifetimePaidStreams,
   markPaid, payoutIdempotencyKey, releaseClaim, syncConnectStatus,
 } from "../_shared/payoutRules.ts";
+import { recordOutcome } from "../_shared/outcomes.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -113,12 +114,15 @@ serve(async (req) => {
       .update({ last_payout_date: new Date().toISOString() })
       .eq("artist_id", artistId);
 
+    await recordOutcome({ ctq: "payout", ok: true, subjectId: transfer.id, artistId, detail: { amount: claim.total, mode: "manual" } });
     return json({ success: true, transferId: transfer.id, amount: claim.total });
   } catch (error) {
     await releaseClaim(supabase, claimedIds).catch(() => {});
     const msg = error instanceof Error ? error.message : String(error);
     console.error("process-artist-payout error:", msg);
     if (error instanceof UserError) return json({ error: msg }, error.status);
+    // Rule refusals above aren't defects; system failures below are.
+    await recordOutcome({ ctq: "payout", ok: false, reason: /insufficient/i.test(msg) ? "platform_balance_low" : "transfer_error", detail: { mode: "manual" } });
     if (/insufficient/i.test(msg)) {
       return json({ error: "Payout is temporarily delayed while platform funds settle. It will be retried automatically." }, 503);
     }

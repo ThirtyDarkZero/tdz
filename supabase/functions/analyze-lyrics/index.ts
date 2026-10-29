@@ -1,7 +1,9 @@
+import "../_shared/aiFallback.ts";
 import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
+import { publicError } from "../_shared/errors.ts";
 
 serve(async (req) => {
   const origin = req.headers.get('origin');
@@ -18,7 +20,7 @@ serve(async (req) => {
   }
 
   try {
-    const { lyrics, bpm, mood } = await req.json();
+    const { lyrics, bpm, mood } = await req.json().catch(() => ({}));
 
     if (!lyrics) {
       throw new Error('Lyrics are required');
@@ -102,7 +104,7 @@ Consider the song's BPM (${bpm}) and overall mood (${mood}) when estimating timi
   } catch (error) {
     console.error('Error in analyze-lyrics:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: publicError(error, 'Unknown error') }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

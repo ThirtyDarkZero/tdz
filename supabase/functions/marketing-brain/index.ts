@@ -2,6 +2,7 @@
 // Generates a daily sales-funnel set (email copy, subject lines, tutorial content,
 // screenshot direction) using live platform metrics, and stores it as DRAFTS.
 // It never sends email itself — drafts are reviewed/exported from the CEO Dashboard.
+import "../_shared/aiFallback.ts";
 import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
@@ -48,7 +49,7 @@ serve(async (req) => {
 
     let body: Record<string, unknown> = {};
     try {
-      body = await req.json();
+      body = await req.json().catch(() => ({}));
     } catch {
       /* cron sends no body */
     }

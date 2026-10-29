@@ -1,6 +1,8 @@
+import "../_shared/aiFallback.ts";
 import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { requireUser, unauthorized } from "../_shared/auth.ts";
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -58,7 +60,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const { action, narrative_context, content_type, extra_context, release_phase } = await req.json();
+    const { action, narrative_context, content_type, extra_context, release_phase } = await req.json().catch(() => ({}));
 
     const phaseStrategy = RELEASE_CYCLE_STRATEGIES[release_phase] || RELEASE_CYCLE_STRATEGIES["no-release"];
 
@@ -246,7 +248,7 @@ Return JSON: { "subject": "...", "preheader": "...", "html": "full HTML email wi
 
   } catch (error) {
     console.error("Campaign brain error:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ error: publicError(error, "Unknown error") }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

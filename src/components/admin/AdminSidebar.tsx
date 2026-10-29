@@ -24,8 +24,7 @@ import {
   FileText,
   LifeBuoy,
   Webhook,
-  Megaphone
-} from "lucide-react";
+  Megaphone, Gauge } from "lucide-react";
 
 interface AdminSidebarProps {
   activeTab: string;
@@ -38,6 +37,7 @@ const adminNavItems = [
   { id: "marketing", icon: Megaphone, label: "Marketing Brain", badge: "AI" },
   { id: "finance", icon: BarChart3, label: "Financial Agents", badge: "STRIPE" },
   { id: "webhooks", icon: Webhook, label: "Stripe Webhooks", badge: "DEBUG" },
+  { id: "quality", icon: Gauge, label: "Quality (Six Sigma)" },
   { id: "revenue", icon: DollarSign, label: "Revenue Pool" },
   { id: "users", icon: Users, label: "Users" },
   { id: "content", icon: Music, label: "Content" },
