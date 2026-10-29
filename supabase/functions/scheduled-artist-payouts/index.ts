@@ -147,13 +147,13 @@ serve(async (req) => {
           .from("artist_payout_details")
           .update({ last_payout_date: new Date().toISOString() })
           .eq("artist_id", artistId);
-        await supabase.from("notifications").insert({
+        // notifications has no title/metadata columns; the old insert always failed.
+        const { error: notifyErr } = await supabase.from("notifications").insert({
           user_id: artistId,
           notification_type: "payout",
-          title: "Payout sent",
-          message: `$${claim.total.toFixed(2)} is on its way to your connected bank account.`,
-          metadata: { transfer_id: transfer.id, amount: claim.total },
+          message: `Payout sent: $${claim.total.toFixed(2)} is on its way to your connected bank account.`,
         });
+        if (notifyErr) console.error(`[auto-payout] notify ${artistId} failed:`, notifyErr.message);
 
         results.push({ artistId, status: "processed", amount: claim.total, transferId: transfer.id });
         await recordOutcome({ ctq: "payout", ok: true, subjectId: transfer.id, artistId, detail: { amount: claim.total, mode: "auto" } });

@@ -205,7 +205,7 @@ serve(async (req) => {
   if (limited) return limited;
 
   try {
-    const { genre = 'hip-hop', limit = 50, withYouTube = false } = await req.json();
+    const { genre = 'hip-hop', limit = 50, withYouTube = false } = await req.json().catch(() => ({}));
     
     console.log(`Genre Top 50 request: genre=${genre} limit=${limit} withYouTube=${withYouTube}`);
 

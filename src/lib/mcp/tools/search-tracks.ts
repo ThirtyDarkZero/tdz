@@ -29,12 +29,14 @@ export default defineTool({
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
     const supabase = supabaseForUser(ctx);
-    const q = query.replace(/[%_]/g, "\\$&");
+    // Strip PostgREST filter syntax (, ( ) : * \) so search text can't inject
+    // extra filters, then escape LIKE wildcards.
+    const safeQ = String(query ?? "").replace(/[,():*\\]/g, " ").slice(0, 100).replace(/[%_]/g, "\\$&");
     const { data, error } = await supabase
       .from("tracks")
       .select("id, title, genre, play_count")
       .eq("is_published", true)
-      .or(`title.ilike.%${q}%,genre.ilike.%${q}%`)
+      .or(`title.ilike.%${safeQ}%,genre.ilike.%${safeQ}%`)
       .order("play_count", { ascending: false })
       .limit(limit ?? 20);
     if (error) {

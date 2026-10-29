@@ -1,6 +1,6 @@
 import "../_shared/fetchTimeout.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from '../_shared/cors.ts';
 
@@ -34,7 +34,7 @@ serve(async (req) => {
       });
     }
 
-    const { trackId, artistId, listenerId, sessionId, durationSeconds, deviceType } = await req.json();
+    const { trackId, artistId, listenerId, sessionId, durationSeconds, deviceType } = await req.json().catch(() => ({}));
 
     // SECURITY: Strict UUID validation before any DB writes.
     if (!trackId || !artistId || !UUID_REGEX.test(trackId) || !UUID_REGEX.test(artistId)) {

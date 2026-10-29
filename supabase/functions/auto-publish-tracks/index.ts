@@ -1,4 +1,5 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { createClient } from 'npm:@supabase/supabase-js@2.57.2';
+import { publicError } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,7 +22,7 @@ Deno.serve(async (req) => {
     
     if (req.method === 'POST') {
       try {
-        const body = await req.json();
+        const body = await req.json().catch(() => ({}));
         adminOverride = body.adminOverride === true;
         specificTrackId = body.trackId || null;
       } catch {
@@ -154,7 +155,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: publicError(error, 'Unknown error occurred')
       }),
       { 
         status: 500,
