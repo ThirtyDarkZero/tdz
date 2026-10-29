@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1793236496622,
+      "tag": "0000_fix_artist_payouts",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793301684006,
+      "tag": "0001_payroll_manager_runs",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793304889933,
+      "tag": "0002_global_catalog",
+      "breakpoints": true
+    }
+  ]
+}

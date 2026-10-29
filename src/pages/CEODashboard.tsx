@@ -24,6 +24,7 @@ import { AdminSidebar, CEORevenueControl } from "@/components/admin";
 import { StripeFinancialAgents } from "@/components/admin/StripeFinancialAgents";
 import { SupportTicketsAdmin } from "@/components/admin/SupportTicketsAdmin";
 import { StripeWebhookMonitor } from "@/components/admin/StripeWebhookMonitor";
+import { PayrollManagerPanel } from "@/components/admin/PayrollManagerPanel";
 import { QualityScorecard } from "@/components/admin/QualityScorecard";
 import { StreamPolicySettings } from "@/components/admin/StreamPolicySettings";
 import { MarketingBrainPanel } from "@/components/admin/MarketingBrainPanel";
@@ -653,6 +654,7 @@ function CEODashboardInner() {
           {/* Stripe Webhook Monitor Tab */}
           {activeTab === "webhooks" && (
             <div className="animate-fade-in">
+              <PayrollManagerPanel />
               <StripeWebhookMonitor />
             </div>
           )}
