@@ -91,7 +91,7 @@ serve(async (req) => {
 
       // Platform requires Stripe-managed risk (losses collected by Stripe).
       // Try Express dashboard first, then full Stripe dashboard. Never use legacy `type`.
-      const attempts = [
+      const attempts: { key: string; controller: any; capabilities?: any }[] = [
         { key: "connect_acct_v2_express", controller: {
           losses: { payments: "stripe" },
           fees: { payer: "application" },
@@ -103,14 +103,14 @@ serve(async (req) => {
           fees: { payer: "account" },
           stripe_dashboard: { type: "full" },
           requirement_collection: "stripe",
-        } },
+        }, capabilities: { card_payments: { requested: true }, transfers: { requested: true } } },
       ];
       let account;
       let lastErr: unknown;
       for (const a of attempts) {
         try {
           account = await withStripeRetry(
-            () => stripe.accounts.create({ ...baseParams, controller: a.controller } as any,
+            () => stripe.accounts.create({ ...baseParams, ...(a.capabilities ? { capabilities: a.capabilities } : {}), controller: a.controller } as any,
               { idempotencyKey: makeIdempotencyKey(a.key, user.id) }),
             { label: `accounts.create(${a.key})` }
           );
