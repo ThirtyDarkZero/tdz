@@ -98,7 +98,7 @@ serve(async (req) => {
           stripe_dashboard: { type: "express" },
           requirement_collection: "stripe",
         } },
-        { key: "connect_acct_v2_full", controller: {
+        { key: "connect_acct_v2_full_cp", controller: {
           losses: { payments: "stripe" },
           fees: { payer: "account" },
           stripe_dashboard: { type: "full" },
