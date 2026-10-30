@@ -47,6 +47,221 @@ export type Database = {
         }
         Relationships: []
       }
+      ad_campaigns: {
+        Row: {
+          age_max: number
+          age_min: number
+          approved_at: string | null
+          approved_by: string | null
+          artist_id: string
+          countries: string[]
+          created_at: string
+          created_by: string | null
+          creatives: Json
+          destination_url: string
+          duration_days: number
+          error: string | null
+          external: Json
+          goal: string
+          id: string
+          keywords: string[]
+          last_optimized_on: string | null
+          name: string
+          plan: Json | null
+          platform: string
+          spent_cents: number
+          start_date: string
+          status: string
+          total_budget_cents: number
+          updated_at: string
+        }
+        Insert: {
+          age_max?: number
+          age_min?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          artist_id: string
+          countries?: string[]
+          created_at?: string
+          created_by?: string | null
+          creatives?: Json
+          destination_url: string
+          duration_days: number
+          error?: string | null
+          external?: Json
+          goal?: string
+          id?: string
+          keywords?: string[]
+          last_optimized_on?: string | null
+          name: string
+          plan?: Json | null
+          platform: string
+          spent_cents?: number
+          start_date: string
+          status?: string
+          total_budget_cents: number
+          updated_at?: string
+        }
+        Update: {
+          age_max?: number
+          age_min?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          artist_id?: string
+          countries?: string[]
+          created_at?: string
+          created_by?: string | null
+          creatives?: Json
+          destination_url?: string
+          duration_days?: number
+          error?: string | null
+          external?: Json
+          goal?: string
+          id?: string
+          keywords?: string[]
+          last_optimized_on?: string | null
+          name?: string
+          plan?: Json | null
+          platform?: string
+          spent_cents?: number
+          start_date?: string
+          status?: string
+          total_budget_cents?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ad_connections: {
+        Row: {
+          account_id: string | null
+          account_name: string | null
+          artist_id: string
+          choices: Json | null
+          connected_by: string | null
+          currency: string | null
+          error: string | null
+          page_id: string | null
+          platform: string
+          refresh_cipher: string | null
+          status: string
+          token_cipher: string
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          account_name?: string | null
+          artist_id: string
+          choices?: Json | null
+          connected_by?: string | null
+          currency?: string | null
+          error?: string | null
+          page_id?: string | null
+          platform: string
+          refresh_cipher?: string | null
+          status?: string
+          token_cipher: string
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          account_name?: string | null
+          artist_id?: string
+          choices?: Json | null
+          connected_by?: string | null
+          currency?: string | null
+          error?: string | null
+          page_id?: string | null
+          platform?: string
+          refresh_cipher?: string | null
+          status?: string
+          token_cipher?: string
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ad_daily_reports: {
+        Row: {
+          budget_next_cents: number | null
+          campaign_id: string
+          clicks: number
+          created_at: string
+          day_number: number
+          decisions: Json
+          id: string
+          impressions: number
+          phase: string | null
+          report_date: string
+          smart_link_visits: number
+          spend_cents: number
+          summary: string
+        }
+        Insert: {
+          budget_next_cents?: number | null
+          campaign_id: string
+          clicks?: number
+          created_at?: string
+          day_number: number
+          decisions?: Json
+          id?: string
+          impressions?: number
+          phase?: string | null
+          report_date: string
+          smart_link_visits?: number
+          spend_cents?: number
+          summary: string
+        }
+        Update: {
+          budget_next_cents?: number | null
+          campaign_id?: string
+          clicks?: number
+          created_at?: string
+          day_number?: number
+          decisions?: Json
+          id?: string
+          impressions?: number
+          phase?: string | null
+          report_date?: string
+          smart_link_visits?: number
+          spend_cents?: number
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_daily_reports_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "ad_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ad_oauth_states: {
+        Row: {
+          artist_id: string
+          created_at: string
+          created_by: string
+          platform: string
+          state: string
+        }
+        Insert: {
+          artist_id: string
+          created_at?: string
+          created_by: string
+          platform: string
+          state?: string
+        }
+        Update: {
+          artist_id?: string
+          created_at?: string
+          created_by?: string
+          platform?: string
+          state?: string
+        }
+        Relationships: []
+      }
       albums: {
         Row: {
           apple_motion_art_1x1: string | null
@@ -241,6 +456,7 @@ export type Database = {
       artist_contacts: {
         Row: {
           artist_id: string
+          bounced_at: string | null
           city: string | null
           created_at: string | null
           email: string
@@ -252,9 +468,12 @@ export type Database = {
           source: string | null
           subscribed: boolean | null
           tags: string[] | null
+          unsubscribe_token: string
+          unsubscribed_at: string | null
         }
         Insert: {
           artist_id: string
+          bounced_at?: string | null
           city?: string | null
           created_at?: string | null
           email: string
@@ -266,9 +485,12 @@ export type Database = {
           source?: string | null
           subscribed?: boolean | null
           tags?: string[] | null
+          unsubscribe_token?: string
+          unsubscribed_at?: string | null
         }
         Update: {
           artist_id?: string
+          bounced_at?: string | null
           city?: string | null
           created_at?: string | null
           email?: string
@@ -280,6 +502,8 @@ export type Database = {
           source?: string | null
           subscribed?: boolean | null
           tags?: string[] | null
+          unsubscribe_token?: string
+          unsubscribed_at?: string | null
         }
         Relationships: []
       }
@@ -1565,6 +1789,129 @@ export type Database = {
           },
         ]
       }
+      email_campaign_sends: {
+        Row: {
+          campaign_id: string
+          clicked_at: string | null
+          contact_id: string | null
+          created_at: string
+          email: string
+          error: string | null
+          id: string
+          opened_at: string | null
+          provider_id: string | null
+          status: string
+        }
+        Insert: {
+          campaign_id: string
+          clicked_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          email: string
+          error?: string | null
+          id?: string
+          opened_at?: string | null
+          provider_id?: string | null
+          status?: string
+        }
+        Update: {
+          campaign_id?: string
+          clicked_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          email?: string
+          error?: string | null
+          id?: string
+          opened_at?: string | null
+          provider_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaign_sends_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_campaign_sends_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "artist_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_campaigns: {
+        Row: {
+          artist_id: string
+          audience_tags: string[]
+          body_html: string
+          bounced: number
+          clicked: number
+          complained: number
+          created_at: string
+          delivered: number
+          error: string | null
+          id: string
+          opened: number
+          preview_text: string | null
+          recipients: number
+          scheduled_at: string | null
+          sent_at: string | null
+          started_at: string | null
+          status: string
+          subject: string
+          unsubscribed: number
+          updated_at: string
+        }
+        Insert: {
+          artist_id: string
+          audience_tags?: string[]
+          body_html: string
+          bounced?: number
+          clicked?: number
+          complained?: number
+          created_at?: string
+          delivered?: number
+          error?: string | null
+          id?: string
+          opened?: number
+          preview_text?: string | null
+          recipients?: number
+          scheduled_at?: string | null
+          sent_at?: string | null
+          started_at?: string | null
+          status?: string
+          subject: string
+          unsubscribed?: number
+          updated_at?: string
+        }
+        Update: {
+          artist_id?: string
+          audience_tags?: string[]
+          body_html?: string
+          bounced?: number
+          clicked?: number
+          complained?: number
+          created_at?: string
+          delivered?: number
+          error?: string | null
+          id?: string
+          opened?: number
+          preview_text?: string | null
+          recipients?: number
+          scheduled_at?: string | null
+          sent_at?: string | null
+          started_at?: string | null
+          status?: string
+          subject?: string
+          unsubscribed?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -2352,6 +2699,54 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lyrics_jobs: {
+        Row: {
+          attempts: number
+          created_at: string
+          error: string | null
+          proxy_path: string | null
+          status: string
+          track_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          proxy_path?: string | null
+          status?: string
+          track_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          proxy_path?: string | null
+          status?: string
+          track_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lyrics_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: true
+            referencedRelation: "published_tracks_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lyrics_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: true
+            referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
         ]
@@ -3232,6 +3627,7 @@ export type Database = {
       presave_signups: {
         Row: {
           campaign_id: string
+          consent_at: string | null
           created_at: string
           email: string
           id: string
@@ -3241,6 +3637,7 @@ export type Database = {
         }
         Insert: {
           campaign_id: string
+          consent_at?: string | null
           created_at?: string
           email: string
           id?: string
@@ -3250,6 +3647,7 @@ export type Database = {
         }
         Update: {
           campaign_id?: string
+          consent_at?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -3680,6 +4078,7 @@ export type Database = {
           country: string | null
           id: string
           platform: string | null
+          referrer: string | null
           smart_link_id: string
           user_agent: string | null
         }
@@ -3688,6 +4087,7 @@ export type Database = {
           country?: string | null
           id?: string
           platform?: string | null
+          referrer?: string | null
           smart_link_id: string
           user_agent?: string | null
         }
@@ -3696,6 +4096,7 @@ export type Database = {
           country?: string | null
           id?: string
           platform?: string | null
+          referrer?: string | null
           smart_link_id?: string
           user_agent?: string | null
         }
@@ -3711,34 +4112,43 @@ export type Database = {
       }
       smart_links: {
         Row: {
+          artwork_url: string | null
           clicks: number | null
           created_at: string
+          description: string | null
           id: string
+          platforms: Json
           short_code: string
-          target_id: string
-          target_type: string
+          target_id: string | null
+          target_type: string | null
           title: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          artwork_url?: string | null
           clicks?: number | null
           created_at?: string
+          description?: string | null
           id?: string
+          platforms?: Json
           short_code: string
-          target_id: string
-          target_type: string
+          target_id?: string | null
+          target_type?: string | null
           title?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          artwork_url?: string | null
           clicks?: number | null
           created_at?: string
+          description?: string | null
           id?: string
+          platforms?: Json
           short_code?: string
-          target_id?: string
-          target_type?: string
+          target_id?: string | null
+          target_type?: string | null
           title?: string | null
           updated_at?: string
           user_id?: string
@@ -3781,6 +4191,75 @@ export type Database = {
           refresh_token?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      social_posts: {
+        Row: {
+          artist_id: string
+          body: string
+          created_at: string
+          created_by: string | null
+          error: string | null
+          id: string
+          media_urls: string[]
+          platforms: string[]
+          provider_id: string | null
+          results: Json
+          scheduled_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          artist_id: string
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          media_urls?: string[]
+          platforms: string[]
+          provider_id?: string | null
+          results?: Json
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          artist_id?: string
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          id?: string
+          media_urls?: string[]
+          platforms?: string[]
+          provider_id?: string | null
+          results?: Json
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      social_profiles: {
+        Row: {
+          artist_id: string
+          platforms: string[]
+          profile_key: string
+          updated_at: string
+        }
+        Insert: {
+          artist_id: string
+          platforms?: string[]
+          profile_key: string
+          updated_at?: string
+        }
+        Update: {
+          artist_id?: string
+          platforms?: string[]
+          profile_key?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -4473,40 +4952,61 @@ export type Database = {
       track_rights_splits: {
         Row: {
           created_at: string
+          dispute_note: string | null
           holder_email: string | null
           holder_name: string
+          holder_user_id: string | null
           id: string
           ipi_number: string | null
           is_verified: boolean
           pro_affiliation: string | null
+          responded_at: string | null
           rights_type: string
+          role: string | null
+          sent_at: string | null
           split_percentage: number
+          status: string
+          token: string
           track_id: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          dispute_note?: string | null
           holder_email?: string | null
           holder_name: string
+          holder_user_id?: string | null
           id?: string
           ipi_number?: string | null
           is_verified?: boolean
           pro_affiliation?: string | null
+          responded_at?: string | null
           rights_type: string
+          role?: string | null
+          sent_at?: string | null
           split_percentage: number
+          status?: string
+          token?: string
           track_id: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          dispute_note?: string | null
           holder_email?: string | null
           holder_name?: string
+          holder_user_id?: string | null
           id?: string
           ipi_number?: string | null
           is_verified?: boolean
           pro_affiliation?: string | null
+          responded_at?: string | null
           rights_type?: string
+          role?: string | null
+          sent_at?: string | null
           split_percentage?: number
+          status?: string
+          token?: string
           track_id?: string
           updated_at?: string
         }
@@ -5363,6 +5863,18 @@ export type Database = {
       }
     }
     Functions: {
+      ad_connection_status: {
+        Args: { p_artist: string }
+        Returns: {
+          account_name: string
+          choices: Json
+          currency: string
+          error: string
+          page_id: string
+          platform: string
+          status: string
+        }[]
+      }
       apply_stripe_account_event: {
         Args: {
           p_account_id: string
@@ -5401,6 +5913,7 @@ export type Database = {
         Args: { p_event_id: string; p_event_type?: string; p_key: string }
         Returns: boolean
       }
+      copy_splits: { Args: { p_from: string; p_to: string[] }; Returns: number }
       create_system_notification: {
         Args: {
           p_message: string
@@ -5446,6 +5959,11 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      fan_audience_count: {
+        Args: { p_artist: string; p_tags?: string[] }
+        Returns: number
+      }
+      fan_unsubscribe: { Args: { p_token: string }; Returns: string }
       fraud_anomalies: {
         Args: { p_hours?: number }
         Returns: {
@@ -5490,6 +6008,19 @@ export type Database = {
           top_failure: string
         }[]
       }
+      get_split_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          artist_name: string
+          holder_name: string
+          others: Json
+          rights_type: string
+          role: string
+          split_percentage: number
+          status: string
+          track_title: string
+        }[]
+      }
       get_user_plan: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["subscription_plan"]
@@ -5507,10 +6038,6 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
-      }
-      increment_smart_link_clicks: {
-        Args: { p_short_code: string }
-        Returns: undefined
       }
       is_manager_of: {
         Args: { _artist: string; _manager: string }
@@ -5534,6 +6061,10 @@ export type Database = {
         }
         Returns: number
       }
+      presave_signup: {
+        Args: { p_email: string; p_platforms?: Json; p_slug: string }
+        Returns: string
+      }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
@@ -5551,11 +6082,47 @@ export type Database = {
           unpaid_earnings: number
         }[]
       }
+      record_fan_email_event: {
+        Args: { p_provider_id: string; p_type: string }
+        Returns: undefined
+      }
+      record_smart_link_click: {
+        Args: {
+          p_code: string
+          p_platform: string
+          p_referrer?: string
+          p_user_agent?: string
+        }
+        Returns: undefined
+      }
       respond_to_invite: {
         Args: { p_accept: boolean; p_token: string }
         Returns: string
       }
+      respond_to_split: {
+        Args: { p_confirm: boolean; p_note?: string; p_token: string }
+        Returns: string
+      }
       sigma_level: { Args: { p_dpmo: number }; Returns: number }
+      smart_link_stats: {
+        Args: { p_link: string }
+        Returns: {
+          clicks: number
+          platform: string
+        }[]
+      }
+      social_platforms: { Args: { p_artist: string }; Returns: string[] }
+      split_overview: {
+        Args: never
+        Returns: {
+          confirmed: number
+          disputed: number
+          holders: number
+          rights_type: string
+          total: number
+          track_id: string
+        }[]
+      }
       update_artist_monthly_listeners: { Args: never; Returns: undefined }
       validate_stream: {
         Args: {

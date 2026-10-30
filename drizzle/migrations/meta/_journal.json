@@ -29,6 +29,62 @@
       "when": 1793400637232,
       "tag": "0003_team_invites",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793400917607,
+      "tag": "0004_smart_links",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793400949242,
+      "tag": "0005_auto_lyrics",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793400963679,
+      "tag": "0006_presave_signup",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793400992243,
+      "tag": "0007_splits_pipeline",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793401031813,
+      "tag": "0008_fan_email",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793401040570,
+      "tag": "0009_social_posts",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793401063714,
+      "tag": "0010_ad_agents",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793401080024,
+      "tag": "0011_grants_for_new_feature_tables",
+      "breakpoints": true
     }
   ]
 }

@@ -7,7 +7,7 @@
 import "../_shared/fetchTimeout.ts";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from "../_shared/cors.ts";
-import { chunk, htmlToText, personalize, wrapEmail } from "./lib.ts";
+import { chunk, htmlToText, personalize, wrapEmail } from "../_shared/fanEmailLib.ts";
 
 const SITE_URL = Deno.env.get("SITE_URL") ?? "https://www.thirtydarkzero.net";
 const FROM_ADDRESS = Deno.env.get("RESEND_FROM") ?? "fans@news.thirtydarkzero.net";

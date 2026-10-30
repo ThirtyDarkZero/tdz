@@ -1,0 +1,15 @@
+GRANT SELECT, UPDATE ON public.lyrics_jobs TO authenticated;
+GRANT ALL ON public.lyrics_jobs TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.email_campaigns TO authenticated;
+GRANT ALL ON public.email_campaigns TO service_role;
+GRANT SELECT ON public.email_campaign_sends TO authenticated;
+GRANT ALL ON public.email_campaign_sends TO service_role;
+GRANT ALL ON public.social_profiles TO service_role;
+GRANT SELECT ON public.social_posts TO authenticated;
+GRANT ALL ON public.social_posts TO service_role;
+GRANT ALL ON public.ad_connections TO service_role;
+GRANT ALL ON public.ad_oauth_states TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.ad_campaigns TO authenticated;
+GRANT ALL ON public.ad_campaigns TO service_role;
+GRANT SELECT ON public.ad_daily_reports TO authenticated;
+GRANT ALL ON public.ad_daily_reports TO service_role;

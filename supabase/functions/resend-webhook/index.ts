@@ -1,7 +1,7 @@
 // Resend → TDZ delivery events (delivered, opened, clicked, bounced, complained).
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import "../_shared/fetchTimeout.ts";
-import { verifyResendSignature as verifyWebhook } from "../fan-email/lib.ts";
+import { verifyResendSignature as verifyWebhook } from "../_shared/fanEmailLib.ts";
 
 const TRACKED = new Set(["email.delivered", "email.opened", "email.clicked", "email.bounced", "email.complained"]);
 

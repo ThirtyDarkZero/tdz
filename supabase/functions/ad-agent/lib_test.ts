@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { dayOf, decrypt, encrypt, optimize, planCampaign, splitBudget, summarize, todaysBudgetCents, type Plan } from "./lib.ts";
+import { dayOf, decrypt, encrypt, optimize, planCampaign, splitBudget, summarize, todaysBudgetCents, type Plan } from "../_shared/adAgentLib.ts";
 
 Deno.test("30/60/90 plans add up to the budget", () => {
   for (const d of [30, 60, 90] as const) {
