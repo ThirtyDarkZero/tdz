@@ -98,3 +98,17 @@ CREATE TABLE public.artist_contacts (id uuid PRIMARY KEY DEFAULT gen_random_uuid
   imported_at timestamptz DEFAULT now(), created_at timestamptz DEFAULT now(), UNIQUE (artist_id, email));
 ALTER TABLE public.presave_signups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.artist_contacts ENABLE ROW LEVEL SECURITY;
+
+-- Email infra pieces the fan-email migration uses.
+CREATE TABLE public.suppressed_emails (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), email text NOT NULL UNIQUE,
+  reason text NOT NULL CHECK (reason IN ('unsubscribe', 'bounce', 'complaint')), metadata jsonb, created_at timestamptz NOT NULL DEFAULT now());
+CREATE FUNCTION public.is_manager_of(_manager uuid, _artist uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS
+  $$ SELECT EXISTS (SELECT 1 FROM public.manager_artists WHERE manager_id = _manager AND artist_id = _artist) $$;
+CREATE POLICY "Artists manage own contacts" ON public.artist_contacts FOR ALL USING (auth.uid() = artist_id);
+
+-- Storage stand-ins for the social media bucket.
+CREATE SCHEMA IF NOT EXISTS storage;
+CREATE TABLE storage.buckets (id text PRIMARY KEY, name text, public boolean, file_size_limit bigint);
+CREATE TABLE storage.objects (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), bucket_id text, name text);
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+CREATE FUNCTION storage.foldername(name text) RETURNS text[] LANGUAGE sql IMMUTABLE AS $$ SELECT (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1] $$;

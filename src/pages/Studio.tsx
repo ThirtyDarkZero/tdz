@@ -43,7 +43,9 @@ function StudioContent() {
   const { isDelegated, effectiveUserId, actingArtistName, canDelegate } = useActingArtist();
   const navigate = useNavigate();
   
-  const [activeSection, setActiveSection] = useState("home");
+  // ?section=promote (e.g. returning from connecting an ad account) opens that section.
+  const [activeSection, setActiveSection] = useState(() =>
+    new URLSearchParams(window.location.search).get("section") || "home");
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [queue, setQueue] = useState<Track[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);

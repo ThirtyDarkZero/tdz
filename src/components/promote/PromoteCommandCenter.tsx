@@ -15,7 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export type PromoteSectionId =
-  | "fans" | "campaigns" | "smart-links" | "storytelling" | "merch" | "tour" | "ads";
+  | "fans" | "campaigns" | "smart-links" | "storytelling" | "merch" | "tour" | "ads" | "email" | "social";
 
 interface Props {
   onNavigate: (id: PromoteSectionId) => void;

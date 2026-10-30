@@ -259,3 +259,115 @@ SELECT pg_temp.check(
   pg_temp.as_user('00000000-0000-4000-8000-0000000000a4', 'stranger@tdz.test',
     $q$SELECT copy_splits('00000000-0000-4000-8000-0000000000e1', ARRAY['00000000-0000-4000-8000-0000000000e2']::uuid[])::text$q$) LIKE 'ERROR:%',
   'others cannot copy splits');
+
+-- Fan email -----------------------------------------------------------------------
+INSERT INTO artist_contacts (artist_id, email, first_name, tags) VALUES
+  ('00000000-0000-4000-8000-0000000000a1', 'a@fans.co', 'Ana', ARRAY['vip']),
+  ('00000000-0000-4000-8000-0000000000a1', 'b@fans.co', 'Ben', NULL),
+  ('00000000-0000-4000-8000-0000000000a1', 'bounced@fans.co', 'Bo', NULL);
+INSERT INTO suppressed_emails (email, reason) VALUES ('bounced@fans.co', 'bounce');
+-- fan@example.com joined earlier through the pre-save page.
+SELECT pg_temp.check(
+  pg_temp.as_user('00000000-0000-4000-8000-0000000000a1', 'artist@tdz.test',
+    $q$SELECT fan_audience_count('00000000-0000-4000-8000-0000000000a1')::text$q$) = '3',
+  'audience excludes suppressed addresses');
+SELECT pg_temp.check(
+  pg_temp.as_user('00000000-0000-4000-8000-0000000000a1', 'artist@tdz.test',
+    $q$SELECT fan_audience_count('00000000-0000-4000-8000-0000000000a1', ARRAY['vip'])::text$q$) = '1',
+  'audience can be filtered by tag');
+SELECT pg_temp.check(
+  pg_temp.as_user('00000000-0000-4000-8000-0000000000a4', 'stranger@tdz.test',
+    $q$SELECT fan_audience_count('00000000-0000-4000-8000-0000000000a1')::text$q$) = '0',
+  'others cannot count an artist''s list');
+SELECT pg_temp.check(
+  pg_temp.as_user('00000000-0000-4000-8000-0000000000a1', 'artist@tdz.test',
+    $q$INSERT INTO email_campaigns (artist_id, subject, body_html, opened, recipients)
+       VALUES ('00000000-0000-4000-8000-0000000000a1', 'New single', '<p>Hi</p>', 9999, 9999) RETURNING opened::text || '/' || recipients$q$) = '0/0',
+  'artists cannot fake campaign stats');
+SELECT pg_temp.check(
+  pg_temp.as_user('00000000-0000-4000-8000-0000000000a1', 'artist@tdz.test',
+    $q$INSERT INTO email_campaigns (artist_id, subject, body_html, status) VALUES ('00000000-0000-4000-8000-0000000000a1', 'x', 'x', 'sent') RETURNING 'ok'$q$) LIKE 'ERROR:%',
+  'artists cannot mark a campaign sent');
+SELECT pg_temp.check(
+  pg_temp.as_user('00000000-0000-4000-8000-0000000000a1', 'artist@tdz.test',
+    $q$INSERT INTO email_campaigns (artist_id, subject, body_html, status, scheduled_at) VALUES ('00000000-0000-4000-8000-0000000000a1', 'x', 'x', 'scheduled', now() - interval '1 day') RETURNING 'ok'$q$) LIKE 'ERROR:%Pick a time%',
+  'scheduling in the past is refused');
+
+-- Server sends; webhook events count once each.
+INSERT INTO email_campaign_sends (campaign_id, contact_id, email, provider_id, status)
+SELECT c.id, ct.id, ct.email, 're_' || ct.first_name, 'sent'
+FROM email_campaigns c, artist_contacts ct WHERE c.subject = 'New single' AND ct.email IN ('a@fans.co', 'b@fans.co');
+SELECT record_fan_email_event('re_Ana', 'email.delivered');
+SELECT record_fan_email_event('re_Ana', 'email.opened');
+SELECT record_fan_email_event('re_Ana', 'email.opened');
+SELECT record_fan_email_event('re_Ana', 'email.clicked');
+SELECT record_fan_email_event('re_Ben', 'email.clicked');
+SELECT record_fan_email_event('re_Ben', 'email.complained');
+SELECT record_fan_email_event('re_unknown', 'email.opened');
+SELECT pg_temp.check((SELECT delivered || '/' || opened || '/' || clicked || '/' || complained FROM email_campaigns WHERE subject = 'New single') = '1/2/2/1',
+  'opens and clicks count once per fan; a click implies an open');
+SELECT pg_temp.check((SELECT NOT subscribed FROM artist_contacts WHERE email = 'b@fans.co'), 'a spam complaint unsubscribes the fan');
+SELECT pg_temp.check(EXISTS (SELECT 1 FROM suppressed_emails WHERE email = 'b@fans.co' AND reason = 'complaint'), 'and blocks future sends');
+SELECT pg_temp.check(NOT has_function_privilege('authenticated', 'public.record_fan_email_event(text,text)', 'execute'), 'only the server records events');
+
+-- Fan unsubscribes from their link.
+CREATE TEMP TABLE ana_tok AS SELECT unsubscribe_token FROM artist_contacts WHERE email = 'a@fans.co';
+GRANT SELECT ON ana_tok TO anon;
+SET ROLE anon;
+SELECT pg_temp.check(public.fan_unsubscribe((SELECT unsubscribe_token FROM ana_tok)) = 'Nova Reign', 'fan unsubscribes without an account');
+SELECT public.fan_unsubscribe((SELECT unsubscribe_token FROM ana_tok));
+RESET ROLE;
+SELECT pg_temp.check((SELECT unsubscribed FROM email_campaigns WHERE subject = 'New single') = 1, 'unsubscribe counted once on the campaign');
+SELECT pg_temp.check(EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'fan-email-dispatch'), 'scheduled sends are dispatched by cron');
+
+-- Ad agents ---------------------------------------------------------------------
+SELECT pg_temp.check(
+  pg_temp.as_user('00000000-0000-4000-8000-0000000000a1', 'artist@tdz.test',
+    $q$INSERT INTO ad_campaigns (artist_id, platform, name, duration_days, total_budget_cents, start_date, destination_url, status, spent_cents, external)
+       VALUES ('00000000-0000-4000-8000-0000000000a1', 'meta', 'Single push', 30, 50000, current_date + 1, 'https://www.thirtydarkzero.net/link/my-single', 'active', 99, '{"x":1}')
+       RETURNING status || '/' || spent_cents || '/' || external::text$q$) = 'draft/0/{}',
+  'a new campaign always starts as an untouched draft');
+SELECT pg_temp.check(
+  pg_temp.as_user('00000000-0000-4000-8000-0000000000a1', 'artist@tdz.test',
+    $q$UPDATE ad_campaigns SET status = 'active' WHERE name = 'Single push' RETURNING status$q$) LIKE 'ERROR:%',
+  'artists cannot launch a campaign by editing it');
+UPDATE ad_campaigns SET status = 'awaiting_approval', plan = '{"phases":[]}' WHERE name = 'Single push';
+SELECT pg_temp.check(
+  pg_temp.as_user('00000000-0000-4000-8000-0000000000a1', 'artist@tdz.test',
+    $q$UPDATE ad_campaigns SET total_budget_cents = 90000 WHERE name = 'Single push' RETURNING status || '/' || (plan IS NULL)$q$) = 'draft/true',
+  'changing the budget after planning sends it back to draft');
+SELECT pg_temp.check(
+  pg_temp.as_user('00000000-0000-4000-8000-0000000000a1', 'artist@tdz.test',
+    $q$INSERT INTO ad_campaigns (artist_id, platform, name, duration_days, total_budget_cents, start_date, destination_url)
+       VALUES ('00000000-0000-4000-8000-0000000000a1', 'meta', 'x', 45, 1, current_date, 'https://x.co') RETURNING 'ok'$q$) LIKE 'ERROR:%',
+  'only 30, 60 or 90 day campaigns');
+SELECT pg_temp.check(
+  pg_temp.as_user('00000000-0000-4000-8000-0000000000a4', 'stranger@tdz.test',
+    $q$SELECT count(*)::text FROM ad_campaigns$q$) = '0',
+  'others cannot see an artist''s campaigns');
+INSERT INTO ad_connections (artist_id, platform, account_name, token_cipher) VALUES ('00000000-0000-4000-8000-0000000000a1', 'meta', 'Nova Ads', 'secret');
+SELECT pg_temp.check(
+  pg_temp.as_user('00000000-0000-4000-8000-0000000000a1', 'artist@tdz.test',
+    $q$SELECT count(*)::text FROM ad_connections$q$) = '0',
+  'ad tokens are never readable from the app');
+SELECT pg_temp.check(
+  pg_temp.as_user('00000000-0000-4000-8000-0000000000a1', 'artist@tdz.test',
+    $q$SELECT account_name || '/' || status FROM ad_connection_status('00000000-0000-4000-8000-0000000000a1')$q$) = 'Nova Ads/connected',
+  'the artist sees which account is connected');
+SELECT pg_temp.check(EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'ad-agent-daily'), 'daily optimization is scheduled');
+
+-- Social posts ------------------------------------------------------------------
+INSERT INTO social_profiles (artist_id, profile_key, platforms) VALUES ('00000000-0000-4000-8000-0000000000a1', 'SECRET-KEY', ARRAY['instagram','tiktok']);
+SELECT pg_temp.check(
+  pg_temp.as_user('00000000-0000-4000-8000-0000000000a1', 'artist@tdz.test',
+    $q$SELECT count(*)::text FROM social_profiles$q$) = '0',
+  'the social profile key is never readable from the app');
+SELECT pg_temp.check(
+  pg_temp.as_user('00000000-0000-4000-8000-0000000000a1', 'artist@tdz.test',
+    $q$SELECT array_to_string(social_platforms('00000000-0000-4000-8000-0000000000a1'), ',')$q$) = 'instagram,tiktok',
+  'the artist sees which networks are linked');
+SELECT pg_temp.check(
+  pg_temp.as_user('00000000-0000-4000-8000-0000000000a4', 'stranger@tdz.test',
+    $q$SELECT array_to_string(social_platforms('00000000-0000-4000-8000-0000000000a1'), ',')$q$) = '',
+  'others cannot see an artist''s networks');
+SELECT pg_temp.check(EXISTS (SELECT 1 FROM storage.buckets WHERE id = 'social-media' AND public), 'media bucket exists');

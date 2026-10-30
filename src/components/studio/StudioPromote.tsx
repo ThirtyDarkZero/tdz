@@ -9,9 +9,12 @@ import { TourDatesManager } from "@/components/promote/TourDatesManager";
 import { FanHub } from "@/components/promote/FanHub";
 import { StorytellingAIGenerator } from "@/components/promote/StorytellingAIGenerator";
 import { AdsAnalyticsHub } from "@/components/promote/AdsAnalyticsHub";
+import { AdCampaigns } from "@/components/promote/AdCampaigns";
+import { FanEmail } from "@/components/promote/FanEmail";
+import { SocialScheduler } from "@/components/promote/SocialScheduler";
 import { PromoteCommandCenter, type PromoteSectionId } from "@/components/promote/PromoteCommandCenter";
 import {
-  LayoutDashboard, Users, Mail, Link2, BookOpen, ShoppingBag, Calendar, BarChart3,
+  LayoutDashboard, Users, Mail, Link2, BookOpen, ShoppingBag, Calendar, BarChart3, Megaphone, Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,7 +34,8 @@ const GROUPS: {
   {
     group: "Attract",
     items: [
-      { id: "ads", label: "Ads & Analytics", icon: BarChart3, hint: "Google, Meta, TikTok, GA4" },
+      { id: "ads", label: "Ad campaigns", icon: BarChart3, hint: "Agent-run Meta & Google ads" },
+      { id: "social", label: "Social posts", icon: Megaphone, hint: "Post & schedule everywhere" },
       { id: "smart-links", label: "Smart Links", icon: Link2, hint: "Links & pre-saves" },
       { id: "storytelling", label: "Storytelling", icon: BookOpen, hint: "Narrative & AI copy" },
     ],
@@ -43,7 +47,8 @@ const GROUPS: {
   {
     group: "Convert",
     items: [
-      { id: "campaigns", label: "Campaigns", icon: Mail, hint: "Email & press" },
+      { id: "email", label: "Fan email", icon: Send, hint: "Send & track to your list" },
+      { id: "campaigns", label: "AI writer", icon: Mail, hint: "Email & press copy" },
       { id: "merch", label: "Merch", icon: ShoppingBag, hint: "Store & drops" },
       { id: "tour", label: "Tour", icon: Calendar, hint: "Dates & ticketing" },
     ],
@@ -53,16 +58,21 @@ const GROUPS: {
 const TITLES: Record<SectionId, { title: string; sub: string }> = {
   overview: { title: "Promote", sub: "One connected funnel: attract, capture, convert." },
   fans: { title: "Fan Hub", sub: "Own your audience — every contact, tagged and reachable." },
-  campaigns: { title: "Campaigns", sub: "Turn your story into email and press that lands." },
+  campaigns: { title: "AI writer", sub: "Draft emails and press copy from your story." },
   "smart-links": { title: "Smart Links", sub: "One link per release. Every click measured." },
   storytelling: { title: "Storytelling", sub: "The narrative that makes the rest of the funnel work." },
   merch: { title: "Merch", sub: "Convert attention into owned revenue." },
   tour: { title: "Tour", sub: "Announce, sell and route your live run." },
-  ads: { title: "Ads & Analytics", sub: "Paid reach, pixels and UTM attribution in one place." },
+  ads: { title: "Ad campaigns", sub: "Your budget, our media buyer: 30, 60 or 90 days, reported every morning." },
+  email: { title: "Fan email", sub: "Write once, reach your whole list, see who opened and clicked." },
+  social: { title: "Social posts", sub: "Plan and schedule posts to every network from one place." },
 };
 
 export const StudioPromote = () => {
-  const [section, setSection] = useState<SectionId>("overview");
+  const [section, setSection] = useState<SectionId>(() => {
+    const q = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("promote") : null;
+    return q && q in TITLES ? (q as SectionId) : "overview";
+  });
   const meta = TITLES[section];
 
   return (
@@ -146,7 +156,17 @@ export const StudioPromote = () => {
           )}
           {section === "merch" && <MerchStore variant="full" />}
           {section === "tour" && <TourDatesManager />}
-          {section === "ads" && <AdsAnalyticsHub />}
+          {section === "ads" && (
+            <div className="space-y-8">
+              <AdCampaigns />
+              <details>
+                <summary className="cursor-pointer text-sm font-medium">Tracking pixels and UTM links</summary>
+                <div className="mt-4"><AdsAnalyticsHub /></div>
+              </details>
+            </div>
+          )}
+          {section === "email" && <FanEmail />}
+          {section === "social" && <SocialScheduler />}
         </div>
       </div>
     </div>

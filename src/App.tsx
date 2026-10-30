@@ -27,6 +27,7 @@ const InviteAccept = lazy(() => import("./pages/InviteAccept"));
 const SmartLinkPage = lazy(() => import("./pages/SmartLinkPage"));
 const PresavePage = lazy(() => import("./pages/PresavePage"));
 const SplitConfirm = lazy(() => import("./pages/SplitConfirm"));
+const FanUnsubscribe = lazy(() => import("./pages/FanUnsubscribe"));
 const Learn = lazy(() => import("./pages/Learn"));
 
 
@@ -96,6 +97,7 @@ const App = () => (
                   <Route path="/link/:code" element={<SmartLinkPage />} />
                   <Route path="/s/:code" element={<SmartLinkPage />} />
                   <Route path="/presave/:slug" element={<PresavePage />} />
+                  <Route path="/fan-unsubscribe" element={<Seo title="Unsubscribe | TDZ" description="Stop emails from an artist on TDZ." path="/fan-unsubscribe" noindex><FanUnsubscribe /></Seo>} />
                   <Route path="/split/:token" element={<Seo title="Confirm your split | TDZ" description="Confirm your share of a song on TDZ Distribution." path="/split" noindex><SplitConfirm /></Seo>} />
                   <Route path="/invite/:token" element={<Seo title="Your TDZ invite" description="Accept an invite to collaborate on TDZ Distribution." path="/invite" noindex><InviteAccept /></Seo>} />
                   <Route path="/learn" element={<Seo title="Learn TDZ — Guides for Artists, Managers & Fans" description="Step-by-step TDZ walkthroughs: upload your first release, build smart links, set up $1-per-stream payouts, and run an entire roster." path="/learn"><Learn /></Seo>} />
