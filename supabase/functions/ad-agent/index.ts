@@ -10,7 +10,7 @@ import "../_shared/fetchTimeout.ts";
 import "../_shared/aiFallback.ts";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from "../_shared/cors.ts";
-import { dayOf, decrypt, encrypt, optimize, phaseOn, planCampaign, splitBudget, summarize, todaysBudgetCents, type Decision, type Plan } from "./lib.ts";
+import { dayOf, decrypt, encrypt, optimize, phaseOn, planCampaign, splitBudget, summarize, todaysBudgetCents, type Decision, type Plan } from "../_shared/adAgentLib.ts";
 import { metaInsights, metaLaunch, metaSetDailyBudget, metaSetStatus } from "./meta.ts";
 import { googleInsights, googleLaunch, googleRefresh, googleSetBudget, googleSetStatus } from "./google.ts";
 

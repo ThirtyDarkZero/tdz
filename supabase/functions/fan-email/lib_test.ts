@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { chunk, htmlToText, personalize, sanitizeHtml, verifyResendSignature, wrapEmail } from "./lib.ts";
+import { chunk, htmlToText, personalize, sanitizeHtml, verifyResendSignature, wrapEmail } from "../_shared/fanEmailLib.ts";
 
 Deno.test("strips scripts, handlers and javascript links", () => {
   const out = sanitizeHtml(`<p onclick="x()">Hi</p><script>alert(1)</script><a href="javascript:alert(1)">x</a><img src=x onerror=alert(1)>`);

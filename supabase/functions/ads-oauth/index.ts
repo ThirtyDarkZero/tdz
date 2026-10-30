@@ -8,7 +8,7 @@ import "../_shared/fetchTimeout.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from "../_shared/cors.ts";
 import { requireUser } from "../_shared/auth.ts";
-import { encrypt } from "../ad-agent/lib.ts";
+import { encrypt } from "../_shared/adAgentLib.ts";
 import { metaAccounts, metaExchangeCode, metaOAuthUrl } from "../ad-agent/meta.ts";
 import { googleCustomers, googleExchangeCode, googleOAuthUrl } from "../ad-agent/google.ts";
 
