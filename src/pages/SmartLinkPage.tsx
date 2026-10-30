@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Loader2, Play, ExternalLink } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { recordClick } from "@/lib/smartLinks";
-import tdzLogo from "@/assets/tdz-logo.png";
+import { ReleaseCard, ReleaseCardPage } from "@/components/promote/ReleaseCard";
 
 interface LinkRow {
   short_code: string;
@@ -62,41 +62,20 @@ export default function SmartLinkPage() {
   }
 
   const tdzPath = link.target_id && link.target_type ? `/${link.target_type}/${link.target_id}` : null;
-  const platforms = Object.entries(link.platforms ?? {}).filter(([, url]) => /^https?:\/\//i.test(url));
+  const links = Object.entries(link.platforms ?? {})
+    .filter(([, url]) => /^https?:\/\//i.test(url))
+    .map(([name, url]) => ({ name, href: url, onClick: () => recordClick(link.short_code, name) }));
 
   return (
-    <main className="min-h-screen bg-black text-white relative overflow-hidden">
-      {art && <img src={art} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover blur-3xl opacity-40 scale-110" />}
-      <div className="relative max-w-md mx-auto px-4 py-10 flex flex-col items-center">
-        {art
-          ? <img src={art} alt={`${link.title ?? "Release"} artwork`} className="w-64 h-64 rounded-2xl object-cover shadow-2xl" />
-          : <div className="w-64 h-64 rounded-2xl bg-white/10" />}
-        <h1 className="mt-6 text-2xl font-semibold text-center">{link.title ?? "Listen now"}</h1>
-        {artist && <p className="text-white/70 mt-1">{artist}</p>}
-        {link.description && <p className="text-white/60 text-sm mt-3 text-center">{link.description}</p>}
-
-        <ul className="w-full mt-8 rounded-2xl bg-white/10 backdrop-blur divide-y divide-white/10">
-          {tdzPath && (
-            <li>
-              <Link to={tdzPath} onClick={() => recordClick(link.short_code, "TDZ")}
-                className="flex items-center justify-between px-5 py-4 hover:bg-white/5">
-                <span className="flex items-center gap-3 font-medium"><img src={tdzLogo} alt="" className="w-7 h-7" />TDZ</span>
-                <span className="flex items-center gap-1 text-sm rounded-full bg-[#ff6347] text-black px-4 py-1.5 font-semibold"><Play className="w-3.5 h-3.5" />Play</span>
-              </Link>
-            </li>
-          )}
-          {platforms.map(([name, url]) => (
-            <li key={name}>
-              <a href={url} target="_blank" rel="noopener noreferrer" onClick={() => recordClick(link.short_code, name)}
-                className="flex items-center justify-between px-5 py-4 hover:bg-white/5">
-                <span className="font-medium">{name}</span>
-                <span className="flex items-center gap-1 text-sm rounded-full border border-white/40 px-4 py-1.5">Open<ExternalLink className="w-3.5 h-3.5" /></span>
-              </a>
-            </li>
-          ))}
-        </ul>
-        <Link to="/" className="mt-10 text-xs text-white/50">Powered by TDZ Distribution</Link>
-      </div>
-    </main>
+    <ReleaseCardPage art={art}>
+      <ReleaseCard
+        art={art}
+        title={link.title ?? "Listen now"}
+        artist={artist}
+        description={link.description}
+        tdz={tdzPath ? { name: "TDZ", href: tdzPath, internal: true, onClick: () => recordClick(link.short_code, "TDZ") } : null}
+        links={links}
+      />
+    </ReleaseCardPage>
   );
 }

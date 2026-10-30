@@ -18,6 +18,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, differenceInDays, isFuture } from "date-fns";
+import { AlbumCoverUploader } from "@/components/AlbumCoverUploader";
+import { DEFAULT_PLATFORMS, PlatformLinksEditor, platformMap, type PlatformLink } from "@/components/promote/PlatformLinksEditor";
 
 interface Campaign {
   id: string;
@@ -57,6 +59,9 @@ export const PreSaveCampaignManager = () => {
     track_id: "",
     album_id: ""
   });
+  const [coverPath, setCoverPath] = useState<string | null>(null);
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [links, setLinks] = useState<PlatformLink[]>(DEFAULT_PLATFORMS);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -116,6 +121,9 @@ export const PreSaveCampaignManager = () => {
       return;
     }
 
+    const platforms = platformMap(links);
+    if (typeof platforms === "string") { toast.error(platforms); return; }
+
     setSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -133,6 +141,8 @@ export const PreSaveCampaignManager = () => {
           description: newCampaign.description || null,
           track_id: newCampaign.track_id || null,
           album_id: newCampaign.album_id || null,
+          cover_image_path: coverPath,
+          landing_page_settings: { platforms },
           is_active: true,
           total_presaves: 0
         });
@@ -149,6 +159,7 @@ export const PreSaveCampaignManager = () => {
         track_id: "",
         album_id: ""
       });
+      setCoverPath(null); setCoverUrl(null); setLinks(DEFAULT_PLATFORMS);
       loadData();
     } catch (error: any) {
       console.error("Error creating campaign:", error);
@@ -344,7 +355,7 @@ export const PreSaveCampaignManager = () => {
               New Campaign
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create Pre-Save Campaign</DialogTitle>
             </DialogHeader>
@@ -393,7 +404,19 @@ export const PreSaveCampaignManager = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Artwork</Label>
+                <div className="flex items-center gap-4">
+                  <AlbumCoverUploader coverPath={coverPath} bucket="album-covers" size="sm"
+                    onUpload={(path, url) => { setCoverPath(path); setCoverUrl(url); }} />
+                  <p className="text-xs text-muted-foreground">{coverUrl ? "Using your upload." : "Leave empty to use the linked track or album cover."}</p>
+                </div>
+              </div>
+
+              <PlatformLinksEditor value={links} onChange={setLinks} idPrefix="ps" />
+              <p className="text-xs text-muted-foreground -mt-2">Use each service&apos;s pre-save or pre-add link; swap in regular links after release.</p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
                     <Music className="w-4 h-4" />
