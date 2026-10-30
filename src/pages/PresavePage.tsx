@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import tdzLogo from "@/assets/tdz-logo.png";
+import { ReleaseCard, ReleaseCardPage } from "@/components/promote/ReleaseCard";
 
 interface Campaign {
   campaign_name: string;
@@ -13,6 +13,7 @@ interface Campaign {
   track_id: string | null;
   album_id: string | null;
   user_id: string;
+  landing_page_settings: { platforms?: Record<string, unknown> } | null;
 }
 
 const rpc = supabase.rpc.bind(supabase) as unknown as (
@@ -32,9 +33,9 @@ export default function PresavePage() {
   useEffect(() => {
     (async () => {
       const { data } = await supabase.from("presave_campaigns")
-        .select("campaign_name, description, release_date, cover_image_path, track_id, album_id, user_id")
+        .select("campaign_name, description, release_date, cover_image_path, track_id, album_id, user_id, landing_page_settings")
         .ilike("slug", slug).eq("is_active", true).maybeSingle();
-      const row = (data as Campaign) ?? null;
+      const row = (data as unknown as Campaign) ?? null;
       setC(row);
       if (!row) return;
       document.title = `Pre-save ${row.campaign_name} | TDZ`;
@@ -71,43 +72,43 @@ export default function PresavePage() {
   }
   const released = new Date(c.release_date + "T12:00:00") <= new Date();
 
-  return (
-    <main className="min-h-screen bg-black text-white relative overflow-hidden">
-      {art && <img src={art} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover blur-3xl opacity-40 scale-110" />}
-      <div className="relative max-w-md mx-auto px-4 py-10 flex flex-col items-center text-center">
-        {art ? <img src={art} alt={`${c.campaign_name} artwork`} className="w-64 h-64 rounded-2xl object-cover shadow-2xl" />
-          : <div className="w-64 h-64 rounded-2xl bg-white/10" />}
-        <h1 className="mt-6 text-2xl font-semibold">{c.campaign_name}</h1>
-        {artist && <p className="text-white/70 mt-1">{artist}</p>}
-        <p className="mt-3 text-sm text-white/80">
-          {released ? "Out now on TDZ" : `Out ${format(new Date(c.release_date + "T12:00:00"), "MMMM d, yyyy")}`}
-        </p>
-        {c.description && <p className="text-white/60 text-sm mt-3">{c.description}</p>}
+  const listen = c.album_id ? `/album/${c.album_id}` : c.track_id ? `/track/${c.track_id}` : null;
+  const outside = Object.entries(c.landing_page_settings?.platforms ?? {})
+    .filter(([, url]) => typeof url === "string" && /^https?:\/\//i.test(url))
+    .map(([name, url]) => ({ name, href: url as string }));
 
-        {released ? (
-          <Link to={c.album_id ? `/album/${c.album_id}` : c.track_id ? `/track/${c.track_id}` : "/discover"}
-            className="mt-8 rounded-full bg-[#ff6347] text-black font-semibold px-8 py-3">Listen now</Link>
-        ) : state === "joined" || state === "already" ? (
-          <p role="status" className="mt-8 rounded-2xl bg-white/10 px-5 py-4">
+  return (
+    <ReleaseCardPage art={art}>
+      <ReleaseCard
+        art={art}
+        title={c.campaign_name}
+        artist={artist}
+        status={released ? "Out now" : `Out ${format(new Date(c.release_date + "T12:00:00"), "MMMM d, yyyy")}`}
+        description={c.description}
+        tdz={released && listen ? { name: "TDZ", href: listen, internal: true } : null}
+        links={outside}
+        action={released ? "Listen" : "Pre-save"}
+      >
+        {released ? null : state === "joined" || state === "already" ? (
+          <p role="status" className="rounded-2xl bg-white/10 px-4 py-3 text-center text-sm">
             {state === "joined" ? "You're in. We'll email you the day it drops." : "You're already on the list for this one."}
           </p>
         ) : (
-          <form onSubmit={submit} className="mt-8 w-full grid gap-3">
-            <label htmlFor="presave-email" className="text-sm text-left">Get it the day it drops</label>
+          <form onSubmit={submit} className="grid gap-3">
+            <label htmlFor="presave-email" className="text-sm">Get it the day it drops</label>
             <input id="presave-email" type="email" required autoComplete="email" value={email}
               onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com"
               className="h-12 rounded-full px-5 bg-white text-black" />
-            <button type="submit" disabled={state === "busy"} className="h-12 rounded-full bg-[#ff6347] text-black font-semibold">
+            <button type="submit" disabled={state === "busy"} className="h-12 rounded-full bg-primary text-primary-foreground font-semibold">
               {state === "busy" ? "Saving…" : "Pre-save"}
             </button>
             {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
-            <p className="text-xs text-white/50">
+            <p className="text-xs text-white/50 text-center">
               You'll get release news from {artist ?? "this artist"} through TDZ. Unsubscribe any time.
             </p>
           </form>
         )}
-        <Link to="/" className="mt-10 text-xs text-white/50">Powered by TDZ Distribution</Link>
-      </div>
-    </main>
+      </ReleaseCard>
+    </ReleaseCardPage>
   );
 }
