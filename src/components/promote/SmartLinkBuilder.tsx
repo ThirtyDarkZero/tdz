@@ -1,29 +1,33 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link2, Copy, ExternalLink, Plus, Trash2, Sparkles, Loader2 } from "lucide-react";
+import { Link2, Copy, ExternalLink, Plus, Trash2, Sparkles, Loader2, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useAIFeature } from "@/hooks/useAIFeature";
+import { PLATFORMS, cleanUrl, isValidCode, linkStats, smartLinkUrl, toCode } from "@/lib/smartLinks";
 
 interface SmartLink {
   id: string;
-  slug: string;
-  title: string;
-  artwork_url: string | null;
-  platforms: Record<string, string>;
-  click_count: number;
+  short_code: string;
+  title: string | null;
+  clicks: number | null;
   created_at: string;
 }
+
+interface Release { id: string; type: "track" | "album"; title: string }
 
 export function SmartLinkBuilder() {
   const { user } = useAuth();
   const [links, setLinks] = useState<SmartLink[]>([]);
+  const [releases, setReleases] = useState<Release[]>([]);
+  const [release, setRelease] = useState("");
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
+  const [slugTouched, setSlugTouched] = useState(false);
   const [artworkUrl, setArtworkUrl] = useState("");
   const [platforms, setPlatforms] = useState<{ name: string; url: string }[]>([
     { name: "Spotify", url: "" },
@@ -31,52 +35,101 @@ export function SmartLinkBuilder() {
     { name: "YouTube", url: "" },
   ]);
   const [creating, setCreating] = useState(false);
+  const [stats, setStats] = useState<Record<string, { platform: string; clicks: number }[]>>({});
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [aiCopy, setAiCopy] = useState<any>(null);
   const copyAI = useAIFeature("smart-link-copy");
 
-  useEffect(() => {
-    if (user) loadLinks();
-  }, [user]);
-
-  const loadLinks = async () => {
+  const loadLinks = useCallback(async () => {
     if (!user) return;
-    const { data } = await (supabase as any)
+    const { data } = await supabase
       .from("smart_links")
-      .select("*")
-      .eq("artist_id", user.id)
+      .select("id, short_code, title, clicks, created_at")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     setLinks((data as SmartLink[]) || []);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    loadLinks();
+    Promise.all([
+      supabase.from("tracks").select("id, title").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100),
+      supabase.from("albums").select("id, title").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
+    ]).then(([t, a]) => setReleases([
+      ...((a.data ?? []) as { id: string; title: string }[]).map((r) => ({ ...r, type: "album" as const })),
+      ...((t.data ?? []) as { id: string; title: string }[]).map((r) => ({ ...r, type: "track" as const })),
+    ]));
+  }, [user, loadLinks]);
+
+  const pickRelease = (key: string) => {
+    setRelease(key);
+    const r = releases.find((x) => `${x.type}:${x.id}` === key);
+    if (r) {
+      setTitle(r.title);
+      if (!slugTouched) setSlug(toCode(r.title));
+    }
   };
 
   const handleCreate = async () => {
-    if (!user || !title || !slug) { toast.error("Title and slug are required"); return; }
-    setCreating(true);
+    if (!user) return;
+    const code = toCode(slug || title);
+    if (!title.trim()) { toast.error("Add a title."); return; }
+    if (!isValidCode(code)) { toast.error("The link name needs at least 2 letters or numbers."); return; }
 
     const platformMap: Record<string, string> = {};
-    platforms.forEach(p => { if (p.url) platformMap[p.name] = p.url; });
+    for (const p of platforms) {
+      if (!p.url.trim()) continue;
+      const url = cleanUrl(p.url);
+      if (!url || !p.name.trim()) { toast.error(`Check the ${p.name || "platform"} link — it must be a web address.`); return; }
+      platformMap[p.name.trim()] = url;
+    }
+    const target = releases.find((x) => `${x.type}:${x.id}` === release);
+    if (!target && Object.keys(platformMap).length === 0) {
+      toast.error("Pick a TDZ release or add at least one platform link.");
+      return;
+    }
+    const art = artworkUrl.trim() ? cleanUrl(artworkUrl) : null;
+    if (artworkUrl.trim() && !art) { toast.error("The artwork must be a web address."); return; }
 
-    const { error } = await (supabase as any).from("smart_links").insert({
-      artist_id: user.id,
-      slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
-      title,
-      artwork_url: artworkUrl || null,
+    setCreating(true);
+    const { error } = await supabase.from("smart_links").insert({
+      user_id: user.id,
+      short_code: code,
+      title: title.trim(),
+      target_type: target?.type ?? null,
+      target_id: target?.id ?? null,
+      artwork_url: art,
       platforms: platformMap,
-    } as any);
+    } as never);
+    setCreating(false);
 
     if (error) {
-      toast.error(error.message.includes("unique") ? "Slug already taken" : "Failed to create link");
-    } else {
-      toast.success("Smart Link created!");
-      setTitle(""); setSlug(""); setArtworkUrl("");
-      setPlatforms([{ name: "Spotify", url: "" }, { name: "Apple Music", url: "" }, { name: "YouTube", url: "" }]);
-      loadLinks();
+      toast.error(error.code === "23505" ? `/link/${code} is taken. Try another name.` : `Couldn't create the link: ${error.message}`);
+      return;
     }
-    setCreating(false);
+    await navigator.clipboard?.writeText(smartLinkUrl(code)).catch(() => {});
+    toast.success("Smart link created and copied");
+    setTitle(""); setSlug(""); setSlugTouched(false); setArtworkUrl(""); setRelease("");
+    setPlatforms([{ name: "Spotify", url: "" }, { name: "Apple Music", url: "" }, { name: "YouTube", url: "" }]);
+    loadLinks();
   };
 
-  const copyLink = (slug: string) => {
-    navigator.clipboard.writeText(`${window.location.origin}/link/${slug}`);
-    toast.success("Link copied!");
+  const remove = async (id: string) => {
+    const { error } = await supabase.from("smart_links").delete().eq("id", id);
+    if (error) toast.error(`Couldn't delete: ${error.message}`);
+    else { toast.success("Link deleted"); loadLinks(); }
+  };
+
+  const toggleStats = async (id: string) => {
+    if (stats[id]) { setStats(({ [id]: _, ...rest }) => rest); return; }
+    const s = await linkStats(id);
+    setStats((prev) => ({ ...prev, [id]: s }));
+  };
+
+  const copyLink = (code: string) => {
+    navigator.clipboard.writeText(smartLinkUrl(code));
+    toast.success("Link copied");
   };
 
   return (
@@ -89,30 +142,38 @@ export function SmartLinkBuilder() {
           <CardDescription>One link for all platforms — track clicks automatically</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="sl-release">TDZ release (optional)</Label>
+            <select id="sl-release" value={release} onChange={(e) => pickRelease(e.target.value)}
+              className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+              <option value="">None — outside platforms only</option>
+              {releases.map((r) => <option key={`${r.type}:${r.id}`} value={`${r.type}:${r.id}`}>{r.type === "album" ? "Album" : "Track"}: {r.title}</option>)}
+            </select>
+          </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <Label>Release Title</Label>
-              <Input value={title} onChange={(e) => { setTitle(e.target.value); if (!slug) setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-")); }} className="mt-1" placeholder="My New Single" />
+              <Label htmlFor="sl-title">Title</Label>
+              <Input id="sl-title" value={title} onChange={(e) => { setTitle(e.target.value); if (!slugTouched) setSlug(toCode(e.target.value)); }} className="mt-1" placeholder="My New Single" />
             </div>
             <div>
-              <Label>Custom Slug</Label>
+              <Label htmlFor="sl-slug">Link name</Label>
               <div className="flex items-center gap-1 mt-1">
                 <span className="text-xs text-muted-foreground">/link/</span>
-                <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="my-new-single" />
+                <Input id="sl-slug" value={slug} onChange={(e) => { setSlugTouched(true); setSlug(e.target.value); }} onBlur={() => setSlug(toCode(slug))} placeholder="my-new-single" />
               </div>
             </div>
           </div>
           <div>
-            <Label>Artwork URL (optional)</Label>
-            <Input value={artworkUrl} onChange={(e) => setArtworkUrl(e.target.value)} className="mt-1" placeholder="https://..." />
+            <Label htmlFor="sl-art">Artwork URL (optional — uses the release cover if blank)</Label>
+            <Input id="sl-art" value={artworkUrl} onChange={(e) => setArtworkUrl(e.target.value)} className="mt-1" placeholder="https://..." />
           </div>
 
           <div className="space-y-2">
             <Label>Platform Links</Label>
             {platforms.map((p, i) => (
               <div key={i} className="flex items-center gap-2">
-                <Input value={p.name} onChange={(e) => { const n = [...platforms]; n[i].name = e.target.value; setPlatforms(n); }} className="w-32" />
-                <Input value={p.url} onChange={(e) => { const n = [...platforms]; n[i].url = e.target.value; setPlatforms(n); }} placeholder="https://..." className="flex-1" />
+                <Input list="sl-platforms" aria-label="Platform" value={p.name} onChange={(e) => { const n = [...platforms]; n[i] = { ...n[i], name: e.target.value }; setPlatforms(n); }} className="w-36" />
+                <Input aria-label={`${p.name || "Platform"} link`} value={p.url} onChange={(e) => { const n = [...platforms]; n[i] = { ...n[i], url: e.target.value }; setPlatforms(n); }} placeholder="https://..." className="flex-1" />
                 {platforms.length > 1 && (
                   <Button variant="ghost" size="icon" onClick={() => setPlatforms(platforms.filter((_, j) => j !== i))}>
                     <Trash2 className="w-3 h-3" />
@@ -120,6 +181,7 @@ export function SmartLinkBuilder() {
                 )}
               </div>
             ))}
+            <datalist id="sl-platforms">{PLATFORMS.map((p) => <option key={p} value={p} />)}</datalist>
             <Button variant="ghost" size="sm" onClick={() => setPlatforms([...platforms, { name: "", url: "" }])} className="gap-1">
               <Plus className="w-3 h-3" /> Add Platform
             </Button>
@@ -166,19 +228,27 @@ export function SmartLinkBuilder() {
           </CardHeader>
           <CardContent className="space-y-3">
             {links.map((link) => (
-              <div key={link.id} className="flex items-center justify-between p-4 rounded-xl bg-muted/20 border border-border/20">
-                <div>
-                  <p className="font-semibold">{link.title}</p>
-                  <p className="text-xs text-muted-foreground">/link/{link.slug} · {link.click_count || 0} clicks</p>
+              <div key={link.id} className="p-4 rounded-xl bg-muted/20 border border-border/20">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold truncate">{link.title}</p>
+                    <p className="text-xs text-muted-foreground">/link/{link.short_code} — {link.clicks || 0} clicks</p>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <Button variant="ghost" size="icon" aria-label="Click breakdown" onClick={() => toggleStats(link.id)}><BarChart3 className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="icon" aria-label="Copy link" onClick={() => copyLink(link.short_code)}><Copy className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="icon" aria-label="Open link" onClick={() => window.open(`/link/${link.short_code}`, "_blank")}><ExternalLink className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="icon" aria-label="Delete link" onClick={() => remove(link.id)}><Trash2 className="w-4 h-4" /></Button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="icon" onClick={() => copyLink(link.slug)}>
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => window.open(`/link/${link.slug}`, "_blank")}>
-                    <ExternalLink className="w-4 h-4" />
-                  </Button>
-                </div>
+                {stats[link.id] && (
+                  <ul className="mt-3 text-sm grid gap-1">
+                    {stats[link.id].length === 0 && <li className="text-muted-foreground">No visits yet.</li>}
+                    {stats[link.id].map((r) => (
+                      <li key={r.platform} className="flex justify-between"><span>{r.platform === "view" ? "Page views" : r.platform}</span><span>{r.clicks}</span></li>
+                    ))}
+                  </ul>
+                )}
               </div>
             ))}
           </CardContent>

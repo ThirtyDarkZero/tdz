@@ -23,6 +23,8 @@ import NotFound from "./pages/NotFound";
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
+const InviteAccept = lazy(() => import("./pages/InviteAccept"));
+const SmartLinkPage = lazy(() => import("./pages/SmartLinkPage"));
 const Learn = lazy(() => import("./pages/Learn"));
 
 
@@ -89,6 +91,9 @@ const App = () => (
 
                   <Route path="/forgot-password" element={<Seo title="Reset Your Password | TDZ" description="Recover access to your TDZ Distribution account. Request a secure password reset link delivered to your verified email address." path="/forgot-password" noindex><ForgotPassword /></Seo>} />
                   <Route path="/unsubscribe" element={<Unsubscribe />} />
+                  <Route path="/link/:code" element={<SmartLinkPage />} />
+                  <Route path="/s/:code" element={<SmartLinkPage />} />
+                  <Route path="/invite/:token" element={<Seo title="Your TDZ invite" description="Accept an invite to collaborate on TDZ Distribution." path="/invite" noindex><InviteAccept /></Seo>} />
                   <Route path="/learn" element={<Seo title="Learn TDZ — Guides for Artists, Managers & Fans" description="Step-by-step TDZ walkthroughs: upload your first release, build smart links, set up $1-per-stream payouts, and run an entire roster." path="/learn"><Learn /></Seo>} />
 
                   <Route path="/reset-password" element={<Seo title="Set a New Password | TDZ" description="Choose a new password for your TDZ Distribution account and securely return to your studio, fan profile, or artist dashboard." path="/reset-password" noindex><ResetPassword /></Seo>} />

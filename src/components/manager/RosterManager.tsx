@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { sendInvite } from "@/lib/invites";
 import { UserPlus, Trash2, ExternalLink, Loader2, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -72,19 +73,23 @@ export function RosterManager() {
   const handleInvite = async () => {
     if (!user || !inviteEmail.trim()) return;
     setInviting(true);
-    const { error } = await supabase.from("collaborator_invites").insert({
-      artist_id: user.id,
-      invited_email: inviteEmail.trim().toLowerCase(),
-      status: "pending",
-      permissions: { manager: true, upload: true, analytics: true },
-    } as any);
-    setInviting(false);
-    if (error) {
-      toast.error("Invite failed", { description: error.message });
-      return;
+    try {
+      const result = await sendInvite({ email: inviteEmail.trim(), kind: "roster" });
+      if (result.email_status === "queued") {
+        toast.success(`Invite emailed to ${inviteEmail.trim()}`);
+      } else {
+        await navigator.clipboard?.writeText(result.invite_url).catch(() => {});
+        toast.warning("Invite saved, but the email didn't send", {
+          description: `${result.error ?? "Email service error"}. The invite link is copied — share it directly.`,
+          duration: 10000,
+        });
+      }
+      setInviteEmail("");
+    } catch (e) {
+      toast.error("Invite failed", { description: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setInviting(false);
     }
-    toast.success("Invite sent");
-    setInviteEmail("");
   };
 
   const handleRemove = async (id: string) => {

@@ -122,7 +122,7 @@ export function useArtistNarrativeContext(): FullNarrativeContext {
         supabase.from("tracks").select("id, title, play_count, album_id, is_published").eq("user_id", user.id).order("play_count", { ascending: false }),
         supabase.from("artist_follows").select("id", { count: "exact", head: true }).eq("artist_id", user.id),
         (supabase as any).from("tour_dates").select("venue, city, date_time").eq("artist_id", user.id).gte("date_time", new Date().toISOString()).order("date_time", { ascending: true }).limit(10),
-        (supabase as any).from("smart_links").select("title, click_count, slug").eq("artist_id", user.id).order("click_count", { ascending: false }).limit(10),
+        (supabase as any).from("smart_links").select("title, click_count:clicks, slug:short_code").eq("user_id", user.id).order("clicks", { ascending: false }).limit(10),
       ]);
 
       const narrative = narrativeRes.data;

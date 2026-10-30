@@ -45,7 +45,7 @@ export function PromoteCommandCenter({ onNavigate }: Props) {
       const db = supabase as any;
       const [contacts, links, tours, drafts, integrations, merch] = await Promise.all([
         db.from("artist_contacts").select("id, subscribed").eq("artist_id", id),
-        db.from("smart_links").select("id, click_count").eq("artist_id", id),
+        db.from("smart_links").select("id, clicks").eq("user_id", id),
         db.from("tour_dates").select("id, event_date").eq("artist_id", id),
         db.from("marketing_drafts").select("id, status").eq("artist_id", id),
         db.from("manager_integrations").select("provider").eq("manager_id", id),
@@ -63,7 +63,7 @@ export function PromoteCommandCenter({ onNavigate }: Props) {
         contacts: contactRows.length,
         subscribed: contactRows.filter((c) => c.subscribed !== false).length,
         links: linkRows.length,
-        clicks: linkRows.reduce((s, l) => s + (l.click_count || 0), 0),
+        clicks: linkRows.reduce((s, l) => s + (l.clicks || 0), 0),
         upcomingShows: tourRows.filter((t) => t.event_date && new Date(t.event_date).getTime() > now).length,
         pendingDrafts: draftRows.filter((d) => d.status !== "sent").length,
         integrations: integrationRows.length,
