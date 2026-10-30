@@ -18,7 +18,8 @@ export function planCampaign(durationDays: Duration, totalBudgetCents: number, a
   const shape = SHAPE[durationDays];
   const testSets = Math.max(1, Math.min(3, audiences));
   // The test phase needs every audience funded at the platform minimum.
-  const minTotal = Math.ceil((MIN_ADSET_DAILY_CENTS * testSets * shape.test[0]) / shape.test[1] / 100) * 100;
+  // Meta's lowest campaign spend cap is $100, so that's the floor for any campaign.
+  const minTotal = Math.max(10_000, Math.ceil((MIN_ADSET_DAILY_CENTS * testSets * shape.test[0]) / shape.test[1] / 100) * 100);
   if (totalBudgetCents < minTotal) {
     return { error: `For ${durationDays} days, the budget needs to be at least $${(minTotal / 100).toFixed(0)}.` };
   }

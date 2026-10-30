@@ -107,7 +107,7 @@ async function launch(db: SupabaseClient, c: Campaign, approver: string) {
       if (!conn.page_id) throw new Error("Pick the Facebook Page that will run the ads.");
       external = await metaLaunch({
         token, adAccountId: conn.account_id, pageId: conn.page_id, name: `TDZ — ${c.name}`,
-        spendCapCents: Math.max(c.total_budget_cents, 10_000), destination: c.destination_url, countries: c.countries,
+        spendCapCents: c.total_budget_cents, destination: c.destination_url, countries: c.countries,
         ageMin: c.age_min, ageMax: c.age_max, startTime: start.toISOString(), endTime: end.toISOString(),
         audiences: p.audiences, creatives: c.creatives,
         dailyBudgetCentsPerAdSet: Math.max(100, Math.floor(day1 / p.audiences.length)),
