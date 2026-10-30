@@ -512,7 +512,7 @@ export function TourDatesManager() {
   return (
     <Card className="bg-card/50 border-border/30">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <CardTitle className="flex items-center gap-2">
               <MapPin className="w-5 h-5 text-primary" /> Tour Dates

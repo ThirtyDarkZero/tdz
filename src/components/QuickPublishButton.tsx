@@ -80,13 +80,14 @@ export const QuickPublishButton = ({ trackId, isPublished, onPublishChange }: Qu
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="default" size="sm" disabled={isLoading} className="gap-2">
+        <Button variant="default" size="sm" disabled={isLoading} className="gap-2 shrink-0" aria-label="Publish now">
           {isLoading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <>
               <Globe className="w-4 h-4" />
-              Publish Now
+              <span className="hidden sm:inline">Publish Now</span>
+              <span className="sm:hidden">Publish</span>
             </>
           )}
         </Button>

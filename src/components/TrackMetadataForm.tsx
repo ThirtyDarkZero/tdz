@@ -103,24 +103,6 @@ const generateUPC = () => {
   return fullUpc + checkDigit;
 };
 
-/** Fill the optional business fields from the artist's own name when left blank. */
-export function withDefaults(m: TrackMetadata): TrackMetadata {
-  const artist = m.artistName.trim();
-  const year = m.copyrightYear || new Date().getFullYear();
-  const hasCredits = m.credits.writers.length + m.credits.producers.length + m.credits.performers.length > 0;
-  const self = (role: Contributor['role']): Contributor => ({ id: `self-${role}`, name: artist, role, split: 100 });
-  return {
-    ...m,
-    label: m.label.trim() || artist,
-    copyrightOwner: m.copyrightOwner.trim() || artist,
-    copyrightYear: year,
-    pLine: m.pLine.trim() || (artist ? `℗ ${year} ${m.copyrightOwner.trim() || artist}` : ''),
-    cLine: m.cLine.trim() || (artist ? `© ${year} ${m.copyrightOwner.trim() || artist}` : ''),
-    credits: hasCredits || !artist ? m.credits : { ...m.credits, writers: [self('writer')], performers: [self('performer')] },
-    publishingInfo: { ...m.publishingInfo, pro: m.publishingInfo.pro ?? 'other' },
-  };
-}
-
 const defaultMetadata: TrackMetadata = {
   title: '',
   artistName: '',
@@ -171,21 +153,39 @@ export const TrackMetadataForm = ({
     split: 0
   });
 
-  // Only what a first-time artist can always answer is required. Label,
-  // copyright owner, credits and PRO default sensibly (see withDefaults) and
-  // can be filled in properly later.
+  // Validation
   const getValidationErrors = () => {
     const errors: string[] = [];
+    
     if (!metadata.title.trim()) errors.push('Track title is required');
     if (!metadata.artistName.trim()) errors.push('Artist name is required');
+    if (!metadata.label.trim()) errors.push('Label is required');
+    if (!metadata.copyrightOwner.trim()) errors.push('Copyright owner is required');
+    if (!metadata.copyrightYear) errors.push('Copyright year is required');
     if (!metadata.genre) errors.push('Genre is required');
+    
+    // Check for at least one contributor
+    const totalContributors = 
+      metadata.credits.writers.length + 
+      metadata.credits.producers.length + 
+      metadata.credits.performers.length;
+    
+    if (totalContributors === 0) {
+      errors.push('At least one credit (writer, producer, or performer) is required');
+    }
+    
+    // Check publishing info
+    if (!metadata.publishingInfo.pro) {
+      errors.push('Performance Rights Organization (PRO) is required');
+    }
+    
     return errors;
   };
 
   const isComplete = getValidationErrors().length === 0;
 
   useEffect(() => {
-    onMetadataChange(withDefaults(metadata), isComplete);
+    onMetadataChange(metadata, isComplete);
   }, [metadata, isComplete, onMetadataChange]);
 
   const updateMetadata = (updates: Partial<TrackMetadata>) => {
@@ -269,25 +269,25 @@ export const TrackMetadataForm = ({
       )}
 
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 mb-4">
-          <TabsTrigger value="basic" className="text-xs">
-            <Info className="w-3 h-3 mr-1" />
+        <TabsList className="flex w-full justify-start overflow-x-auto mb-4 sm:grid sm:grid-cols-5">
+          <TabsTrigger value="basic" className="text-xs shrink-0">
+            <Info className="w-3 h-3 mr-1 hidden sm:inline" />
             Basic
           </TabsTrigger>
-          <TabsTrigger value="rights" className="text-xs">
-            <Shield className="w-3 h-3 mr-1" />
+          <TabsTrigger value="rights" className="text-xs shrink-0">
+            <Shield className="w-3 h-3 mr-1 hidden sm:inline" />
             Rights
           </TabsTrigger>
-          <TabsTrigger value="credits" className="text-xs">
-            <Users className="w-3 h-3 mr-1" />
+          <TabsTrigger value="credits" className="text-xs shrink-0">
+            <Users className="w-3 h-3 mr-1 hidden sm:inline" />
             Credits
           </TabsTrigger>
-          <TabsTrigger value="publishing" className="text-xs">
-            <Music className="w-3 h-3 mr-1" />
+          <TabsTrigger value="publishing" className="text-xs shrink-0">
+            <Music className="w-3 h-3 mr-1 hidden sm:inline" />
             Publishing
           </TabsTrigger>
-          <TabsTrigger value="assets" className="text-xs">
-            <FileText className="w-3 h-3 mr-1" />
+          <TabsTrigger value="assets" className="text-xs shrink-0">
+            <FileText className="w-3 h-3 mr-1 hidden sm:inline" />
             Assets
           </TabsTrigger>
         </TabsList>
@@ -295,7 +295,7 @@ export const TrackMetadataForm = ({
         <ScrollArea className="h-[400px] pr-4">
           {/* Basic Info Tab */}
           <TabsContent value="basic" className="space-y-4 mt-0">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs">Track Title *</Label>
                 <Input
@@ -320,9 +320,9 @@ export const TrackMetadataForm = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label className="text-xs">Label (optional — defaults to your artist name)</Label>
+                <Label className="text-xs">Label *</Label>
                 <Input
                   value={metadata.label}
                   onChange={(e) => updateMetadata({ label: e.target.value })}
@@ -370,7 +370,7 @@ export const TrackMetadataForm = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <Label className="text-xs">Release Type *</Label>
                 <Select 
@@ -442,7 +442,7 @@ export const TrackMetadataForm = ({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs">Original Release Date</Label>
                 <Popover>
@@ -486,7 +486,7 @@ export const TrackMetadataForm = ({
 
           {/* Rights Tab */}
           <TabsContent value="rights" className="space-y-4 mt-0">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs">ISRC Code</Label>
                 <Input
@@ -499,7 +499,7 @@ export const TrackMetadataForm = ({
                 </p>
               </div>
               <div>
-                <Label className="text-xs">UPC (auto-generated)</Label>
+                <Label className="text-xs">UPC *</Label>
                 <Input
                   value={metadata.upc}
                   onChange={(e) => updateMetadata({ upc: e.target.value })}
@@ -513,9 +513,9 @@ export const TrackMetadataForm = ({
 
             <Separator />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label className="text-xs">Copyright Owner (optional — defaults to you)</Label>
+                <Label className="text-xs">Copyright Owner *</Label>
                 <Input
                   value={metadata.copyrightOwner}
                   onChange={(e) => updateMetadata({ copyrightOwner: e.target.value })}
@@ -526,7 +526,7 @@ export const TrackMetadataForm = ({
                 />
               </div>
               <div>
-                <Label className="text-xs">Copyright Year</Label>
+                <Label className="text-xs">Copyright Year *</Label>
                 <Input
                   type="number"
                   value={metadata.copyrightYear}
@@ -538,7 +538,7 @@ export const TrackMetadataForm = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs">℗ Line (Sound Recording)</Label>
                 <Input
@@ -571,7 +571,7 @@ export const TrackMetadataForm = ({
                 Add at least one contributor (writer, producer, or performer) *
               </p>
               
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <Input
                   placeholder="Name"
                   value={newContributor.name}
@@ -667,7 +667,7 @@ export const TrackMetadataForm = ({
           {/* Publishing Tab */}
           <TabsContent value="publishing" className="space-y-4 mt-0">
             <div>
-              <Label className="text-xs">Performance Rights Organization (PRO, optional)</Label>
+              <Label className="text-xs">Performance Rights Organization (PRO) *</Label>
               <Select
                 value={metadata.publishingInfo.pro || ''}
                 onValueChange={(v: 'bmi' | 'ascap' | 'sesac' | 'other') => 

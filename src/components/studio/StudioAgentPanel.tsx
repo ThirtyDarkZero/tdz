@@ -11,6 +11,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import { AgentFace } from "@/components/agents/AgentFace";
 
 /* ── Department Definitions (Major Label Structure) ── */
 const DEPARTMENTS = [
@@ -173,27 +174,28 @@ export function StudioAgentPanel() {
               <button
                 key={d.id}
                 onClick={() => setActiveDept(d.id)}
-                className="group relative overflow-hidden rounded-2xl p-5 text-left transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                className="group relative overflow-hidden rounded-2xl text-left transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
                 style={{
                   background: "rgba(255,255,255,0.03)",
                   border: "1px solid rgba(255,255,255,0.08)",
                 }}
               >
-                {/* Gradient accent */}
-                <div className="absolute top-0 left-0 right-0 h-1 opacity-60 group-hover:opacity-100 transition-opacity" style={{ background: d.gradient }} />
-                
-                <div className="flex items-start justify-between mb-3">
-                  <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ background: d.gradient }}>
-                    <Icon className="h-5 w-5 text-white" />
+                <div className="relative aspect-[4/5] w-full">
+                  <AgentFace name={d.head} fallback={d.avatar} rounded="" className="absolute inset-0 h-full w-full" />
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85), transparent 55%)" }} />
+                  <div className="absolute top-2 left-2 h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: d.gradient }}>
+                    <Icon className="h-4 w-4 text-white" />
                   </div>
                   {hasHistory && (
-                    <div className="h-2 w-2 rounded-full" style={{ background: "#22C55E" }} />
+                    <div className="absolute top-3 right-3 h-2.5 w-2.5 rounded-full" style={{ background: "#22C55E" }} aria-label="Has conversation" />
                   )}
+                  <p className="absolute bottom-2 left-3 right-3 font-body text-sm font-bold text-white leading-tight">{d.head}</p>
                 </div>
+                <div className="p-3 sm:p-4">
 
                 <h3 className="font-body text-sm font-bold mb-0.5" style={{ color: "var(--text-1)" }}>{d.fullName}</h3>
                 <p className="font-body text-xs mb-3" style={{ color: "var(--text-3)" }}>
-                  {d.head} · {d.title}
+                  {d.title}
                 </p>
 
                 <div className="flex flex-wrap gap-1">
@@ -202,6 +204,7 @@ export function StudioAgentPanel() {
                       fontSize: 9, fontWeight: 600, background: "rgba(255,255,255,0.06)", color: "var(--text-4)",
                     }}>{e}</span>
                   ))}
+                </div>
                 </div>
               </button>
             );
@@ -242,9 +245,7 @@ export function StudioAgentPanel() {
         <button onClick={() => setActiveDept(null)} className="p-2 rounded-lg transition-colors" style={{ color: "var(--text-2)", background: "rgba(255,255,255,0.04)" }}>
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <div className="h-9 w-9 rounded-xl flex items-center justify-center text-lg" style={{ background: dept.gradient }}>
-          {dept.avatar}
-        </div>
+        <AgentFace name={dept.head} fallback={dept.avatar} className="h-10 w-10 shrink-0" still />
         <div className="flex-1 min-w-0">
           <h2 className="font-body text-sm font-bold truncate" style={{ color: "var(--text-1)" }}>{dept.head}</h2>
           <p className="font-body text-xs truncate" style={{ color: "var(--text-3)" }}>{dept.title} · {dept.fullName}</p>
@@ -261,10 +262,8 @@ export function StudioAgentPanel() {
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-4 scrollbar-hide pb-4">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="h-16 w-16 rounded-2xl flex items-center justify-center text-3xl mb-4" style={{ background: dept.gradient }}>
-              {dept.avatar}
-            </div>
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <AgentFace name={dept.head} fallback={dept.avatar} rounded="rounded-2xl" className="h-56 w-44 sm:h-64 sm:w-52 mb-4 shadow-2xl" />
             <h3 className="font-body text-base font-bold mb-1" style={{ color: "var(--text-1)" }}>
               {dept.head}
             </h3>
@@ -288,7 +287,8 @@ export function StudioAgentPanel() {
         )}
 
         {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+          <div key={i} className={`flex items-end gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+            {msg.role === "assistant" && <AgentFace name={dept.head} fallback={dept.avatar} className="h-7 w-7 shrink-0" still />}
             <div
               className="max-w-[85%] rounded-2xl px-4 py-3"
               style={{

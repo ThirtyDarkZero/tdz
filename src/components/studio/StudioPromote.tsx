@@ -85,7 +85,23 @@ export const StudioPromote = () => {
               <h1 style={heading} className="text-3xl leading-none">Promote</h1>
               <p style={body} className="text-[11px] text-muted-foreground">Growth command center</p>
             </div>
-            <nav className="flex gap-1 overflow-x-auto lg:block lg:space-y-3 lg:overflow-visible">
+            {/* Phones: one clear picker instead of a sideways-scrolling strip */}
+            <label className="lg:hidden block">
+              <span className="sr-only">Promote section</span>
+              <select
+                value={section}
+                onChange={(e) => setSection(e.target.value as SectionId)}
+                className="w-full h-11 rounded-lg border border-border bg-background px-3 text-sm"
+                style={body}
+              >
+                {GROUPS.map((g) => (
+                  <optgroup key={g.group} label={g.group}>
+                    {g.items.map((item) => <option key={item.id} value={item.id}>{item.label} — {item.hint}</option>)}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+            <nav className="hidden lg:block lg:space-y-3">
               {GROUPS.map((g) => (
                 <div key={g.group} className="shrink-0 lg:shrink">
                   <p

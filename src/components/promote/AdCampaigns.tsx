@@ -262,7 +262,7 @@ export function AdCampaigns() {
         })}
       </div>
 
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">You set the budget and approve the plan. The agent tests, pauses weak ads, moves money to what works, and emails you a report every morning. Ads are billed by Meta or Google to your own account. TDZ takes no fee.</p>
         <Button onClick={() => setDraft(blank())} className="gap-1 shrink-0"><Plus className="w-4 h-4" />New campaign</Button>
       </div>

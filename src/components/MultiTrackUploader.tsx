@@ -852,35 +852,35 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, 
           </h2>
           <p className="text-muted-foreground text-sm mt-1">Choose your release type to get started</p>
         </div>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <Card 
-            className={`p-6 cursor-pointer transition-all duration-300 hover:scale-105 ${releaseType === 'single' ? 'border-primary bg-gradient-to-br from-primary/20 to-primary/5 shadow-glow' : 'hover:border-primary/50 hover:bg-primary/5'}`}
+            className={`p-3 sm:p-6 cursor-pointer transition-all duration-300 hover:scale-105 ${releaseType === 'single' ? 'border-primary bg-gradient-to-br from-primary/20 to-primary/5 shadow-glow' : 'hover:border-primary/50 hover:bg-primary/5'}`}
             onClick={() => setReleaseType('single')}
           >
             <div className={`w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center ${releaseType === 'single' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
               <Music className="h-6 w-6" />
             </div>
-            <p className="text-center font-bold text-lg">Single</p>
+            <p className="text-center font-bold text-base sm:text-lg">Single</p>
             <p className="text-xs text-center text-muted-foreground mt-1">1-2 tracks</p>
           </Card>
           <Card 
-            className={`p-6 cursor-pointer transition-all duration-300 hover:scale-105 ${releaseType === 'ep' ? 'border-primary bg-gradient-to-br from-primary/20 to-primary/5 shadow-glow' : 'hover:border-primary/50 hover:bg-primary/5'}`}
+            className={`p-3 sm:p-6 cursor-pointer transition-all duration-300 hover:scale-105 ${releaseType === 'ep' ? 'border-primary bg-gradient-to-br from-primary/20 to-primary/5 shadow-glow' : 'hover:border-primary/50 hover:bg-primary/5'}`}
             onClick={() => setReleaseType('ep')}
           >
             <div className={`w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center ${releaseType === 'ep' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
               <Disc className="h-6 w-6" />
             </div>
-            <p className="text-center font-bold text-lg">EP</p>
+            <p className="text-center font-bold text-base sm:text-lg">EP</p>
             <p className="text-xs text-center text-muted-foreground mt-1">3-6 tracks</p>
           </Card>
           <Card 
-            className={`p-6 cursor-pointer transition-all duration-300 hover:scale-105 ${releaseType === 'album' ? 'border-primary bg-gradient-to-br from-primary/20 to-primary/5 shadow-glow' : 'hover:border-primary/50 hover:bg-primary/5'}`}
+            className={`p-3 sm:p-6 cursor-pointer transition-all duration-300 hover:scale-105 ${releaseType === 'album' ? 'border-primary bg-gradient-to-br from-primary/20 to-primary/5 shadow-glow' : 'hover:border-primary/50 hover:bg-primary/5'}`}
             onClick={() => setReleaseType('album')}
           >
             <div className={`w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center ${releaseType === 'album' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
               <AlbumIcon className="h-6 w-6" />
             </div>
-            <p className="text-center font-bold text-lg">Album</p>
+            <p className="text-center font-bold text-base sm:text-lg">Album</p>
             <p className="text-xs text-center text-muted-foreground mt-1">7+ tracks</p>
           </Card>
         </div>

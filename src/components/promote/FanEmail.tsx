@@ -200,7 +200,7 @@ export function FanEmail() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">Emails go from your name, with replies to your inbox. Every email has an unsubscribe link.</p>
         <Button onClick={startNew} className="gap-1 shrink-0"><Plus className="w-4 h-4" />New email</Button>
       </div>

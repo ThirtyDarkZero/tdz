@@ -209,7 +209,7 @@ export const TerritoryRightsHub = () => {
                 onClick={() => handleOpenManager(track)}
               >
                 <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                     {/* Cover Art */}
                     <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                       {track.album?.cover_art_path ? (
@@ -238,7 +238,7 @@ export const TerritoryRightsHub = () => {
                     </div>
 
                     {/* Status Badges */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 ml-auto">
                       <Badge
                         variant={
                           (track.territories_count || 0) > 0 ? "default" : "secondary"

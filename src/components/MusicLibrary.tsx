@@ -315,7 +315,7 @@ export const MusicLibrary = ({ onPlayTrack }: MusicLibraryProps) => {
           >
             <Play className="h-4 w-4" />
           </Button>
-          <span className="text-muted-foreground w-6 group-hover:hidden text-sm">{index + 1}</span>
+          <span className="text-muted-foreground w-6 group-hover:hidden text-sm hidden sm:inline">{index + 1}</span>
           
           <CoverArt track={track} className="w-10 h-10 sm:w-12 sm:h-12 rounded object-cover flex-shrink-0" />
           
