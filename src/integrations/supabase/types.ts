@@ -2356,6 +2356,54 @@ export type Database = {
           },
         ]
       }
+      lyrics_jobs: {
+        Row: {
+          attempts: number
+          created_at: string
+          error: string | null
+          proxy_path: string | null
+          status: string
+          track_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          proxy_path?: string | null
+          status?: string
+          track_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          proxy_path?: string | null
+          status?: string
+          track_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lyrics_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: true
+            referencedRelation: "published_tracks_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lyrics_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: true
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manager_artists: {
         Row: {
           artist_id: string
