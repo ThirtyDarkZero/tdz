@@ -43,6 +43,20 @@
       "when": 1793400949242,
       "tag": "0005_auto_lyrics",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793400963679,
+      "tag": "0006_presave_signup",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793400992243,
+      "tag": "0007_splits_pipeline",
+      "breakpoints": true
     }
   ]
 }

@@ -3280,6 +3280,7 @@ export type Database = {
       presave_signups: {
         Row: {
           campaign_id: string
+          consent_at: string | null
           created_at: string
           email: string
           id: string
@@ -3289,6 +3290,7 @@ export type Database = {
         }
         Insert: {
           campaign_id: string
+          consent_at?: string | null
           created_at?: string
           email: string
           id?: string
@@ -3298,6 +3300,7 @@ export type Database = {
         }
         Update: {
           campaign_id?: string
+          consent_at?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -4533,40 +4536,61 @@ export type Database = {
       track_rights_splits: {
         Row: {
           created_at: string
+          dispute_note: string | null
           holder_email: string | null
           holder_name: string
+          holder_user_id: string | null
           id: string
           ipi_number: string | null
           is_verified: boolean
           pro_affiliation: string | null
+          responded_at: string | null
           rights_type: string
+          role: string | null
+          sent_at: string | null
           split_percentage: number
+          status: string
+          token: string
           track_id: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          dispute_note?: string | null
           holder_email?: string | null
           holder_name: string
+          holder_user_id?: string | null
           id?: string
           ipi_number?: string | null
           is_verified?: boolean
           pro_affiliation?: string | null
+          responded_at?: string | null
           rights_type: string
+          role?: string | null
+          sent_at?: string | null
           split_percentage: number
+          status?: string
+          token?: string
           track_id: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          dispute_note?: string | null
           holder_email?: string | null
           holder_name?: string
+          holder_user_id?: string | null
           id?: string
           ipi_number?: string | null
           is_verified?: boolean
           pro_affiliation?: string | null
+          responded_at?: string | null
           rights_type?: string
+          role?: string | null
+          sent_at?: string | null
           split_percentage?: number
+          status?: string
+          token?: string
           track_id?: string
           updated_at?: string
         }
@@ -5461,6 +5485,7 @@ export type Database = {
         Args: { p_event_id: string; p_event_type?: string; p_key: string }
         Returns: boolean
       }
+      copy_splits: { Args: { p_from: string; p_to: string[] }; Returns: number }
       create_system_notification: {
         Args: {
           p_message: string
@@ -5550,6 +5575,19 @@ export type Database = {
           top_failure: string
         }[]
       }
+      get_split_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          artist_name: string
+          holder_name: string
+          others: Json
+          rights_type: string
+          role: string
+          split_percentage: number
+          status: string
+          track_title: string
+        }[]
+      }
       get_user_plan: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["subscription_plan"]
@@ -5590,6 +5628,10 @@ export type Database = {
         }
         Returns: number
       }
+      presave_signup: {
+        Args: { p_email: string; p_platforms?: Json; p_slug: string }
+        Returns: string
+      }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
@@ -5620,12 +5662,27 @@ export type Database = {
         Args: { p_accept: boolean; p_token: string }
         Returns: string
       }
+      respond_to_split: {
+        Args: { p_confirm: boolean; p_note?: string; p_token: string }
+        Returns: string
+      }
       sigma_level: { Args: { p_dpmo: number }; Returns: number }
       smart_link_stats: {
         Args: { p_link: string }
         Returns: {
           clicks: number
           platform: string
+        }[]
+      }
+      split_overview: {
+        Args: never
+        Returns: {
+          confirmed: number
+          disputed: number
+          holders: number
+          rights_type: string
+          total: number
+          track_id: string
         }[]
       }
       update_artist_monthly_listeners: { Args: never; Returns: undefined }
