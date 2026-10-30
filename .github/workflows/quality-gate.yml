@@ -55,7 +55,7 @@ jobs:
         run: |
           set +e
           # Edge functions don't use the app's package.json; stop Deno looking for its node_modules.
-          DENO_NO_PACKAGE_JSON=1 deno test --allow-env --no-lock supabase/functions/_shared/ 2>&1 | tee deno-test.log
+          DENO_NO_PACKAGE_JSON=1 deno test --allow-env --no-lock supabase/functions/_shared/ supabase/functions/*/lib_test.ts 2>&1 | tee deno-test.log
           status=${PIPESTATUS[0]}
           if [ "$status" != 0 ]; then
             # Surface the failure as annotations so it's readable from the PR checks.

@@ -103,6 +103,24 @@ const generateUPC = () => {
   return fullUpc + checkDigit;
 };
 
+/** Fill the optional business fields from the artist's own name when left blank. */
+export function withDefaults(m: TrackMetadata): TrackMetadata {
+  const artist = m.artistName.trim();
+  const year = m.copyrightYear || new Date().getFullYear();
+  const hasCredits = m.credits.writers.length + m.credits.producers.length + m.credits.performers.length > 0;
+  const self = (role: Contributor['role']): Contributor => ({ id: `self-${role}`, name: artist, role, split: 100 });
+  return {
+    ...m,
+    label: m.label.trim() || artist,
+    copyrightOwner: m.copyrightOwner.trim() || artist,
+    copyrightYear: year,
+    pLine: m.pLine.trim() || (artist ? `℗ ${year} ${m.copyrightOwner.trim() || artist}` : ''),
+    cLine: m.cLine.trim() || (artist ? `© ${year} ${m.copyrightOwner.trim() || artist}` : ''),
+    credits: hasCredits || !artist ? m.credits : { ...m.credits, writers: [self('writer')], performers: [self('performer')] },
+    publishingInfo: { ...m.publishingInfo, pro: m.publishingInfo.pro ?? 'other' },
+  };
+}
+
 const defaultMetadata: TrackMetadata = {
   title: '',
   artistName: '',
@@ -153,39 +171,21 @@ export const TrackMetadataForm = ({
     split: 0
   });
 
-  // Validation
+  // Only what a first-time artist can always answer is required. Label,
+  // copyright owner, credits and PRO default sensibly (see withDefaults) and
+  // can be filled in properly later.
   const getValidationErrors = () => {
     const errors: string[] = [];
-    
     if (!metadata.title.trim()) errors.push('Track title is required');
     if (!metadata.artistName.trim()) errors.push('Artist name is required');
-    if (!metadata.label.trim()) errors.push('Label is required');
-    if (!metadata.copyrightOwner.trim()) errors.push('Copyright owner is required');
-    if (!metadata.copyrightYear) errors.push('Copyright year is required');
     if (!metadata.genre) errors.push('Genre is required');
-    
-    // Check for at least one contributor
-    const totalContributors = 
-      metadata.credits.writers.length + 
-      metadata.credits.producers.length + 
-      metadata.credits.performers.length;
-    
-    if (totalContributors === 0) {
-      errors.push('At least one credit (writer, producer, or performer) is required');
-    }
-    
-    // Check publishing info
-    if (!metadata.publishingInfo.pro) {
-      errors.push('Performance Rights Organization (PRO) is required');
-    }
-    
     return errors;
   };
 
   const isComplete = getValidationErrors().length === 0;
 
   useEffect(() => {
-    onMetadataChange(metadata, isComplete);
+    onMetadataChange(withDefaults(metadata), isComplete);
   }, [metadata, isComplete, onMetadataChange]);
 
   const updateMetadata = (updates: Partial<TrackMetadata>) => {
@@ -322,7 +322,7 @@ export const TrackMetadataForm = ({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-xs">Label *</Label>
+                <Label className="text-xs">Label (optional — defaults to your artist name)</Label>
                 <Input
                   value={metadata.label}
                   onChange={(e) => updateMetadata({ label: e.target.value })}
@@ -499,7 +499,7 @@ export const TrackMetadataForm = ({
                 </p>
               </div>
               <div>
-                <Label className="text-xs">UPC *</Label>
+                <Label className="text-xs">UPC (auto-generated)</Label>
                 <Input
                   value={metadata.upc}
                   onChange={(e) => updateMetadata({ upc: e.target.value })}
@@ -515,7 +515,7 @@ export const TrackMetadataForm = ({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-xs">Copyright Owner *</Label>
+                <Label className="text-xs">Copyright Owner (optional — defaults to you)</Label>
                 <Input
                   value={metadata.copyrightOwner}
                   onChange={(e) => updateMetadata({ copyrightOwner: e.target.value })}
@@ -526,7 +526,7 @@ export const TrackMetadataForm = ({
                 />
               </div>
               <div>
-                <Label className="text-xs">Copyright Year *</Label>
+                <Label className="text-xs">Copyright Year</Label>
                 <Input
                   type="number"
                   value={metadata.copyrightYear}
@@ -667,7 +667,7 @@ export const TrackMetadataForm = ({
           {/* Publishing Tab */}
           <TabsContent value="publishing" className="space-y-4 mt-0">
             <div>
-              <Label className="text-xs">Performance Rights Organization (PRO) *</Label>
+              <Label className="text-xs">Performance Rights Organization (PRO, optional)</Label>
               <Select
                 value={metadata.publishingInfo.pro || ''}
                 onValueChange={(v: 'bmi' | 'ascap' | 'sesac' | 'other') => 

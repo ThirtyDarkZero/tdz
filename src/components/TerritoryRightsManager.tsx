@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SplitSheet } from "@/components/SplitSheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -45,6 +46,7 @@ interface RightsSplit {
 interface TerritoryRightsManagerProps {
   trackId: string;
   trackTitle: string;
+  albumId?: string | null;
   onClose?: () => void;
 }
 
@@ -104,7 +106,7 @@ const PRO_OPTIONS = [
   { value: "other", label: "Other" },
 ];
 
-export const TerritoryRightsManager = ({ trackId, trackTitle, onClose }: TerritoryRightsManagerProps) => {
+export const TerritoryRightsManager = ({ trackId, trackTitle, albumId, onClose }: TerritoryRightsManagerProps) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [territories, setTerritories] = useState<TrackTerritory[]>([]);
@@ -233,30 +235,7 @@ export const TerritoryRightsManager = ({ trackId, trackTitle, onClose }: Territo
         .from("track_territories")
         .insert(territoryInserts);
 
-      // Save rights splits - delete existing and insert new
-      await supabase
-        .from("track_rights_splits")
-        .delete()
-        .eq("track_id", trackId);
-
-      if (rightsSplits.length > 0) {
-        const splitInserts = rightsSplits.map(s => ({
-          track_id: trackId,
-          rights_type: s.rights_type,
-          holder_name: s.holder_name,
-          holder_email: s.holder_email,
-          split_percentage: s.split_percentage,
-          pro_affiliation: s.pro_affiliation,
-          ipi_number: s.ipi_number,
-          is_verified: s.is_verified
-        }));
-
-        await supabase
-          .from("track_rights_splits")
-          .insert(splitInserts);
-      }
-
-      toast.success("Territory & rights saved successfully");
+      toast.success("Territories saved");
       onClose?.();
     } catch (error) {
       console.error("Error saving:", error);
@@ -381,196 +360,7 @@ export const TerritoryRightsManager = ({ trackId, trackTitle, onClose }: Territo
 
         {/* Rights Splits Tab */}
         <TabsContent value="rights" className="space-y-4">
-          {/* Split Summary */}
-          <div className="grid grid-cols-3 gap-4">
-            {(['master', 'publishing', 'performance'] as const).map(type => (
-              <Card key={type} className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium capitalize">{type}</span>
-                  <Badge variant={getSplitTotal(type) === 100 ? "default" : "destructive"}>
-                    {getSplitTotal(type)}%
-                  </Badge>
-                </div>
-                <Progress value={getSplitTotal(type)} className="h-2" />
-                {getSplitTotal(type) !== 100 && getSplitTotal(type) > 0 && (
-                  <p className="text-xs text-destructive mt-1">
-                    Must equal 100%
-                  </p>
-                )}
-              </Card>
-            ))}
-          </div>
-
-          {/* Add Split Button */}
-          <Dialog open={showAddSplit} onOpenChange={setShowAddSplit}>
-            <DialogTrigger asChild>
-              <Button className="w-full" variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Rights Holder
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Rights Holder</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Rights Type *</Label>
-                    <Select 
-                      value={newSplit.rights_type} 
-                      onValueChange={(v: any) => setNewSplit({ ...newSplit, rights_type: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="master">Master Rights</SelectItem>
-                        <SelectItem value="publishing">Publishing Rights</SelectItem>
-                        <SelectItem value="performance">Performance Rights</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Split Percentage *</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={newSplit.split_percentage}
-                      onChange={(e) => setNewSplit({ ...newSplit, split_percentage: parseFloat(e.target.value) || 0 })}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Holder Name *</Label>
-                  <Input
-                    value={newSplit.holder_name}
-                    onChange={(e) => setNewSplit({ ...newSplit, holder_name: e.target.value })}
-                    placeholder="Rights holder name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input
-                    type="email"
-                    value={newSplit.holder_email}
-                    onChange={(e) => setNewSplit({ ...newSplit, holder_email: e.target.value })}
-                    placeholder="holder@email.com"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>PRO Affiliation</Label>
-                    <Select 
-                      value={newSplit.pro_affiliation || ''} 
-                      onValueChange={(v) => setNewSplit({ ...newSplit, pro_affiliation: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select PRO" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PRO_OPTIONS.map(pro => (
-                          <SelectItem key={pro.value} value={pro.value}>{pro.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>IPI Number</Label>
-                    <Input
-                      value={newSplit.ipi_number}
-                      onChange={(e) => setNewSplit({ ...newSplit, ipi_number: e.target.value })}
-                      placeholder="IPI/CAE Number"
-                    />
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowAddSplit(false)}>Cancel</Button>
-                <Button onClick={handleAddSplit}>Add Holder</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* Existing Splits */}
-          {rightsSplits.length === 0 ? (
-            <Card className="p-8 text-center">
-              <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="font-semibold mb-2">No Rights Holders Added</h3>
-              <p className="text-sm text-muted-foreground">
-                Add rights holders to define master, publishing, and performance splits
-              </p>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {(['master', 'publishing', 'performance'] as const).map(type => {
-                const typeSplits = rightsSplits.filter(s => s.rights_type === type);
-                if (typeSplits.length === 0) return null;
-                
-                return (
-                  <Card key={type} className="p-4">
-                    <h4 className="font-semibold mb-3 capitalize flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-primary" />
-                      {type} Rights
-                    </h4>
-                    <div className="space-y-2">
-                      {typeSplits.map(split => (
-                        <div 
-                          key={split.id}
-                          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                              <Users className="w-5 h-5 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-medium">{split.holder_name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {split.pro_affiliation?.toUpperCase() || 'No PRO'} 
-                                {split.ipi_number && ` · IPI: ${split.ipi_number}`}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <Badge variant="secondary" className="text-lg font-bold">
-                              {split.split_percentage}%
-                            </Badge>
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => handleRemoveSplit(split.id!)}
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Validation Warning */}
-          {rightsSplits.length > 0 && (
-            getSplitTotal('master') !== 100 || 
-            getSplitTotal('publishing') !== 100 || 
-            getSplitTotal('performance') !== 100
-          ) && (
-            <Card className="p-4 border-amber-500/50 bg-amber-500/10">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-medium text-amber-500">Incomplete Rights Allocation</p>
-                  <p className="text-sm text-muted-foreground">
-                    Each rights type (Master, Publishing, Performance) should total 100% for proper royalty distribution.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          )}
+          <SplitSheet trackId={trackId} trackTitle={trackTitle} albumId={albumId} />
         </TabsContent>
       </Tabs>
     </div>

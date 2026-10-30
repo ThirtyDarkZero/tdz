@@ -1,3 +1,5 @@
+-- Supabase gives signed-in users table-wide rights on new tables by default; mirror that.
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO authenticated, anon;
 -- Invite tables, policies and triggers as they stood before 20261030120000_team_invites.
 ALTER TABLE auth.users ADD COLUMN IF NOT EXISTS email text;
 CREATE TABLE public.artist_profiles (user_id uuid PRIMARY KEY, artist_name text);
@@ -65,3 +67,34 @@ ALTER TABLE public.smart_link_clicks ENABLE ROW LEVEL SECURITY;
 GRANT SELECT, INSERT, DELETE ON public.smart_links TO authenticated;
 GRANT SELECT ON public.smart_links TO anon;
 CREATE FUNCTION public.increment_smart_link_clicks(p_short_code text) RETURNS void LANGUAGE sql AS $$ SELECT $$;
+
+-- Tracks (minimal) for the lyrics migration.
+CREATE TABLE public.tracks (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, title text NOT NULL,
+  artist_name text, file_path text NOT NULL DEFAULT 'x.mp3', duration integer DEFAULT 180, credits jsonb);
+ALTER TABLE public.tracks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "own tracks" ON public.tracks FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+-- Rights splits (20260114003231).
+CREATE TABLE public.track_rights_splits (id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  track_id uuid NOT NULL REFERENCES public.tracks(id) ON DELETE CASCADE,
+  rights_type text NOT NULL CHECK (rights_type IN ('master', 'publishing', 'performance')), holder_name text NOT NULL,
+  holder_email text, split_percentage numeric(5,2) NOT NULL CHECK (split_percentage >= 0 AND split_percentage <= 100),
+  pro_affiliation text, ipi_number text, is_verified boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
+ALTER TABLE public.track_rights_splits ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "owners manage splits" ON public.track_rights_splits FOR ALL TO authenticated
+  USING (EXISTS (SELECT 1 FROM public.tracks t WHERE t.id = track_id AND t.user_id = auth.uid()))
+  WITH CHECK (EXISTS (SELECT 1 FROM public.tracks t WHERE t.id = track_id AND t.user_id = auth.uid()));
+
+-- Pre-save tables (as created in 20260114003231) and fan contacts.
+CREATE TABLE public.presave_campaigns (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL,
+  track_id uuid, album_id uuid, campaign_name text NOT NULL, slug text NOT NULL UNIQUE, release_date date NOT NULL,
+  description text, cover_image_path text, total_presaves integer NOT NULL DEFAULT 0, is_active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE public.presave_signups (id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  campaign_id uuid NOT NULL REFERENCES public.presave_campaigns(id) ON DELETE CASCADE, email text NOT NULL, user_id uuid,
+  platform_preferences jsonb DEFAULT '[]', notified_on_release boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE public.artist_contacts (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), artist_id uuid NOT NULL, email text NOT NULL,
+  first_name text, last_name text, city text, phone text, source text DEFAULT 'manual', tags text[], subscribed boolean DEFAULT true,
+  imported_at timestamptz DEFAULT now(), created_at timestamptz DEFAULT now(), UNIQUE (artist_id, email));
+ALTER TABLE public.presave_signups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.artist_contacts ENABLE ROW LEVEL SECURITY;

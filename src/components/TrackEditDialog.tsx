@@ -1,36 +1,17 @@
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useEffect, useState } from "react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, X, Music, Users, FileText, Info, Save, Loader2 } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
+import { releaseFields, type ReleaseMode } from "@/lib/releasePlan";
 
-interface Contributor {
-  id: string;
-  name: string;
-  role: string;
-  split: number;
-}
-
-// Flexible track interface that accepts any ai_tags structure
-interface Track {
-  id: string;
-  title: string;
-  artist_name: string;
-  genre?: string;
-  lyrics?: string;
-  ai_tags?: Record<string, unknown>;
-  download_price?: number | null;
-}
+interface Track { id: string; title: string; artist_name: string }
 
 interface TrackEditDialogProps {
   track: Track | null;
@@ -39,529 +20,194 @@ interface TrackEditDialogProps {
   onSuccess: () => void;
 }
 
-// Helper to safely extract metadata from ai_tags
-const getMetadata = (aiTags?: Record<string, unknown>) => {
-  if (!aiTags || typeof aiTags !== 'object') return {};
-  const metadata = aiTags.metadata;
-  if (!metadata || typeof metadata !== 'object') return {};
-  return metadata as Record<string, unknown>;
+type Form = {
+  title: string; artist_name: string; genre: string; explicit: boolean; language: string;
+  download_price: string; isrc: string; upc: string; label: string;
+  copyright_owner: string; copyright_year: string; p_line: string; c_line: string;
 };
 
+const EMPTY: Form = {
+  title: "", artist_name: "", genre: "", explicit: false, language: "English", download_price: "",
+  isrc: "", upc: "", label: "", copyright_owner: "", copyright_year: "", p_line: "", c_line: "",
+};
+
+const ISRC = /^[A-Z]{2}-?[A-Z0-9]{3}-?\d{2}-?\d{5}$/i;
+const UPC = /^\d{12,13}$/;
+
+/** Problems with the form, keyed by field. Empty object means it can be saved. */
+export function validateTrackForm(f: Form, mode: ReleaseMode, date: string): Partial<Record<keyof Form | "date", string>> {
+  const e: Partial<Record<keyof Form | "date", string>> = {};
+  if (!f.title.trim()) e.title = "Add a title.";
+  if (!f.artist_name.trim()) e.artist_name = "Add the artist name.";
+  if (f.isrc && !ISRC.test(f.isrc.trim())) e.isrc = "ISRCs look like US-ABC-26-00001 (12 letters and numbers).";
+  if (f.upc && !UPC.test(f.upc.trim())) e.upc = "UPCs are 12 or 13 digits.";
+  if (f.download_price && !(Number(f.download_price) >= 0.5 && Number(f.download_price) <= 100)) {
+    e.download_price = "Use a price from $0.50 to $100, or leave it blank for no downloads.";
+  }
+  if (f.copyright_year && !/^(19|20)\d{2}$/.test(f.copyright_year)) e.copyright_year = "Use a 4-digit year.";
+  if (mode === "scheduled" && !date) e.date = "Pick a release date.";
+  return e;
+}
+
+/** Edit a track's details in one place. Writes the same fields the uploader saves. */
 export const TrackEditDialog = ({ track, open, onOpenChange, onSuccess }: TrackEditDialogProps) => {
-  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const [form, setForm] = useState<Form>(EMPTY);
+  const [mode, setMode] = useState<ReleaseMode>("draft");
+  const [date, setDate] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [showCodes, setShowCodes] = useState(false);
+  const [touched, setTouched] = useState(false);
 
-  // Basic Info
-  const [title, setTitle] = useState("");
-  const [artistName, setArtistName] = useState("");
-  const [genre, setGenre] = useState("");
-  const [explicitContent, setExplicitContent] = useState("no");
-  const [language, setLanguage] = useState("en");
-  const [description, setDescription] = useState("");
-
-  // Lyrics
-  const [lyrics, setLyrics] = useState("");
-
-  // Credits & Publishing
-  const [isrc, setIsrc] = useState("");
-  const [upc, setUpc] = useState("");
-  const [copyrightYear, setCopyrightYear] = useState(new Date().getFullYear().toString());
-  const [copyrightHolder, setCopyrightHolder] = useState("");
-  const [pLine, setPLine] = useState("");
-  const [cLine, setCLine] = useState("");
-
-  // Contributors
-  const [contributors, setContributors] = useState<Contributor[]>([]);
-  const [newContributor, setNewContributor] = useState({ name: "", role: "", split: 0 });
-
-  // Pricing
-  const [downloadPrice, setDownloadPrice] = useState<string>("");
-
-  // Update form fields when track changes
   useEffect(() => {
-    if (track) {
-      setTitle(track.title);
-      setArtistName(track.artist_name);
-      setGenre(track.genre || "");
-      setLyrics(track.lyrics || "");
-      setDownloadPrice(track.download_price ? track.download_price.toString() : "");
-
-      const metadata = getMetadata(track.ai_tags);
-      setIsrc(String(metadata.isrc || ""));
-      setUpc(String(metadata.upc || ""));
-      setCopyrightYear(String(metadata.copyrightYear || new Date().getFullYear()));
-      setCopyrightHolder(String(metadata.copyrightHolder || ""));
-      setPLine(String(metadata.pLine || ""));
-      setCLine(String(metadata.cLine || ""));
-      setExplicitContent(String(metadata.explicitContent || "no"));
-      setLanguage(String(metadata.language || "en"));
-      setDescription(String(metadata.description || ""));
-      setContributors(Array.isArray(metadata.contributors) ? metadata.contributors as Contributor[] : []);
-    }
-  }, [track]);
-
-  const addContributor = () => {
-    if (!newContributor.name || !newContributor.role) {
-      toast({ title: "Please complete contributor name and role", variant: "destructive" });
-      return;
-    }
-
-    const totalSplit = contributors.reduce((sum, c) => sum + c.split, 0) + newContributor.split;
-    if (totalSplit > 100) {
-      toast({ title: "Total splits cannot exceed 100%", variant: "destructive" });
-      return;
-    }
-
-    setContributors([...contributors, {
-      id: crypto.randomUUID(),
-      name: newContributor.name,
-      role: newContributor.role,
-      split: newContributor.split
-    }]);
-    setNewContributor({ name: "", role: "", split: 0 });
-  };
-
-  const removeContributor = (id: string) => {
-    setContributors(contributors.filter(c => c.id !== id));
-  };
-
-  const handleSave = async () => {
-    if (!track) return;
-
-    setSaving(true);
-    try {
-      const existingTags = (track.ai_tags && typeof track.ai_tags === 'object') ? track.ai_tags : {};
-      const existingMetadata = getMetadata(track.ai_tags);
-
-      const updatedAiTags = {
-        ...existingTags,
-        metadata: {
-          ...existingMetadata,
-          isrc,
-          upc,
-          copyrightYear,
-          copyrightHolder,
-          pLine,
-          cLine,
-          explicitContent,
-          language,
-          description,
-          contributors: contributors.map(c => ({ id: c.id, name: c.name, role: c.role, split: c.split }))
-        }
-      };
-
-      const priceValue = downloadPrice ? parseFloat(downloadPrice) : null;
-      
-      const { error } = await supabase
-        .from('tracks')
-        .update({
-          title: title.slice(0, 200),
-          artist_name: artistName.slice(0, 100),
-          genre: genre || null,
-          lyrics: lyrics || null,
-          ai_tags: updatedAiTags,
-          download_price: priceValue && priceValue > 0 ? priceValue : null
-        })
-        .eq('id', track.id);
-
-      if (error) throw error;
-
-      toast({ title: "Track updated successfully" });
-      onSuccess();
-      onOpenChange(false);
-    } catch (error: any) {
-      console.error('Error updating track:', error);
-      toast({
-        title: "Failed to update track",
-        description: error.message,
-        variant: "destructive"
+    if (!track || !open) return;
+    setLoading(true);
+    setTouched(false);
+    supabase.from("tracks").select("*").eq("id", track.id).maybeSingle().then(({ data: t }) => {
+      setLoading(false);
+      if (!t) return;
+      setForm({
+        title: t.title ?? "", artist_name: t.artist_name ?? "", genre: t.genre ?? "",
+        explicit: !!t.explicit, language: t.language ?? "English",
+        download_price: t.download_price ? String(t.download_price) : "",
+        isrc: t.isrc ?? "", upc: t.upc ?? "", label: t.label ?? "",
+        copyright_owner: t.copyright_owner ?? "", copyright_year: t.copyright_year ? String(t.copyright_year) : "",
+        p_line: t.p_line ?? "", c_line: t.c_line ?? "",
       });
-    } finally {
-      setSaving(false);
+      const scheduled = !t.is_published && (t.scheduled_release_date || t.release_date);
+      setMode(t.is_published ? "now" : scheduled ? "scheduled" : "draft");
+      setDate((t.scheduled_release_date || t.release_date || "") as string);
+      setShowCodes(!!(t.isrc || t.upc || t.p_line || t.c_line));
+    });
+  }, [track, open]);
+
+  const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }));
+  const errors = validateTrackForm(form, mode, date);
+  const show = (k: keyof typeof errors) => (touched && errors[k] ? <p className="text-xs text-destructive mt-1">{errors[k]}</p> : null);
+
+  const save = async () => {
+    setTouched(true);
+    if (!track || Object.keys(errors).length) {
+      if (errors.isrc || errors.upc || errors.copyright_year) setShowCodes(true);
+      return;
     }
+    setSaving(true);
+    const release = releaseFields(mode, date ? new Date(`${date}T12:00:00`) : null);
+    const price = form.download_price ? Number(form.download_price) : null;
+    const { error } = await supabase.from("tracks").update({
+      title: form.title.trim().slice(0, 200),
+      artist_name: form.artist_name.trim().slice(0, 100),
+      genre: form.genre.trim() || null,
+      explicit: form.explicit,
+      language: form.language.trim() || null,
+      download_price: price,
+      isrc: form.isrc.trim().toUpperCase().replace(/-/g, "") || null,
+      upc: form.upc.trim() || null,
+      label: form.label.trim() || null,
+      copyright_owner: form.copyright_owner.trim() || null,
+      copyright_year: form.copyright_year ? Number(form.copyright_year) : null,
+      p_line: form.p_line.trim() || null,
+      c_line: form.c_line.trim() || null,
+      ...release,
+    } as never).eq("id", track.id);
+    setSaving(false);
+    if (error) {
+      toast({ title: "Couldn't save the track", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: release.is_published ? "Saved — the track is live" : release.release_date ? "Saved — release scheduled" : "Saved as a draft" });
+    onSuccess();
+    onOpenChange(false);
   };
 
   if (!track) return null;
 
-  const totalSplit = contributors.reduce((sum, c) => sum + c.split, 0);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh]">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Music className="w-5 h-5 text-primary" />
-            Edit Track Metadata
-          </DialogTitle>
+          <DialogTitle>Edit track</DialogTitle>
+          <DialogDescription>
+            Lyrics are under Music &gt; Lyrics. Writers and splits are under Music &gt; Rights &amp; Territories.
+          </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="basic" className="gap-1.5">
-              <Info className="w-3.5 h-3.5" />
-              Basic
-            </TabsTrigger>
-            <TabsTrigger value="lyrics" className="gap-1.5">
-              <FileText className="w-3.5 h-3.5" />
-              Lyrics
-            </TabsTrigger>
-            <TabsTrigger value="credits" className="gap-1.5">
-              <Music className="w-3.5 h-3.5" />
-              Credits
-            </TabsTrigger>
-            <TabsTrigger value="contributors" className="gap-1.5">
-              <Users className="w-3.5 h-3.5" />
-              Splits
-            </TabsTrigger>
-          </TabsList>
-
-          <ScrollArea className="h-[400px] mt-4 pr-4">
-            {/* Basic Info Tab */}
-            <TabsContent value="basic" className="space-y-4 mt-0">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-title">Track Title *</Label>
-                  <Input
-                    id="edit-title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Song name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-artist">Artist Name *</Label>
-                  <Input
-                    id="edit-artist"
-                    value={artistName}
-                    onChange={(e) => setArtistName(e.target.value)}
-                    placeholder="Your artist name"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-genre">Genre</Label>
-                  <Select value={genre} onValueChange={setGenre}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select genre" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pop">Pop</SelectItem>
-                      <SelectItem value="rock">Rock</SelectItem>
-                      <SelectItem value="hip-hop">Hip Hop</SelectItem>
-                      <SelectItem value="electronic">Electronic</SelectItem>
-                      <SelectItem value="jazz">Jazz</SelectItem>
-                      <SelectItem value="classical">Classical</SelectItem>
-                      <SelectItem value="country">Country</SelectItem>
-                      <SelectItem value="r&b">R&B</SelectItem>
-                      <SelectItem value="indie">Indie</SelectItem>
-                      <SelectItem value="ai-generated">AI-Generated</SelectItem>
-                      <SelectItem value="ai-assisted">AI-Assisted</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="edit-language">Language</Label>
-                  <Select value={language} onValueChange={setLanguage}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select language" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="es">Spanish</SelectItem>
-                      <SelectItem value="fr">French</SelectItem>
-                      <SelectItem value="de">German</SelectItem>
-                      <SelectItem value="pt">Portuguese</SelectItem>
-                      <SelectItem value="ja">Japanese</SelectItem>
-                      <SelectItem value="ko">Korean</SelectItem>
-                      <SelectItem value="zh">Chinese</SelectItem>
-                      <SelectItem value="instrumental">Instrumental</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
+        {loading ? (
+          <div className="py-12 grid place-items-center"><Loader2 className="w-5 h-5 animate-spin" aria-label="Loading" /></div>
+        ) : (
+          <form className="grid gap-5" onSubmit={(e) => { e.preventDefault(); save(); }}>
+            <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <Label htmlFor="edit-explicit">Explicit Content</Label>
-                <Select value={explicitContent} onValueChange={setExplicitContent}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="no">No explicit content</SelectItem>
-                    <SelectItem value="yes">Contains explicit content</SelectItem>
-                    <SelectItem value="clean">Clean version</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="te-title">Title</Label>
+                <Input id="te-title" value={form.title} onChange={(e) => set("title", e.target.value)} className="mt-1" />
+                {show("title")}
               </div>
-
               <div>
-                <Label htmlFor="edit-description">Description</Label>
-                <Textarea
-                  id="edit-description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Tell listeners about this track..."
-                  rows={3}
-                />
+                <Label htmlFor="te-artist">Artist</Label>
+                <Input id="te-artist" value={form.artist_name} onChange={(e) => set("artist_name", e.target.value)} className="mt-1" />
+                {show("artist_name")}
               </div>
-
-              <Separator />
-
               <div>
-                <Label htmlFor="edit-download-price">Download Price (USD)</Label>
-                <Input
-                  id="edit-download-price"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={downloadPrice}
-                  onChange={(e) => setDownloadPrice(e.target.value)}
-                  placeholder="0.00 = Free download"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Leave empty or set to 0 for free downloads. Set a price to require purchase.
-                </p>
+                <Label htmlFor="te-genre">Genre</Label>
+                <Input id="te-genre" value={form.genre} onChange={(e) => set("genre", e.target.value)} className="mt-1" placeholder="Hip-Hop" />
               </div>
-            </TabsContent>
-
-            {/* Lyrics Tab */}
-            <TabsContent value="lyrics" className="space-y-4 mt-0">
               <div>
-                <Label htmlFor="edit-lyrics" className="flex items-center justify-between">
-                  <span>Lyrics</span>
-                  <span className="text-xs text-muted-foreground">
-                    {lyrics.length} characters
-                  </span>
-                </Label>
-                <Textarea
-                  id="edit-lyrics"
-                  value={lyrics}
-                  onChange={(e) => setLyrics(e.target.value)}
-                  placeholder="Enter your lyrics here...
-
-[Verse 1]
-...
-
-[Chorus]
-...
-
-[Verse 2]
-..."
-                  rows={16}
-                  className="font-mono text-sm"
-                />
-                <p className="text-xs text-muted-foreground mt-2">
-                  Add lyrics with section markers like [Verse], [Chorus], [Bridge] for better formatting
-                </p>
+                <Label htmlFor="te-lang">Language</Label>
+                <Input id="te-lang" value={form.language} onChange={(e) => set("language", e.target.value)} className="mt-1" />
               </div>
-            </TabsContent>
+            </div>
+            <label className="flex items-center justify-between gap-3 text-sm">
+              <span>Explicit lyrics</span>
+              <Switch checked={form.explicit} onCheckedChange={(v) => set("explicit", v)} aria-label="Explicit lyrics" />
+            </label>
 
-            {/* Credits Tab */}
-            <TabsContent value="credits" className="space-y-4 mt-0">
-              <div className="grid grid-cols-2 gap-4">
+            <fieldset className="grid gap-3">
+              <legend className="text-sm font-medium mb-2">Release</legend>
+              <RadioGroup value={mode} onValueChange={(v) => setMode(v as ReleaseMode)} className="grid grid-cols-3 gap-2">
+                {([["now", "Live"], ["scheduled", "Scheduled"], ["draft", "Draft"]] as const).map(([v, l]) => (
+                  <Label key={v} htmlFor={`te-mode-${v}`} className={`flex items-center gap-2 rounded-md border p-2.5 cursor-pointer font-normal ${mode === v ? "border-primary bg-primary/5" : ""}`}>
+                    <RadioGroupItem id={`te-mode-${v}`} value={v} />{l}
+                  </Label>
+                ))}
+              </RadioGroup>
+              {mode === "scheduled" && (
                 <div>
-                  <Label htmlFor="edit-isrc">ISRC Code</Label>
-                  <Input
-                    id="edit-isrc"
-                    value={isrc}
-                    onChange={(e) => setIsrc(e.target.value)}
-                    placeholder="e.g., USRC17607839"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    International Standard Recording Code
-                  </p>
+                  <Label htmlFor="te-date">Release date</Label>
+                  <Input id="te-date" type="date" value={date} min={new Date().toISOString().slice(0, 10)} onChange={(e) => setDate(e.target.value)} className="mt-1" />
+                  {show("date")}
                 </div>
-                <div>
-                  <Label htmlFor="edit-upc">UPC/EAN</Label>
-                  <Input
-                    id="edit-upc"
-                    value={upc}
-                    onChange={(e) => setUpc(e.target.value)}
-                    placeholder="e.g., 012345678905"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Universal Product Code
-                  </p>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-copyright-year">Copyright Year</Label>
-                  <Input
-                    id="edit-copyright-year"
-                    value={copyrightYear}
-                    onChange={(e) => setCopyrightYear(e.target.value)}
-                    placeholder="2024"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-copyright-holder">Copyright Holder</Label>
-                  <Input
-                    id="edit-copyright-holder"
-                    value={copyrightHolder}
-                    onChange={(e) => setCopyrightHolder(e.target.value)}
-                    placeholder="Your name or label"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-pline">℗ Line (Sound Recording)</Label>
-                  <Input
-                    id="edit-pline"
-                    value={pLine}
-                    onChange={(e) => setPLine(e.target.value)}
-                    placeholder="℗ 2024 Label Name"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Who owns the sound recording
-                  </p>
-                </div>
-                <div>
-                  <Label htmlFor="edit-cline">© Line (Composition)</Label>
-                  <Input
-                    id="edit-cline"
-                    value={cLine}
-                    onChange={(e) => setCLine(e.target.value)}
-                    placeholder="© 2024 Publisher Name"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Who owns the composition
-                  </p>
-                </div>
-              </div>
-            </TabsContent>
-
-            {/* Contributors Tab */}
-            <TabsContent value="contributors" className="space-y-4 mt-0">
-              <Card className="p-4 border-dashed">
-                <h4 className="font-medium mb-3">Add Contributor</h4>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <Label>Name</Label>
-                    <Input
-                      value={newContributor.name}
-                      onChange={(e) => setNewContributor({ ...newContributor, name: e.target.value })}
-                      placeholder="Contributor name"
-                    />
-                  </div>
-                  <div>
-                    <Label>Role</Label>
-                    <Select
-                      value={newContributor.role}
-                      onValueChange={(v) => setNewContributor({ ...newContributor, role: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="writer">Songwriter</SelectItem>
-                        <SelectItem value="composer">Composer</SelectItem>
-                        <SelectItem value="producer">Producer</SelectItem>
-                        <SelectItem value="featured">Featured Artist</SelectItem>
-                        <SelectItem value="mixer">Mixing Engineer</SelectItem>
-                        <SelectItem value="master">Mastering Engineer</SelectItem>
-                        <SelectItem value="performer">Performer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Split %</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={newContributor.split}
-                        onChange={(e) => setNewContributor({ ...newContributor, split: Number(e.target.value) })}
-                        placeholder="0"
-                      />
-                      <Button size="icon" onClick={addContributor}>
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-
-              {contributors.length > 0 ? (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium">Contributors</h4>
-                    <Badge variant={totalSplit === 100 ? "default" : "secondary"}>
-                      {totalSplit}% allocated
-                    </Badge>
-                  </div>
-                  {contributors.map((contributor) => (
-                    <Card key={contributor.id} className="p-3 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Users className="w-4 h-4 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{contributor.name}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{contributor.role}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Badge variant="outline">{contributor.split}%</Badge>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => removeContributor(contributor.id)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
-                  {totalSplit !== 100 && totalSplit > 0 && (
-                    <p className="text-xs text-amber-500">
-                      Publishing splits should total 100% for proper royalty distribution
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <Card className="p-6 text-center border-dashed">
-                  <Users className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    No contributors added yet
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Add songwriters, producers, and collaborators above
-                  </p>
-                </Card>
               )}
-            </TabsContent>
-          </ScrollArea>
-        </Tabs>
+              <div>
+                <Label htmlFor="te-price">Download price (USD, optional)</Label>
+                <Input id="te-price" inputMode="decimal" value={form.download_price} onChange={(e) => set("download_price", e.target.value)} className="mt-1" placeholder="1.29" />
+                {show("download_price")}
+                <p className="text-xs text-muted-foreground mt-1">You keep 100% of download sales. Leave blank to stream only.</p>
+              </div>
+            </fieldset>
 
-        <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={saving} className="gap-2">
-            {saving ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                Save Changes
-              </>
-            )}
-          </Button>
-        </DialogFooter>
+            <Collapsible open={showCodes} onOpenChange={setShowCodes}>
+              <CollapsibleTrigger className="flex w-full items-center justify-between text-sm font-medium py-1">
+                Codes and copyright
+                <ChevronDown className={`w-4 h-4 transition-transform ${showCodes ? "rotate-180" : ""}`} />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="grid gap-4 sm:grid-cols-2 pt-3">
+                <div><Label htmlFor="te-isrc">ISRC</Label><Input id="te-isrc" value={form.isrc} onChange={(e) => set("isrc", e.target.value)} className="mt-1" placeholder="USABC2600001" />{show("isrc")}</div>
+                <div><Label htmlFor="te-upc">UPC</Label><Input id="te-upc" inputMode="numeric" value={form.upc} onChange={(e) => set("upc", e.target.value)} className="mt-1" />{show("upc")}</div>
+                <div><Label htmlFor="te-owner">Copyright owner</Label><Input id="te-owner" value={form.copyright_owner} onChange={(e) => set("copyright_owner", e.target.value)} className="mt-1" /></div>
+                <div><Label htmlFor="te-year">Copyright year</Label><Input id="te-year" inputMode="numeric" value={form.copyright_year} onChange={(e) => set("copyright_year", e.target.value)} className="mt-1" />{show("copyright_year")}</div>
+                <div><Label htmlFor="te-pline">℗ line (recording)</Label><Input id="te-pline" value={form.p_line} onChange={(e) => set("p_line", e.target.value)} className="mt-1" /></div>
+                <div><Label htmlFor="te-cline">© line (song)</Label><Input id="te-cline" value={form.c_line} onChange={(e) => set("c_line", e.target.value)} className="mt-1" /></div>
+                <div className="sm:col-span-2"><Label htmlFor="te-label">Label</Label><Input id="te-label" value={form.label} onChange={(e) => set("label", e.target.value)} className="mt-1" /></div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
+              <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+            </DialogFooter>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
