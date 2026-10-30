@@ -78,6 +78,13 @@
       "when": 1793401063714,
       "tag": "0010_ad_agents",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793401080024,
+      "tag": "0011_grants_for_new_feature_tables",
+      "breakpoints": true
     }
   ]
 }
