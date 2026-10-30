@@ -11,8 +11,8 @@ import "../_shared/aiFallback.ts";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from "../_shared/cors.ts";
 import { dayOf, decrypt, encrypt, optimize, phaseOn, planCampaign, splitBudget, summarize, todaysBudgetCents, type Decision, type Plan } from "../_shared/adAgentLib.ts";
-import { metaInsights, metaLaunch, metaSetDailyBudget, metaSetStatus } from "./meta.ts";
-import { googleInsights, googleLaunch, googleRefresh, googleSetBudget, googleSetStatus } from "./google.ts";
+import { metaInsights, metaLaunch, metaSetDailyBudget, metaSetStatus } from "../_shared/adMeta.ts";
+import { googleInsights, googleLaunch, googleRefresh, googleSetBudget, googleSetStatus } from "../_shared/adGoogle.ts";
 
 type Campaign = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 const KEY = () => Deno.env.get("ADS_TOKEN_KEY") ?? "";
