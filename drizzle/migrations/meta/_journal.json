@@ -29,6 +29,13 @@
       "when": 1793400637232,
       "tag": "0003_team_invites",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793400917607,
+      "tag": "0004_smart_links",
+      "breakpoints": true
     }
   ]
 }

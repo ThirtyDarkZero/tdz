@@ -3680,6 +3680,7 @@ export type Database = {
           country: string | null
           id: string
           platform: string | null
+          referrer: string | null
           smart_link_id: string
           user_agent: string | null
         }
@@ -3688,6 +3689,7 @@ export type Database = {
           country?: string | null
           id?: string
           platform?: string | null
+          referrer?: string | null
           smart_link_id: string
           user_agent?: string | null
         }
@@ -3696,6 +3698,7 @@ export type Database = {
           country?: string | null
           id?: string
           platform?: string | null
+          referrer?: string | null
           smart_link_id?: string
           user_agent?: string | null
         }
@@ -3711,34 +3714,43 @@ export type Database = {
       }
       smart_links: {
         Row: {
+          artwork_url: string | null
           clicks: number | null
           created_at: string
+          description: string | null
           id: string
+          platforms: Json
           short_code: string
-          target_id: string
-          target_type: string
+          target_id: string | null
+          target_type: string | null
           title: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          artwork_url?: string | null
           clicks?: number | null
           created_at?: string
+          description?: string | null
           id?: string
+          platforms?: Json
           short_code: string
-          target_id: string
-          target_type: string
+          target_id?: string | null
+          target_type?: string | null
           title?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          artwork_url?: string | null
           clicks?: number | null
           created_at?: string
+          description?: string | null
           id?: string
+          platforms?: Json
           short_code?: string
-          target_id?: string
-          target_type?: string
+          target_id?: string | null
+          target_type?: string | null
           title?: string | null
           updated_at?: string
           user_id?: string
@@ -5508,10 +5520,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      increment_smart_link_clicks: {
-        Args: { p_short_code: string }
-        Returns: undefined
-      }
       is_manager_of: {
         Args: { _artist: string; _manager: string }
         Returns: boolean
@@ -5551,11 +5559,27 @@ export type Database = {
           unpaid_earnings: number
         }[]
       }
+      record_smart_link_click: {
+        Args: {
+          p_code: string
+          p_platform: string
+          p_referrer?: string
+          p_user_agent?: string
+        }
+        Returns: undefined
+      }
       respond_to_invite: {
         Args: { p_accept: boolean; p_token: string }
         Returns: string
       }
       sigma_level: { Args: { p_dpmo: number }; Returns: number }
+      smart_link_stats: {
+        Args: { p_link: string }
+        Returns: {
+          clicks: number
+          platform: string
+        }[]
+      }
       update_artist_monthly_listeners: { Args: never; Returns: undefined }
       validate_stream: {
         Args: {
