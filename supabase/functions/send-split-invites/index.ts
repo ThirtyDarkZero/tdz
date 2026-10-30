@@ -1,5 +1,6 @@
 // Email everyone on a track's splits who hasn't confirmed yet.
 // POST { track_id } → { sent, skipped_no_email, failed }
+import "../_shared/fetchTimeout.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from "../_shared/cors.ts";
 import { requireUser } from "../_shared/auth.ts";

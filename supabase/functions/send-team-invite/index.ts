@@ -1,6 +1,7 @@
 // Create (or re-send) a team or roster invite and email it.
 // POST { email, kind?: "collaborator" | "roster", permissions?: string[], message? }
 // → { invite_id, email_status: "queued" | "failed", error? }
+import "../_shared/fetchTimeout.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from "../_shared/cors.ts";
 import { requireUser } from "../_shared/auth.ts";

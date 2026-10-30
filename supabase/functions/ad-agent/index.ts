@@ -6,6 +6,7 @@
 //   POST { action: "pause" | "resume" | "cancel", campaign_id }
 // Cron:
 //   POST { action: "optimize_all" }          → daily: pull numbers, pause losers, pace budget, report
+import "../_shared/fetchTimeout.ts";
 import "../_shared/aiFallback.ts";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from "../_shared/cors.ts";

@@ -4,6 +4,7 @@
 // POST { action: "test", campaign_id }   — artist/manager: send a test to themselves
 // POST { action: "dispatch" }            — cron: start due scheduled campaigns, continue in-progress ones
 // POST ?unsub=<token>                    — one-click unsubscribe (List-Unsubscribe-Post)
+import "../_shared/fetchTimeout.ts";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from "../_shared/cors.ts";
 import { chunk, htmlToText, personalize, wrapEmail } from "./lib.ts";

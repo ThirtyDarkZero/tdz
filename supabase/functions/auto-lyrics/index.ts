@@ -3,6 +3,7 @@
 //
 // POST { track_id }   — the track's owner (right after upload) or the server
 // POST { sweep: true } — cron: works through pending/failed jobs
+import "../_shared/fetchTimeout.ts";
 import "../_shared/aiFallback.ts";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from "../_shared/cors.ts";

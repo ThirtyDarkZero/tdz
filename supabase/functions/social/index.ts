@@ -5,6 +5,7 @@
 // POST { action: "post", artist_id?, body, platforms, media_urls, scheduled_at? } → { post }
 // POST { action: "cancel", post_id }      → { ok }
 // POST { action: "sync", artist_id? }     → refresh statuses of posts whose time has passed
+import "../_shared/fetchTimeout.ts";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from "../_shared/cors.ts";
 import { requireUser } from "../_shared/auth.ts";

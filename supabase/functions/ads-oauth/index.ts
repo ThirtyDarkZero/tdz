@@ -4,6 +4,7 @@
 // GET  ?code=…&state=…                            (provider redirect) → stores tokens, back to the Studio
 // POST { action: "choose", platform, account_id, page_id?, artist_id? } → pick which account/page to use
 // POST { action: "disconnect", platform, artist_id? }
+import "../_shared/fetchTimeout.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightWithOrigin } from "../_shared/cors.ts";
 import { requireUser } from "../_shared/auth.ts";

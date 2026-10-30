@@ -1,6 +1,7 @@
 // Resend → TDZ delivery events (delivered, opened, clicked, bounced, complained).
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
-import { verifyResendSignature } from "../fan-email/lib.ts";
+import "../_shared/fetchTimeout.ts";
+import { verifyResendSignature as verifyWebhook } from "../fan-email/lib.ts";
 
 const TRACKED = new Set(["email.delivered", "email.opened", "email.clicked", "email.bounced", "email.complained"]);
 
@@ -9,7 +10,7 @@ Deno.serve(async (req) => {
   const secret = Deno.env.get("RESEND_WEBHOOK_SECRET");
   if (!secret) return new Response("Not configured", { status: 503 });
   const raw = await req.text();
-  const ok = await verifyResendSignature(secret, {
+  const ok = await verifyWebhook(secret, {
     id: req.headers.get("svix-id"), timestamp: req.headers.get("svix-timestamp"), signature: req.headers.get("svix-signature"),
   }, raw);
   if (!ok) return new Response("Invalid signature", { status: 401 });
