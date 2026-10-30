@@ -5,10 +5,11 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN CREATE ROLE service_role; END IF;
 END $$;
 CREATE SCHEMA auth;
-CREATE TABLE auth._session (uid uuid, role text);
+CREATE TABLE auth._session (uid uuid, role text, email text);
 INSERT INTO auth._session VALUES (NULL, 'service_role');
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT uid FROM auth._session $$;
 CREATE FUNCTION auth.role() RETURNS text LANGUAGE sql STABLE AS $$ SELECT role FROM auth._session $$;
+CREATE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql STABLE AS $$ SELECT jsonb_build_object('email', email, 'role', role) FROM auth._session $$;
 CREATE TABLE auth.users (id uuid PRIMARY KEY);
 CREATE TYPE public.app_role AS ENUM ('admin', 'ceo', 'artist', 'user');
 CREATE TABLE public.user_roles (user_id uuid, role public.app_role);

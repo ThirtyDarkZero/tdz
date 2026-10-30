@@ -23,4 +23,13 @@ for m in 20261027120000_fix_artist_payouts 20261027130000_six_sigma_audit_fixes 
   echo "applied $m"
 done
 psql -o /dev/null -f 10_assertions.sql 2>&1 | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +//"
+
+# Team and roster invites
+psql -f 02_invites_base.sql
+for m in 20261030120000_team_invites 20261030130000_smart_links 20261030140000_auto_lyrics 20261030150000_presave_signup 20261030160000_splits_pipeline 20261030170000_fan_email 20261030180000_social_posts 20261030190000_ad_agents; do
+  [[ " ${SKIP:-} " == *" $m "* ]] && { echo "skipped $m"; continue; }
+  psql -o /dev/null -f "$MIG/$m.sql"
+  echo "applied $m"
+done
+psql -o /dev/null -f 20_invites_assertions.sql 2>&1 | sed -E "s/^psql:[^ ]+ (NOTICE|ERROR): +//"
 echo "ALL DB TESTS PASSED"

@@ -30,6 +30,9 @@ export const LyricsSyncEditor = () => {
   const [syncIndex, setSyncIndex] = useState(0);
   const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState<"edit" | "sync">("edit");
+  const [job, setJob] = useState<{ status: string; error: string | null } | null>(null);
+  const [source, setSource] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -51,7 +54,14 @@ export const LyricsSyncEditor = () => {
   // Load existing sync data when track is selected
   useEffect(() => {
     if (!selectedTrackId) return;
+    setLines([]);
+    setRawLyrics("");
+    setMode("edit");
+    setSource(null);
     const loadExisting = async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types yet
+      const { data: j } = await (supabase as any).from("lyrics_jobs").select("status, error").eq("track_id", selectedTrackId).maybeSingle();
+      setJob(j ?? null);
       const { data } = await supabase
         .from("track_lyrics_sync")
         .select("lyrics_data")
@@ -62,7 +72,9 @@ export const LyricsSyncEditor = () => {
       if (data?.lyrics_data) {
         const parsed = data.lyrics_data as any;
         if (parsed?.lines?.length) {
+          setSource(parsed.source ?? null);
           setLines(parsed.lines);
+          setSyncIndex(parsed.lines.length);
           setRawLyrics(parsed.lines.map((l: LyricLine) => l.text).join("\n"));
           setMode("sync");
         }
@@ -88,9 +100,10 @@ export const LyricsSyncEditor = () => {
       .split("\n")
       .map(text => text.trim())
       .filter(text => text.length > 0)
-      .map(text => ({ time: -1, text }));
+      .map((text, i) => ({ time: lines[i]?.time ?? -1, text }));
     setLines(parsed);
-    setSyncIndex(0);
+    const firstUntimed = parsed.findIndex(l => l.time < 0);
+    setSyncIndex(firstUntimed < 0 ? parsed.length : firstUntimed);
     setMode("sync");
     toast.success(`${parsed.length} lines ready to sync`);
   };
@@ -147,6 +160,25 @@ export const LyricsSyncEditor = () => {
     }
   };
 
+  const redoAutomatically = async () => {
+    if (!selectedTrackId) return;
+    if (source === "artist" && !window.confirm("Replace your edited lyrics with a fresh automatic transcription?")) return;
+    setRetrying(true);
+    const { data, error } = await supabase.functions.invoke("auto-lyrics", {
+      body: { track_id: selectedTrackId, retry: true, force: source === "artist" },
+    });
+    setRetrying(false);
+    if (error) { toast.error("Couldn't start transcription. Try again in a minute."); return; }
+    const status = (data as { status?: string })?.status;
+    if (status === "done") {
+      toast.success("Lyrics transcribed. Check the words and timing.");
+      const id = selectedTrackId;
+      setSelectedTrackId("");
+      setTimeout(() => setSelectedTrackId(id), 0);
+    } else if (status === "instrumental") toast.message("No vocals found in this track.");
+    else toast.error("Transcription didn't finish. We'll keep retrying in the background.");
+  };
+
   const handleSave = async (publish: boolean) => {
     if (!selectedTrackId || lines.length === 0) return;
     setSaving(true);
@@ -157,6 +189,8 @@ export const LyricsSyncEditor = () => {
       const lyricsData = {
         lines: lines.filter(l => l.time >= 0),
         version: 1,
+        source: "artist",
+        updated_at: new Date().toISOString(),
       };
 
       const { error } = await supabase.from("track_lyrics_sync").upsert(
@@ -167,10 +201,11 @@ export const LyricsSyncEditor = () => {
           is_published: publish,
           version: 1,
         },
-        { onConflict: "track_id,user_id" }
+        { onConflict: "track_id,version" }
       );
 
       if (error) throw error;
+      setSource("artist");
       toast.success(publish ? "Lyrics published!" : "Lyrics saved as draft");
     } catch (err: any) {
       toast.error(err.message || "Failed to save");
@@ -196,7 +231,7 @@ export const LyricsSyncEditor = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Mic className="h-5 w-5 text-primary" />
-            Lyrics Sync Editor
+            Lyrics
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -211,10 +246,27 @@ export const LyricsSyncEditor = () => {
             </SelectContent>
           </Select>
 
+          {selectedTrackId && (
+            <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm">
+              <span>
+                {source === "auto" ? "Transcribed and timed automatically. Fix any words or timings, then publish."
+                  : source === "artist" ? "Your edited lyrics."
+                  : job?.status === "pending" || job?.status === "processing" ? "Transcribing this track… this usually takes a minute or two."
+                  : job?.status === "instrumental" ? "No vocals found, so there are no lyrics to time."
+                  : job?.status === "failed" || job?.status === "gave_up" ? `Automatic transcription didn't work${job.error ? `: ${job.error}` : ""}.`
+                  : "No lyrics yet."}
+              </span>
+              <Button variant="outline" size="sm" onClick={redoAutomatically} disabled={retrying} className="gap-1">
+                {retrying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
+                {source ? "Redo automatically" : "Transcribe now"}
+              </Button>
+            </div>
+          )}
+
           {selectedTrackId && mode === "edit" && (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Paste or type your lyrics below, one line per row. Then click "Prepare Sync" to start timing.
+                Paste or type your lyrics, one line per row. Lines keep their timing when you only change words.
               </p>
               <Textarea
                 value={rawLyrics}
@@ -291,9 +343,12 @@ export const LyricsSyncEditor = () => {
                     {line.time >= 0 && <Check className="h-3.5 w-3.5 text-primary flex-shrink-0" />}
 
                     {/* Text */}
-                    <span className={`flex-1 text-sm ${i === syncIndex ? "font-semibold" : ""}`}>
-                      {line.text}
-                    </span>
+                    <input
+                      aria-label={`Line ${i + 1}`}
+                      value={line.text}
+                      onChange={(e) => setLines(prev => prev.map((l, j) => j === i ? { ...l, text: e.target.value } : l))}
+                      className={`flex-1 min-w-0 bg-transparent text-sm rounded px-1 py-0.5 focus:bg-background focus:outline-none focus:ring-1 focus:ring-primary ${i === syncIndex ? "font-semibold" : ""}`}
+                    />
 
                     <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeLine(i)}>
                       <Trash2 className="h-3 w-3" />

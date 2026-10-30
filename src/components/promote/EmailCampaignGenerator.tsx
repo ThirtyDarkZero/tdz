@@ -294,6 +294,18 @@ Return a JSON object with exactly these fields:
     toast.success("Plain text exported");
   };
 
+  // Hand the draft to Promote > Fan email, which sends and tracks it.
+  const saveAsFanEmail = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || !generatedHtml) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- table not in generated types yet
+    const { error } = await (supabase as any).from("email_campaigns").insert({
+      artist_id: user.id, subject: (subject || "News from me").slice(0, 200), body_html: generatedHtml, status: "draft",
+    });
+    if (error) toast.error(`Couldn't save: ${error.message}`);
+    else toast.success("Saved as a draft. Open Promote > Fan email to send it to your list.");
+  };
+
   const copyHtml = () => {
     navigator.clipboard.writeText(generatedHtml);
     toast.success("HTML copied to clipboard");
@@ -341,19 +353,21 @@ Return a JSON object with exactly these fields:
       </div>
 
       {/* Step Progress */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2">
         {steps.map((s, i) => (
-          <div key={s.key} className="flex items-center gap-2">
+          <div key={s.key} className="flex items-center gap-1 sm:gap-2 min-w-0">
             <button
               onClick={() => setStep(s.key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              aria-label={s.label}
+              aria-current={step === s.key ? "step" : undefined}
+              className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                 step === s.key
                   ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                   : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
               }`}
             >
-              <s.icon className="w-4 h-4" />
-              {s.label}
+              <s.icon className="w-4 h-4 shrink-0" />
+              <span className={step === s.key ? "truncate" : "hidden sm:inline"}>{s.label}</span>
             </button>
             {i < steps.length - 1 && <ChevronRight className="w-4 h-4 text-muted-foreground/40" />}
           </div>
@@ -763,6 +777,9 @@ Return a JSON object with exactly these fields:
                     </Button>
                     <Button variant="outline" size="sm" onClick={copyHtml} className="gap-1">
                       <Copy className="w-3 h-3" /> Copy HTML
+                    </Button>
+                    <Button size="sm" onClick={saveAsFanEmail} className="gap-1">
+                      <Send className="w-3 h-3" /> Send to my fans
                     </Button>
                   </div>
                 </div>

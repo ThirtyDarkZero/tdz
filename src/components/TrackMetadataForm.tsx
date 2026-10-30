@@ -269,25 +269,25 @@ export const TrackMetadataForm = ({
       )}
 
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 mb-4">
-          <TabsTrigger value="basic" className="text-xs">
-            <Info className="w-3 h-3 mr-1" />
+        <TabsList className="flex w-full justify-start overflow-x-auto mb-4 sm:grid sm:grid-cols-5">
+          <TabsTrigger value="basic" className="text-xs shrink-0">
+            <Info className="w-3 h-3 mr-1 hidden sm:inline" />
             Basic
           </TabsTrigger>
-          <TabsTrigger value="rights" className="text-xs">
-            <Shield className="w-3 h-3 mr-1" />
+          <TabsTrigger value="rights" className="text-xs shrink-0">
+            <Shield className="w-3 h-3 mr-1 hidden sm:inline" />
             Rights
           </TabsTrigger>
-          <TabsTrigger value="credits" className="text-xs">
-            <Users className="w-3 h-3 mr-1" />
+          <TabsTrigger value="credits" className="text-xs shrink-0">
+            <Users className="w-3 h-3 mr-1 hidden sm:inline" />
             Credits
           </TabsTrigger>
-          <TabsTrigger value="publishing" className="text-xs">
-            <Music className="w-3 h-3 mr-1" />
+          <TabsTrigger value="publishing" className="text-xs shrink-0">
+            <Music className="w-3 h-3 mr-1 hidden sm:inline" />
             Publishing
           </TabsTrigger>
-          <TabsTrigger value="assets" className="text-xs">
-            <FileText className="w-3 h-3 mr-1" />
+          <TabsTrigger value="assets" className="text-xs shrink-0">
+            <FileText className="w-3 h-3 mr-1 hidden sm:inline" />
             Assets
           </TabsTrigger>
         </TabsList>
@@ -295,7 +295,7 @@ export const TrackMetadataForm = ({
         <ScrollArea className="h-[400px] pr-4">
           {/* Basic Info Tab */}
           <TabsContent value="basic" className="space-y-4 mt-0">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs">Track Title *</Label>
                 <Input
@@ -320,7 +320,7 @@ export const TrackMetadataForm = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs">Label *</Label>
                 <Input
@@ -370,7 +370,7 @@ export const TrackMetadataForm = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <Label className="text-xs">Release Type *</Label>
                 <Select 
@@ -442,7 +442,7 @@ export const TrackMetadataForm = ({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs">Original Release Date</Label>
                 <Popover>
@@ -486,7 +486,7 @@ export const TrackMetadataForm = ({
 
           {/* Rights Tab */}
           <TabsContent value="rights" className="space-y-4 mt-0">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs">ISRC Code</Label>
                 <Input
@@ -513,7 +513,7 @@ export const TrackMetadataForm = ({
 
             <Separator />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs">Copyright Owner *</Label>
                 <Input
@@ -538,7 +538,7 @@ export const TrackMetadataForm = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs">℗ Line (Sound Recording)</Label>
                 <Input
@@ -571,7 +571,7 @@ export const TrackMetadataForm = ({
                 Add at least one contributor (writer, producer, or performer) *
               </p>
               
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <Input
                   placeholder="Name"
                   value={newContributor.name}

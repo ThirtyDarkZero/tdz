@@ -1,3 +1,4 @@
+import { AgentFace } from "@/components/agents/AgentFace";
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -379,7 +380,7 @@ export const LabelStaff = () => {
                 value={staff.id}
                 className="flex flex-col gap-1 py-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary/20 data-[state=active]:to-secondary/20"
               >
-                <span className="text-2xl">{staff.avatar}</span>
+                <AgentFace name={staff.name} fallback={staff.avatar} className="h-8 w-8" still />
                 <span className="text-xs font-medium hidden md:block">{staff.name.split(" ")[0]}</span>
               </TabsTrigger>
             ))}
@@ -389,9 +390,7 @@ export const LabelStaff = () => {
 
       <div className="px-6 py-4 border-b border-border/50 bg-gradient-to-r from-background to-background/50">
         <div className="flex items-start gap-3">
-          <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${currentStaff.color} flex items-center justify-center text-2xl shadow-lg`}>
-            {currentStaff.avatar}
-          </div>
+          <AgentFace name={currentStaff.name} fallback={currentStaff.avatar} className="w-12 h-12 shrink-0 shadow-lg" />
           <div className="flex-1">
             <h3 className="font-semibold flex items-center gap-2">
               {currentStaff.name}
@@ -415,9 +414,7 @@ export const LabelStaff = () => {
       <ScrollArea ref={scrollRef} className="flex-1 p-6">
         {currentMessages.length === 0 ? (
           <div className="text-center py-12">
-            <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br ${currentStaff.color} flex items-center justify-center text-3xl shadow-glow`}>
-              {currentStaff.avatar}
-            </div>
+            <AgentFace name={currentStaff.name} fallback={currentStaff.avatar} rounded="rounded-2xl" className="w-40 h-48 mx-auto mb-4 shadow-glow" />
             <h4 className="font-semibold mb-2">Start a quantum session with {currentStaff.name}</h4>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
               {currentStaff.name} harnesses quantum intelligence for {currentStaff.expertise.join(", ")}. 

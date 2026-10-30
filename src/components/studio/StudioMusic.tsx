@@ -46,7 +46,7 @@ export const StudioMusic = ({ onPlayTrack }: StudioMusicProps) => {
             Gallery
           </TabsTrigger>
           <TabsTrigger value="lyrics-sync" className="data-[state=active]:bg-background">
-            Lyrics Sync
+            Lyrics
           </TabsTrigger>
         </TabsList>
 

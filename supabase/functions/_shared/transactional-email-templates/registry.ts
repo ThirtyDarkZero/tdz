@@ -9,6 +9,9 @@ import { template as tutorialFirstUpload } from './tutorial-first-upload.tsx'
 import { template as tutorialSmartLink } from './tutorial-smart-link.tsx'
 import { template as tutorialPayouts } from './tutorial-payouts.tsx'
 import { template as tutorialDiscovery } from './tutorial-discovery.tsx'
+import { template as teamInvite } from './team-invite.tsx'
+import { template as splitConfirm } from './split-confirm.tsx'
+import { template as adDailyReport } from './ad-daily-report.tsx'
 
 export interface TemplateEntry {
   // deno-lint-ignore no-explicit-any
@@ -30,4 +33,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'tutorial-smart-link': tutorialSmartLink,
   'tutorial-payouts': tutorialPayouts,
   'tutorial-discovery': tutorialDiscovery,
+  'team-invite': teamInvite,
+  'split-confirm': splitConfirm,
+  'ad-daily-report': adDailyReport,
 }

@@ -1,3 +1,4 @@
+import { AgentFace } from "@/components/agents/AgentFace";
 import { useState, useRef, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -411,7 +412,7 @@ export const ExecAgentPanel = () => {
           <TabsList className="grid w-full grid-cols-2 bg-background/50">
             {execAgents.map(agent => (
               <TabsTrigger key={agent.id} value={agent.id} className="text-xs data-[state=active]:bg-primary/20">
-                <span className="mr-1">{agent.avatar}</span>
+                <AgentFace name={agent.name} fallback={agent.avatar} className="h-5 w-5 mr-1 inline-block" still />
                 {agent.role.split(' ')[0]}
               </TabsTrigger>
             ))}
@@ -423,7 +424,7 @@ export const ExecAgentPanel = () => {
       <div className={`p-3 bg-gradient-to-r ${currentAgent.color} text-white relative overflow-hidden`}>
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iNCIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
         <div className="flex items-center gap-3 relative z-10">
-          <div className="text-4xl drop-shadow-lg">{currentAgent.avatar}</div>
+          <AgentFace name={currentAgent.name} fallback={currentAgent.avatar} className="h-14 w-14 shrink-0 drop-shadow-lg" />
           <div>
             <h4 className="font-bold text-lg">{currentAgent.name}</h4>
             <p className="text-xs opacity-90">{currentAgent.role}</p>
@@ -561,7 +562,7 @@ export const ExecAgentPanel = () => {
                 >
                   {msg.role === "assistant" && (
                     <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
-                      <span className="text-lg">{currentAgent.avatar}</span>
+                      <AgentFace name={currentAgent.name} fallback={currentAgent.avatar} className="h-6 w-6" still />
                       <span className="font-medium">{currentAgent.name}</span>
                     </div>
                   )}

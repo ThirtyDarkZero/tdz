@@ -12,6 +12,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { TerritoryRightsManager } from "./TerritoryRightsManager";
 import { toast } from "sonner";
 
+type SplitState = "none" | "incomplete" | "disputed" | "waiting" | "confirmed";
+const SPLIT_LABEL: Record<SplitState, string> = {
+  none: "No splits", incomplete: "Not 100%", disputed: "Disputed", waiting: "Awaiting confirmation", confirmed: "Splits confirmed",
+};
+
 interface Track {
   id: string;
   title: string;
@@ -21,8 +26,10 @@ interface Track {
     title: string;
     cover_art_path?: string;
   };
+  album_id?: string | null;
   territories_count?: number;
   rights_count?: number;
+  split_state?: SplitState;
 }
 
 export const TerritoryRightsHub = () => {
@@ -48,12 +55,28 @@ export const TerritoryRightsHub = () => {
           title,
           artist_name,
           isrc,
+          album_id,
           album:albums(title, cover_art_path)
         `)
         .eq("user_id", user?.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
+
+      // Split health for all tracks in one call
+      const { data: overview } = await supabase.rpc("split_overview" as never);
+      const byTrack = new Map<string, { total: number; holders: number; confirmed: number; disputed: number }[]>();
+      for (const o of (overview ?? []) as { track_id: string; total: number; holders: number; confirmed: number; disputed: number }[]) {
+        byTrack.set(o.track_id, [...(byTrack.get(o.track_id) ?? []), o]);
+      }
+      const splitState = (id: string): SplitState => {
+        const groups = byTrack.get(id) ?? [];
+        if (!groups.length) return "none";
+        if (groups.some((g) => Math.abs(Number(g.total) - 100) > 0.01)) return "incomplete";
+        if (groups.some((g) => g.disputed > 0)) return "disputed";
+        if (groups.some((g) => g.confirmed < g.holders)) return "waiting";
+        return "confirmed";
+      };
 
       // Get territory and rights counts for each track
       const tracksWithCounts = await Promise.all(
@@ -74,6 +97,7 @@ export const TerritoryRightsHub = () => {
             album: Array.isArray(track.album) ? track.album[0] : track.album,
             territories_count: territoriesRes.count || 0,
             rights_count: rightsRes.count || 0,
+            split_state: splitState(track.id),
           };
         })
       );
@@ -145,9 +169,9 @@ export const TerritoryRightsHub = () => {
             </div>
             <div className="p-4 rounded-lg bg-muted/50">
               <div className="text-2xl font-bold text-secondary">
-                {tracks.filter((t) => (t.rights_count || 0) > 0).length}
+                {tracks.filter((t) => t.split_state === "confirmed").length}
               </div>
-              <div className="text-sm text-muted-foreground">With Rights Defined</div>
+              <div className="text-sm text-muted-foreground">Splits confirmed</div>
             </div>
           </div>
         </CardContent>
@@ -185,7 +209,7 @@ export const TerritoryRightsHub = () => {
                 onClick={() => handleOpenManager(track)}
               >
                 <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                     {/* Cover Art */}
                     <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                       {track.album?.cover_art_path ? (
@@ -214,7 +238,7 @@ export const TerritoryRightsHub = () => {
                     </div>
 
                     {/* Status Badges */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 ml-auto">
                       <Badge
                         variant={
                           (track.territories_count || 0) > 0 ? "default" : "secondary"
@@ -225,11 +249,11 @@ export const TerritoryRightsHub = () => {
                         {track.territories_count || 0}
                       </Badge>
                       <Badge
-                        variant={(track.rights_count || 0) > 0 ? "default" : "secondary"}
+                        variant={track.split_state === "confirmed" ? "default" : track.split_state === "disputed" || track.split_state === "incomplete" ? "destructive" : "secondary"}
                         className="gap-1"
                       >
                         <Shield className="w-3 h-3" />
-                        {track.rights_count || 0}
+                        {SPLIT_LABEL[track.split_state ?? "none"]}
                       </Badge>
                       <ChevronRight className="w-5 h-5 text-muted-foreground" />
                     </div>
@@ -251,6 +275,7 @@ export const TerritoryRightsHub = () => {
             <TerritoryRightsManager
               trackId={selectedTrack.id}
               trackTitle={selectedTrack.title}
+              albumId={selectedTrack.album_id}
               onClose={handleCloseManager}
             />
           )}

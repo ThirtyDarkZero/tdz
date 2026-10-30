@@ -445,6 +445,11 @@
     button:has(> svg:only-child) {
       min-width: 44px;
     }
+    /* Radios, checkboxes and switches keep their shape; their label is the tap target */
+    button[role="radio"][data-state], button[role="checkbox"][data-state], button[role="switch"][data-state] {
+      min-height: 0;
+      min-width: 0;
+    }
 
     /* Uniform gutters for opt-in page shells (full-bleed pages excluded) */
     [data-app-page] {

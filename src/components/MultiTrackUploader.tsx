@@ -8,6 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { startAutoLyrics } from "@/lib/lyricsProxy";
+import { createReleaseLinks, releaseFields, type ReleaseMode } from "@/lib/releasePlan";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
@@ -80,6 +84,8 @@ export type ReleaseSummary = {
   releaseType: ReleaseType;
   albumId: string | null;
   trackId: string | null;
+  smartLink?: string;
+  presaveLink?: string;
 };
 
 export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, onStage }: { onSuccess?: (summary?: ReleaseSummary) => void; targetUserId?: string; targetArtistName?: string; onStage?: (stage: ReleaseQuestStage) => void }) => {
@@ -101,6 +107,9 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, 
   const [metadata, setMetadata] = useState<TrackMetadata | null>(null);
   const [metadataComplete, setMetadataComplete] = useState(false);
   const [scheduledReleaseDate, setScheduledReleaseDate] = useState<Date | null>(null);
+  const [releaseMode, setReleaseMode] = useState<ReleaseMode>("now");
+  const [makeSmartLink, setMakeSmartLink] = useState(true);
+  const [makePresave, setMakePresave] = useState(true);
   const [draftRestored, setDraftRestored] = useState(false);
   const [showDraftBanner, setShowDraftBanner] = useState(false);
   const [coverArtPath, setCoverArtPath] = useState<string | null>(null);
@@ -208,6 +217,7 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, 
     setGenre(loadedDraft.genre);
     setDescription(loadedDraft.description);
     setScheduledReleaseDate(loadedDraft.scheduledReleaseDate ? new Date(loadedDraft.scheduledReleaseDate) : null);
+    if (loadedDraft.scheduledReleaseDate) setReleaseMode('scheduled');
     if (loadedDraft.metadata) {
       setMetadata(loadedDraft.metadata as TrackMetadata);
       setMetadataComplete(loadedDraft.metadataComplete);
@@ -432,6 +442,7 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, 
     let uploadedFilePaths: string[] = [];
     let createdAlbumId: string | null = null;
     let createdTrackIds: string[] = [];
+    const lyricsQueue: { id: string; file: File }[] = [];
 
     try {
       // Step 1: Verify authentication (uploader) and resolve effective owner
@@ -442,6 +453,7 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, 
       // If a manager is acting on behalf of a roster artist, the owner id is the artist,
       // but auth/rate limits still key off the manager (auth.uid()).
       const ownerId = targetUserId || user.id;
+      const release = releaseFields(releaseMode, scheduledReleaseDate);
 
       let albumId: string | null = null;
 
@@ -459,7 +471,7 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, 
               description: description?.trim() || null,
               cover_art_path: coverArtPath,
               release_type: releaseType, // Store release type for categorization
-              is_published: false,
+              ...release,
               total_tracks: tracks.length
             } as any)
             .select()
@@ -555,7 +567,7 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, 
               duration: track.duration || 0,
               file_path: filePath,
               genre: metadata!.genre || null,
-              is_published: false,
+              is_published: release.is_published,
               audio_quality: audioQuality,
               album_id: albumId,
               track_number: releaseType !== 'single' ? i + 1 : null,
@@ -581,8 +593,8 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, 
               publishing_info: metadata!.publishingInfo || null,
               metadata_complete: true,
               // Scheduled release date - saves release date set during upload
-              scheduled_release_date: scheduledReleaseDate?.toISOString().split('T')[0] || null,
-              release_date: scheduledReleaseDate?.toISOString().split('T')[0] || null,
+              scheduled_release_date: release.scheduled_release_date,
+              release_date: release.release_date,
               // For singles, store cover art directly on track if provided
               album_cover_path: releaseType === 'single' ? coverArtPath : null,
               album_cover_bucket: releaseType === 'single' && coverArtPath ? 'album-covers' : null,
@@ -597,6 +609,7 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, 
             if (!dbError && trackData) {
               trackCreated = true;
               createdTrackIds.push(trackData.id);
+              lyricsQueue.push({ id: trackData.id, file: track.file });
               successfulTracks.push(i);
             } else {
               dbRetries--;
@@ -624,6 +637,11 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, 
       }
 
       setProgress(100);
+
+      // Transcribe and time the lyrics in the background, one track at a time.
+      void (async () => {
+        for (const t of lyricsQueue) await startAutoLyrics(t.id, ownerId, t.file);
+      })();
 
       // Email confirmations: upload receipt (+ release announcement for multi-track releases)
       try {
@@ -655,7 +673,7 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, 
               trackTitle: tracks[0]?.title || releaseTitle,
             },
           });
-          if (releaseType !== 'single' && !scheduledReleaseDate) {
+          if (release.is_published) {
             await sendAppEmail({
               templateName: 'release-live',
               recipientEmail: email,
@@ -673,15 +691,39 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, 
         console.warn('Upload email notification failed', emailErr);
       }
 
-      toast({ 
-        title: "Upload successful!",
-        description: `${tracks.length} track(s) uploaded to your library`
+      // Release links: one smart link, plus a pre-save page when scheduled.
+      const releaseTitleFinal = (releaseTitle || tracks[0]?.title || 'Untitled Release').trim();
+      let links: { smartLink?: string; presave?: string } = {};
+      if (releaseMode !== 'draft' && (albumId || createdTrackIds[0])) {
+        try {
+          links = await createReleaseLinks({
+            ownerId,
+            title: releaseTitleFinal,
+            target: albumId ? { type: 'album', id: albumId } : { type: 'track', id: createdTrackIds[0] },
+            smartLink: makeSmartLink,
+            presave: makePresave && !release.is_published,
+            releaseDate: release.release_date,
+          });
+        } catch (linkErr) {
+          console.warn('Release links failed', linkErr);
+        }
+      }
+
+      toast({
+        title: release.is_published ? "You're live on TDZ" : release.release_date ? `Scheduled for ${format(new Date(release.release_date + 'T12:00:00'), 'PPP')}` : "Saved as a draft",
+        description: [
+          `${tracks.length} track(s) uploaded. Lyrics are being transcribed — you can correct them under Music > Lyrics.`,
+          links.smartLink ? `Smart link: ${links.smartLink}` : null,
+          links.presave ? `Pre-save page: ${links.presave}` : null,
+        ].filter(Boolean).join(' '),
       });
 
       
       // Snapshot the release details before the form is reset (used for the victory card)
       const summary: ReleaseSummary = {
-        title: (releaseTitle || tracks[0]?.title || 'Untitled Release').trim(),
+        title: releaseTitleFinal,
+        smartLink: links.smartLink,
+        presaveLink: links.presave,
         artistName: (artistName || targetArtistName || '').trim(),
         coverUrl: coverArtUrl,
         trackCount: createdTrackIds.length || tracks.length,
@@ -704,6 +746,7 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, 
       setMetadata(null);
       setMetadataComplete(false);
       setScheduledReleaseDate(null);
+      setReleaseMode('now');
       setCoverArtPath(null);
       setCoverArtUrl(null);
       
@@ -809,35 +852,35 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, 
           </h2>
           <p className="text-muted-foreground text-sm mt-1">Choose your release type to get started</p>
         </div>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <Card 
-            className={`p-6 cursor-pointer transition-all duration-300 hover:scale-105 ${releaseType === 'single' ? 'border-primary bg-gradient-to-br from-primary/20 to-primary/5 shadow-glow' : 'hover:border-primary/50 hover:bg-primary/5'}`}
+            className={`p-3 sm:p-6 cursor-pointer transition-all duration-300 hover:scale-105 ${releaseType === 'single' ? 'border-primary bg-gradient-to-br from-primary/20 to-primary/5 shadow-glow' : 'hover:border-primary/50 hover:bg-primary/5'}`}
             onClick={() => setReleaseType('single')}
           >
             <div className={`w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center ${releaseType === 'single' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
               <Music className="h-6 w-6" />
             </div>
-            <p className="text-center font-bold text-lg">Single</p>
+            <p className="text-center font-bold text-base sm:text-lg">Single</p>
             <p className="text-xs text-center text-muted-foreground mt-1">1-2 tracks</p>
           </Card>
           <Card 
-            className={`p-6 cursor-pointer transition-all duration-300 hover:scale-105 ${releaseType === 'ep' ? 'border-primary bg-gradient-to-br from-primary/20 to-primary/5 shadow-glow' : 'hover:border-primary/50 hover:bg-primary/5'}`}
+            className={`p-3 sm:p-6 cursor-pointer transition-all duration-300 hover:scale-105 ${releaseType === 'ep' ? 'border-primary bg-gradient-to-br from-primary/20 to-primary/5 shadow-glow' : 'hover:border-primary/50 hover:bg-primary/5'}`}
             onClick={() => setReleaseType('ep')}
           >
             <div className={`w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center ${releaseType === 'ep' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
               <Disc className="h-6 w-6" />
             </div>
-            <p className="text-center font-bold text-lg">EP</p>
+            <p className="text-center font-bold text-base sm:text-lg">EP</p>
             <p className="text-xs text-center text-muted-foreground mt-1">3-6 tracks</p>
           </Card>
           <Card 
-            className={`p-6 cursor-pointer transition-all duration-300 hover:scale-105 ${releaseType === 'album' ? 'border-primary bg-gradient-to-br from-primary/20 to-primary/5 shadow-glow' : 'hover:border-primary/50 hover:bg-primary/5'}`}
+            className={`p-3 sm:p-6 cursor-pointer transition-all duration-300 hover:scale-105 ${releaseType === 'album' ? 'border-primary bg-gradient-to-br from-primary/20 to-primary/5 shadow-glow' : 'hover:border-primary/50 hover:bg-primary/5'}`}
             onClick={() => setReleaseType('album')}
           >
             <div className={`w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center ${releaseType === 'album' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
               <AlbumIcon className="h-6 w-6" />
             </div>
-            <p className="text-center font-bold text-lg">Album</p>
+            <p className="text-center font-bold text-base sm:text-lg">Album</p>
             <p className="text-xs text-center text-muted-foreground mt-1">7+ tracks</p>
           </Card>
         </div>
@@ -1065,43 +1108,60 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, 
         </div>
       )}
 
-      {/* Scheduled Release Date */}
+      {/* Release: planned here, so there's no second trip to the Release Manager */}
       {tracks.length > 0 && (
-        <div className="space-y-2">
-          <Label>Schedule Release Date (Optional)</Label>
-          <p className="text-xs text-muted-foreground">
-            Set a future date to schedule release. Leave empty to save as draft.
-          </p>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-full justify-start text-left font-normal">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {scheduledReleaseDate ? format(scheduledReleaseDate, "PPP") : "No scheduled date - Save as draft"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={scheduledReleaseDate || undefined}
-                onSelect={(date) => setScheduledReleaseDate(date || null)}
-                disabled={(date) => date < new Date()}
-                initialFocus
-              />
-              {scheduledReleaseDate && (
-                <div className="p-2 border-t">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="w-full" 
-                    onClick={() => setScheduledReleaseDate(null)}
-                  >
-                    Clear date (save as draft)
-                  </Button>
-                </div>
+        <fieldset className="space-y-3 rounded-lg border p-4">
+          <legend className="px-1 text-sm font-semibold">Release</legend>
+          <RadioGroup value={releaseMode} onValueChange={(v) => setReleaseMode(v as ReleaseMode)} className="grid gap-2 sm:grid-cols-3">
+            {([
+              ["now", "Release now", "Goes live on TDZ as soon as it uploads"],
+              ["scheduled", "Pick a date", "Goes live automatically that day"],
+              ["draft", "Save as draft", "Private until you release it"],
+            ] as const).map(([value, label, hint]) => (
+              <Label key={value} htmlFor={`release-${value}`}
+                className={`flex cursor-pointer gap-3 rounded-md border p-3 ${releaseMode === value ? "border-primary bg-primary/5" : ""}`}>
+                <RadioGroupItem id={`release-${value}`} value={value} className="mt-0.5" />
+                <span><span className="block font-medium">{label}</span><span className="block text-xs text-muted-foreground font-normal">{hint}</span></span>
+              </Label>
+            ))}
+          </RadioGroup>
+
+          {releaseMode === "scheduled" && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {scheduledReleaseDate ? format(scheduledReleaseDate, "PPP") : "Choose a release date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={scheduledReleaseDate || undefined}
+                  onSelect={(date) => setScheduledReleaseDate(date || null)}
+                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          )}
+
+          {releaseMode !== "draft" && (
+            <div className="grid gap-2 pt-1">
+              <label className="flex items-center justify-between gap-3 text-sm">
+                <span>Create a smart link to share</span>
+                <Switch checked={makeSmartLink} onCheckedChange={setMakeSmartLink} aria-label="Create a smart link" />
+              </label>
+              {releaseMode === "scheduled" && (
+                <label className="flex items-center justify-between gap-3 text-sm">
+                  <span>Start a pre-save page so fans get notified on release day</span>
+                  <Switch checked={makePresave} onCheckedChange={setMakePresave} aria-label="Create a pre-save page" />
+                </label>
               )}
-            </PopoverContent>
-          </Popover>
-        </div>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">Lyrics are transcribed and timed automatically after upload; you can correct them any time.</p>
+        </fieldset>
       )}
 
       {uploading && (
@@ -1115,10 +1175,15 @@ export const MultiTrackUploader = ({ onSuccess, targetUserId, targetArtistName, 
 
       <Button 
         onClick={handleUpload} 
-        disabled={uploading || tracks.length === 0 || !metadataComplete} 
+        disabled={uploading || tracks.length === 0 || !metadataComplete || (releaseMode === "scheduled" && !scheduledReleaseDate)} 
         className="w-full"
       >
-        {uploading ? "Uploading..." : !metadataComplete && tracks.length > 0 ? "Complete Metadata to Upload" : `Upload ${releaseType === 'single' ? 'Track' : tracks.length + ' Tracks'}`}
+        {uploading ? "Uploading..."
+          : !metadataComplete && tracks.length > 0 ? "Complete Metadata to Upload"
+          : releaseMode === "scheduled" && !scheduledReleaseDate ? "Choose a release date"
+          : releaseMode === "now" ? `Upload and release ${releaseType === 'single' ? 'track' : tracks.length + ' tracks'}`
+          : releaseMode === "scheduled" ? `Upload and schedule for ${format(scheduledReleaseDate!, "MMM d")}`
+          : `Upload ${releaseType === 'single' ? 'track' : tracks.length + ' tracks'} as a draft`}
       </Button>
 
       <BulkEditDialog

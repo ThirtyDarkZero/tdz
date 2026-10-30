@@ -47,7 +47,8 @@ function AuthForm() {
   const [isSignUp, setIsSignUp] = useState(
     () => new URLSearchParams(window.location.search).get("mode") === "signup"
   );
-  const [email, setEmail] = useState("");
+  const [searchParams] = useSearchParams();
+  const [email, setEmail] = useState(() => searchParams.get("email")?.slice(0, 254) ?? "");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -61,7 +62,6 @@ function AuthForm() {
 
   const { signIn, signUp, signInWithGoogle } = useAuthContext();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   // Same-origin relative path only. Used to return the user to a preserved URL
   // (e.g. the OAuth consent page) after any sign-in method.
   const rawNext = searchParams.get("next");

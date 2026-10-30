@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { supabase } from "@/integrations/supabase/client";
+import { sendInvite } from "@/lib/invites";
 import { toast } from "sonner";
 import { Mail, Shield, Music, Upload, Trash2, TrendingUp, Album } from "lucide-react";
 
@@ -48,34 +48,23 @@ export const CollaboratorInviteDialog = ({ open, onOpenChange, onInviteSent }: C
 
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Your session expired. Please sign in again.");
-
-      const { error } = await supabase
-        .from("collaborator_invites")
-        .insert({
-          artist_id: user.id,
-          invited_email: normalizedEmail,
-          permissions: permissions,
-          message: message || null,
+      const result = await sendInvite({ email: normalizedEmail, permissions, message: message || undefined });
+      if (result.email_status === "queued") {
+        toast.success(`Invite emailed to ${normalizedEmail}`);
+      } else {
+        await navigator.clipboard?.writeText(result.invite_url).catch(() => {});
+        toast.warning("Invite saved, but the email didn't send", {
+          description: `${result.error ?? "Email service error"}. The invite link is copied — share it directly.`,
+          duration: 10000,
         });
-
-      if (error) throw error;
-
-      toast.success(`Invitation sent to ${normalizedEmail}`);
+      }
       setEmail("");
       setMessage("");
       setPermissions(["view_tracks"]);
       onOpenChange(false);
       onInviteSent?.();
-    } catch (error: any) {
-      console.error("Error sending invite:", error);
-      const message = error?.message?.toLowerCase?.() || "";
-      if (message.includes("invalid login credentials") || message.includes("jwt") || message.includes("not authenticated")) {
-        toast.error("Your session expired. Please sign in again and retry.");
-      } else {
-        toast.error(error.message || "Failed to send invitation");
-      }
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Couldn't send the invite.");
     } finally {
       setLoading(false);
     }
