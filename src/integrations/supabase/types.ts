@@ -1127,34 +1127,55 @@ export type Database = {
         Row: {
           artist_id: string
           created_at: string
+          email_error: string | null
+          email_status: string | null
           expires_at: string
           id: string
           invited_email: string
+          inviter_name: string | null
+          kind: string
+          last_sent_at: string | null
           message: string | null
           permissions: Json
+          responded_at: string | null
           status: string
+          token: string
           updated_at: string
         }
         Insert: {
           artist_id: string
           created_at?: string
+          email_error?: string | null
+          email_status?: string | null
           expires_at?: string
           id?: string
           invited_email: string
+          inviter_name?: string | null
+          kind?: string
+          last_sent_at?: string | null
           message?: string | null
           permissions?: Json
+          responded_at?: string | null
           status?: string
+          token?: string
           updated_at?: string
         }
         Update: {
           artist_id?: string
           created_at?: string
+          email_error?: string | null
+          email_status?: string | null
           expires_at?: string
           id?: string
           invited_email?: string
+          inviter_name?: string | null
+          kind?: string
+          last_sent_at?: string | null
           message?: string | null
           permissions?: Json
+          responded_at?: string | null
           status?: string
+          token?: string
           updated_at?: string
         }
         Relationships: []
@@ -5445,6 +5466,19 @@ export type Database = {
           token_expires_at: string
         }[]
       }
+      get_invite_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          expires_at: string
+          id: string
+          invited_email: string
+          inviter_name: string
+          kind: string
+          message: string
+          permissions: Json
+          status: string
+        }[]
+      }
       get_quality_scorecard: {
         Args: { p_days?: number }
         Returns: {
@@ -5516,6 +5550,10 @@ export type Database = {
           ledger_balance: number
           unpaid_earnings: number
         }[]
+      }
+      respond_to_invite: {
+        Args: { p_accept: boolean; p_token: string }
+        Returns: string
       }
       sigma_level: { Args: { p_dpmo: number }; Returns: number }
       update_artist_monthly_listeners: { Args: never; Returns: undefined }
