@@ -22,6 +22,13 @@
       "when": 1793304889933,
       "tag": "0002_global_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793400637232,
+      "tag": "0003_team_invites",
+      "breakpoints": true
     }
   ]
 }
